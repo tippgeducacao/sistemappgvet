@@ -3,54 +3,55 @@ import { supabase } from '@/integrations/supabase/client';
 
 export class SecretariaUpdateService {
   static async updateVendaStatus(
-    vendaId: string, 
+    vendaId: string,
     status: 'pendente' | 'matriculado' | 'desistiu',
     pontuacaoValidada?: number,
     motivoPendencia?: string
   ): Promise<boolean> {
-    console.log('🎯 SecretariaUpdateService: Iniciando atualização de venda:', { 
-      vendaId: vendaId.substring(0, 8), 
+    console.log('🔄 SecretariaUpdateService: Atualizando status da venda', {
+      vendaId: vendaId.substring(0, 8),
       status,
       pontuacaoValidada,
-      motivoPendencia 
+      motivoPendencia
     });
 
     try {
-      // Verificar se o usuário está autenticado
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('❌ Usuário não autenticado');
-        return false;
+      // Preparar os campos a serem atualizados
+      const updateFields: any = {
+        status,
+        atualizado_em: new Date().toISOString()
+      };
+
+      if (pontuacaoValidada !== undefined) {
+        updateFields.pontuacao_validada = pontuacaoValidada;
       }
 
-      console.log('👤 Usuário autenticado:', user.id);
+      if (motivoPendencia) {
+        updateFields.motivo_pendencia = motivoPendencia;
+      }
 
-      // Chamar a função SQL que foi corrigida
-      const { data, error } = await supabase.rpc('update_venda_status', {
-        venda_id: vendaId,
-        new_status: status,
-        pontuacao_validada_param: pontuacaoValidada || null,
-        motivo_pendencia_param: motivoPendencia || null
-      });
+      // Atualizar diretamente na tabela form_entries
+      const { data, error } = await supabase
+        .from('form_entries')
+        .update(updateFields)
+        .eq('id', vendaId)
+        .select('id, status, pontuacao_validada, motivo_pendencia');
 
       if (error) {
-        console.error('❌ Erro ao chamar função update_venda_status:', error);
+        console.error('❌ Erro na atualização direta:', error);
         return false;
       }
 
-      console.log('✅ Resultado da função update_venda_status:', data);
-      
-      // Verificar se a atualização foi bem-sucedida
-      if (data === true) {
-        console.log('✅ Venda atualizada com sucesso!');
-        return true;
-      } else {
-        console.warn('⚠️ Função retornou false - nenhuma linha foi atualizada');
+      if (!data || data.length === 0) {
+        console.error('❌ Nenhum registro foi atualizado');
         return false;
       }
+
+      console.log('✅ Venda atualizada com sucesso:', data[0]);
+      return true;
 
     } catch (error) {
-      console.error('❌ Erro inesperado no SecretariaUpdateService:', error);
+      console.error('❌ Erro inesperado na atualização:', error);
       return false;
     }
   }

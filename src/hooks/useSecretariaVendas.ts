@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SecretariaUpdateService } from '@/services/vendas/SecretariaUpdateService';
@@ -76,7 +77,7 @@ export const useSecretariaVendas = () => {
           status: (venda.status as 'pendente' | 'matriculado' | 'desistiu') || 'pendente',
           pontuacao_esperada: venda.pontuacao_esperada || 0,
           pontuacao_validada: venda.pontuacao_validada,
-          enviado_em: venda.created_at || '',
+          enviado_em: venda.enviado_em || venda.created_at || '',
           atualizado_em: venda.atualizado_em || '',
           motivo_pendencia: venda.motivo_pendencia,
           aluno: venda.aluno && typeof venda.aluno === 'object' && venda.aluno !== null && 'id' in venda.aluno ? {

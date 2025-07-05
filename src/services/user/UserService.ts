@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/services/auth/AuthService';
 
@@ -68,29 +69,44 @@ export class UserService {
   }
 
   static async isAdmin(userId: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .rpc('is_admin', { _user_id: userId });
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
     
-    if (error) {
+      if (error) {
+        console.error('Erro ao verificar se é admin:', error);
+        return false;
+      }
+    
+      return !!data;
+    } catch (error) {
       console.error('Erro ao verificar se é admin:', error);
       return false;
     }
-    
-    return data || false;
   }
 
   static async hasRole(userId: string, role: 'admin' | 'secretaria' | 'vendedor'): Promise<boolean> {
-    const { data, error } = await supabase
-      .rpc('has_role', { 
-        _user_id: userId, 
-        _role: role 
-      });
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('role', role)
+        .maybeSingle();
     
-    if (error) {
+      if (error) {
+        console.error('Erro ao verificar role:', error);
+        return false;
+      }
+    
+      return !!data;
+    } catch (error) {
       console.error('Erro ao verificar role:', error);
       return false;
     }
-    
-    return data || false;
   }
 }
