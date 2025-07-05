@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 
 interface FormState {
@@ -7,6 +8,7 @@ interface FormState {
   // Actions
   updateField: <T extends keyof FormData>(field: T, value: FormData[T]) => void;
   setFormData: (data: Partial<FormData>) => void;
+  setVendedor: (vendedor: string) => void;
   clearForm: () => void;
   setIsSubmitting: (value: boolean) => void;
 }
@@ -46,6 +48,9 @@ export interface FormData {
   indicacao?: string;
   nomeIndicador?: string;
 
+  // Documento comprobatório
+  documentoComprobatorio?: File | null;
+
   // Observações
   observacoes?: string;
 }
@@ -81,6 +86,9 @@ const initialFormData: FormData = {
   indicacao: '',
   nomeIndicador: '',
 
+  // Document
+  documentoComprobatorio: null,
+
   // Observations
   observacoes: ''
 };
@@ -95,6 +103,10 @@ export const useFormStore = create<FormState>((set) => ({
   
   setFormData: (data) => set((state) => ({
     formData: { ...state.formData, ...data }
+  })),
+
+  setVendedor: (vendedor) => set((state) => ({
+    formData: { ...state.formData, vendedor }
   })),
   
   clearForm: () => set({ formData: initialFormData }),

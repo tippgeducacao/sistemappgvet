@@ -45,13 +45,13 @@ export class ValidationService {
     formaCaptacao: {},
     tipoVenda: { required: true },
     vendaCasada: { required: true },
-    detalhesVendaCasada: { maxLength: 500 }, // Novo campo adicionado
-    
-    // Observations
-    observacoes: { maxLength: 1000 },
+    detalhesVendaCasada: { maxLength: 500 },
     
     // Document
-    documentoComprobatorio: {}
+    documentoComprobatorio: {},
+    
+    // Observations
+    observacoes: { maxLength: 1000 }
   };
 
   static validateField(fieldName: keyof FormData, value: string | File | null): string | null {
@@ -172,9 +172,9 @@ export class ValidationService {
       formaCaptacao: 'Forma de Captação do Lead',
       tipoVenda: 'Tipo de Venda',
       vendaCasada: 'Venda Casada',
-      detalhesVendaCasada: 'Detalhes da Venda Casada', // Novo campo adicionado
-      observacoes: 'Observações',
-      documentoComprobatorio: 'Documento Comprobatório'
+      detalhesVendaCasada: 'Detalhes da Venda Casada',
+      documentoComprobatorio: 'Documento Comprobatório',
+      observacoes: 'Observações'
     };
 
     return displayNames[fieldName] || fieldName;

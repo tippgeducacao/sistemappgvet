@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ErrorService } from '@/services/error/ErrorService';
 import { ScoringService } from '@/services/scoringService';
@@ -8,7 +9,7 @@ import { AlunoCreationService } from './AlunoCreationService';
 import { FormResponsesService } from './FormResponsesService';
 import type { FormData } from '@/store/FormStore';
 
-export interface FormSubmissionData {
+export interface SaveFormDataParams {
   formData: FormData;
   vendedorId: string;
 }
@@ -24,13 +25,11 @@ export class FormPersistenceService {
       await this.validateFormData(data.formData);
 
       // 2. Criar ou buscar aluno
-      const alunoId = await AlunoCreationService.createOrFindAluno({
-        nome: data.formData.nomeAluno,
-        email: data.formData.emailAluno,
-        telefone: data.formData.telefone,
-        crmv: data.formData.crmv,
-        vendedorId: data.vendedorId
-      });
+      const alunoId = await AlunoCreationService.createAluno(
+        data.formData,
+        '', // formEntryId será definido depois
+        data.vendedorId
+      );
 
       console.log('👨‍🎓 Aluno processado:', alunoId);
 
@@ -39,22 +38,20 @@ export class FormPersistenceService {
       console.log('🎯 Pontuação calculada:', pontuacaoEsperada);
 
       // 4. Criar entrada do formulário
-      const formEntryId = await FormEntryCreationService.createFormEntry({
-        vendedorId: data.vendedorId,
-        cursoId: data.formData.cursoId,
-        alunoId,
-        observacoes: data.formData.observacoes || '',
+      const formEntry = await FormEntryCreationService.createFormEntry(
+        data.vendedorId,
+        data.formData,
         pontuacaoEsperada,
-        status: 'pendente'
-      });
+        null // documento será tratado separadamente
+      );
 
-      console.log('📄 Form entry criado:', formEntryId);
+      console.log('📄 Form entry criado:', formEntry.id);
 
       // 5. Salvar respostas do formulário
-      await FormResponsesService.saveFormResponses(formEntryId, data.formData);
+      await FormResponsesService.saveFormResponses(formEntry.id, data.formData);
 
       console.log('✅ FORMULÁRIO SALVO COM SUCESSO!');
-      return formEntryId;
+      return formEntry.id;
 
     } catch (error) {
       console.error('❌ ERRO NO SALVAMENTO:', error);
