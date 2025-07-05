@@ -16,7 +16,7 @@ export class AdminVendaQueryService {
         status,
         pontuacao_esperada,
         pontuacao_validada,
-        created_at,
+        enviado_em,
         atualizado_em,
         motivo_pendencia,
         aluno_id,
@@ -32,7 +32,7 @@ export class AdminVendaQueryService {
           nome
         )
       `)
-      .order('created_at', { ascending: false });
+      .order('enviado_em', { ascending: false });
 
     if (error) {
       console.error('❌ Erro ao buscar todas as vendas:', error);
@@ -85,14 +85,12 @@ export class AdminVendaQueryService {
         return {
           ...venda,
           aluno: alunoFinal,
-          vendedor: vendedorData,
-          enviado_em: venda.created_at || '',
-          status: venda.status as 'pendente' | 'matriculado' | 'desistiu'
+          vendedor: vendedorData
         };
       })
     );
 
     console.log('✅✅ VENDAS FINAIS PROCESSADAS:', vendasComVendedores.length);
-    return vendasComVendedores as VendaCompleta[];
+    return vendasComVendedores as unknown as VendaCompleta[];
   }
 }

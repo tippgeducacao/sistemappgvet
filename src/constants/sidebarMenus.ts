@@ -1,89 +1,74 @@
 
 import type { MenuItem } from '@/types/navigation';
 
-export const adminMenuItems: MenuItem[] = [
+export const ADMIN_MENU_ITEMS: MenuItem[] = [
   {
-    title: "Dashboard",
-    section: "dashboard",
-    icon: "BarChart3",
-    url: "/dashboard"
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
   },
   {
-    title: "Gerenciar Vendas",
-    section: "gerenciar-vendas",
-    icon: "ClipboardCheck",
-    url: "/vendas"
+    title: 'Gerenciar Vendas',
+    section: 'gerenciar-vendas',
+    icon: 'FileText'
   },
   {
-    title: "Gerenciar Cursos",
-    section: "gerenciar-cursos",
-    icon: "BookOpen",
-    url: "/cursos"
+    title: 'Gerenciar Cursos',
+    section: 'gerenciar-cursos',
+    icon: 'GraduationCap'
   },
   {
-    title: "Gerenciar Vendedores",
-    section: "gerenciar-vendedores",
-    icon: "Users",
-    url: "/vendedores"
+    title: 'Gerenciar Vendedores',
+    section: 'gerenciar-vendedores',
+    icon: 'Users'
   },
   {
-    title: "Gerenciar Pontuações",
-    section: "gerenciar-pontuacoes",
-    icon: "Target",
-    url: "/pontuacoes"
+    title: 'Gerenciar Pontuações',
+    section: 'gerenciar-pontuacoes',
+    icon: 'Star'
   }
 ];
 
-export const secretariaMenuItems: MenuItem[] = [
+export const SECRETARY_MENU_ITEMS: MenuItem[] = [
   {
-    title: "Dashboard",
-    section: "dashboard",
-    icon: "BarChart3",
-    url: "/dashboard"
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
   },
   {
-    title: "Gerenciar Vendas",
-    section: "gerenciar-vendas",
-    icon: "ClipboardCheck",
-    url: "/vendas"
+    title: 'Gerenciar Vendas',
+    section: 'gerenciar-vendas',
+    icon: 'FileText'
   },
   {
-    title: "Gerenciar Cursos",
-    section: "gerenciar-cursos",
-    icon: "BookOpen",
-    url: "/cursos"
+    title: 'Gerenciar Cursos',
+    section: 'gerenciar-cursos',
+    icon: 'GraduationCap'
   },
   {
-    title: "Gerenciar Vendedores",
-    section: "gerenciar-vendedores",
-    icon: "Users",
-    url: "/vendedores"
+    title: 'Gerenciar Vendedores',
+    section: 'gerenciar-vendedores',
+    icon: 'Users'
   }
 ];
 
-export const vendedorMenuItems: MenuItem[] = [
+export const VENDOR_MENU_ITEMS: MenuItem[] = [
   {
-    title: "Dashboard",
-    section: "dashboard",
-    icon: "BarChart3",
-    url: "/dashboard"
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
   },
   {
-    title: "Minhas Vendas",
-    section: "minhas-vendas",
-    icon: "FileText",
-    url: "/minhas-vendas"
-  },
+    title: 'Minhas Vendas',
+    section: 'minhas-vendas',
+    icon: 'ShoppingCart'
+  }
+];
+
+export const ADMIN_SPECIFIC_MENU: MenuItem[] = [
   {
-    title: "Nova Venda",
-    section: "nova-venda",
-    icon: "Plus",
-    url: "/nova-venda"
-  },
-  {
-    title: "Gestão de Leads",
-    section: "gestao-leads",
-    icon: "Users",
-    url: "/leads"
+    title: 'Gestão de Leads',
+    section: 'gestao-leads',
+    icon: 'Target'
   }
 ];

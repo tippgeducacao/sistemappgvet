@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -62,19 +63,10 @@ export const useLeads = () => {
           *,
           vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
         `)
-        .order('created_at', { ascending: false });
+        .order('data_captura', { ascending: false });
 
       if (error) throw error;
-      
-      // Mapear os dados para corresponder à interface Lead
-      const mappedData = (data || []).map(item => ({
-        ...item,
-        data_captura: item.created_at,
-        convertido_em_venda: false,
-        status: item.status || 'novo'
-      }));
-      
-      return mappedData as Lead[];
+      return data as Lead[];
     },
   });
 };
@@ -93,16 +85,7 @@ export const useLeadById = (leadId: string) => {
         .single();
 
       if (error) throw error;
-      
-      // Mapear os dados para corresponder à interface Lead
-      const mappedData = {
-        ...data,
-        data_captura: data.created_at,
-        convertido_em_venda: false,
-        status: data.status || 'novo'
-      };
-      
-      return mappedData as Lead;
+      return data as Lead;
     },
     enabled: !!leadId,
   });
@@ -115,21 +98,14 @@ export const useLeadInteractions = (leadId: string) => {
       const { data, error } = await supabase
         .from('lead_interactions')
         .select(`
-          *
+          *,
+          user:profiles!user_id(name, email)
         `)
         .eq('lead_id', leadId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Mapear os dados para adicionar user_id se necessário
-      const mappedData = (data || []).map(item => ({
-        ...item,
-        user_id: 'system', // Valor padrão para user_id
-        user: null
-      }));
-      
-      return mappedData as LeadInteraction[];
+      return data as LeadInteraction[];
     },
     enabled: !!leadId,
   });
