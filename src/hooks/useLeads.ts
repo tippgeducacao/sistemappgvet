@@ -105,20 +105,40 @@ export const useLeadInteractions = (leadId: string) => {
       const { data, error } = await supabase
         .from('lead_interactions')
         .select(`
-          *,
-          user:profiles!user_id(name, email)
+          id,
+          lead_id,
+          user_id,
+          tipo,
+          descricao,
+          created_at
         `)
         .eq('lead_id', leadId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Map the data to match our interface
-      return (data || []).map(item => ({
-        ...item,
-        user_id: item.user_id || '',
-        user: item.user || undefined
-      })) as LeadInteraction[];
+      // Buscar informações dos usuários separadamente para evitar erros de relacionamento
+      const interactionsWithUsers = await Promise.all(
+        (data || []).map(async (interaction) => {
+          let userData = null;
+          
+          if (interaction.user_id) {
+            const { data: user } = await supabase
+              .from('profiles')
+              .select('name, email')
+              .eq('id', interaction.user_id)
+              .single();
+            userData = user;
+          }
+
+          return {
+            ...interaction,
+            user: userData || undefined
+          };
+        })
+      );
+      
+      return interactionsWithUsers as LeadInteraction[];
     },
     enabled: !!leadId,
   });

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
@@ -9,9 +10,7 @@ export class AdminVendaQueryService {
       .from('form_entries')
       .select(`
         *,
-        alunos!form_entries_aluno_id_fkey(*),
-        cursos(*),
-        profiles!form_entries_vendedor_id_fkey(id, name, email)
+        cursos(*)
       `)
       .order('created_at', { ascending: false });
 
@@ -27,26 +26,41 @@ export class AdminVendaQueryService {
 
     console.log(`✅ ${vendas.length} vendas encontradas`);
 
-    // Mapear os dados para o formato correto
-    return vendas.map(venda => {
-      const aluno = Array.isArray(venda.alunos) ? venda.alunos[0] : venda.alunos;
-      
-      return {
-        ...venda,
-        aluno: aluno ? {
-          id: aluno.id,
-          nome: aluno.nome,
-          email: aluno.email,
-          telefone: aluno.telefone,
-          crmv: aluno.crmv
-        } : null,
-        vendedor: venda.profiles ? {
-          id: venda.profiles.id,
-          name: venda.profiles.name,
-          email: venda.profiles.email
-        } : null
-      };
-    });
+    // Buscar dados de alunos e vendedores separadamente para evitar erros de relacionamento
+    const vendasCompletas = await Promise.all(
+      vendas.map(async (venda) => {
+        let alunoData = null;
+        let vendedorData = null;
+
+        // Buscar aluno se houver aluno_id
+        if (venda.aluno_id) {
+          const { data: aluno } = await supabase
+            .from('alunos')
+            .select('*')
+            .eq('id', venda.aluno_id)
+            .single();
+          alunoData = aluno;
+        }
+
+        // Buscar vendedor se houver vendedor_id
+        if (venda.vendedor_id) {
+          const { data: vendedor } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .eq('id', venda.vendedor_id)
+            .single();
+          vendedorData = vendedor;
+        }
+
+        return {
+          ...venda,
+          aluno: alunoData,
+          vendedor: vendedorData
+        };
+      })
+    );
+
+    return vendasCompletas;
   }
 
   static async getAllVendasForAdmin(): Promise<VendaCompleta[]> {
@@ -65,18 +79,7 @@ export class AdminVendaQueryService {
         enviado_em,
         atualizado_em,
         motivo_pendencia,
-        aluno_id,
-        aluno:alunos!form_entries_aluno_id_fkey(
-          id,
-          nome,
-          email,
-          telefone,
-          crmv
-        ),
-        curso:cursos!form_entries_curso_id_fkey(
-          id,
-          nome
-        )
+        aluno_id
       `)
       .order('enviado_em', { ascending: false });
 
@@ -87,11 +90,34 @@ export class AdminVendaQueryService {
 
     console.log('✅ Vendas brutas encontradas:', data?.length || 0);
 
-    // Buscar informações dos vendedores separadamente
-    const vendasComVendedores = await Promise.all(
+    // Buscar informações relacionadas separadamente
+    const vendasComRelacionamentos = await Promise.all(
       (data || []).map(async (venda) => {
+        let alunoData = null;
+        let cursoData = null;
         let vendedorData = null;
         
+        // Buscar aluno
+        if (venda.aluno_id) {
+          const { data: aluno } = await supabase
+            .from('alunos')
+            .select('id, nome, email, telefone, crmv')
+            .eq('id', venda.aluno_id)
+            .single();
+          alunoData = aluno;
+        }
+
+        // Buscar curso
+        if (venda.curso_id) {
+          const { data: curso } = await supabase
+            .from('cursos')
+            .select('id, nome')
+            .eq('id', venda.curso_id)
+            .single();
+          cursoData = curso;
+        }
+
+        // Buscar vendedor
         if (venda.vendedor_id) {
           const { data: vendedor } = await supabase
             .from('profiles')
@@ -101,10 +127,8 @@ export class AdminVendaQueryService {
           vendedorData = vendedor;
         }
 
-        // Se não tem aluno vinculado ou aluno sem nome, tentar buscar pelos dados das respostas
-        let alunoFinal = venda.aluno;
-        
-        if (!alunoFinal || !alunoFinal.nome) {
+        // Se não tem aluno vinculado, tentar buscar pelos dados das respostas
+        if (!alunoData) {
           console.log(`🔍 Tentando encontrar dados do aluno para venda ${venda.id.substring(0, 8)}`);
           
           const { data: respostas } = await supabase
@@ -117,7 +141,7 @@ export class AdminVendaQueryService {
             const emailResposta = respostas.find(r => r.campo_nome === 'Email do Aluno');
             
             if (nomeResposta || emailResposta) {
-              alunoFinal = {
+              alunoData = {
                 id: venda.aluno_id || '',
                 nome: nomeResposta?.valor_informado || 'Nome não informado',
                 email: emailResposta?.valor_informado || 'Email não informado',
@@ -130,13 +154,14 @@ export class AdminVendaQueryService {
 
         return {
           ...venda,
-          aluno: alunoFinal,
+          aluno: alunoData,
+          curso: cursoData,
           vendedor: vendedorData
         };
       })
     );
 
-    console.log('✅✅ VENDAS FINAIS PROCESSADAS:', vendasComVendedores.length);
-    return vendasComVendedores as unknown as VendaCompleta[];
+    console.log('✅✅ VENDAS FINAIS PROCESSADAS:', vendasComRelacionamentos.length);
+    return vendasComRelacionamentos as unknown as VendaCompleta[];
   }
 }

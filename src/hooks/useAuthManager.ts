@@ -26,18 +26,22 @@ export const useAuthManager = () => {
           console.log('User metadata:', session.user.user_metadata);
           
           setTimeout(async () => {
-            const profileData = await UserService.fetchProfile(session.user.id);
+            const profileData = await UserService.getProfile(session.user.id);
             console.log('Profile data retornado:', profileData);
             
-            // Se não encontrou perfil ou o tipo está errado, tenta corrigir
+            // Se não encontrou perfil, usar dados básicos do usuário
             if (!profileData) {
-              console.log('Perfil não encontrado, tentando criar...');
-              const expectedType = session.user.user_metadata?.user_type || 'vendedor';
-              await UserService.verifyAndFixProfile(session.user.id, expectedType);
-              
-              // Tenta buscar novamente após correção
-              const newProfile = await UserService.fetchProfile(session.user.id);
-              setProfile(newProfile);
+              console.log('Perfil não encontrado, usando dados do usuário...');
+              const basicProfile = {
+                id: session.user.id,
+                name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário',
+                email: session.user.email || '',
+                user_type: session.user.user_metadata?.user_type || 'vendedor',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                photo_url: null
+              };
+              setProfile(basicProfile);
             } else {
               setProfile(profileData);
             }
