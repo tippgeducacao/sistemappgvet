@@ -1,0 +1,105 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* PPGVET Design System - Cores baseadas na logo */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* PPGVET Primary - Verde água da logo */
+    --primary: 180 100% 35.5%;
+    --primary-foreground: 0 0% 100%;
+
+    /* PPGVET Secondary - Magenta da logo */
+    --secondary: 318 51% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 180 100% 35.5%;
+
+    --radius: 0.75rem;
+
+    /* PPGVET Custom Colors */
+    --ppgvet-teal: 180 100% 35.5%;
+    --ppgvet-magenta: 318 51% 50%;
+    --ppgvet-gray-50: 210 20% 98%;
+    --ppgvet-gray-100: 210 20% 96%;
+    --ppgvet-gray-200: 210 16% 93%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 180 100% 35.5%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 318 51% 50%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 180 100% 35.5%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .ppgvet-teal {
+    color: hsl(var(--ppgvet-teal));
+  }
+  
+  .ppgvet-magenta {
+    color: hsl(var(--ppgvet-magenta));
+  }
+  
+  .bg-ppgvet-teal {
+    background-color: hsl(var(--ppgvet-teal));
+  }
+  
+  .bg-ppgvet-magenta {
+    background-color: hsl(var(--ppgvet-magenta));
+  }
+  
+  .bg-ppgvet-gray-50 {
+    background-color: hsl(var(--ppgvet-gray-50));
+  }
+}

@@ -1,0 +1,56 @@
+
+import { supabase } from '@/integrations/supabase/client';
+
+export interface Course {
+  id: string;
+  nome: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+  criado_por?: string;
+}
+
+export class CoursesService {
+  static async fetchActiveCourses(): Promise<Course[]> {
+    const { data, error } = await supabase
+      .from('cursos')
+      .select('*')
+      .eq('ativo', true)
+      .order('nome');
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  static async addCourse(nome: string): Promise<Course> {
+    const { data, error } = await supabase
+      .from('cursos')
+      .insert([{ nome }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  static async updateCourse(id: string, nome: string): Promise<Course> {
+    const { data, error } = await supabase
+      .from('cursos')
+      .update({ nome, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  static async removeCourse(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('cursos')
+      .update({ ativo: false })
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+}
