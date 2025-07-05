@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -39,7 +40,7 @@ export interface Lead {
 export interface LeadInteraction {
   id: string;
   lead_id: string;
-  user_id: string;
+  user_id?: string;
   tipo: string;
   descricao?: string;
   resultado?: string;
@@ -72,6 +73,7 @@ export const useLeads = () => {
         convertido_em_venda: false,
         vendedor_atribuido_profile: lead.vendedor_atribuido_profile && 
           typeof lead.vendedor_atribuido_profile === 'object' && 
+          !('error' in lead.vendedor_atribuido_profile) &&
           'name' in lead.vendedor_atribuido_profile
           ? lead.vendedor_atribuido_profile as { name: string; email: string }
           : null
@@ -101,6 +103,7 @@ export const useLeadById = (leadId: string) => {
         convertido_em_venda: false,
         vendedor_atribuido_profile: data.vendedor_atribuido_profile && 
           typeof data.vendedor_atribuido_profile === 'object' && 
+          !('error' in data.vendedor_atribuido_profile) &&
           'name' in data.vendedor_atribuido_profile
           ? data.vendedor_atribuido_profile as { name: string; email: string }
           : null
@@ -124,7 +127,7 @@ export const useLeadInteractions = (leadId: string) => {
       
       return (data || []).map(interaction => ({
         ...interaction,
-        user_id: interaction.user_id || 'system',
+        user_id: 'system',
         user: { name: 'Sistema', email: 'system@example.com' }
       })) as LeadInteraction[];
     },
