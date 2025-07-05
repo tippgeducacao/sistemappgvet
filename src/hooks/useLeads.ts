@@ -63,10 +63,15 @@ export const useLeads = () => {
           *,
           vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
         `)
-        .order('data_captura', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Lead[];
+      
+      return (data || []).map(lead => ({
+        ...lead,
+        data_captura: lead.created_at,
+        convertido_em_venda: false
+      })) as Lead[];
     },
   });
 };
@@ -85,7 +90,12 @@ export const useLeadById = (leadId: string) => {
         .single();
 
       if (error) throw error;
-      return data as Lead;
+      
+      return {
+        ...data,
+        data_captura: data.created_at,
+        convertido_em_venda: false
+      } as Lead;
     },
     enabled: !!leadId,
   });
@@ -98,14 +108,18 @@ export const useLeadInteractions = (leadId: string) => {
       const { data, error } = await supabase
         .from('lead_interactions')
         .select(`
-          *,
-          user:profiles!user_id(name, email)
+          *
         `)
         .eq('lead_id', leadId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as LeadInteraction[];
+      
+      return (data || []).map(interaction => ({
+        ...interaction,
+        user_id: 'system', // Valor padrão temporário
+        user: { name: 'Sistema', email: 'system@example.com' }
+      })) as LeadInteraction[];
     },
     enabled: !!leadId,
   });

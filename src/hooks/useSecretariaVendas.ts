@@ -34,7 +34,7 @@ export const useSecretariaVendas = () => {
           aluno:alunos!form_entries_aluno_id_fkey(*),
           curso:cursos(*)
         `)
-        .order('enviado_em', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('❌ Erro ao carregar vendas:', error);
@@ -74,20 +74,20 @@ export const useSecretariaVendas = () => {
           vendedor_id: venda.vendedor_id,
           curso_id: venda.curso_id || '',
           observacoes: venda.observacoes || '',
-          status: venda.status,
+          status: (venda.status as 'pendente' | 'matriculado' | 'desistiu') || 'pendente',
           pontuacao_esperada: venda.pontuacao_esperada || 0,
           pontuacao_validada: venda.pontuacao_validada,
-          enviado_em: venda.enviado_em || '',
+          enviado_em: venda.created_at || '',
           atualizado_em: venda.atualizado_em || '',
           motivo_pendencia: venda.motivo_pendencia,
-          aluno: venda.aluno ? {
+          aluno: venda.aluno && typeof venda.aluno === 'object' && 'id' in venda.aluno ? {
             id: venda.aluno.id,
             nome: venda.aluno.nome,
             email: venda.aluno.email,
             telefone: venda.aluno.telefone,
             crmv: venda.aluno.crmv
           } : null,
-          curso: venda.curso ? {
+          curso: venda.curso && typeof venda.curso === 'object' && 'id' in venda.curso ? {
             id: venda.curso.id,
             nome: venda.curso.nome
           } : null,
