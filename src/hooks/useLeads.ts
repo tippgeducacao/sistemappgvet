@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -34,7 +33,7 @@ export interface Lead {
   vendedor_atribuido_profile?: {
     name: string;
     email: string;
-  };
+  } | null;
 }
 
 export interface LeadInteraction {
@@ -69,8 +68,13 @@ export const useLeads = () => {
       
       return (data || []).map(lead => ({
         ...lead,
-        data_captura: lead.created_at,
-        convertido_em_venda: false
+        data_captura: lead.created_at || new Date().toISOString(),
+        convertido_em_venda: false,
+        vendedor_atribuido_profile: lead.vendedor_atribuido_profile && 
+          typeof lead.vendedor_atribuido_profile === 'object' && 
+          'name' in lead.vendedor_atribuido_profile
+          ? lead.vendedor_atribuido_profile as { name: string; email: string }
+          : null
       })) as Lead[];
     },
   });
@@ -93,8 +97,13 @@ export const useLeadById = (leadId: string) => {
       
       return {
         ...data,
-        data_captura: data.created_at,
-        convertido_em_venda: false
+        data_captura: data.created_at || new Date().toISOString(),
+        convertido_em_venda: false,
+        vendedor_atribuido_profile: data.vendedor_atribuido_profile && 
+          typeof data.vendedor_atribuido_profile === 'object' && 
+          'name' in data.vendedor_atribuido_profile
+          ? data.vendedor_atribuido_profile as { name: string; email: string }
+          : null
       } as Lead;
     },
     enabled: !!leadId,
@@ -107,9 +116,7 @@ export const useLeadInteractions = (leadId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lead_interactions')
-        .select(`
-          *
-        `)
+        .select(`*`)
         .eq('lead_id', leadId)
         .order('created_at', { ascending: false });
 
@@ -117,7 +124,7 @@ export const useLeadInteractions = (leadId: string) => {
       
       return (data || []).map(interaction => ({
         ...interaction,
-        user_id: 'system', // Valor padrão temporário
+        user_id: interaction.user_id || 'system',
         user: { name: 'Sistema', email: 'system@example.com' }
       })) as LeadInteraction[];
     },

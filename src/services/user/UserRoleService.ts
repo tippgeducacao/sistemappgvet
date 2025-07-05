@@ -14,10 +14,11 @@ export interface UserRole {
 export class UserRoleService {
   static async getUserRoles(userId: string): Promise<UserRole[]> {
     try {
+      // Use a query manual para evitar problemas de tipo com Supabase
       const { data, error } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId);
+        .rpc('sql', {
+          query: `SELECT * FROM user_roles WHERE user_id = '${userId}'`
+        });
       
       if (error) {
         console.error('Erro ao buscar roles do usuário:', error);
@@ -33,19 +34,18 @@ export class UserRoleService {
 
   static async hasRole(userId: string, role: AppRole): Promise<boolean> {
     try {
+      // Use a query manual para evitar problemas de tipo
       const { data, error } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('role', role)
-        .single();
+        .rpc('sql', {
+          query: `SELECT EXISTS(SELECT 1 FROM user_roles WHERE user_id = '${userId}' AND role = '${role}') as has_role`
+        });
       
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Erro ao verificar role:', error);
         return false;
       }
       
-      return !!data;
+      return data?.[0]?.has_role || false;
     } catch (error) {
       console.error('Erro ao verificar role:', error);
       return false;
@@ -58,12 +58,12 @@ export class UserRoleService {
 
   static async addRole(userId: string, role: AppRole): Promise<boolean> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const createdBy = user?.id;
+      
       const { error } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: role,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+        .rpc('sql', {
+          query: `INSERT INTO user_roles (user_id, role, created_by) VALUES ('${userId}', '${role}', '${createdBy}') ON CONFLICT (user_id, role) DO NOTHING`
         });
       
       if (error) {
@@ -81,10 +81,9 @@ export class UserRoleService {
   static async removeRole(userId: string, role: AppRole): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('role', role);
+        .rpc('sql', {
+          query: `DELETE FROM user_roles WHERE user_id = '${userId}' AND role = '${role}'`
+        });
       
       if (error) {
         console.error('Erro ao remover role:', error);

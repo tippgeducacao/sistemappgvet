@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UltraSimpleUpdateService } from '@/services/vendas/UltraSimpleUpdateService';
@@ -46,16 +45,16 @@ export const useUltraSimpleVendas = () => {
           enviado_em: venda.created_at || '',
           atualizado_em: venda.atualizado_em || '',
           motivo_pendencia: venda.motivo_pendencia,
-          aluno: venda.aluno && typeof venda.aluno === 'object' && 'id' in venda.aluno ? {
+          aluno: venda.aluno && typeof venda.aluno === 'object' && venda.aluno !== null && 'id' in venda.aluno ? {
             id: venda.aluno.id,
-            nome: venda.aluno.nome,
-            email: venda.aluno.email,
-            telefone: venda.aluno.telefone,
-            crmv: venda.aluno.crmv
+            nome: venda.aluno.nome || '',
+            email: venda.aluno.email || '',
+            telefone: venda.aluno.telefone || '',
+            crmv: venda.aluno.crmv || ''
           } : null,
-          curso: venda.curso && typeof venda.curso === 'object' && 'id' in venda.curso ? {
+          curso: venda.curso && typeof venda.curso === 'object' && venda.curso !== null && 'id' in venda.curso ? {
             id: venda.curso.id,
-            nome: venda.curso.nome
+            nome: venda.curso.nome || ''
           } : null,
           vendedor: undefined
         };
