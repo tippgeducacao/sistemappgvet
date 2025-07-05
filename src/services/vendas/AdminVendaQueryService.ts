@@ -1,8 +1,54 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 export class AdminVendaQueryService {
+  static async fetchVendasWithRelations(): Promise<any[]> {
+    console.log('📊 ADMIN: Buscando todas as vendas com relacionamentos...');
+
+    const { data: vendas, error } = await supabase
+      .from('form_entries')
+      .select(`
+        *,
+        alunos!form_entries_aluno_id_fkey(*),
+        cursos(*),
+        profiles!form_entries_vendedor_id_fkey(id, name, email)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Erro ao buscar vendas:', error);
+      throw error;
+    }
+
+    if (!vendas || vendas.length === 0) {
+      console.log('⚠️ Nenhuma venda encontrada');
+      return [];
+    }
+
+    console.log(`✅ ${vendas.length} vendas encontradas`);
+
+    // Mapear os dados para o formato correto
+    return vendas.map(venda => {
+      const aluno = Array.isArray(venda.alunos) ? venda.alunos[0] : venda.alunos;
+      
+      return {
+        ...venda,
+        aluno: aluno ? {
+          id: aluno.id,
+          nome: aluno.nome,
+          email: aluno.email,
+          telefone: aluno.telefone,
+          crmv: aluno.crmv
+        } : null,
+        vendedor: venda.profiles ? {
+          id: venda.profiles.id,
+          name: venda.profiles.name,
+          email: venda.profiles.email
+        } : null
+      };
+    });
+  }
+
   static async getAllVendasForAdmin(): Promise<VendaCompleta[]> {
     console.log('🔍 AdminVendaQueryService: Buscando todas as vendas para admin...');
     

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ErrorService } from '@/services/error/ErrorService';
 
@@ -97,6 +96,29 @@ export class VendaDeleteService {
 
       ErrorService.logError(error as Error, 'VendaDeleteService.deleteVenda');
       throw error;
+    }
+  }
+
+  private static async deleteValidationHistory(vendaId: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Excluindo histórico de validações...');
+      
+      // Usar delete direto em vez de from com select
+      const { error } = await supabase
+        .from('historico_validacoes')
+        .delete()
+        .eq('form_entry_id', vendaId);
+
+      if (error) {
+        console.error('❌ Erro ao excluir histórico:', error);
+        return false;
+      }
+
+      console.log('✅ Histórico de validações excluído');
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao excluir histórico:', error);
+      return false;
     }
   }
 

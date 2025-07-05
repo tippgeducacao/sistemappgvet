@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SecretariaUpdateService } from '@/services/vendas/SecretariaUpdateService';
@@ -25,13 +26,13 @@ export const useSecretariaVendas = () => {
 
       console.log('👤 Usuário autenticado:', user.id, user.email);
 
-      // Buscar as vendas sem o join com profiles para evitar o erro
+      // Buscar as vendas com os relacionamentos corretos
       const { data, error } = await supabase
         .from('form_entries')
         .select(`
           *,
-          aluno:alunos!form_entries_aluno_id_fkey(*),
-          curso:cursos(*)
+          alunos!form_entries_aluno_id_fkey(*),
+          cursos(*)
         `)
         .order('created_at', { ascending: false });
 
@@ -58,6 +59,7 @@ export const useSecretariaVendas = () => {
       // Mapear as vendas com as informações dos vendedores
       const vendasMapeadas: VendaCompleta[] = (data || []).map(venda => {
         const vendedorProfile = profiles?.find(p => p.id === venda.vendedor_id);
+        const aluno = Array.isArray(venda.alunos) ? venda.alunos[0] : venda.alunos;
         
         const vendaMapeada: VendaCompleta = {
           id: venda.id,
@@ -70,16 +72,16 @@ export const useSecretariaVendas = () => {
           enviado_em: venda.created_at || new Date().toISOString(),
           atualizado_em: venda.atualizado_em || venda.created_at || new Date().toISOString(),
           motivo_pendencia: venda.motivo_pendencia,
-          aluno: venda.aluno ? {
-            id: venda.aluno.id,
-            nome: venda.aluno.nome,
-            email: venda.aluno.email,
-            telefone: venda.aluno.telefone,
-            crmv: venda.aluno.crmv
+          aluno: aluno ? {
+            id: aluno.id,
+            nome: aluno.nome,
+            email: aluno.email,
+            telefone: aluno.telefone,
+            crmv: aluno.crmv
           } : null,
-          curso: venda.curso ? {
-            id: venda.curso.id,
-            nome: venda.curso.nome
+          curso: venda.cursos ? {
+            id: venda.cursos.id,
+            nome: venda.cursos.nome
           } : null,
           vendedor: vendedorProfile ? {
             id: vendedorProfile.id,
@@ -169,27 +171,7 @@ export const useSecretariaVendas = () => {
     vendasMatriculadas,
     isLoading,
     isUpdating,
-    updateStatus: async (vendaId: string, status: 'pendente' | 'matriculado' | 'desistiu', pontuacaoValidada?: number, motivoPendencia?: string) => {
-      setIsUpdating(true);
-      try {
-        const success = await SecretariaUpdateService.updateVendaStatus(vendaId, status, pontuacaoValidada, motivoPendencia);
-        if (success) {
-          await loadVendas();
-          toast({
-            title: 'Sucesso',
-            description: `Venda ${status === 'matriculado' ? 'aprovada' : status === 'pendente' ? 'marcada como pendente' : 'rejeitada'} com sucesso!`,
-          });
-        }
-      } catch (error) {
-        toast({
-          title: 'Erro',
-          description: 'Erro ao atualizar status da venda',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsUpdating(false);
-      }
-    },
+    updateStatus,
     refetch: loadVendas
   };
 };

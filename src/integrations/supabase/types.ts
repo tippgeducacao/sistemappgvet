@@ -19,6 +19,7 @@ export type Database = {
           nome: string
           telefone: string | null
           updated_at: string | null
+          vendedor_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -29,6 +30,7 @@ export type Database = {
           nome: string
           telefone?: string | null
           updated_at?: string | null
+          vendedor_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -39,6 +41,7 @@ export type Database = {
           nome?: string
           telefone?: string | null
           updated_at?: string | null
+          vendedor_id?: string | null
         }
         Relationships: [
           {
@@ -155,6 +158,44 @@ export type Database = {
           },
         ]
       }
+      historico_validacoes: {
+        Row: {
+          acao: string
+          created_at: string | null
+          data: string | null
+          descricao: string | null
+          form_entry_id: string | null
+          id: string
+          secretaria_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          data?: string | null
+          descricao?: string | null
+          form_entry_id?: string | null
+          id?: string
+          secretaria_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          data?: string | null
+          descricao?: string | null
+          form_entry_id?: string | null
+          id?: string
+          secretaria_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_validacoes_form_entry_id_fkey"
+            columns: ["form_entry_id"]
+            isOneToOne: false
+            referencedRelation: "form_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_interactions: {
         Row: {
           created_at: string | null
@@ -162,6 +203,7 @@ export type Database = {
           id: string
           lead_id: string | null
           tipo: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -169,6 +211,7 @@ export type Database = {
           id?: string
           lead_id?: string | null
           tipo: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -176,6 +219,7 @@ export type Database = {
           id?: string
           lead_id?: string | null
           tipo?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -412,6 +456,15 @@ export type Database = {
           last_accessed_at: string
           metadata: Json
         }[]
+      }
+      update_venda_status: {
+        Args: {
+          venda_id_param: string
+          novo_status: string
+          pontuacao_param?: number
+          motivo_param?: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

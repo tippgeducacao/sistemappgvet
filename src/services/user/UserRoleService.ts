@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type AppRole = 'admin' | 'secretaria' | 'vendedor';
@@ -8,22 +7,27 @@ export interface UserRole {
   user_id: string;
   role: AppRole;
   created_at: string;
-  created_by: string | null;
+  created_by?: string;
 }
 
 export class UserRoleService {
   static async getUserRoles(userId: string): Promise<UserRole[]> {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId);
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      return (data || []).map(role => ({
+        ...role,
+        role: role.role as AppRole
+      }));
+    } catch (error) {
       console.error('Erro ao buscar roles do usuário:', error);
-      return [];
+      throw error;
     }
-    
-    return data || [];
   }
 
   static async hasRole(userId: string, role: AppRole): Promise<boolean> {

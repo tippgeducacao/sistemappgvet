@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -111,7 +112,13 @@ export const useLeadInteractions = (leadId: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as LeadInteraction[];
+      
+      // Map the data to match our interface
+      return (data || []).map(item => ({
+        ...item,
+        user_id: item.user_id || '',
+        user: item.user || undefined
+      })) as LeadInteraction[];
     },
     enabled: !!leadId,
   });

@@ -1,8 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Profile } from '@/services/auth/AuthService';
 
 export class UserService {
-  static async fetchProfile(userId: string): Promise<Profile | null> {
+  static async getProfile(userId: string): Promise<any | null> {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -15,82 +14,68 @@ export class UserService {
         return null;
       }
 
-      return data as Profile;
+      return data || null;
     } catch (error) {
-      console.error('Erro inesperado ao buscar perfil:', error);
+      console.error('Erro ao buscar perfil:', error);
       return null;
     }
   }
 
-  static async verifyAndFixProfile(userId: string, expectedType: 'secretaria' | 'vendedor'): Promise<void> {
+  static async updateProfile(userId: string, updates: any): Promise<any | null> {
     try {
-      const profile = await this.fetchProfile(userId);
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId)
+        .select()
+        .single();
 
-      if (!profile || profile.user_type !== expectedType) {
-        console.warn(`Perfil inconsistente encontrado (tipo errado ou inexistente), corrigindo...`);
-
-        const user = (await supabase.auth.getUser()).data.user;
-        const email = user?.email || '';
-        const name = user?.user_metadata?.name || 'Sem nome';
-
-        const { error } = await supabase
-          .from('profiles')
-          .upsert(
-            {
-              id: userId,
-              email: email,
-              name: name,
-              user_type: expectedType,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'id' }
-          );
-
-        if (error) {
-          console.error('Erro ao criar/atualizar perfil:', error);
-        } else {
-          console.log('Perfil corrigido/criado com sucesso!');
-        }
-      } else {
-        console.log('Perfil consistente, nenhuma correção necessária.');
+      if (error) {
+        console.error('Erro ao atualizar perfil:', error);
+        return null;
       }
+
+      return data || null;
     } catch (error) {
-      console.error('Erro durante a verificação/correção do perfil:', error);
+      console.error('Erro ao atualizar perfil:', error);
+      return null;
     }
   }
 
-  static isSecretary(user: any): boolean {
-    return user?.user_type === 'secretaria';
-  }
-
-  static isVendedor(user: any): boolean {
-    return user?.user_type === 'vendedor';
-  }
-
-  static async isAdmin(userId: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .rpc('is_admin', { _user_id: userId });
-    
-    if (error) {
-      console.error('Erro ao verificar se é admin:', error);
-      return false;
-    }
-    
-    return data || false;
-  }
-
-  static async hasRole(userId: string, role: 'admin' | 'secretaria' | 'vendedor'): Promise<boolean> {
-    const { data, error } = await supabase
-      .rpc('has_role', { 
-        _user_id: userId, 
-        _role: role 
+  static async hasRole(userId: string, role: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.rpc('has_role', {
+        user_id: userId,
+        role_name: role
       });
-    
-    if (error) {
+
+      if (error) {
+        console.error('Erro ao verificar role:', error);
+        return false;
+      }
+
+      return data || false;
+    } catch (error) {
       console.error('Erro ao verificar role:', error);
       return false;
     }
-    
-    return data || false;
+  }
+
+  static async isAdmin(userId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.rpc('is_admin', {
+        user_id: userId
+      });
+
+      if (error) {
+        console.error('Erro ao verificar admin:', error);
+        return false;
+      }
+
+      return data || false;
+    } catch (error) {
+      console.error('Erro ao verificar admin:', error);
+      return false;
+    }
   }
 }
