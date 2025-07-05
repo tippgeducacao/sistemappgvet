@@ -52,7 +52,7 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
 
       <FormSelectField
         id="cursoId"
-        label="Curso"
+        label="Curso *"
         value={formData.cursoId || ''}
         onChange={(value) => updateField('cursoId', value)}
         options={courseOptions}
