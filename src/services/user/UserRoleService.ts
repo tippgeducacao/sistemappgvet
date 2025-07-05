@@ -28,31 +28,22 @@ export class UserRoleService {
 
   static async hasRole(userId: string, role: AppRole): Promise<boolean> {
     const { data, error } = await supabase
-      .rpc('has_role', { 
-        _user_id: userId, 
-        _role: role 
-      });
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('role', role)
+      .single();
     
-    if (error) {
+    if (error && error.code !== 'PGRST116') {
       console.error('Erro ao verificar role:', error);
       return false;
     }
     
-    return data || false;
+    return !!data;
   }
 
   static async isAdmin(userId: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .rpc('is_admin', { 
-        _user_id: userId 
-      });
-    
-    if (error) {
-      console.error('Erro ao verificar se é admin:', error);
-      return false;
-    }
-    
-    return data || false;
+    return this.hasRole(userId, 'admin');
   }
 
   static async addRole(userId: string, role: AppRole): Promise<boolean> {

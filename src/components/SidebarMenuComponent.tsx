@@ -22,9 +22,15 @@ import type { MenuItem } from '@/types/navigation';
 const SidebarMenuComponent: React.FC = () => {
   const { activeSection, navigateToSection } = useAppStateStore();
   const { currentUser, profile } = useAuthStore();
-  const { isAdmin } = useUserRoles();
+  const { isAdmin, isSecretaria, isVendedor } = useUserRoles();
 
-  console.log('🔄 SidebarMenuComponent: Estado atual:', { activeSection, currentUser, profile, isAdmin });
+  console.log('🔄 SidebarMenuComponent: Estados atuais:', { 
+    activeSection, 
+    isAdmin, 
+    isSecretaria, 
+    isVendedor,
+    userEmail: profile?.email || currentUser?.email 
+  });
 
   // Verificar se é o admin específico
   const isSpecificAdmin = profile?.email === 'wallasmonteiro019@gmail.com';
@@ -34,8 +40,10 @@ const SidebarMenuComponent: React.FC = () => {
   
   if (isAdmin) {
     menuItems = ADMIN_MENU_ITEMS;
-  } else if (currentUser?.user_type === 'secretaria') {
+  } else if (isSecretaria) {
     menuItems = SECRETARY_MENU_ITEMS;
+  } else if (isVendedor) {
+    menuItems = VENDOR_MENU_ITEMS;
   }
 
   // Adicionar itens específicos para o admin especial
@@ -43,15 +51,15 @@ const SidebarMenuComponent: React.FC = () => {
     menuItems = [...menuItems, ...ADMIN_SPECIFIC_MENU];
   }
 
-  console.log('🔄 SidebarMenuComponent: Menu items:', menuItems);
+  console.log('🔄 SidebarMenuComponent: Menu items determinados:', menuItems.length);
 
   const handleSectionChange = (section: string) => {
-    console.log('🔄 SidebarMenuComponent: Tentando navegar para seção:', section);
-    console.log('🔄 SidebarMenuComponent: Função navigateToSection:', typeof navigateToSection);
+    console.log('🔄 SidebarMenuComponent: Navegando para seção:', section);
+    console.log('🔄 SidebarMenuComponent: Função disponível:', typeof navigateToSection);
     
     if (typeof navigateToSection === 'function') {
       navigateToSection(section);
-      console.log('🔄 SidebarMenuComponent: Navegação executada com sucesso');
+      console.log('🔄 SidebarMenuComponent: Navegação executada');
     } else {
       console.error('🔄 SidebarMenuComponent: navigateToSection não é uma função');
     }

@@ -1,70 +1,74 @@
 
-import { NavigationService } from "@/services/navigation/NavigationService";
-import type { MenuItem } from "@/types/navigation";
+import type { MenuItem } from '@/types/navigation';
 
 export const ADMIN_MENU_ITEMS: MenuItem[] = [
   {
-    title: "Dashboard",
-    url: "#",
-    icon: "LayoutDashboard",
-    section: "dashboard",
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
   },
   {
-    title: "Gerenciar Cursos",
-    url: "#",
-    icon: "Book",
-    section: "gerenciar-cursos",
+    title: 'Gerenciar Vendas',
+    section: 'gerenciar-vendas',
+    icon: 'FileText'
   },
   {
-    title: "Gerenciar Vendas",
-    url: "#",
-    icon: "Coins",
-    section: "gerenciar-vendas",
+    title: 'Gerenciar Cursos',
+    section: 'gerenciar-cursos',
+    icon: 'GraduationCap'
   },
+  {
+    title: 'Gerenciar Vendedores',
+    section: 'gerenciar-vendedores',
+    icon: 'Users'
+  },
+  {
+    title: 'Gerenciar Pontuações',
+    section: 'gerenciar-pontuacoes',
+    icon: 'Star'
+  }
 ];
 
 export const SECRETARY_MENU_ITEMS: MenuItem[] = [
   {
-    title: "Dashboard",
-    url: "#",
-    icon: "LayoutDashboard",
-    section: "dashboard",
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
   },
   {
-    title: "Gerenciar Vendas",
-    url: "#",
-    icon: "Coins",
-    section: "gerenciar-vendas",
+    title: 'Gerenciar Vendas',
+    section: 'gerenciar-vendas',
+    icon: 'FileText'
   },
+  {
+    title: 'Gerenciar Cursos',
+    section: 'gerenciar-cursos',
+    icon: 'GraduationCap'
+  },
+  {
+    title: 'Gerenciar Vendedores',
+    section: 'gerenciar-vendedores',
+    icon: 'Users'
+  }
 ];
 
 export const VENDOR_MENU_ITEMS: MenuItem[] = [
   {
-    title: "Dashboard",
-    url: "#",
-    icon: "LayoutDashboard",
-    section: "dashboard",
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
   },
   {
-    title: "Minhas Vendas",
-    url: "#",
-    icon: "ShoppingCart",
-    section: "minhas-vendas",
-  },
+    title: 'Minhas Vendas',
+    section: 'minhas-vendas',
+    icon: 'ShoppingCart'
+  }
 ];
 
-// Itens específicos apenas para o admin autorizado
 export const ADMIN_SPECIFIC_MENU: MenuItem[] = [
   {
-    title: "Gestão de Leads",
-    url: "#",
-    icon: "Users",
-    section: "gestao-leads",
-  },
-  {
-    title: "Gerenciar Pontuações",
-    url: "#",
-    icon: "Star",
-    section: "gerenciar-pontuacoes",
-  },
+    title: 'Gestão de Leads',
+    section: 'gestao-leads',
+    icon: 'Target'
+  }
 ];

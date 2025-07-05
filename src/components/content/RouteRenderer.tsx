@@ -5,6 +5,7 @@ import MinhasVendas from '@/components/MinhasVendas';
 import GerenciarPontuacoes from '@/components/GerenciarPontuacoes';
 import GerenciarCursos from '@/components/GerenciarCursos';
 import GerenciarVendas from '@/components/GerenciarVendas';
+import GerenciarVendedores from '@/components/GerenciarVendedores';
 import LeadsManager from '@/components/leads/LeadsManager';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useAppStateStore } from '@/stores/AppStateStore';
@@ -38,6 +39,9 @@ const RouteRenderer: React.FC = () => {
     case 'gerenciar-vendas':
       console.log('🔄 Renderizando: GerenciarVendas');
       return <GerenciarVendas />;
+    case 'gerenciar-vendedores':
+      console.log('🔄 Renderizando: GerenciarVendedores');
+      return <GerenciarVendedores />;
     case 'gestao-leads':
       console.log('🔄 Renderizando: LeadsManager');
       // Apenas mostrar para admin específico
