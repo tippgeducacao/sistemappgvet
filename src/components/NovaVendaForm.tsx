@@ -1,5 +1,4 @@
 
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +27,8 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
     isSubmitting, 
     setIsSubmitting, 
     clearForm,
-    updateField
+    updateField,
+    setVendedor
   } = useFormStore();
   const { currentUser } = useAuthStore();
   
@@ -38,6 +38,14 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
   // Estado para armazenar o motivo da pendência
   const [motivoPendencia, setMotivoPendencia] = React.useState<string>('');
   const [dadosCarregados, setDadosCarregados] = React.useState<boolean>(false);
+
+  // Definir vendedor no formulário quando o usuário estiver logado
+  useEffect(() => {
+    if (currentUser?.id && !formData.vendedor) {
+      console.log('🔧 Definindo vendedor no formulário:', currentUser.name || currentUser.email);
+      setVendedor(currentUser.name || currentUser.email);
+    }
+  }, [currentUser, formData.vendedor, setVendedor]);
 
   // Carregar dados da venda para edição
   useEffect(() => {
@@ -100,7 +108,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
 
             // Mapear campos do formulário para os campos do store
             switch (campo) {
-              case 'Data de chegada do lead no CRM':
+              case 'Data de Chegada':
                 updateField('dataChegada', valor);
                 break;
               case 'Formação do Aluno':
@@ -109,7 +117,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
               case 'IES':
                 updateField('ies', valor);
                 break;
-              case 'Telefone':
+              case 'Telefone do Aluno':
                 updateField('telefone', valor);
                 break;
               case 'CRMV':
@@ -118,19 +126,19 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
               case 'Valor do Contrato':
                 updateField('valorContrato', valor);
                 break;
-              case 'Percentual de Descontos':
+              case 'Percentual de Desconto':
                 updateField('percentualDesconto', valor);
                 break;
-              case 'Data de 1º pagamento':
+              case 'Data do Primeiro Pagamento':
                 updateField('dataPrimeiroPagamento', valor);
                 break;
-              case 'Terá Carência para a primeira Cobrança?':
+              case 'Carência da Primeira Cobrança':
                 updateField('carenciaPrimeiraCobranca', valor);
                 break;
               case 'Detalhes da Carência':
                 updateField('detalhesCarencia', valor);
                 break;
-              case 'Reembolso Matrícula':
+              case 'Reembolso da Matrícula':
                 updateField('reembolsoMatricula', valor);
                 break;
               case 'Indicação':
@@ -139,22 +147,22 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
               case 'Nome do Indicador':
                 updateField('nomeIndicador', valor);
                 break;
-              case 'Lote Pós':
+              case 'Lote da Pós-Graduação':
                 updateField('lotePos', valor);
                 break;
               case 'Matrícula':
                 updateField('matricula', valor);
                 break;
-              case 'Modalidade':
+              case 'Modalidade do Curso':
                 updateField('modalidade', valor);
                 break;
-              case 'Parcelamento':
+              case 'Condições de Parcelamento':
                 updateField('parcelamento', valor);
                 break;
               case 'Forma de Pagamento':
                 updateField('pagamento', valor);
                 break;
-              case 'Forma de Captação':
+              case 'Forma de Captação do Lead':
                 updateField('formaCaptacao', valor);
                 break;
               case 'Tipo de Venda':
@@ -189,7 +197,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
     };
 
     loadVendaForEdit();
-  }, [editId, currentUser?.id, formDetails]); // Dependências simplificadas
+  }, [editId, currentUser?.id, formDetails, updateField, toast, onCancel]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,18 +214,16 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
     setIsSubmitting(true);
     
     try {
-      console.log('Iniciando submissão do formulário:', formData);
+      console.log('🚀 Iniciando submissão do formulário:', formData);
+      console.log('👤 Vendedor ID:', currentUser.id);
 
-      // Validar dados do formulário
-      await FormPersistenceService.validateFormData(formData);
-
-      // Salvar dados no banco
+      // Salvar dados no banco usando o serviço de persistência
       const formEntryId = await FormPersistenceService.saveFormData({
         formData,
         vendedorId: currentUser.id
       });
 
-      console.log('Formulário salvo com sucesso:', formEntryId);
+      console.log('✅ Formulário salvo com sucesso:', formEntryId);
 
       const isEdit = !!editId;
       toast({
@@ -231,7 +237,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
       onCancel();
       
     } catch (error) {
-      console.error('Erro ao salvar venda:', error);
+      console.error('❌ Erro ao salvar venda:', error);
       
       const errorMessage = error instanceof Error 
         ? error.message 
@@ -322,4 +328,3 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
 };
 
 export default NovaVendaForm;
-

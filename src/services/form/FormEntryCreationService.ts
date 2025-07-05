@@ -9,7 +9,7 @@ export class FormEntryCreationService {
     pontuacaoEsperada: number, 
     documentPath: string | null
   ) {
-    console.log('💾 Criando form_entry com documento anexado...');
+    console.log('💾 Criando form_entry...');
     
     const { data: formEntry, error: formEntryError } = await supabase
       .from('form_entries')
@@ -29,9 +29,11 @@ export class FormEntryCreationService {
       throw formEntryError;
     }
 
-    console.log('✅ Form entry criado com documento:', {
+    console.log('✅ Form entry criado:', {
       id: formEntry.id,
-      documento_comprobatorio: formEntry.documento_comprobatorio
+      vendedor_id: formEntry.vendedor_id,
+      curso_id: formEntry.curso_id,
+      pontuacao_esperada: formEntry.pontuacao_esperada
     });
 
     return formEntry;

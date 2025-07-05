@@ -24,20 +24,11 @@ export class FormPersistenceService {
       // 1. Validar dados obrigatórios
       await this.validateFormData(data.formData);
 
-      // 2. Criar ou buscar aluno
-      const alunoId = await AlunoCreationService.createAluno(
-        data.formData,
-        '', // formEntryId será definido depois
-        data.vendedorId
-      );
-
-      console.log('👨‍🎓 Aluno processado:', alunoId);
-
-      // 3. Calcular pontuação esperada
+      // 2. Calcular pontuação esperada
       const pontuacaoEsperada = await this.calculateExpectedScore(data.formData);
       console.log('🎯 Pontuação calculada:', pontuacaoEsperada);
 
-      // 4. Criar entrada do formulário
+      // 3. Criar entrada do formulário primeiro
       const formEntry = await FormEntryCreationService.createFormEntry(
         data.vendedorId,
         data.formData,
@@ -47,7 +38,21 @@ export class FormPersistenceService {
 
       console.log('📄 Form entry criado:', formEntry.id);
 
-      // 5. Salvar respostas do formulário
+      // 4. Criar ou buscar aluno
+      const alunoId = await AlunoCreationService.createAluno(
+        data.formData,
+        formEntry.id, // formEntryId já definido
+        data.vendedorId
+      );
+
+      console.log('👨‍🎓 Aluno processado:', alunoId);
+
+      // 5. Atualizar form_entry com o aluno_id se necessário
+      if (alunoId) {
+        await AlunoCreationService.linkAlunoToFormEntry(alunoId, formEntry.id);
+      }
+
+      // 6. Salvar respostas do formulário
       await FormResponsesService.saveFormResponses(formEntry.id, data.formData);
 
       console.log('✅ FORMULÁRIO SALVO COM SUCESSO!');
