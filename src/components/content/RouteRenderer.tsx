@@ -3,7 +3,7 @@ import React from 'react';
 import { useAppStateStore } from '@/stores/AppStateStore';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import VendedorDashboard from '@/components/vendedor/VendedorDashboard';
-import NovaVendaForm from '@/components/forms/NovaVendaForm';
+import NovaVendaForm from '@/components/NovaVendaForm';
 import GerenciarVendas from '@/components/GerenciarVendas';
 import GerenciarCursos from '@/components/GerenciarCursos';
 import GerenciarVendedores from '@/components/GerenciarVendedores';
@@ -25,7 +25,7 @@ const RouteRenderer: React.FC = () => {
 
   // Se está mostrando o formulário de nova venda
   if (showNovaVenda) {
-    return <NovaVendaForm />;
+    return <NovaVendaForm onCancel={() => {}} />;
   }
 
   // Roteamento baseado na seção ativa

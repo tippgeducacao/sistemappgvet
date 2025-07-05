@@ -15,9 +15,10 @@ const NovaVendaButton: React.FC = () => {
   return (
     <Button 
       onClick={handleClick}
-      className="bg-ppgvet-teal hover:bg-ppgvet-teal/90 text-white"
+      className="bg-ppgvet-teal hover:bg-ppgvet-teal/90 text-white flex items-center gap-2"
+      size="lg"
     >
-      <Plus className="h-4 w-4 mr-2" />
+      <Plus className="h-4 w-4" />
       Nova Venda
     </Button>
   );

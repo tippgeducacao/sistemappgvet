@@ -2,11 +2,21 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/AuthStore';
+import { useVendas } from '@/hooks/useVendas';
 import NovaVendaButton from './NovaVendaButton';
 import { FileText, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 
 const VendedorDashboard: React.FC = () => {
   const { profile } = useAuthStore();
+  const { vendas } = useVendas();
+
+  // Calcular métricas das vendas
+  const totalVendas = vendas.length;
+  const vendasPendentes = vendas.filter(v => v.status === 'pendente').length;
+  const vendasAprovadas = vendas.filter(v => v.status === 'matriculado').length;
+  const pontuacaoTotal = vendas
+    .filter(v => v.pontuacao_validada !== null)
+    .reduce((sum, v) => sum + (v.pontuacao_validada || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -33,9 +43,9 @@ const VendedorDashboard: React.FC = () => {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{totalVendas}</div>
             <p className="text-xs text-muted-foreground">
-              +0% do mês passado
+              Vendas cadastradas
             </p>
           </CardContent>
         </Card>
@@ -48,7 +58,7 @@ const VendedorDashboard: React.FC = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{vendasPendentes}</div>
             <p className="text-xs text-muted-foreground">
               Aguardando validação
             </p>
@@ -63,9 +73,9 @@ const VendedorDashboard: React.FC = () => {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{vendasAprovadas}</div>
             <p className="text-xs text-muted-foreground">
-              Este mês
+              Matriculadas
             </p>
           </CardContent>
         </Card>
@@ -78,9 +88,9 @@ const VendedorDashboard: React.FC = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{pontuacaoTotal}</div>
             <p className="text-xs text-muted-foreground">
-              Pontos acumulados
+              Pontos validados
             </p>
           </CardContent>
         </Card>
@@ -95,11 +105,42 @@ const VendedorDashboard: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Nenhuma venda cadastrada ainda</p>
-            <p className="text-sm">Clique em "Nova Venda" para começar</p>
-          </div>
+          {vendas.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhuma venda cadastrada ainda</p>
+              <p className="text-sm">Clique em "Nova Venda" para começar</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {vendas.slice(0, 5).map((venda) => (
+                <div key={venda.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <p className="font-medium">{venda.aluno?.nome || 'Nome não informado'}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {venda.curso?.nome || 'Curso não informado'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {venda.enviado_em ? new Date(venda.enviado_em).toLocaleDateString('pt-BR') : 'Data não informada'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      venda.status === 'matriculado' ? 'bg-green-100 text-green-800' :
+                      venda.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {venda.status === 'matriculado' ? 'Matriculado' :
+                       venda.status === 'pendente' ? 'Pendente' : 'Rejeitado'}
+                    </div>
+                    <p className="text-sm font-medium mt-1">
+                      {venda.pontuacao_esperada || 0} pts
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
