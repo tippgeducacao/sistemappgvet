@@ -23,7 +23,7 @@ export const useUltraSimpleVendas = () => {
           aluno:alunos!form_entries_aluno_id_fkey(*),
           curso:cursos(*)
         `)
-        .order('enviado_em', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('❌ Erro ao carregar vendas:', error);
@@ -37,13 +37,13 @@ export const useUltraSimpleVendas = () => {
         
         return {
           id: venda.id,
-          vendedor_id: venda.vendedor_id,
+          vendedor_id: venda.vendedor_id || '',
           curso_id: venda.curso_id || '',
           observacoes: venda.observacoes || '',
-          status: venda.status,
+          status: venda.status as 'pendente' | 'matriculado' | 'desistiu',
           pontuacao_esperada: venda.pontuacao_esperada || 0,
           pontuacao_validada: venda.pontuacao_validada,
-          enviado_em: venda.enviado_em || '',
+          enviado_em: venda.created_at || '',
           atualizado_em: venda.atualizado_em || '',
           motivo_pendencia: venda.motivo_pendencia,
           aluno: venda.aluno ? {

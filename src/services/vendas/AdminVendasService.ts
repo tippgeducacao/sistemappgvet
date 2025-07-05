@@ -1,25 +1,19 @@
 
 import { AdminVendaQueryService } from './AdminVendaQueryService';
-import { DirectUpdateService } from './DirectUpdateService';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 export class AdminVendasService {
-  static async getAllVendasForAdmin(): Promise<VendaCompleta[]> {
+  static async getAllVendas(): Promise<VendaCompleta[]> {
     return AdminVendaQueryService.getAllVendasForAdmin();
   }
 
-  static async updateVendaStatus(
-    vendaId: string, 
-    status: 'pendente' | 'matriculado' | 'desistiu',
-    pontuacaoValidada?: number,
-    motivoPendencia?: string
-  ): Promise<boolean> {
-    console.log('🎯 AdminVendasService: Delegando para DirectUpdateService');
-    return DirectUpdateService.updateVendaStatusDirect(
-      vendaId,
-      status,
-      pontuacaoValidada,
-      motivoPendencia
-    );
+  static async getVendasByStatus(status: 'pendente' | 'matriculado' | 'desistiu'): Promise<VendaCompleta[]> {
+    const allVendas = await this.getAllVendas();
+    return allVendas.filter(venda => venda.status === status);
+  }
+
+  static async getVendasByVendedor(vendedorId: string): Promise<VendaCompleta[]> {
+    const allVendas = await this.getAllVendas();
+    return allVendas.filter(venda => venda.vendedor_id === vendedorId);
   }
 }

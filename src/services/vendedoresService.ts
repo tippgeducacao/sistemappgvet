@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Vendedor {
@@ -189,5 +188,31 @@ export class VendedoresService {
       console.error('❌ Erro ao remover foto:', error);
       throw error;
     }
+  }
+
+  static async createVendedores(vendedores: Omit<Vendedor, 'id' | 'created_at' | 'updated_at'>[]): Promise<Vendedor[]> {
+    console.log('📝 Criando vendedores:', vendedores.length);
+    
+    // Mapear para o formato correto esperado pelo Supabase
+    const vendedoresFormatados = vendedores.map(vendedor => ({
+      id: crypto.randomUUID(), // Gerar ID único
+      name: vendedor.name,
+      email: vendedor.email,
+      user_type: 'vendedor' as const,
+      photo_url: vendedor.photo_url || null
+    }));
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert(vendedoresFormatados)
+      .select();
+
+    if (error) {
+      console.error('❌ Erro ao criar vendedores:', error);
+      throw error;
+    }
+
+    console.log('✅ Vendedores criados:', data?.length || 0);
+    return data || [];
   }
 }
