@@ -9,13 +9,346 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      alunos: {
+        Row: {
+          created_at: string | null
+          crmv: string | null
+          email: string
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          crmv?: string | null
+          email: string
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          crmv?: string | null
+          email?: string
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cursos: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          criado_por: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          criado_por?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          criado_por?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cursos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_entries: {
+        Row: {
+          aluno_id: string | null
+          atualizado_em: string | null
+          created_at: string | null
+          curso_id: string | null
+          documento_comprobatorio: string | null
+          id: string
+          motivo_pendencia: string | null
+          observacoes: string | null
+          pontuacao_esperada: number | null
+          pontuacao_validada: number | null
+          status: string | null
+          vendedor_id: string | null
+        }
+        Insert: {
+          aluno_id?: string | null
+          atualizado_em?: string | null
+          created_at?: string | null
+          curso_id?: string | null
+          documento_comprobatorio?: string | null
+          id?: string
+          motivo_pendencia?: string | null
+          observacoes?: string | null
+          pontuacao_esperada?: number | null
+          pontuacao_validada?: number | null
+          status?: string | null
+          vendedor_id?: string | null
+        }
+        Update: {
+          aluno_id?: string | null
+          atualizado_em?: string | null
+          created_at?: string | null
+          curso_id?: string | null
+          documento_comprobatorio?: string | null
+          id?: string
+          motivo_pendencia?: string | null
+          observacoes?: string | null
+          pontuacao_esperada?: number | null
+          pontuacao_validada?: number | null
+          status?: string | null
+          vendedor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_form_entries_aluno"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_entries_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_entries_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_interactions: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          lead_id: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          lead_id?: string | null
+          tipo: string
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          lead_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          created_at: string | null
+          dispositivo: string | null
+          email: string | null
+          fonte_referencia: string | null
+          id: string
+          ip_address: string | null
+          nome: string
+          observacoes: string | null
+          pagina_id: string | null
+          pagina_nome: string | null
+          regiao: string | null
+          status: string | null
+          updated_at: string | null
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dispositivo?: string | null
+          email?: string | null
+          fonte_referencia?: string | null
+          id?: string
+          ip_address?: string | null
+          nome: string
+          observacoes?: string | null
+          pagina_id?: string | null
+          pagina_nome?: string | null
+          regiao?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dispositivo?: string | null
+          email?: string | null
+          fonte_referencia?: string | null
+          id?: string
+          ip_address?: string | null
+          nome?: string
+          observacoes?: string | null
+          pagina_id?: string | null
+          pagina_nome?: string | null
+          regiao?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          updated_at: string | null
+          user_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id: string
+          name: string
+          updated_at?: string | null
+          user_type: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_type?: string
+        }
+        Relationships: []
+      }
+      regras_pontuacao: {
+        Row: {
+          campo_nome: string
+          created_at: string | null
+          id: string
+          opcao_valor: string
+          pontos: number
+        }
+        Insert: {
+          campo_nome: string
+          created_at?: string | null
+          id?: string
+          opcao_valor: string
+          pontos: number
+        }
+        Update: {
+          campo_nome?: string
+          created_at?: string | null
+          id?: string
+          opcao_valor?: string
+          pontos?: number
+        }
+        Relationships: []
+      }
+      respostas_formulario: {
+        Row: {
+          campo_nome: string
+          created_at: string | null
+          form_entry_id: string | null
+          id: string
+          valor_informado: string
+        }
+        Insert: {
+          campo_nome: string
+          created_at?: string | null
+          form_entry_id?: string | null
+          id?: string
+          valor_informado: string
+        }
+        Update: {
+          campo_nome?: string
+          created_at?: string | null
+          form_entry_id?: string | null
+          id?: string
+          valor_informado?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "respostas_formulario_form_entry_id_fkey"
+            columns: ["form_entry_id"]
+            isOneToOne: false
+            referencedRelation: "form_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      find_document_by_venda_id: {
+        Args: { venda_id_param: string }
+        Returns: string
+      }
+      find_document_in_bucket: {
+        Args: { search_pattern: string }
+        Returns: string
+      }
+      list_bucket_files: {
+        Args: { bucket_name: string; folder_prefix?: string }
+        Returns: {
+          name: string
+          id: string
+          updated_at: string
+          created_at: string
+          last_accessed_at: string
+          metadata: Json
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
