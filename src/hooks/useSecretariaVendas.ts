@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SecretariaUpdateService } from '@/services/vendas/SecretariaUpdateService';
@@ -26,7 +25,7 @@ export const useSecretariaVendas = () => {
 
       console.log('👤 Usuário autenticado:', user.id, user.email);
 
-      // Primeiro, buscar as vendas sem o join com profiles para evitar o erro
+      // Buscar as vendas sem o join com profiles para evitar o erro
       const { data, error } = await supabase
         .from('form_entries')
         .select(`
@@ -34,11 +33,10 @@ export const useSecretariaVendas = () => {
           aluno:alunos!form_entries_aluno_id_fkey(*),
           curso:cursos(*)
         `)
-        .order('enviado_em', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('❌ Erro ao carregar vendas:', error);
-        console.error('❌ Detalhes do erro:', error.message, error.code, error.details);
         toast({
           title: 'Erro',
           description: 'Erro ao carregar vendas: ' + error.message,
@@ -48,37 +46,29 @@ export const useSecretariaVendas = () => {
       }
 
       console.log('✅ Vendas carregadas:', data?.length || 0);
-      console.log('📊 Primeiros dados:', data?.slice(0, 2));
 
       // Buscar informações dos vendedores separadamente
       const vendedorIds = [...new Set(data?.map(v => v.vendedor_id).filter(Boolean) || [])];
-      console.log('🔍 IDs dos vendedores para buscar:', vendedorIds);
       
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, name, email')
         .in('id', vendedorIds);
 
-      console.log('👥 Profiles carregados:', profiles?.length || 0);
-      console.log('👥 Profiles dados:', profiles);
-
       // Mapear as vendas com as informações dos vendedores
       const vendasMapeadas: VendaCompleta[] = (data || []).map(venda => {
-        console.log(`📝 Mapeando venda ${venda.id.substring(0, 8)} - Status: ${venda.status}`);
-        
         const vendedorProfile = profiles?.find(p => p.id === venda.vendedor_id);
-        console.log(`👤 Vendedor encontrado para ${venda.id.substring(0, 8)}:`, vendedorProfile);
         
         const vendaMapeada: VendaCompleta = {
           id: venda.id,
           vendedor_id: venda.vendedor_id,
           curso_id: venda.curso_id || '',
           observacoes: venda.observacoes || '',
-          status: venda.status,
+          status: (venda.status as 'pendente' | 'matriculado' | 'desistiu') || 'pendente',
           pontuacao_esperada: venda.pontuacao_esperada || 0,
           pontuacao_validada: venda.pontuacao_validada,
-          enviado_em: venda.enviado_em || '',
-          atualizado_em: venda.atualizado_em || '',
+          enviado_em: venda.created_at || new Date().toISOString(),
+          atualizado_em: venda.atualizado_em || venda.created_at || new Date().toISOString(),
           motivo_pendencia: venda.motivo_pendencia,
           aluno: venda.aluno ? {
             id: venda.aluno.id,
@@ -98,11 +88,9 @@ export const useSecretariaVendas = () => {
           } : undefined
         };
         
-        console.log(`✅ Venda mapeada ${venda.id.substring(0, 8)}:`, vendaMapeada);
         return vendaMapeada;
       });
       
-      console.log('🎯 Total vendas mapeadas:', vendasMapeadas.length);
       setVendas(vendasMapeadas);
     } catch (error) {
       console.error('❌ Erro inesperado ao carregar vendas:', error);
@@ -172,26 +160,8 @@ export const useSecretariaVendas = () => {
     loadVendas();
   }, []);
 
-  const vendasPendentes = vendas.filter(v => {
-    const isPendente = v.status === 'pendente';
-    console.log(`🔍 Venda ${v.id.substring(0, 8)} - Status: ${v.status}, É pendente: ${isPendente}`);
-    return isPendente;
-  });
-  
-  const vendasMatriculadas = vendas.filter(v => {
-    const isMatriculado = v.status === 'matriculado';
-    console.log(`🔍 Venda ${v.id.substring(0, 8)} - Status: ${v.status}, É matriculado: ${isMatriculado}`);
-    return isMatriculado;
-  });
-
-  console.log('📊 Estado atual do hook:', {
-    totalVendas: vendas.length,
-    vendasPendentes: vendasPendentes.length,
-    vendasMatriculadas: vendasMatriculadas.length,
-    isLoading,
-    isUpdating,
-    primeiraVenda: vendas[0]
-  });
+  const vendasPendentes = vendas.filter(v => v.status === 'pendente');
+  const vendasMatriculadas = vendas.filter(v => v.status === 'matriculado');
 
   return {
     vendas,
@@ -199,7 +169,27 @@ export const useSecretariaVendas = () => {
     vendasMatriculadas,
     isLoading,
     isUpdating,
-    updateStatus,
+    updateStatus: async (vendaId: string, status: 'pendente' | 'matriculado' | 'desistiu', pontuacaoValidada?: number, motivoPendencia?: string) => {
+      setIsUpdating(true);
+      try {
+        const success = await SecretariaUpdateService.updateVendaStatus(vendaId, status, pontuacaoValidada, motivoPendencia);
+        if (success) {
+          await loadVendas();
+          toast({
+            title: 'Sucesso',
+            description: `Venda ${status === 'matriculado' ? 'aprovada' : status === 'pendente' ? 'marcada como pendente' : 'rejeitada'} com sucesso!`,
+          });
+        }
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: 'Erro ao atualizar status da venda',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsUpdating(false);
+      }
+    },
     refetch: loadVendas
   };
 };

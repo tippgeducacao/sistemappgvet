@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UltraSimpleUpdateService } from '@/services/vendas/UltraSimpleUpdateService';
@@ -23,7 +22,7 @@ export const useUltraSimpleVendas = () => {
           aluno:alunos!form_entries_aluno_id_fkey(*),
           curso:cursos(*)
         `)
-        .order('enviado_em', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('❌ Erro ao carregar vendas:', error);
@@ -33,18 +32,16 @@ export const useUltraSimpleVendas = () => {
       console.log('✅ Vendas carregadas:', data?.length || 0);
       
       const vendasMapeadas: VendaCompleta[] = (data || []).map(venda => {
-        console.log(`📝 Processando venda ${venda.id.substring(0, 8)} - Status: ${venda.status}`);
-        
         return {
           id: venda.id,
           vendedor_id: venda.vendedor_id,
           curso_id: venda.curso_id || '',
           observacoes: venda.observacoes || '',
-          status: venda.status,
+          status: (venda.status as 'pendente' | 'matriculado' | 'desistiu') || 'pendente',
           pontuacao_esperada: venda.pontuacao_esperada || 0,
           pontuacao_validada: venda.pontuacao_validada,
-          enviado_em: venda.enviado_em || '',
-          atualizado_em: venda.atualizado_em || '',
+          enviado_em: venda.created_at || new Date().toISOString(),
+          atualizado_em: venda.atualizado_em || venda.created_at || new Date().toISOString(),
           motivo_pendencia: venda.motivo_pendencia,
           aluno: venda.aluno ? {
             id: venda.aluno.id,
@@ -61,7 +58,6 @@ export const useUltraSimpleVendas = () => {
         };
       });
       
-      console.log('🎯 Vendas mapeadas:', vendasMapeadas.length);
       setVendas(vendasMapeadas);
     } catch (error) {
       console.error('❌ Erro inesperado:', error);
@@ -127,7 +123,27 @@ export const useUltraSimpleVendas = () => {
     vendasMatriculadas,
     isLoading,
     isUpdating,
-    updateStatus,
+    updateStatus: async (vendaId: string, status: 'matriculado' | 'desistiu') => {
+      setIsUpdating(true);
+      try {
+        const success = await UltraSimpleUpdateService.updateVenda(vendaId, status);
+        if (success) {
+          await loadVendas();
+          toast({
+            title: 'Sucesso',
+            description: `Venda ${status === 'matriculado' ? 'aprovada' : 'rejeitada'} com sucesso!`,
+          });
+        }
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: 'Erro ao atualizar status da venda',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsUpdating(false);
+      }
+    },
     refetch: loadVendas
   };
 };

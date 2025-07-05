@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -28,7 +27,7 @@ export interface Lead {
   venda_id?: string;
   created_at: string;
   updated_at: string;
-  // Novos campos para integração SprintHub
+  // Campos para integração SprintHub
   sprinthub_id?: string;
   fonte_captura?: string;
   vendedor_atribuido_profile?: {
@@ -63,10 +62,17 @@ export const useLeads = () => {
           *,
           vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
         `)
-        .order('data_captura', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Lead[];
+      
+      // Map to ensure all required fields are present
+      return (data || []).map(item => ({
+        ...item,
+        data_captura: item.created_at || new Date().toISOString(),
+        convertido_em_venda: false,
+        vendedor_atribuido_profile: item.vendedor_atribuido_profile || undefined
+      })) as Lead[];
     },
   });
 };
