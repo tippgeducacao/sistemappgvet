@@ -23,7 +23,7 @@ export const useUltraSimpleVendas = () => {
           aluno:alunos!form_entries_aluno_id_fkey(*),
           curso:cursos(*)
         `)
-        .order('created_at', { ascending: false });
+        .order('enviado_em', { ascending: false });
 
       if (error) {
         console.error('❌ Erro ao carregar vendas:', error);
@@ -40,22 +40,22 @@ export const useUltraSimpleVendas = () => {
           vendedor_id: venda.vendedor_id,
           curso_id: venda.curso_id || '',
           observacoes: venda.observacoes || '',
-          status: (venda.status as 'pendente' | 'matriculado' | 'desistiu') || 'pendente',
+          status: venda.status,
           pontuacao_esperada: venda.pontuacao_esperada || 0,
           pontuacao_validada: venda.pontuacao_validada,
-          enviado_em: venda.enviado_em || venda.created_at || '',
+          enviado_em: venda.enviado_em || '',
           atualizado_em: venda.atualizado_em || '',
           motivo_pendencia: venda.motivo_pendencia,
-          aluno: venda.aluno && typeof venda.aluno === 'object' && venda.aluno !== null && 'id' in venda.aluno ? {
+          aluno: venda.aluno ? {
             id: venda.aluno.id,
-            nome: venda.aluno.nome || '',
-            email: venda.aluno.email || '',
-            telefone: venda.aluno.telefone || '',
-            crmv: venda.aluno.crmv || ''
+            nome: venda.aluno.nome,
+            email: venda.aluno.email,
+            telefone: venda.aluno.telefone,
+            crmv: venda.aluno.crmv
           } : null,
-          curso: venda.curso && typeof venda.curso === 'object' && venda.curso !== null && 'id' in venda.curso ? {
+          curso: venda.curso ? {
             id: venda.curso.id,
-            nome: venda.curso.nome || ''
+            nome: venda.curso.nome
           } : null,
           vendedor: undefined
         };

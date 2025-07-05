@@ -13,43 +13,33 @@ export interface UserRole {
 
 export class UserRoleService {
   static async getUserRoles(userId: string): Promise<UserRole[]> {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId);
-      
-      if (error) {
-        console.error('Erro ao buscar roles do usuário:', error);
-        return [];
-      }
-      
-      return (data || []) as UserRole[];
-    } catch (error) {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) {
       console.error('Erro ao buscar roles do usuário:', error);
       return [];
     }
+    
+    return data || [];
   }
 
   static async hasRole(userId: string, role: AppRole): Promise<boolean> {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('role', role)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Erro ao verificar role:', error);
-        return false;
-      }
-      
-      return !!data;
-    } catch (error) {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('role', role)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
       console.error('Erro ao verificar role:', error);
       return false;
     }
+    
+    return !!data;
   }
 
   static async isAdmin(userId: string): Promise<boolean> {
@@ -57,47 +47,34 @@ export class UserRoleService {
   }
 
   static async addRole(userId: string, role: AppRole): Promise<boolean> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const createdBy = user?.id;
-      
-      const { error } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: role,
-          created_by: createdBy
-        });
-      
-      if (error) {
-        console.error('Erro ao adicionar role:', error);
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
+    const { error } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: userId,
+        role: role,
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      });
+    
+    if (error) {
       console.error('Erro ao adicionar role:', error);
       return false;
     }
+    
+    return true;
   }
 
   static async removeRole(userId: string, role: AppRole): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('role', role);
-      
-      if (error) {
-        console.error('Erro ao remover role:', error);
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
+    const { error } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', userId)
+      .eq('role', role);
+    
+    if (error) {
       console.error('Erro ao remover role:', error);
       return false;
     }
+    
+    return true;
   }
 }

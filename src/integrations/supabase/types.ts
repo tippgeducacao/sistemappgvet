@@ -14,7 +14,6 @@ export type Database = {
           created_at: string | null
           crmv: string | null
           email: string
-          form_entry_id: string | null
           id: string
           nome: string
           telefone: string | null
@@ -24,7 +23,6 @@ export type Database = {
           created_at?: string | null
           crmv?: string | null
           email: string
-          form_entry_id?: string | null
           id?: string
           nome: string
           telefone?: string | null
@@ -34,21 +32,12 @@ export type Database = {
           created_at?: string | null
           crmv?: string | null
           email?: string
-          form_entry_id?: string | null
           id?: string
           nome?: string
           telefone?: string | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "alunos_form_entry_id_fkey"
-            columns: ["form_entry_id"]
-            isOneToOne: false
-            referencedRelation: "form_entries"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       cursos: {
         Row: {
@@ -92,7 +81,6 @@ export type Database = {
           created_at: string | null
           curso_id: string | null
           documento_comprobatorio: string | null
-          enviado_em: string | null
           id: string
           motivo_pendencia: string | null
           observacoes: string | null
@@ -107,7 +95,6 @@ export type Database = {
           created_at?: string | null
           curso_id?: string | null
           documento_comprobatorio?: string | null
-          enviado_em?: string | null
           id?: string
           motivo_pendencia?: string | null
           observacoes?: string | null
@@ -122,7 +109,6 @@ export type Database = {
           created_at?: string | null
           curso_id?: string | null
           documento_comprobatorio?: string | null
-          enviado_em?: string | null
           id?: string
           motivo_pendencia?: string | null
           observacoes?: string | null
@@ -208,7 +194,6 @@ export type Database = {
           utm_medium: string | null
           utm_source: string | null
           utm_term: string | null
-          vendedor_atribuido: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -231,7 +216,6 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
-          vendedor_atribuido?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -254,18 +238,9 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
-          vendedor_atribuido?: string | null
           whatsapp?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "leads_vendedor_atribuido_fkey"
-            columns: ["vendedor_atribuido"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -273,7 +248,6 @@ export type Database = {
           email: string
           id: string
           name: string
-          photo_url: string | null
           updated_at: string | null
           user_type: string
         }
@@ -282,7 +256,6 @@ export type Database = {
           email: string
           id: string
           name: string
-          photo_url?: string | null
           updated_at?: string | null
           user_type: string
         }
@@ -291,7 +264,6 @@ export type Database = {
           email?: string
           id?: string
           name?: string
-          photo_url?: string | null
           updated_at?: string | null
           user_type?: string
         }
@@ -353,39 +325,11 @@ export type Database = {
           },
         ]
       }
-      user_roles: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          role: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          role: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          role?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      delete_venda_cascade: {
-        Args: { venda_id: string }
-        Returns: boolean
-      }
       find_document_by_venda_id: {
         Args: { venda_id_param: string }
         Returns: string
@@ -393,14 +337,6 @@ export type Database = {
       find_document_in_bucket: {
         Args: { search_pattern: string }
         Returns: string
-      }
-      has_role: {
-        Args: { user_id: string; role_name: string }
-        Returns: boolean
-      }
-      is_admin: {
-        Args: { user_id: string }
-        Returns: boolean
       }
       list_bucket_files: {
         Args: { bucket_name: string; folder_prefix?: string }

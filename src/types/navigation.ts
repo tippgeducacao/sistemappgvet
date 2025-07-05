@@ -21,6 +21,7 @@ export interface PageMetadata {
 
 export interface MenuItem {
   title: string;
-  section: NavigationSection;
+  url: string;
   icon: string;
+  section: NavigationSection;
 }

@@ -36,7 +36,7 @@ export class UltraSimpleUpdateService {
         id: existingRecord.id,
         status_atual: existingRecord.status,
         vendedor_id: existingRecord.vendedor_id,
-        created: existingRecord.created_at
+        created: existingRecord.enviado_em
       });
 
       // STEP 3: Tentar atualização SIMPLES primeiro
@@ -73,7 +73,7 @@ export class UltraSimpleUpdateService {
           status: newStatus,
           atualizado_em: new Date().toISOString(),
           vendedor_id: existingRecord.vendedor_id,
-          created_at: existingRecord.created_at
+          enviado_em: existingRecord.enviado_em
         })
         .select('id, status, atualizado_em');
 

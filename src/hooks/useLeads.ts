@@ -34,13 +34,13 @@ export interface Lead {
   vendedor_atribuido_profile?: {
     name: string;
     email: string;
-  } | null;
+  };
 }
 
 export interface LeadInteraction {
   id: string;
   lead_id: string;
-  user_id?: string;
+  user_id: string;
   tipo: string;
   descricao?: string;
   resultado?: string;
@@ -63,21 +63,10 @@ export const useLeads = () => {
           *,
           vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
         `)
-        .order('created_at', { ascending: false });
+        .order('data_captura', { ascending: false });
 
       if (error) throw error;
-      
-      return (data || []).map(lead => ({
-        ...lead,
-        data_captura: lead.created_at || new Date().toISOString(),
-        convertido_em_venda: false,
-        vendedor_atribuido_profile: lead.vendedor_atribuido_profile && 
-          typeof lead.vendedor_atribuido_profile === 'object' && 
-          !('error' in lead.vendedor_atribuido_profile) &&
-          'name' in lead.vendedor_atribuido_profile
-          ? lead.vendedor_atribuido_profile as { name: string; email: string }
-          : null
-      })) as Lead[];
+      return data as Lead[];
     },
   });
 };
@@ -96,18 +85,7 @@ export const useLeadById = (leadId: string) => {
         .single();
 
       if (error) throw error;
-      
-      return {
-        ...data,
-        data_captura: data.created_at || new Date().toISOString(),
-        convertido_em_venda: false,
-        vendedor_atribuido_profile: data.vendedor_atribuido_profile && 
-          typeof data.vendedor_atribuido_profile === 'object' && 
-          !('error' in data.vendedor_atribuido_profile) &&
-          'name' in data.vendedor_atribuido_profile
-          ? data.vendedor_atribuido_profile as { name: string; email: string }
-          : null
-      } as Lead;
+      return data as Lead;
     },
     enabled: !!leadId,
   });
@@ -119,17 +97,15 @@ export const useLeadInteractions = (leadId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lead_interactions')
-        .select(`*`)
+        .select(`
+          *,
+          user:profiles!user_id(name, email)
+        `)
         .eq('lead_id', leadId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      return (data || []).map(interaction => ({
-        ...interaction,
-        user_id: 'system',
-        user: { name: 'Sistema', email: 'system@example.com' }
-      })) as LeadInteraction[];
+      return data as LeadInteraction[];
     },
     enabled: !!leadId,
   });

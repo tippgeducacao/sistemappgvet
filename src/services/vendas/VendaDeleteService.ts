@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ErrorService } from '@/services/error/ErrorService';
 
 export class VendaDeleteService {
+  // Email autorizado para excluir vendas
   private static readonly AUTHORIZED_EMAIL = 'wallasmonteiro019@gmail.com';
 
   static async deleteVenda(vendaId: string, currentUserEmail: string): Promise<boolean> {
@@ -10,36 +11,48 @@ export class VendaDeleteService {
       console.log('🗑️ VendaDeleteService: Iniciando exclusão de venda:', vendaId.substring(0, 8));
       console.log('👤 Usuário solicitante:', currentUserEmail);
 
+      // 1. Verificar permissão
       if (!this.hasDeletePermission(currentUserEmail)) {
         console.error('❌ Usuário não autorizado:', currentUserEmail);
         throw new Error('Você não tem permissão para excluir vendas.');
       }
 
+      // 2. Diagnóstico PRÉ-exclusão
       console.log('🔍 Executando diagnóstico PRÉ-exclusão...');
       await this.diagnosticoCompleto(vendaId);
 
-      console.log('🔥 Executando RPC delete_venda_cascade...');
+      // 3. Chamar a função RPC corrigida com timeout
+      console.log('🔥 Executando RPC delete_venda_cascade com constraints corrigidas...');
       
       const { data: deleteResult, error: rpcError } = await supabase.rpc('delete_venda_cascade', {
         venda_id: vendaId
       });
 
+      // 4. Verificar erro do RPC
       if (rpcError) {
         console.error('❌ ERRO RPC:', rpcError);
+        
+        // Tentar diagnóstico pós-erro
         console.log('🔍 Diagnóstico pós-erro RPC...');
         await this.diagnosticoCompleto(vendaId);
+        
         throw new Error(`Erro na função de exclusão: ${rpcError.message}`);
       }
 
+      // 5. Verificar resultado da função
       console.log('📊 Resultado da função RPC:', deleteResult);
       
       if (deleteResult !== true) {
         console.error('💥 Função RPC retornou falso - exclusão falhou');
+        
+        // Diagnóstico detalhado do problema
         console.log('🔍 Diagnóstico de falha...');
         await this.diagnosticoCompleto(vendaId);
+        
         throw new Error('A exclusão falhou na função do banco de dados. Verifique os logs para mais detalhes.');
       }
 
+      // 6. Verificação final DUPLA para garantir sucesso
       console.log('🔍 Verificação final de segurança...');
       
       const { data: vendaAindaExiste, error: checkError } = await supabase
@@ -58,6 +71,7 @@ export class VendaDeleteService {
         throw new Error('Inconsistência detectada - venda ainda existe após exclusão reportada como bem-sucedida.');
       }
 
+      // 7. SUCESSO CONFIRMADO
       console.log('🎉 EXCLUSÃO CONFIRMADA COM SUCESSO!');
       console.log('📋 Log de Auditoria - SUCESSO:', {
         acao: 'EXCLUSAO_VENDA_SUCESSO',
@@ -86,10 +100,12 @@ export class VendaDeleteService {
     }
   }
 
+  // Diagnóstico completo e detalhado para debug
   private static async diagnosticoCompleto(vendaId: string): Promise<void> {
     try {
       console.log('🔬 === DIAGNÓSTICO COMPLETO DETALHADO ===');
       
+      // 1. Verificar venda principal
       const { data: venda, error: vendaError } = await supabase
         .from('form_entries')
         .select('*')
@@ -112,6 +128,7 @@ export class VendaDeleteService {
         return;
       }
 
+      // 2. Verificar aluno via form_entry_id
       const { data: alunoViaFormEntry, error: alunoFormError } = await supabase
         .from('alunos')
         .select('*')
@@ -129,6 +146,7 @@ export class VendaDeleteService {
         } : null
       });
 
+      // 3. Verificar aluno via aluno_id (se existir referência)
       if (venda.aluno_id) {
         const { data: alunoViaId, error: alunoIdError } = await supabase
           .from('alunos')
@@ -147,6 +165,7 @@ export class VendaDeleteService {
         });
       }
 
+      // 4. Verificar respostas do formulário
       const { data: respostas, error: respostasError } = await supabase
         .from('respostas_formulario')
         .select('id, campo_nome, valor_informado')
@@ -158,10 +177,24 @@ export class VendaDeleteService {
         sample: respostas?.slice(0, 3) || []
       });
 
-      const totalDependencies = (respostas?.length || 0) + (alunoViaFormEntry ? 1 : 0);
+      // 5. Verificar histórico de validações
+      const { data: historico, error: historicoError } = await supabase
+        .from('historico_validacoes')
+        .select('id, acao, data, descricao')
+        .eq('form_entry_id', vendaId);
+      
+      console.log('📋 Histórico de validações:', { 
+        count: historico?.length || 0, 
+        error: historicoError?.message,
+        sample: historico?.slice(0, 3) || []
+      });
+
+      // 6. Resumo das dependências
+      const totalDependencies = (respostas?.length || 0) + (historico?.length || 0) + (alunoViaFormEntry ? 1 : 0);
       console.log('🔗 Resumo de dependências:', {
         aluno: !!alunoViaFormEntry,
         respostas: respostas?.length || 0,
+        historico: historico?.length || 0,
         total: totalDependencies
       });
 

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Vendedor {
@@ -5,9 +6,9 @@ export interface Vendedor {
   name: string;
   email: string;
   user_type: string;
-  created_at: string | null;
-  updated_at: string | null;
-  photo_url?: string | null;
+  photo_url?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export class VendedoresService {
@@ -190,108 +191,3 @@ export class VendedoresService {
     }
   }
 }
-
-export const vendedoresService = {
-  async getVendedores(): Promise<Vendedor[]> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_type', 'vendedor')
-      .order('name');
-
-    if (error) throw error;
-    return data || [];
-  },
-
-  async createVendedor(vendedor: Omit<Vendedor, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
-    const { error } = await supabase
-      .from('profiles')
-      .insert([vendedor]);
-
-    if (error) throw error;
-  },
-
-  async updateVendedor(id: string, vendedor: Partial<Vendedor>): Promise<void> {
-    const { error } = await supabase
-      .from('profiles')
-      .update(vendedor)
-      .eq('id', id);
-
-    if (error) throw error;
-  },
-
-  async deleteVendedor(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-  },
-
-  async uploadPhoto(vendedorId: string, file: File): Promise<string> {
-    console.log('📤 Iniciando upload de foto para vendedor:', vendedorId);
-
-    try {
-      // Deletar foto anterior se existir
-      await this.deleteExistingPhoto(vendedorId);
-
-      // Gerar nome único para o arquivo
-      const fileExtension = file.name.split('.').pop() || 'jpg';
-      const fileName = `${vendedorId}_${Date.now()}.${fileExtension}`;
-      const filePath = `vendedores/${fileName}`;
-
-      // Upload do arquivo
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('vendedor-photos')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw new Error(`Erro no upload: ${uploadError.message}`);
-      }
-
-      // Obter URL pública
-      const { data: urlData } = supabase.storage
-        .from('vendedor-photos')
-        .getPublicUrl(filePath);
-
-      return urlData.publicUrl;
-
-    } catch (error) {
-      console.error('💥 Erro durante upload:', error);
-      throw error;
-    }
-  },
-
-  async deleteExistingPhoto(vendedorId: string): Promise<void> {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('photo_url')
-        .eq('id', vendedorId)
-        .single();
-
-      if (profile?.photo_url) {
-        console.log('🗑️ Removendo foto anterior');
-        
-        try {
-          const url = new URL(profile.photo_url);
-          const pathSegments = url.pathname.split('/');
-          const bucketIndex = pathSegments.findIndex(segment => segment === 'vendedor-photos');
-          
-          if (bucketIndex !== -1) {
-            const oldFilePath = pathSegments.slice(bucketIndex + 1).join('/');
-            
-            await supabase.storage
-              .from('vendedor-photos')
-              .remove([oldFilePath]);
-          }
-        } catch (error) {
-          console.error('Erro ao processar URL:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao buscar foto anterior:', error);
-    }
-  }
-};
