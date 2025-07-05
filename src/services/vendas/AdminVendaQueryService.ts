@@ -3,94 +3,84 @@ import { supabase } from '@/integrations/supabase/client';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 export class AdminVendaQueryService {
-  static async getAllVendasForAdmin(): Promise<VendaCompleta[]> {
-    console.log('🔍 AdminVendaQueryService: Buscando todas as vendas para admin...');
+  static async getAllVendas(): Promise<VendaCompleta[]> {
+    console.log('🔍 AdminVendaQueryService: Buscando todas as vendas...');
     
-    const { data, error } = await supabase
-      .from('form_entries')
-      .select(`
-        id,
-        vendedor_id,
-        curso_id,
-        observacoes,
-        status,
-        pontuacao_esperada,
-        pontuacao_validada,
-        enviado_em,
-        atualizado_em,
-        motivo_pendencia,
-        aluno_id,
-        aluno:alunos!form_entries_aluno_id_fkey(
-          id,
-          nome,
-          email,
-          telefone,
-          crmv
-        ),
-        curso:cursos!form_entries_curso_id_fkey(
-          id,
-          nome
-        )
-      `)
-      .order('enviado_em', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('form_entries')
+        .select(`
+          *,
+          aluno:alunos!form_entries_aluno_id_fkey(*),
+          curso:cursos(*)
+        `)
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('❌ Erro ao buscar todas as vendas:', error);
+      if (error) {
+        console.error('❌ Erro na query:', error);
+        throw error;
+      }
+
+      if (!data) {
+        console.log('⚠️ Nenhum dado retornado');
+        return [];
+      }
+
+      console.log('✅ Dados brutos recebidos:', data.length, 'registros');
+
+      // Buscar informações dos vendedores separadamente
+      const vendedorIds = [...new Set(data.map(v => v.vendedor_id).filter(Boolean))];
+      console.log('🔍 IDs dos vendedores:', vendedorIds.length);
+
+      const { data: vendedores } = await supabase
+        .from('profiles')
+        .select('id, name, email, photo_url')
+        .in('id', vendedorIds);
+
+      console.log('👥 Vendedores encontrados:', vendedores?.length || 0);
+
+      // Mapear vendas
+      const vendasMapeadas: VendaCompleta[] = data.map(venda => {
+        const vendedor = vendedores?.find(v => v.id === venda.vendedor_id);
+        
+        return {
+          id: venda.id,
+          vendedor_id: venda.vendedor_id || '',
+          curso_id: venda.curso_id || '',
+          observacoes: venda.observacoes || '',
+          status: (venda.status as 'pendente' | 'matriculado' | 'desistiu') || 'pendente',
+          pontuacao_esperada: venda.pontuacao_esperada || 0,
+          pontuacao_validada: venda.pontuacao_validada,
+          enviado_em: venda.enviado_em || venda.created_at || '',
+          atualizado_em: venda.atualizado_em || '',
+          motivo_pendencia: venda.motivo_pendencia,
+          documento_comprobatorio: venda.documento_comprobatorio,
+          aluno: venda.aluno && typeof venda.aluno === 'object' && venda.aluno !== null && 'id' in venda.aluno ? {
+            id: venda.aluno.id,
+            nome: venda.aluno.nome || '',
+            email: venda.aluno.email || '',
+            telefone: venda.aluno.telefone || '',
+            crmv: venda.aluno.crmv || ''
+          } : null,
+          curso: venda.curso && typeof venda.curso === 'object' && venda.curso !== null && 'id' in venda.curso ? {
+            id: venda.curso.id,
+            nome: venda.curso.nome || ''
+          } : null,
+          vendedor: vendedor ? {
+            id: vendedor.id,
+            name: vendedor.name,
+            email: vendedor.email,
+            photo_url: vendedor.photo_url || undefined
+          } : undefined
+        };
+      });
+
+      console.log('🎯 Vendas processadas:', vendasMapeadas.length);
+      return vendasMapeadas;
+
+    } catch (error) {
+      console.error('💥 Erro crítico na busca:', error);
       throw error;
     }
-
-    console.log('✅ Vendas brutas encontradas:', data?.length || 0);
-
-    // Buscar informações dos vendedores separadamente
-    const vendasComVendedores = await Promise.all(
-      (data || []).map(async (venda) => {
-        let vendedorData = null;
-        
-        if (venda.vendedor_id) {
-          const { data: vendedor } = await supabase
-            .from('profiles')
-            .select('id, name, email')
-            .eq('id', venda.vendedor_id)
-            .single();
-          vendedorData = vendedor;
-        }
-
-        // Se não tem aluno vinculado ou aluno sem nome, tentar buscar pelos dados das respostas
-        let alunoFinal = venda.aluno;
-        
-        if (!alunoFinal || !alunoFinal.nome) {
-          console.log(`🔍 Tentando encontrar dados do aluno para venda ${venda.id.substring(0, 8)}`);
-          
-          const { data: respostas } = await supabase
-            .from('respostas_formulario')
-            .select('campo_nome, valor_informado')
-            .eq('form_entry_id', venda.id);
-
-          if (respostas && respostas.length > 0) {
-            const nomeResposta = respostas.find(r => r.campo_nome === 'Nome do Aluno');
-            const emailResposta = respostas.find(r => r.campo_nome === 'Email do Aluno');
-            
-            if (nomeResposta || emailResposta) {
-              alunoFinal = {
-                id: venda.aluno_id || '',
-                nome: nomeResposta?.valor_informado || 'Nome não informado',
-                email: emailResposta?.valor_informado || 'Email não informado',
-                telefone: null,
-                crmv: null
-              };
-            }
-          }
-        }
-
-        return {
-          ...venda,
-          aluno: alunoFinal,
-          vendedor: vendedorData
-        };
-      })
-    );
-
-    console.log('✅✅ VENDAS FINAIS PROCESSADAS:', vendasComVendedores.length);
-    return vendasComVendedores as unknown as VendaCompleta[];
   }
 }

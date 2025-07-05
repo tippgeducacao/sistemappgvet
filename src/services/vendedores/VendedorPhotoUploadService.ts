@@ -1,119 +1,89 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
 export class VendedorPhotoUploadService {
   static async uploadVendedorPhoto(vendedorId: string, file: File): Promise<string> {
-    console.log('📤 Iniciando upload da foto para vendedor:', vendedorId);
-    console.log('📁 Arquivo:', file.name, 'Tamanho:', file.size);
-    
-    this.validateFile(file);
-    
-    const filePath = this.generateFilePath(vendedorId, file);
-    console.log('🗂️ Caminho do arquivo:', filePath);
+    console.log('📤 Iniciando upload de foto para vendedor:', vendedorId);
+    console.log('📄 Arquivo:', file.name, file.type, file.size);
 
-    await this.removeExistingPhoto(vendedorId);
-    
-    const photoUrl = await this.performUpload(filePath, file);
-    await this.validateUploadedFile(photoUrl);
-    
-    return photoUrl;
-  }
-
-  private static validateFile(file: File): void {
-    if (!file.type.startsWith('image/')) {
-      throw new Error('Arquivo deve ser uma imagem');
-    }
-    
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error('Arquivo muito grande (máximo 5MB)');
-    }
-  }
-
-  private static generateFilePath(vendedorId: string, file: File): string {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${vendedorId}_${Date.now()}.${fileExt}`;
-    return `vendedores/${fileName}`;
-  }
-
-  private static async removeExistingPhoto(vendedorId: string): Promise<void> {
     try {
-      const { data: currentProfile } = await supabase
+      // Deletar foto anterior se existir
+      await this.deleteExistingPhoto(vendedorId);
+
+      // Gerar nome único para o arquivo
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      const fileName = `${vendedorId}_${uuidv4()}.${fileExtension}`;
+      const filePath = `vendedores/${fileName}`;
+
+      console.log('📁 Caminho do arquivo:', filePath);
+
+      // Upload do arquivo para o storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('vendedor-photos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('❌ Erro no upload:', uploadError);
+        throw new Error(`Erro no upload: ${uploadError.message}`);
+      }
+
+      console.log('✅ Upload realizado:', uploadData);
+
+      // Obter URL pública da imagem
+      const { data: urlData } = supabase.storage
+        .from('vendedor-photos')
+        .getPublicUrl(filePath);
+
+      const publicUrl = urlData.publicUrl;
+      console.log('🔗 URL pública gerada:', publicUrl);
+
+      return publicUrl;
+
+    } catch (error) {
+      console.error('💥 Erro durante upload:', error);
+      throw error;
+    }
+  }
+
+  private static async deleteExistingPhoto(vendedorId: string): Promise<void> {
+    try {
+      const { data: profile } = await supabase
         .from('profiles')
         .select('photo_url')
         .eq('id', vendedorId)
         .single();
 
-      if (currentProfile?.photo_url) {
-        await this.deleteFileFromStorage(currentProfile.photo_url);
-      }
-    } catch (error) {
-      console.log('ℹ️ Nenhuma foto anterior para remover ou erro na busca');
-    }
-  }
-
-  private static async deleteFileFromStorage(photoUrl: string): Promise<void> {
-    try {
-      const oldUrl = new URL(photoUrl);
-      const pathSegments = oldUrl.pathname.split('/');
-      const bucketIndex = pathSegments.findIndex(segment => segment === 'vendedor-photos');
-      
-      if (bucketIndex !== -1 && bucketIndex < pathSegments.length - 1) {
-        const oldPath = pathSegments.slice(bucketIndex + 1).join('/');
-        console.log('🗑️ Removendo foto anterior:', oldPath);
+      if (profile?.photo_url) {
+        console.log('🗑️ Removendo foto anterior:', profile.photo_url);
         
-        const { error: removeError } = await supabase.storage
-          .from('vendedor-photos')
-          .remove([oldPath]);
+        try {
+          const url = new URL(profile.photo_url);
+          const pathSegments = url.pathname.split('/');
+          const bucketIndex = pathSegments.findIndex(segment => segment === 'vendedor-photos');
           
-        if (removeError) {
-          console.log('⚠️ Erro ao remover foto anterior (continuando):', removeError);
+          if (bucketIndex !== -1 && bucketIndex < pathSegments.length - 1) {
+            const oldFilePath = pathSegments.slice(bucketIndex + 1).join('/');
+            
+            const { error: removeError } = await supabase.storage
+              .from('vendedor-photos')
+              .remove([oldFilePath]);
+              
+            if (removeError) {
+              console.error('⚠️ Erro ao deletar foto anterior:', removeError);
+            } else {
+              console.log('✅ Foto anterior removida');
+            }
+          }
+        } catch (error) {
+          console.error('⚠️ Erro ao processar URL da foto anterior:', error);
         }
       }
-    } catch (urlError) {
-      console.log('⚠️ Erro ao processar URL anterior (continuando):', urlError);
-    }
-  }
-
-  private static async performUpload(filePath: string, file: File): Promise<string> {
-    console.log('📤 Fazendo upload do arquivo...');
-    
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('vendedor-photos')
-      .upload(filePath, file, { 
-        cacheControl: '3600',
-        upsert: true 
-      });
-
-    if (uploadError) {
-      console.error('❌ Erro no upload:', uploadError);
-      throw new Error(`Erro no upload: ${uploadError.message}`);
-    }
-    
-    console.log('✅ Upload concluído:', uploadData);
-
-    const { data: urlData } = supabase.storage
-      .from('vendedor-photos')
-      .getPublicUrl(filePath);
-
-    if (!urlData?.publicUrl) {
-      throw new Error('Erro ao gerar URL pública do arquivo');
-    }
-
-    console.log('🔗 URL pública gerada:', urlData.publicUrl);
-    return urlData.publicUrl;
-  }
-
-  private static async validateUploadedFile(photoUrl: string): Promise<void> {
-    try {
-      const response = await fetch(photoUrl, { method: 'HEAD' });
-      if (!response.ok) {
-        console.error('❌ URL não está acessível:', response.status);
-        throw new Error('Arquivo uploadado mas não está acessível');
-      }
-      console.log('✅ URL testada e acessível');
-    } catch (fetchError) {
-      console.error('❌ Erro ao testar URL:', fetchError);
-      throw new Error('Arquivo uploadado mas não está acessível publicamente');
+    } catch (error) {
+      console.error('⚠️ Erro ao buscar foto anterior:', error);
     }
   }
 }
