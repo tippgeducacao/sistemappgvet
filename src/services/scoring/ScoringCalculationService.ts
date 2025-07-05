@@ -10,7 +10,7 @@ export class ScoringCalculationService {
     parcelamento: 'Condições de Parcelamento',
     pagamento: 'Forma de Pagamento',
     formaCaptacao: 'Forma de Captação do Lead',
-    tipoVenda: 'Canal/Local da Venda',
+    tipoVenda: 'Tipo de Venda',
     vendaCasada: 'Venda Casada'
   };
 
@@ -18,7 +18,6 @@ export class ScoringCalculationService {
     console.log('🔢 Calculando pontuação total do formulário');
     console.log('📋 Dados do formulário:', formData);
     console.log('📊 Regras disponíveis:', rules.length);
-    console.log('📊 TODAS AS REGRAS:', rules);
     
     let totalPoints = this.getBasePoints();
     console.log(`🎯 Pontos base: ${totalPoints}`);
@@ -29,15 +28,6 @@ export class ScoringCalculationService {
       
       if (typeof fieldValue === 'string' && fieldValue.trim() !== '') {
         console.log(`🔍 PROCESSANDO CAMPO: ${formFieldName} → ${ruleFieldName} = "${fieldValue}"`);
-        
-        // Debug específico para tipoVenda
-        if (formFieldName === 'tipoVenda') {
-          console.log(`🎯 TIPO VENDA - Valor do formulário: "${fieldValue}"`);
-          console.log(`🎯 TIPO VENDA - Campo nas regras: "${ruleFieldName}"`);
-          console.log(`🎯 TIPO VENDA - Regras disponíveis para este campo:`, 
-            rules.filter(r => r.campo_nome === ruleFieldName)
-          );
-        }
         
         const fieldPoints = this.calculateFieldPointsByName(ruleFieldName, fieldValue, rules);
         console.log(`📍 Campo ${formFieldName} (${ruleFieldName}) = "${fieldValue}" → ${fieldPoints} pts`);
@@ -55,42 +45,46 @@ export class ScoringCalculationService {
   }
 
   static calculatePointsFromResponses(vendaRespostas: any[], rules: any[]): number {
-    let totalPoints = 0;
+    console.log('🔢 Calculando pontos das respostas...');
+    console.log('📝 Respostas recebidas:', vendaRespostas.length);
+    console.log('📊 Regras disponíveis:', rules.length);
+
+    let totalPoints = this.getBasePoints();
+    console.log(`🎯 Pontos base: ${totalPoints}`);
+
+    // Mapear respostas do formulário para os nomes corretos dos campos
+    const fieldMapping: Record<string, string> = {
+      'Lote Pós': 'Lote da Pós-Graduação',
+      'Lote da Pós-Graduação': 'Lote da Pós-Graduação',
+      'Matrícula': 'Matrícula',
+      'Modalidade': 'Modalidade do Curso',
+      'Modalidade do Curso': 'Modalidade do Curso',
+      'Parcelamento': 'Condições de Parcelamento',
+      'Condições de Parcelamento': 'Condições de Parcelamento',
+      'Forma de Pagamento': 'Forma de Pagamento',
+      'Forma de Captação': 'Forma de Captação do Lead',
+      'Forma de Captação do Lead': 'Forma de Captação do Lead',
+      'Tipo de Venda': 'Tipo de Venda',
+      'Canal/Local da Venda': 'Tipo de Venda',
+      'Venda Casada': 'Venda Casada'
+    };
 
     for (const resposta of vendaRespostas) {
-      if (resposta.campo_nome && resposta.valor) {
-        totalPoints += this.calculateFieldPointsByName(resposta.campo_nome, resposta.valor, rules);
+      if (resposta.campo_nome && resposta.valor_informado) {
+        const nomeCampoMapeado = fieldMapping[resposta.campo_nome] || resposta.campo_nome;
+        const pontos = this.calculateFieldPointsByName(nomeCampoMapeado, resposta.valor_informado, rules);
+        console.log(`📍 Resposta: ${resposta.campo_nome} → ${nomeCampoMapeado} = "${resposta.valor_informado}" → ${pontos} pts`);
+        totalPoints += pontos;
       }
     }
 
+    console.log(`🏆 Pontuação total das respostas: ${totalPoints}`);
     return totalPoints;
-  }
-
-  private static calculateFieldPoints(fieldName: string, fieldValue: string, rules: any[]): number {
-    // Forma de captação não pontua
-    if (fieldName === 'formaCaptacao') {
-      return 0;
-    }
-
-    const rule = rules.find(rule => rule.field_name === fieldName && rule.field_value === fieldValue);
-    return rule ? rule.points : 0;
   }
 
   private static calculateFieldPointsByName(fieldName: string, fieldValue: string, rules: any[]): number {
     console.log(`🔍 Buscando regra: campo="${fieldName}", valor="${fieldValue}"`);
-    console.log(`📊 Total de regras disponíveis: ${rules.length}`);
     
-    // Log de todas as regras para debug
-    console.log(`📊 REGRAS PARA CAMPO "${fieldName}":`, 
-      rules.filter(r => r.campo_nome === fieldName)
-    );
-    
-    // Forma de captação não pontua
-    if (fieldName === 'Forma de Captação do Lead') {
-      console.log('📝 Campo de captação não pontua');
-      return 0;
-    }
-
     const rule = rules.find(rule => {
       const fieldMatch = rule.campo_nome === fieldName;
       const valueMatch = rule.opcao_valor === fieldValue;

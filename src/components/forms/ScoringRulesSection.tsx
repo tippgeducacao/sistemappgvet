@@ -3,11 +3,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useFormStore } from '@/store/FormStore';
 import { useScoringPoints, getPointsForFieldValue } from '@/hooks/useScoringPoints';
-import TipoVendaField from './fields/TipoVendaField';
 
 const ScoringRulesSection: React.FC = () => {
   const { formData, updateField } = useFormStore();
@@ -15,12 +13,11 @@ const ScoringRulesSection: React.FC = () => {
 
   console.log('🔧 ScoringRulesSection renderizando...');
   console.log('📊 Regras carregadas:', scoringRules.length);
-  console.log('⏳ Carregando:', isLoading);
 
   const getFieldPoints = (fieldName: string, value: string) => {
     if (!value || isLoading) return null;
     const points = getPointsForFieldValue(scoringRules, fieldName, value);
-    return points !== 0 ? points : 0; // Retorna 0 mesmo para campos sem pontuação
+    return points !== 0 ? points : 0;
   };
 
   const renderPointsBadge = (points: number | null) => {
@@ -40,22 +37,6 @@ const ScoringRulesSection: React.FC = () => {
     if (isLoading) return null;
     const points = getPointsForFieldValue(scoringRules, fieldName, value);
     return renderPointsBadge(points !== 0 ? points : 0);
-  };
-
-  // Função específica para venda casada que busca nas regras do banco
-  const getVendaCasadaPoints = (value: string) => {
-    if (isLoading) return null;
-    
-    console.log(`🔍 Buscando pontos para Venda Casada = "${value}"`);
-    const points = getPointsForFieldValue(scoringRules, 'Venda Casada', value);
-    console.log(`🎯 Pontos encontrados para Venda Casada "${value}": ${points}`);
-    
-    return renderPointsBadge(points);
-  };
-
-  const getCurrentVendaCasadaPoints = () => {
-    if (!formData.vendaCasada || isLoading) return null;
-    return getVendaCasadaPoints(formData.vendaCasada);
   };
 
   // Valores das matrículas
@@ -248,17 +229,17 @@ const ScoringRulesSection: React.FC = () => {
                   Cartão de crédito - limite total ou PIX
                   {getSelectItemPoints('Forma de Pagamento', 'Cartão de crédito - limite total ou PIX')}
                 </SelectItem>
-                <SelectItem value="Boleto bancário">
-                  Boleto bancário
-                  {getSelectItemPoints('Forma de Pagamento', 'Boleto bancário')}
+                <SelectItem value="Boleto 1x até 30 dias">
+                  Boleto 1x até 30 dias
+                  {getSelectItemPoints('Forma de Pagamento', 'Boleto 1x até 30 dias')}
                 </SelectItem>
                 <SelectItem value="Recorrência">
                   Recorrência
                   {getSelectItemPoints('Forma de Pagamento', 'Recorrência')}
                 </SelectItem>
-                <SelectItem value="Boleto 1x até 30 dias">
-                  Boleto 1x até 30 dias
-                  {getSelectItemPoints('Forma de Pagamento', 'Boleto 1x até 30 dias')}
+                <SelectItem value="Boleto bancário">
+                  Boleto bancário
+                  {getSelectItemPoints('Forma de Pagamento', 'Boleto bancário')}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -300,13 +281,61 @@ const ScoringRulesSection: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TipoVendaField />
+          <div>
+            <Label htmlFor="tipoVenda">
+              Canal/Local da Venda
+              {renderPointsBadge(getFieldPoints('Tipo de Venda', formData.tipoVenda))}
+            </Label>
+            <Select value={formData.tipoVenda} onValueChange={(value) => updateField('tipoVenda', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o canal da venda" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="LIGAÇÃO">
+                  LIGAÇÃO ⚠️ (Comprovação obrigatória)
+                  {getSelectItemPoints('Tipo de Venda', 'LIGAÇÃO')}
+                </SelectItem>
+                <SelectItem value="LIGAÇÃO E FECHAMENTO NO WHATSAPP">
+                  LIGAÇÃO E FECHAMENTO NO WHATSAPP ⚠️ (Comprovação obrigatória)
+                  {getSelectItemPoints('Tipo de Venda', 'LIGAÇÃO E FECHAMENTO NO WHATSAPP')}
+                </SelectItem>
+                <SelectItem value="REUNIÃO MEET">
+                  REUNIÃO MEET
+                  {getSelectItemPoints('Tipo de Venda', 'REUNIÃO MEET')}
+                </SelectItem>
+                <SelectItem value="VENDA DIRETA">
+                  VENDA DIRETA
+                  {getSelectItemPoints('Tipo de Venda', 'VENDA DIRETA')}
+                </SelectItem>
+                <SelectItem value="PRESENCIAL">
+                  PRESENCIAL
+                  {getSelectItemPoints('Tipo de Venda', 'PRESENCIAL')}
+                </SelectItem>
+                <SelectItem value="LANÇAMENTO ( CAMPANHA )">
+                  LANÇAMENTO ( CAMPANHA )
+                  {getSelectItemPoints('Tipo de Venda', 'LANÇAMENTO ( CAMPANHA )')}
+                </SelectItem>
+                <SelectItem value="EMAIL">
+                  EMAIL
+                  {getSelectItemPoints('Tipo de Venda', 'EMAIL')}
+                </SelectItem>
+                <SelectItem value="OUTRO">
+                  OUTRO
+                  {getSelectItemPoints('Tipo de Venda', 'OUTRO')}
+                </SelectItem>
+                <SelectItem value="WHATSAPP">
+                  WHATSAPP
+                  {getSelectItemPoints('Tipo de Venda', 'WHATSAPP')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="space-y-3">
             <div>
               <Label htmlFor="vendaCasada">
                 Venda Casada *
-                {getCurrentVendaCasadaPoints()}
+                {renderPointsBadge(getFieldPoints('Venda Casada', formData.vendaCasada))}
               </Label>
               <Select 
                 value={formData.vendaCasada} 
@@ -325,11 +354,11 @@ const ScoringRulesSection: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="SIM">
                     SIM
-                    {getVendaCasadaPoints('SIM')}
+                    {getSelectItemPoints('Venda Casada', 'SIM')}
                   </SelectItem>
                   <SelectItem value="NAO">
                     NÃO
-                    {getVendaCasadaPoints('NAO')}
+                    {getSelectItemPoints('Venda Casada', 'NAO')}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -352,6 +381,27 @@ const ScoringRulesSection: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Alerta para comprovação obrigatória */}
+        {(formData.tipoVenda === 'LIGAÇÃO' || formData.tipoVenda === 'LIGAÇÃO E FECHAMENTO NO WHATSAPP') && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Comprovação Obrigatória
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>Para este tipo de venda, você deve anexar um documento comprobatório (áudio, print, etc.) na seção de observações.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

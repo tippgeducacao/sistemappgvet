@@ -1,33 +1,29 @@
-
 import { create } from 'zustand';
-import { ErrorService } from '@/services/error/ErrorService';
 
-// Interface completa para todos os dados do formulário
+interface FormState {
+  formData: FormData;
+  isSubmitting: boolean;
+  
+  // Actions
+  updateField: <T extends keyof FormData>(field: T, value: FormData[T]) => void;
+  setFormData: (data: Partial<FormData>) => void;
+  clearForm: () => void;
+  setIsSubmitting: (value: boolean) => void;
+}
+
 export interface FormData {
-  // Lead info - Informações Básicas
+  // Informações do Lead
   dataChegada: string;
   nomeAluno: string;
   emailAluno: string;
+  telefone?: string;
+  crmv?: string;
   formacaoAluno: string;
   ies: string;
   cursoId: string;
-  vendedor: string;
-  
-  // Informações de Contato Adicionais
-  telefone: string;
-  crmv: string;
-  
-  // Payment info - Informações de Pagamento
-  valorContrato: string;
-  percentualDesconto: string;
-  dataPrimeiroPagamento: string;
-  carenciaPrimeiraCobranca: string;
-  detalhesCarencia: string;
-  reembolsoMatricula: string;
-  indicacao: string;
-  nomeIndicador: string;
-  
-  // Scoring rules data - Regras de Pontuação
+  vendedor?: string;
+
+  // Informações de Pontuação
   lotePos: string;
   matricula: string;
   modalidade: string;
@@ -36,33 +32,34 @@ export interface FormData {
   formaCaptacao: string;
   tipoVenda: string;
   vendaCasada: string;
-  detalhesVendaCasada: string; // Novo campo para detalhes da venda casada
-  
-  // Observations
-  observacoes: string;
-  
-  // Documento comprobatório
-  documentoComprobatorio: File | null;
+  detalhesVendaCasada?: string;
+
+  // Informações Financeiras
+  valorContrato?: string;
+  percentualDesconto?: string;
+  dataPrimeiroPagamento?: string;
+  carenciaPrimeiraCobranca?: string;
+  detalhesCarencia?: string;
+  reembolsoMatricula?: string;
+
+  // Indicação
+  indicacao?: string;
+  nomeIndicador?: string;
+
+  // Observações
+  observacoes?: string;
 }
 
 const initialFormData: FormData = {
-  dataChegada: '',
+  // Lead Info
+  dataChegada: new Date().toISOString().split('T')[0],
   nomeAluno: '',
   emailAluno: '',
   formacaoAluno: '',
   ies: '',
   cursoId: '',
-  vendedor: '',
-  telefone: '',
-  crmv: '',
-  valorContrato: '',
-  percentualDesconto: '',
-  dataPrimeiroPagamento: '',
-  carenciaPrimeiraCobranca: '',
-  detalhesCarencia: '',
-  reembolsoMatricula: '',
-  indicacao: '',
-  nomeIndicador: '',
+
+  // Scoring Info
   lotePos: '',
   matricula: '',
   modalidade: '',
@@ -71,38 +68,35 @@ const initialFormData: FormData = {
   formaCaptacao: '',
   tipoVenda: '',
   vendaCasada: '',
-  detalhesVendaCasada: '', // Inicializar o novo campo
-  observacoes: '',
-  documentoComprobatorio: null
+
+  // Payment Info
+  valorContrato: '',
+  percentualDesconto: '',
+  dataPrimeiroPagamento: '',
+  carenciaPrimeiraCobranca: '',
+  detalhesCarencia: '',
+  reembolsoMatricula: '',
+
+  // Indication
+  indicacao: '',
+  nomeIndicador: '',
+
+  // Observations
+  observacoes: ''
 };
 
-interface FormState {
-  formData: FormData;
-  isSubmitting: boolean;
-  
-  // Actions
-  updateField: (field: keyof FormData, value: string | File | null) => void;
-  setIsSubmitting: (submitting: boolean) => void;
-  clearForm: () => void;
-  setVendedor: (vendedor: string) => void;
-}
-
-export const useFormStore = create<FormState>((set, get) => ({
+export const useFormStore = create<FormState>((set) => ({
   formData: initialFormData,
   isSubmitting: false,
   
-  updateField: (field, value) => {
-    console.log(`Updating field ${field} with value:`, value);
-    set((state) => ({
-      formData: { ...state.formData, [field]: value }
-    }));
-  },
+  updateField: (field, value) => set((state) => ({
+    formData: { ...state.formData, [field]: value }
+  })),
   
-  setIsSubmitting: (submitting) => set({ isSubmitting: submitting }),
+  setFormData: (data) => set((state) => ({
+    formData: { ...state.formData, ...data }
+  })),
   
   clearForm: () => set({ formData: initialFormData }),
-  
-  setVendedor: (vendedor) => set((state) => ({
-    formData: { ...state.formData, vendedor }
-  })),
+  setIsSubmitting: (value) => set({ isSubmitting: value }),
 }));
