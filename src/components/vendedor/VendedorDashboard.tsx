@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useVendas } from '@/hooks/useVendas';
-import NovaVendaButton from './NovaVendaButton';
 import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 import { FileText } from 'lucide-react';
@@ -19,17 +18,14 @@ const VendedorDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header com botão Nova Venda */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Olá, {profile?.name || 'Vendedor'}!
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Gerencie suas vendas e acompanhe seu desempenho
-          </p>
-        </div>
-        <NovaVendaButton />
+      {/* Header sem botão Nova Venda */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">
+          Olá, {profile?.name || 'Vendedor'}!
+        </h1>
+        <p className="text-gray-600 mt-2">
+          Gerencie suas vendas e acompanhe seu desempenho
+        </p>
       </div>
 
       {/* Filtro por período */}
@@ -60,7 +56,7 @@ const VendedorDashboard: React.FC = () => {
             <div className="text-center py-8 text-gray-500">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Nenhuma venda cadastrada ainda</p>
-              <p className="text-sm">Clique em "Nova Venda" para começar</p>
+              <p className="text-sm">Acesse a aba "Nova Venda" para começar</p>
             </div>
           ) : (
             <div className="space-y-4">
