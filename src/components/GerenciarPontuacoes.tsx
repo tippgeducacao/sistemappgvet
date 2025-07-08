@@ -5,10 +5,10 @@ import AddRuleDialog from '@/components/pontuacao/AddRuleDialog';
 import RulesByField from '@/components/pontuacao/RulesByField';
 import EmptyState from '@/components/pontuacao/EmptyState';
 import { ScoringRule } from '@/services/scoringService';
-import { useAuthStore } from '@/stores/AuthStore';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 const GerenciarPontuacoes: React.FC = () => {
-  const { currentUser, profile } = useAuthStore();
+  const { isAdmin, isSecretaria } = useUserRoles();
   const {
     rules,
     isLoading,
@@ -29,11 +29,11 @@ const GerenciarPontuacoes: React.FC = () => {
     handleAddRule,
   } = useScoring();
 
-  // Verificar se o usuário é o admin autorizado
-  const isAuthorizedAdmin = (profile?.email || currentUser?.email) === 'wallasmonteiro019@gmail.com';
+  // Verificar se o usuário tem permissão (admin ou secretaria)
+  const hasPermission = isAdmin || isSecretaria;
 
-  // Se não for o admin autorizado, mostrar mensagem de acesso negado
-  if (!isAuthorizedAdmin) {
+  // Se não tiver permissão, mostrar mensagem de acesso negado
+  if (!hasPermission) {
     return (
       <div className="text-center py-12">
         <div className="max-w-md mx-auto">
