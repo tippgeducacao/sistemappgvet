@@ -3,6 +3,7 @@ import React from 'react';
 import { useAppStateStore } from '@/stores/AppStateStore';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import VendedorDashboard from '@/components/vendedor/VendedorDashboard';
+import DashboardContainer from '@/components/dashboard/DashboardContainer';
 import NovaVendaForm from '@/components/NovaVendaForm';
 import GerenciarVendas from '@/components/GerenciarVendas';
 import GerenciarCursos from '@/components/GerenciarCursos';
@@ -34,13 +35,8 @@ const RouteRenderer: React.FC = () => {
       if (isVendedor) {
         return <VendedorDashboard />;
       }
-      // Para admin e secretaria, mostrar dashboard padrão ou estatísticas
-      return (
-        <div className="p-6">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Bem-vindo ao sistema de gestão de vendas</p>
-        </div>
-      );
+      // Para admin e secretaria, usar o DashboardContainer completo
+      return <DashboardContainer userType={isAdmin ? 'admin' : 'secretaria'} />;
 
     case 'gerenciar-vendas':
       return <GerenciarVendas />;
