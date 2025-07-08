@@ -4,13 +4,29 @@ import { Sidebar } from '@/components/ui/sidebar';
 import SidebarHeaderComponent from '@/components/SidebarHeader';
 import SidebarMenuComponent from '@/components/SidebarMenuComponent';
 import SidebarFooterComponent from '@/components/SidebarFooterComponent';
+import { useAuthStore } from '@/stores/AuthStore';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 const AppSidebar: React.FC = () => {
+  const { profile, currentUser } = useAuthStore();
+  const { isAdmin, isSecretaria, isVendedor } = useUserRoles();
+  
+  // Determinar o tipo de usuário baseado nas roles
+  const getUserType = () => {
+    if (isAdmin) return 'admin';
+    if (isSecretaria) return 'secretaria';
+    if (isVendedor) return 'vendedor';
+    return 'vendedor'; // fallback
+  };
+  
+  const userName = profile?.name || currentUser?.name || 'Usuário';
+  const userType = getUserType();
+  
   return (
     <Sidebar>
-      <SidebarHeaderComponent userType="admin" />
+      <SidebarHeaderComponent userType={userType} />
       <SidebarMenuComponent />
-      <SidebarFooterComponent userType="admin" userName="Usuário" />
+      <SidebarFooterComponent userType={userType} userName={userName} />
     </Sidebar>
   );
 };
