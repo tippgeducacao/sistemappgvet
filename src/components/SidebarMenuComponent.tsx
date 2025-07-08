@@ -13,8 +13,7 @@ import { useAppStateStore } from '@/stores/AppStateStore';
 import { 
   ADMIN_MENU_ITEMS, 
   SECRETARY_MENU_ITEMS, 
-  VENDOR_MENU_ITEMS,
-  ADMIN_SPECIFIC_MENU
+  VENDOR_MENU_ITEMS
 } from '@/constants/sidebarMenus';
 import * as Icons from 'lucide-react';
 import type { MenuItem } from '@/types/navigation';

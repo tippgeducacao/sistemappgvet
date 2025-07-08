@@ -28,11 +28,6 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     icon: 'Star'
   },
   {
-    title: 'Minhas Vendas',
-    section: 'minhas-vendas',
-    icon: 'ShoppingCart'
-  },
-  {
     title: 'Gestão de Leads',
     section: 'gestao-leads',
     icon: 'Target'
@@ -80,10 +75,3 @@ export const VENDOR_MENU_ITEMS: MenuItem[] = [
   }
 ];
 
-export const ADMIN_SPECIFIC_MENU: MenuItem[] = [
-  {
-    title: 'Gestão de Leads',
-    section: 'gestao-leads',
-    icon: 'Target'
-  }
-];
