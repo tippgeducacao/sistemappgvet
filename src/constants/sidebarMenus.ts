@@ -26,6 +26,16 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     title: 'Gerenciar Pontuações',
     section: 'gerenciar-pontuacoes',
     icon: 'Star'
+  },
+  {
+    title: 'Minhas Vendas',
+    section: 'minhas-vendas',
+    icon: 'ShoppingCart'
+  },
+  {
+    title: 'Gestão de Leads',
+    section: 'gestao-leads',
+    icon: 'Target'
   }
 ];
 

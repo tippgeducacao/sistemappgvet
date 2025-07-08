@@ -27,7 +27,7 @@ const GerenciarVendas: React.FC = () => {
     );
   }
 
-  // Verificar se o usuário tem permissão para gerenciar vendas
+  // Admin sempre pode gerenciar vendas
   const canManageVendas = isAdmin || isSecretaria;
 
   if (!canManageVendas) {

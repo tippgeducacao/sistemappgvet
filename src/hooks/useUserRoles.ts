@@ -25,13 +25,13 @@ export const useUserRoles = () => {
   // Admin: quem tem role admin OU é secretaria por perfil
   const isAdmin = hasRole('admin') || isSecretariaByProfile;
   
-  // Secretaria: quem tem role secretaria OU é secretaria por perfil
-  const isSecretaria = hasRole('secretaria') || isSecretariaByProfile;
+  // Secretaria: quem tem role secretaria OU é secretaria por perfil (mas não é admin)
+  const isSecretaria = (hasRole('secretaria') || isSecretariaByProfile) && !hasRole('admin');
   
-  // Vendedor: quem tem role vendedor OU tem user_type vendedor (mas não é secretaria)
+  // Vendedor: quem tem role vendedor OU tem user_type vendedor (mas não é secretaria nem admin)
   const isVendedor = (hasRole('vendedor') || 
                      (profile?.user_type === 'vendedor' || currentUser?.user_type === 'vendedor')) && 
-                     !isSecretariaByProfile;
+                     !isSecretariaByProfile && !hasRole('admin');
 
   console.log('🔐 useUserRoles: Verificando roles do usuário:', {
     userEmail: profile?.email || currentUser?.email,

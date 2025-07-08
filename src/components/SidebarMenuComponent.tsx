@@ -32,23 +32,16 @@ const SidebarMenuComponent: React.FC = () => {
     userEmail: profile?.email || currentUser?.email 
   });
 
-  // Verificar se é o admin específico
-  const isSpecificAdmin = profile?.email === 'wallasmonteiro019@gmail.com';
-
   // Determinar menu baseado no tipo de usuário
   let menuItems: MenuItem[] = VENDOR_MENU_ITEMS;
   
   if (isAdmin) {
+    // Admin tem acesso a TODOS os menus
     menuItems = ADMIN_MENU_ITEMS;
   } else if (isSecretaria) {
     menuItems = SECRETARY_MENU_ITEMS;
   } else if (isVendedor) {
     menuItems = VENDOR_MENU_ITEMS;
-  }
-
-  // Adicionar itens específicos para o admin especial
-  if (isSpecificAdmin) {
-    menuItems = [...menuItems, ...ADMIN_SPECIFIC_MENU];
   }
 
   console.log('🔄 SidebarMenuComponent: Menu items determinados:', menuItems.length);
