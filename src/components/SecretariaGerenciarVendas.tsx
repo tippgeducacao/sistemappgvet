@@ -11,8 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
 import RejectVendaDialog from '@/components/vendas/dialogs/RejectVendaDialog';
+import ManageVendaDialog from '@/components/vendas/dialogs/ManageVendaDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import type { VendaCompleta } from '@/hooks/useVendas';
 
 const SecretariaGerenciarVendas: React.FC = () => {
   const { 
@@ -24,7 +26,9 @@ const SecretariaGerenciarVendas: React.FC = () => {
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
-  const [vendaToReject, setVendaToReject] = React.useState<any>(null);
+  const [vendaToReject, setVendaToReject] = React.useState<VendaCompleta | null>(null);
+  const [manageDialogOpen, setManageDialogOpen] = React.useState(false);
+  const [vendaToManage, setVendaToManage] = React.useState<VendaCompleta | null>(null);
 
   // Filtrar vendas por status
   const vendasPendentes = React.useMemo(() => {
@@ -104,6 +108,15 @@ const SecretariaGerenciarVendas: React.FC = () => {
     await updateStatus(vendaToReject.id, 'desistiu', undefined, motivo);
     setRejectDialogOpen(false);
     setVendaToReject(null);
+  };
+
+  const handleManage = (venda: VendaCompleta) => {
+    setVendaToManage(venda);
+    setManageDialogOpen(true);
+  };
+
+  const handleMarcarPendente = async (vendaId: string, motivo: string) => {
+    await updateStatus(vendaId, 'pendente', undefined, motivo);
   };
 
   const getStatusBadge = (status: string) => {
@@ -249,6 +262,7 @@ const SecretariaGerenciarVendas: React.FC = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
+                          onClick={() => handleManage(venda)}
                           className="text-gray-600"
                         >
                           <Settings className="h-4 w-4" />
@@ -433,6 +447,17 @@ const SecretariaGerenciarVendas: React.FC = () => {
         onConfirm={handleConfirmReject}
         isLoading={isUpdating}
         vendaNome={vendaToReject?.aluno?.nome}
+      />
+
+      {/* Dialog de gerenciar venda */}
+      <ManageVendaDialog
+        open={manageDialogOpen}
+        onOpenChange={setManageDialogOpen}
+        venda={vendaToManage}
+        onAprovar={handleAprovar}
+        onRejeitar={handleConfirmReject}
+        onMarcarPendente={handleMarcarPendente}
+        isUpdating={isUpdating}
       />
     </div>
   );

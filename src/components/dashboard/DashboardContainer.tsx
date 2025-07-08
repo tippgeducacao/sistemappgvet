@@ -44,7 +44,7 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   if (isAdmin || isSecretaria || userType === 'admin' || userType === 'secretaria') {
     return (
       <div className="space-y-6">
-        <PendingVendasAlert />
+        
         
         <MonthYearFilter
           selectedMonth={selectedMonth}
