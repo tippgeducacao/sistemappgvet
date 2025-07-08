@@ -110,13 +110,13 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
           nome: vendedorInfo.name,
           photo_url: vendedorInfo.photo_url,
           vendas: 0,
-          aprovadas: 0,
           pontuacao: 0
         };
       }
-      acc[vendedorId].vendas++;
+      
+      // APENAS contabilizar vendas aprovadas
       if (venda.status === 'matriculado') {
-        acc[vendedorId].aprovadas++;
+        acc[vendedorId].vendas++;
         acc[vendedorId].pontuacao += venda.pontuacao_esperada || 0;
       }
       return acc;
@@ -125,7 +125,6 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
       nome: string;
       photo_url?: string;
       vendas: number;
-      aprovadas: number;
       pontuacao: number;
     }>);
 
@@ -133,10 +132,10 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
     const vendedoresArray = Object.values(vendedoresStats);
     if (vendedoresArray.length === 0) return null;
     return vendedoresArray.sort((a, b) => {
-      if (a.aprovadas !== b.aprovadas) {
-        return b.aprovadas - a.aprovadas;
+      if (a.vendas !== b.vendas) {
+        return b.vendas - a.vendas;
       }
-      return b.vendas - a.vendas;
+      return b.pontuacao - a.pontuacao;
     })[0];
   }, [filteredVendas, vendedores, isAdmin, isSecretaria, userType, profile?.email, currentUser?.email]);
 
@@ -256,7 +255,7 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
                 {melhorVendedor.nome}
               </p>
               <p className="text-xs font-semibold text-yellow-700">
-                {melhorVendedor.vendas} vendas • {melhorVendedor.aprovadas} aprovadas
+                {melhorVendedor.vendas} {melhorVendedor.vendas === 1 ? 'venda aprovada' : 'vendas aprovadas'}
               </p>
               <p className="text-xs text-yellow-600 font-medium">
                 {DataFormattingService.formatPoints(melhorVendedor.pontuacao)} pts
