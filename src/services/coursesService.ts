@@ -23,9 +23,11 @@ export class CoursesService {
   }
 
   static async addCourse(nome: string): Promise<Course> {
+    const { data: { user } } = await supabase.auth.getUser();
+    
     const { data, error } = await supabase
       .from('cursos')
-      .insert([{ nome }])
+      .insert([{ nome, criado_por: user?.id }])
       .select()
       .single();
 
