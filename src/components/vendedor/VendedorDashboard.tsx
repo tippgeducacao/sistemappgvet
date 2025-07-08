@@ -1,22 +1,21 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useVendas } from '@/hooks/useVendas';
 import NovaVendaButton from './NovaVendaButton';
-import { FileText, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards';
+import MonthYearFilter from '@/components/common/MonthYearFilter';
+import { FileText } from 'lucide-react';
 
 const VendedorDashboard: React.FC = () => {
   const { profile } = useAuthStore();
   const { vendas } = useVendas();
 
-  // Calcular métricas das vendas
-  const totalVendas = vendas.length;
-  const vendasPendentes = vendas.filter(v => v.status === 'pendente').length;
-  const vendasAprovadas = vendas.filter(v => v.status === 'matriculado').length;
-  const pontuacaoTotal = vendas
-    .filter(v => v.pontuacao_validada !== null)
-    .reduce((sum, v) => sum + (v.pontuacao_validada || 0), 0);
+  // Estado para filtros de período
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
 
   return (
     <div className="space-y-6">
@@ -33,73 +32,25 @@ const VendedorDashboard: React.FC = () => {
         <NovaVendaButton />
       </div>
 
+      {/* Filtro por período */}
+      <MonthYearFilter
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        onMonthChange={setSelectedMonth}
+        onYearChange={setSelectedYear}
+      />
+
       {/* Cards de métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Vendas
-            </CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalVendas}</div>
-            <p className="text-xs text-muted-foreground">
-              Vendas cadastradas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Vendas Pendentes
-            </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{vendasPendentes}</div>
-            <p className="text-xs text-muted-foreground">
-              Aguardando validação
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Vendas Aprovadas
-            </CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{vendasAprovadas}</div>
-            <p className="text-xs text-muted-foreground">
-              Matriculadas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pontuação Total
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pontuacaoTotal}</div>
-            <p className="text-xs text-muted-foreground">
-              Pontos validados
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <DashboardMetricsCards
+        userType="vendedor"
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+      />
 
       {/* Lista de vendas recentes */}
       <Card>
         <CardHeader>
-          <CardTitle>Vendas Recentes</CardTitle>
+          <CardTitle>Minhas Vendas Recentes</CardTitle>
           <CardDescription>
             Suas últimas vendas cadastradas no sistema
           </CardDescription>
