@@ -53,6 +53,18 @@ const RouteRenderer: React.FC = () => {
     case 'minhas-vendas':
       return <MinhasVendas />;
 
+    case 'nova-venda':
+      // Verificar se é vendedor antes de permitir acesso
+      if (isVendedor) {
+        return <NovaVendaForm onCancel={() => {}} />;
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Apenas vendedores podem acessar esta seção.</p>
+        </div>
+      );
+
     case 'gestao-leads':
       return <LeadsManager />;
 
