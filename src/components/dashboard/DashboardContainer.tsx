@@ -7,6 +7,7 @@ import SalesByCourseChart from './SalesByCourseChart';
 import VendorsRanking from './VendorsRanking';
 import RecentSales from './RecentSales';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
+import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import type { UserType } from '@/types/user';
 
@@ -43,6 +44,8 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   if (isAdmin || isSecretaria || userType === 'admin' || userType === 'secretaria') {
     return (
       <div className="space-y-6">
+        <PendingVendasAlert />
+        
         <MonthYearFilter
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
