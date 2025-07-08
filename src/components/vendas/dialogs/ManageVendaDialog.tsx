@@ -165,34 +165,67 @@ const ManageVendaDialog: React.FC<ManageVendaDialogProps> = ({
             </Card>
           </div>
 
-          {/* Segunda linha: Informações do Curso */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações do Curso</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div>
-                <p className="text-sm text-gray-600">Curso:</p>
-                <p className="font-medium">{venda.curso?.nome || 'Não informado'}</p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Segunda linha: Informações do Curso e Observações lado a lado */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Informações do Curso */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações do Curso</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div>
+                  <p className="text-sm text-gray-600">Curso:</p>
+                  <p className="font-medium">{venda.curso?.nome || 'Não informado'}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Terceira linha: Observações */}
+            {/* Observações */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Observações
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="min-h-[80px] bg-gray-50 rounded-lg p-4 flex items-center justify-center">
+                  {venda.observacoes ? (
+                    <p className="text-gray-700">{venda.observacoes}</p>
+                  ) : (
+                    <p className="text-gray-400">Nenhuma observação registrada</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Status da Venda */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Observações
-              </CardTitle>
+              <CardTitle>Status da Venda</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="min-h-[80px] bg-gray-50 rounded-lg p-4 flex items-center justify-center">
-                {venda.observacoes ? (
-                  <p className="text-gray-700">{venda.observacoes}</p>
-                ) : (
-                  <p className="text-gray-400">Nenhuma observação registrada</p>
-                )}
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Status Atual:</p>
+                  {getStatusBadge(venda.status)}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Vendedor:</p>
+                  <p className="font-medium">{venda.vendedor?.name || 'Não informado'}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Pontuação Esperada:</p>
+                  <p className="font-medium">{venda.pontuacao_esperada || 0} pts</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Pontuação Validada:</p>
+                  <p className="font-medium">{venda.pontuacao_validada || '1.0'} pts</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -352,52 +385,23 @@ const ManageVendaDialog: React.FC<ManageVendaDialogProps> = ({
             </Card>
           </div>
 
-          {/* Status da Venda */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Status da Venda</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Status Atual:</p>
-                  {getStatusBadge(venda.status)}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Vendedor:</p>
-                  <p className="font-medium">{venda.vendedor?.name || 'Não informado'}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Pontuação Esperada:</p>
-                  <p className="font-medium">{venda.pontuacao_esperada || 0} pts</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Pontuação Validada:</p>
-                  <p className="font-medium">{venda.pontuacao_validada || '1.0'} pts</p>
-                </div>
-              </div>
-
-              {/* Motivo da Pendência */}
-              <div>
-                <label className="text-sm text-gray-600 block mb-2">
-                  Motivo da Pendência (opcional)
-                </label>
-                <Textarea
-                  value={motivoPendencia}
-                  onChange={(e) => setMotivoPendencia(e.target.value)}
-                  placeholder={venda.status === 'pendente' ? 'Venda revertida para análise' : 'Digite o motivo caso seja necessário...'}
-                  className="min-h-[80px]"
-                />
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Footer fixo com botões */}
-        <div className="border-t bg-white p-4">
+        {/* Footer fixo com motivo da pendência e botões */}
+        <div className="border-t bg-white p-4 space-y-4">
+          {/* Motivo da Pendência */}
+          <div>
+            <label className="text-sm text-gray-600 block mb-2">
+              Motivo da Pendência (opcional)
+            </label>
+            <Textarea
+              value={motivoPendencia}
+              onChange={(e) => setMotivoPendencia(e.target.value)}
+              placeholder={venda.status === 'pendente' ? 'Venda revertida para análise' : 'Digite o motivo caso seja necessário...'}
+              className="min-h-[60px]"
+            />
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button 
               variant="outline" 
