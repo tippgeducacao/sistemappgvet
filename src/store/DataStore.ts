@@ -122,22 +122,11 @@ export const useDataStore = create<DataState>((set, get) => ({
     { name: 'Desistentes', value: 12, color: '#ef4444' },
   ],
   
-  // Vendedores ranking
-  vendedoresRanking: [
-    { nome: 'João Silva', vendas: 23, pontuacao: 2840, status: 'Ativo' },
-    { nome: 'Maria Santos', vendas: 19, pontuacao: 2650, status: 'Ativo' },
-    { nome: 'Pedro Oliveira', vendas: 17, pontuacao: 2420, status: 'Ativo' },
-    { nome: 'Ana Costa', vendas: 15, pontuacao: 2180, status: 'Ativo' },
-    { nome: 'Carlos Lima', vendas: 12, pontuacao: 1960, status: 'Inativo' },
-  ],
+  // Vendedores ranking - dados serão carregados do banco
+  vendedoresRanking: [],
   
-  // Minhas vendas
-  minhasVendas: [
-    { aluno: 'Dr. Roberto Silva', curso: 'Cirurgia', status: 'Matriculado', pontuacao: 85, data: '2024-06-10' },
-    { aluno: 'Dra. Ana Oliveira', curso: 'Cardiologia', status: 'Pendente', pontuacao: 78, data: '2024-06-09' },
-    { aluno: 'Dr. Carlos Santos', curso: 'Dermatologia', status: 'Matriculado', pontuacao: 92, data: '2024-06-08' },
-    { aluno: 'Dra. Lucia Costa', curso: 'Anestesia', status: 'Pendente', pontuacao: 67, data: '2024-06-07' },
-  ],
+  // Minhas vendas - dados serão carregados do banco
+  minhasVendas: [],
   
   // Actions
   getMetricsForUserType: (userType) => {
