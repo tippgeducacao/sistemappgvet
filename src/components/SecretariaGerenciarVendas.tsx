@@ -2,7 +2,9 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, CheckCircle, XCircle } from 'lucide-react';
-import { useSecretariaVendas } from '@/hooks/useSecretariaVendas';
+import { useAllVendas } from '@/hooks/useVendas';
+import { SecretariaUpdateService } from '@/services/vendas/SecretariaUpdateService';
+import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import MatriculadasTab from '@/components/vendas/MatriculadasTab';
 import RejeitadasTab from '@/components/vendas/RejeitadasTab';
@@ -12,13 +14,21 @@ import VendasPendentesCard from '@/components/vendas/secretaria/VendasPendentesC
 const SecretariaGerenciarVendas: React.FC = () => {
   const { 
     vendas,
-    vendasPendentes, 
-    vendasMatriculadas, 
     isLoading, 
-    isUpdating, 
-    updateStatus,
     refetch
-  } = useSecretariaVendas();
+  } = useAllVendas();
+  
+  const { toast } = useToast();
+  const [isUpdating, setIsUpdating] = React.useState(false);
+
+  // Filtrar vendas por status
+  const vendasPendentes = React.useMemo(() => {
+    return vendas.filter(v => v.status === 'pendente');
+  }, [vendas]);
+
+  const vendasMatriculadas = React.useMemo(() => {
+    return vendas.filter(v => v.status === 'matriculado');
+  }, [vendas]);
 
   // Filtrar vendas rejeitadas
   const vendasRejeitadas = React.useMemo(() => {
@@ -35,6 +45,58 @@ const SecretariaGerenciarVendas: React.FC = () => {
       </div>
     );
   }
+
+  const updateStatus = async (
+    vendaId: string, 
+    status: 'pendente' | 'matriculado' | 'desistiu',
+    pontuacaoValidada?: number,
+    motivoPendencia?: string
+  ) => {
+    setIsUpdating(true);
+    console.log('🎯 SECRETARIA: Iniciando atualização de status:', { 
+      vendaId: vendaId.substring(0, 8), 
+      status,
+      pontuacaoValidada,
+      motivoPendencia
+    });
+
+    try {
+      const success = await SecretariaUpdateService.updateVendaStatus(
+        vendaId, 
+        status, 
+        pontuacaoValidada,
+        motivoPendencia
+      );
+      
+      if (!success) {
+        throw new Error('Falha na atualização - função retornou false');
+      }
+
+      console.log('✅ SUCESSO! Status atualizado. Recarregando vendas...');
+      
+      // Aguardar um pouco antes de recarregar para garantir que a atualização foi processada
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Recarregar vendas
+      await refetch();
+      
+      toast({
+        title: 'Sucesso',
+        description: `Venda ${status === 'matriculado' ? 'aprovada' : status === 'pendente' ? 'marcada como pendente' : 'rejeitada'} com sucesso!`,
+      });
+      
+    } catch (error: any) {
+      console.error('❌ ERRO na atualização:', error);
+      
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao atualizar status da venda',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const handleAprovar = async (vendaId: string, pontuacaoEsperada: number) => {
     console.log('🎯 Aprovando venda:', vendaId.substring(0, 8));
