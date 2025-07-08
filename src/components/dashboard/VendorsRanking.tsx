@@ -101,27 +101,24 @@ const VendorsRanking: React.FC = () => {
     const vendedorNome = venda.vendedor?.name || 'Vendedor não identificado';
     const vendedorPhoto = venda.vendedor?.photo_url || undefined;
     
-    if (!acc[vendedorId]) {
-      acc[vendedorId] = {
-        id: vendedorId,
-        nome: vendedorNome,
-        photo_url: vendedorPhoto,
-        vendas: 0,
-        pontuacao: 0,
-        aprovadas: 0
-      };
-    }
-    
-    acc[vendedorId].vendas++;
-    
-    // APENAS vendas aprovadas (matriculado) contam para pontuação no ranking
+    // APENAS contabilizar vendas aprovadas (matriculadas)
     if (venda.status === 'matriculado') {
+      if (!acc[vendedorId]) {
+        acc[vendedorId] = {
+          id: vendedorId,
+          nome: vendedorNome,
+          photo_url: vendedorPhoto,
+          vendas: 0,
+          pontuacao: 0
+        };
+      }
+      
+      acc[vendedorId].vendas++;
       acc[vendedorId].pontuacao += venda.pontuacao_esperada || 0;
-      acc[vendedorId].aprovadas++;
     }
     
     return acc;
-  }, {} as Record<string, { id: string; nome: string; photo_url?: string; vendas: number; pontuacao: number; aprovadas: number }>);
+  }, {} as Record<string, { id: string; nome: string; photo_url?: string; vendas: number; pontuacao: number }>);
 
   // Incluir TODOS os vendedores filtrados, mesmo os que não fizeram vendas
   const todosVendedoresStats = vendedoresFiltrados.map(vendedor => {
@@ -131,17 +128,16 @@ const VendorsRanking: React.FC = () => {
       nome: vendedor.name,
       photo_url: vendedor.photo_url,
       vendas: statsExistentes?.vendas || 0,
-      pontuacao: statsExistentes?.pontuacao || 0,
-      aprovadas: statsExistentes?.aprovadas || 0
+      pontuacao: statsExistentes?.pontuacao || 0
     };
   });
 
   // Ranking com nova lógica de ordenação - TODOS os vendedores
   const ranking = todosVendedoresStats
     .sort((a, b) => {
-      // Primeira regra: Mais vendas aprovadas + mais pontos (os dois juntos)
-      if (a.aprovadas !== b.aprovadas) {
-        return b.aprovadas - a.aprovadas; // Mais vendas aprovadas primeiro
+      // Primeira regra: Mais vendas aprovadas
+      if (a.vendas !== b.vendas) {
+        return b.vendas - a.vendas; // Mais vendas aprovadas primeiro
       }
       
       // Se têm o mesmo número de vendas aprovadas, ordenar por pontuação
@@ -149,8 +145,8 @@ const VendorsRanking: React.FC = () => {
         return b.pontuacao - a.pontuacao; // Mais pontos primeiro
       }
       
-      // Segunda regra: Se não houver diferença nas aprovadas e pontos, ordenar por total de vendas
-      return b.vendas - a.vendas;
+      // Se tudo igual, ordenar por nome
+      return a.nome.localeCompare(b.nome);
     });
 
   // Obter nome do mês selecionado
@@ -220,7 +216,7 @@ const VendorsRanking: React.FC = () => {
                       </div>
                       <p className="font-bold text-xl text-ppgvet-teal mb-1">{melhorVendedor.nome}</p>
                       <p className="text-lg font-semibold text-yellow-700">
-                        {melhorVendedor.vendas} {melhorVendedor.vendas === 1 ? 'venda total' : 'vendas totais'} • {melhorVendedor.aprovadas} aprovadas
+                        {melhorVendedor.vendas} {melhorVendedor.vendas === 1 ? 'venda aprovada' : 'vendas aprovadas'}
                       </p>
                       <p className="text-lg font-bold text-ppgvet-magenta">
                         {DataFormattingService.formatPoints(melhorVendedor.pontuacao)} pts
@@ -250,7 +246,7 @@ const VendorsRanking: React.FC = () => {
                   <div>
                     <p className="font-medium">{vendedor.nome}</p>
                     <p className="text-sm text-muted-foreground">
-                      {vendedor.vendas} {vendedor.vendas === 1 ? 'venda' : 'vendas'} • {vendedor.aprovadas} aprovadas
+                      {vendedor.vendas} {vendedor.vendas === 1 ? 'venda aprovada' : 'vendas aprovadas'}
                     </p>
                   </div>
                 </div>
@@ -258,8 +254,8 @@ const VendorsRanking: React.FC = () => {
                   <div className="text-right">
                     <p className="font-bold text-ppgvet-magenta">{DataFormattingService.formatPoints(vendedor.pontuacao)} pts</p>
                   </div>
-                  <Badge variant={vendedor.aprovadas > 0 ? "default" : "secondary"}>
-                    {vendedor.aprovadas > 0 ? "Com Vendas" : "Sem Vendas"}
+                  <Badge variant={vendedor.vendas > 0 ? "default" : "secondary"}>
+                    {vendedor.vendas > 0 ? "Com Vendas" : "Sem Vendas"}
                   </Badge>
                 </div>
               </div>
