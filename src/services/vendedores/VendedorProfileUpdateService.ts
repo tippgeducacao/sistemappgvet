@@ -16,7 +16,7 @@ export class VendedorProfileUpdateService {
       console.error('❌ Erro ao atualizar foto do vendedor:', error);
       
       if (error.code === 'PGRST116' || error.message.includes('RLS') || error.message.includes('policy')) {
-        throw new Error(`Erro de permissão: Você não tem autorização para atualizar fotos de vendedores. Verifique se você tem o perfil de secretária ou admin.`);
+        throw new Error(`Erro de permissão: Apenas administradores, secretárias e diretores podem alterar fotos de perfil de usuários.`);
       }
       
       throw new Error(`Erro ao salvar foto: ${error.message}`);

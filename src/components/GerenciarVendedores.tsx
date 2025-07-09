@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Upload, Trash2, Users, UserPlus, Camera } from 'lucide-react';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useToast } from '@/hooks/use-toast';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import NovoVendedorDialog from '@/components/vendedores/NovoVendedorDialog';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -18,6 +19,10 @@ const GerenciarVendedores: React.FC = () => {
   const [showNewVendedorDialog, setShowNewVendedorDialog] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isAdmin, isSecretaria, isDiretor } = useUserRoles();
+
+  // Verificar se o usuário tem permissão para alterar fotos
+  const canEditPhotos = isAdmin || isSecretaria || isDiretor;
 
   const handlePhotoUpload = async (vendedorId: string, file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -122,27 +127,29 @@ const GerenciarVendedores: React.FC = () => {
                         </AvatarFallback>
                       </Avatar>
                       
-                      <div className="absolute -bottom-1 -right-1">
-                        <label 
-                          htmlFor={`photo-${vendedor.id}`}
-                          className="cursor-pointer bg-white rounded-full p-1 shadow-lg hover:bg-gray-50 transition-colors"
-                        >
-                          <Camera className="h-3 w-3 text-gray-600" />
-                        </label>
-                        <input
-                          id={`photo-${vendedor.id}`}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handlePhotoUpload(vendedor.id, file);
-                            }
-                          }}
-                          disabled={uploadingPhoto === vendedor.id}
-                        />
-                      </div>
+                      {canEditPhotos && (
+                        <div className="absolute -bottom-1 -right-1">
+                          <label 
+                            htmlFor={`photo-${vendedor.id}`}
+                            className="cursor-pointer bg-white rounded-full p-1 shadow-lg hover:bg-gray-50 transition-colors"
+                          >
+                            <Camera className="h-3 w-3 text-gray-600" />
+                          </label>
+                          <input
+                            id={`photo-${vendedor.id}`}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handlePhotoUpload(vendedor.id, file);
+                              }
+                            }}
+                            disabled={uploadingPhoto === vendedor.id}
+                          />
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex-1">
@@ -171,17 +178,19 @@ const GerenciarVendedores: React.FC = () => {
                         </Button>
                       ) : (
                         <>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex-1"
-                            onClick={() => document.getElementById(`photo-${vendedor.id}`)?.click()}
-                          >
-                            <Upload className="h-4 w-4 mr-1" />
-                            Foto
-                          </Button>
+                          {canEditPhotos && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={() => document.getElementById(`photo-${vendedor.id}`)?.click()}
+                            >
+                              <Upload className="h-4 w-4 mr-1" />
+                              Foto
+                            </Button>
+                          )}
                           
-                          {vendedor.photo_url && (
+                          {canEditPhotos && vendedor.photo_url && (
                             <Button 
                               variant="outline" 
                               size="sm"
@@ -190,6 +199,12 @@ const GerenciarVendedores: React.FC = () => {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
+                          )}
+                          
+                          {!canEditPhotos && (
+                            <div className="flex-1 text-center text-sm text-gray-500 py-2">
+                              Apenas administradores podem alterar fotos
+                            </div>
                           )}
                         </>
                       )}
