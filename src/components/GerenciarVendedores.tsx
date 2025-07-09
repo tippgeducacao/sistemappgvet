@@ -21,6 +21,21 @@ const GerenciarVendedores: React.FC = () => {
   const { toast } = useToast();
   const { isAdmin, isSecretaria, isDiretor } = useUserRoles();
 
+  // Verificar se o usuário tem permissão para gerenciar vendedores
+  const canManageVendedores = isAdmin || isSecretaria || isDiretor;
+
+  if (!canManageVendedores) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Acesso Negado</h1>
+          <p className="text-gray-600 mb-4">Você não tem permissão para gerenciar vendedores.</p>
+          <p className="text-sm text-gray-500">Apenas administradores podem acessar esta seção.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Verificar se o usuário tem permissão para alterar fotos
   const canEditPhotos = isAdmin || isSecretaria || isDiretor;
 

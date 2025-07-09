@@ -44,6 +44,30 @@ export class VendedoresService {
     try {
       console.log('👤 Criando novo vendedor:', vendedorData.email);
       
+      // Verificar se o usuário atual tem permissão para criar vendedores
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('id', currentUser.user.id)
+        .single();
+
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.user.id);
+
+      const hasAdminRole = roles?.some(r => ['admin', 'secretaria', 'diretor'].includes(r.role));
+      const isAdminByProfile = profile?.user_type === 'secretaria';
+      
+      if (!hasAdminRole && !isAdminByProfile) {
+        throw new Error('Você não tem permissão para criar vendedores. Apenas administradores podem realizar esta ação.');
+      }
+      
       // Criar usuário usando signUp normal (não admin)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: vendedorData.email,
