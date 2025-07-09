@@ -1,7 +1,7 @@
 
 import type { MenuItem } from '@/types/navigation';
 
-export const ADMIN_MENU_ITEMS: MenuItem[] = [
+export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
   {
     title: 'Dashboard',
     section: 'dashboard',
@@ -26,6 +26,34 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     title: 'Gerenciar Pontuações',
     section: 'gerenciar-pontuacoes',
     icon: 'Star'
+  },
+  {
+    title: 'Gestão de Leads',
+    section: 'gestao-leads',
+    icon: 'Target'
+  }
+];
+
+export const ADMIN_MENU_ITEMS: MenuItem[] = [
+  {
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
+  },
+  {
+    title: 'Gerenciar Vendas',
+    section: 'gerenciar-vendas',
+    icon: 'FileText'
+  },
+  {
+    title: 'Gerenciar Cursos',
+    section: 'gerenciar-cursos',
+    icon: 'GraduationCap'
+  },
+  {
+    title: 'Gerenciar Vendedores',
+    section: 'gerenciar-vendedores',
+    icon: 'Users'
   },
   {
     title: 'Gestão de Leads',

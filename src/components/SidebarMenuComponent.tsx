@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAppStateStore } from '@/stores/AppStateStore';
 import { 
+  DIRECTOR_MENU_ITEMS,
   ADMIN_MENU_ITEMS, 
   SECRETARY_MENU_ITEMS, 
   VENDOR_MENU_ITEMS
@@ -21,10 +22,11 @@ import type { MenuItem } from '@/types/navigation';
 const SidebarMenuComponent: React.FC = () => {
   const { activeSection, navigateToSection } = useAppStateStore();
   const { currentUser, profile } = useAuthStore();
-  const { isAdmin, isSecretaria, isVendedor } = useUserRoles();
+  const { isDiretor, isAdmin, isSecretaria, isVendedor } = useUserRoles();
 
   console.log('🔄 SidebarMenuComponent: Estados atuais:', { 
     activeSection, 
+    isDiretor,
     isAdmin, 
     isSecretaria, 
     isVendedor,
@@ -34,8 +36,11 @@ const SidebarMenuComponent: React.FC = () => {
   // Determinar menu baseado no tipo de usuário
   let menuItems: MenuItem[] = VENDOR_MENU_ITEMS;
   
-  if (isAdmin) {
-    // Admin tem acesso a TODOS os menus
+  if (isDiretor) {
+    // Diretor tem acesso total exceto "Nova Venda"
+    menuItems = DIRECTOR_MENU_ITEMS;
+  } else if (isAdmin) {
+    // Admin tem acesso a todos os menus exceto pontuações (só diretor)
     menuItems = ADMIN_MENU_ITEMS;
   } else if (isSecretaria) {
     menuItems = SECRETARY_MENU_ITEMS;
