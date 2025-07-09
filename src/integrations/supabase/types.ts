@@ -407,21 +407,21 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
-          role: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
           id?: string
-          role: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
           id?: string
-          role?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -451,6 +451,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      is_diretor: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       list_bucket_files: {
         Args: { bucket_name: string; folder_prefix?: string }
         Returns: {
@@ -473,7 +477,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "secretaria" | "vendedor" | "diretor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -600,6 +604,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "secretaria", "vendedor", "diretor"],
+    },
   },
 } as const
