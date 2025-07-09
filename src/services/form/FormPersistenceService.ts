@@ -34,6 +34,22 @@ export class FormPersistenceService {
       // 3. Se é edição, atualizar venda existente
       if (data.editId) {
         console.log('🔄 EDITANDO VENDA EXISTENTE:', data.editId);
+        
+        // Primeiro verificar se a venda existe e pertence ao vendedor
+        const { data: existingVenda, error: checkError } = await supabase
+          .from('form_entries')
+          .select('id, status, vendedor_id')
+          .eq('id', data.editId)
+          .eq('vendedor_id', data.vendedorId)
+          .single();
+
+        if (checkError || !existingVenda) {
+          console.error('❌ Venda não encontrada ou sem permissão:', checkError);
+          throw new Error('Venda não encontrada ou você não tem permissão para editá-la');
+        }
+
+        console.log('✅ Venda encontrada, status atual:', existingVenda.status);
+        
         return await this.updateExistingVenda(data.editId, data.formData, data.vendedorId, pontuacaoEsperada);
       }
 
@@ -172,27 +188,35 @@ export class FormPersistenceService {
     console.log('📊 Nova pontuação esperada:', pontuacaoEsperada);
     console.log('👤 Vendedor ID:', vendedorId);
 
-    // 1. Atualizar form_entry principal
+    // 1. Atualizar form_entry principal usando UPDATE direto
+    console.log('📝 Executando UPDATE na form_entries...');
+    
     const { data: updatedEntry, error: updateError } = await supabase
       .from('form_entries')
       .update({
         curso_id: formData.cursoId,
         observacoes: formData.observacoes,
         pontuacao_esperada: pontuacaoEsperada,
-        status: 'pendente', // Resetar para pendente
+        status: 'pendente', // FORÇAR status pendente
         motivo_pendencia: null, // Limpar motivo da rejeição anterior
+        pontuacao_validada: null, // Resetar pontuação validada
         atualizado_em: new Date().toISOString()
       })
       .eq('id', editId)
-      .eq('vendedor_id', vendedorId) // Garantir que só o próprio vendedor pode editar
-      .select();
+      .select('*');
 
     if (updateError) {
       console.error('❌ Erro ao atualizar form_entry:', updateError);
       throw new Error('Erro ao atualizar venda: ' + updateError.message);
     }
 
-    console.log('✅ Form entry atualizado:', updatedEntry);
+    if (!updatedEntry || updatedEntry.length === 0) {
+      console.error('❌ Nenhuma linha foi atualizada');
+      throw new Error('Não foi possível atualizar a venda. Verifique se você tem permissão.');
+    }
+
+    console.log('✅ Form entry atualizado com sucesso:', updatedEntry[0]);
+    console.log('🎯 Novo status:', updatedEntry[0].status);
 
     // 2. Atualizar dados do aluno
     const { error: alunoError } = await supabase
