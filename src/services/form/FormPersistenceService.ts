@@ -168,9 +168,11 @@ export class FormPersistenceService {
     pontuacaoEsperada: number
   ): Promise<string> {
     console.log('🔄 Atualizando venda existente:', editId);
+    console.log('📊 Nova pontuação esperada:', pontuacaoEsperada);
+    console.log('👤 Vendedor ID:', vendedorId);
 
     // 1. Atualizar form_entry principal
-    const { error: updateError } = await supabase
+    const { data: updatedEntry, error: updateError } = await supabase
       .from('form_entries')
       .update({
         curso_id: formData.cursoId,
@@ -181,12 +183,15 @@ export class FormPersistenceService {
         atualizado_em: new Date().toISOString()
       })
       .eq('id', editId)
-      .eq('vendedor_id', vendedorId); // Garantir que só o próprio vendedor pode editar
+      .eq('vendedor_id', vendedorId) // Garantir que só o próprio vendedor pode editar
+      .select();
 
     if (updateError) {
       console.error('❌ Erro ao atualizar form_entry:', updateError);
       throw new Error('Erro ao atualizar venda: ' + updateError.message);
     }
+
+    console.log('✅ Form entry atualizado:', updatedEntry);
 
     // 2. Atualizar dados do aluno
     const { error: alunoError } = await supabase
