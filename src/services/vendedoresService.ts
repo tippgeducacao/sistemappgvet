@@ -122,7 +122,8 @@ export class VendedoresService {
         .from('vendedor-photos')
         .getPublicUrl(filePath);
 
-      const publicUrl = urlData.publicUrl;
+      // Adicionar timestamp para evitar cache
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       console.log('🔗 URL pública gerada:', publicUrl);
 
       return publicUrl;

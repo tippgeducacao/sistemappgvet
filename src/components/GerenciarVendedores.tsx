@@ -115,6 +115,7 @@ const GerenciarVendedores: React.FC = () => {
                         <AvatarImage 
                           src={vendedor.photo_url || ''} 
                           alt={vendedor.name}
+                          key={vendedor.photo_url || 'no-photo'} // Force re-render when URL changes
                         />
                         <AvatarFallback className="bg-ppgvet-teal text-white">
                           {getInitials(vendedor.name)}
