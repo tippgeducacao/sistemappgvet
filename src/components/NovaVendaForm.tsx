@@ -220,7 +220,8 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
       // Salvar dados no banco usando o serviço de persistência
       const formEntryId = await FormPersistenceService.saveFormData({
         formData,
-        vendedorId: currentUser.id
+        vendedorId: currentUser.id,
+        editId: editId // Passar o ID para edição se existir
       });
 
       console.log('✅ Formulário salvo com sucesso:', formEntryId);

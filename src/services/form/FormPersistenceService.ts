@@ -12,6 +12,7 @@ import type { FormData } from '@/store/FormStore';
 export interface SaveFormDataParams {
   formData: FormData;
   vendedorId: string;
+  editId?: string | null;
 }
 
 export class FormPersistenceService {
@@ -19,6 +20,7 @@ export class FormPersistenceService {
     console.log('📤 INICIANDO SALVAMENTO DO FORMULÁRIO');
     console.log('👤 Vendedor ID:', data.vendedorId);
     console.log('📋 Dados do formulário:', data.formData);
+    console.log('✏️ EditId:', data.editId);
 
     try {
       // 1. Validar dados obrigatórios
@@ -28,7 +30,13 @@ export class FormPersistenceService {
       const pontuacaoEsperada = await this.calculateExpectedScore(data.formData);
       console.log('🎯 Pontuação calculada:', pontuacaoEsperada);
 
-      // 3. Criar entrada do formulário primeiro
+      // 3. Se é edição, atualizar venda existente
+      if (data.editId) {
+        console.log('🔄 EDITANDO VENDA EXISTENTE:', data.editId);
+        return await this.updateExistingVenda(data.editId, data.formData, data.vendedorId, pontuacaoEsperada);
+      }
+
+      // 3. Criar nova entrada do formulário
       const formEntry = await FormEntryCreationService.createFormEntry(
         data.vendedorId,
         data.formData,
@@ -151,5 +159,67 @@ export class FormPersistenceService {
     }
 
     console.log('✅ Validação passou');
+  }
+
+  private static async updateExistingVenda(
+    editId: string, 
+    formData: FormData, 
+    vendedorId: string, 
+    pontuacaoEsperada: number
+  ): Promise<string> {
+    console.log('🔄 Atualizando venda existente:', editId);
+
+    // 1. Atualizar form_entry principal
+    const { error: updateError } = await supabase
+      .from('form_entries')
+      .update({
+        curso_id: formData.cursoId,
+        observacoes: formData.observacoes,
+        pontuacao_esperada: pontuacaoEsperada,
+        status: 'pendente', // Resetar para pendente
+        motivo_pendencia: null, // Limpar motivo da rejeição anterior
+        atualizado_em: new Date().toISOString()
+      })
+      .eq('id', editId)
+      .eq('vendedor_id', vendedorId); // Garantir que só o próprio vendedor pode editar
+
+    if (updateError) {
+      console.error('❌ Erro ao atualizar form_entry:', updateError);
+      throw new Error('Erro ao atualizar venda: ' + updateError.message);
+    }
+
+    // 2. Atualizar dados do aluno
+    const { error: alunoError } = await supabase
+      .from('alunos')
+      .update({
+        nome: formData.nomeAluno,
+        email: formData.emailAluno,
+        telefone: formData.telefone || null,
+        crmv: formData.crmv || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('form_entry_id', editId);
+
+    if (alunoError) {
+      console.error('❌ Erro ao atualizar aluno:', alunoError);
+      throw new Error('Erro ao atualizar dados do aluno: ' + alunoError.message);
+    }
+
+    // 3. Deletar respostas antigas e criar novas
+    const { error: deleteError } = await supabase
+      .from('respostas_formulario')
+      .delete()
+      .eq('form_entry_id', editId);
+
+    if (deleteError) {
+      console.error('❌ Erro ao deletar respostas antigas:', deleteError);
+      throw new Error('Erro ao atualizar respostas: ' + deleteError.message);
+    }
+
+    // 4. Salvar novas respostas
+    await FormResponsesService.saveFormResponses(editId, formData);
+
+    console.log('✅ VENDA ATUALIZADA COM SUCESSO!');
+    return editId;
   }
 }
