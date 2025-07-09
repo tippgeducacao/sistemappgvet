@@ -35,16 +35,18 @@ export const useVendedores = () => {
   const uploadPhoto = async (vendedorId: string, file: File) => {
     try {
       console.log('📤 Iniciando processo de upload para:', vendedorId);
+      console.log('📄 Arquivo selecionado:', { name: file.name, size: file.size, type: file.type });
       
       // Upload da foto
       const photoUrl = await VendedoresService.uploadVendedorPhoto(vendedorId, file);
-      console.log('🔗 URL gerada:', photoUrl);
+      console.log('🔗 URL gerada pelo serviço:', photoUrl);
       
       // Atualizar o perfil com a nova URL
       await VendedoresService.updateVendedorPhoto(vendedorId, photoUrl);
-      console.log('✅ Processo de atualização concluído');
+      console.log('✅ Processo de atualização no banco concluído');
       
       // Recarregar a lista para garantir sincronização
+      console.log('🔄 Recarregando lista de vendedores...');
       await fetchVendedores();
       console.log('🔄 Lista recarregada após upload');
 

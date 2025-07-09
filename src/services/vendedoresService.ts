@@ -137,21 +137,24 @@ export class VendedoresService {
   static async updateVendedorPhoto(vendedorId: string, photoUrl: string): Promise<void> {
     try {
       console.log('🔄 Atualizando URL da foto no perfil:', vendedorId);
+      console.log('🔗 Nova URL a ser salva:', photoUrl);
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({ 
           photo_url: photoUrl,
           updated_at: new Date().toISOString()
         })
-        .eq('id', vendedorId);
+        .eq('id', vendedorId)
+        .select();
 
       if (error) {
         console.error('❌ Erro ao atualizar perfil:', error);
         throw new Error(`Erro ao atualizar perfil: ${error.message}`);
       }
 
-      console.log('✅ Foto atualizada no perfil');
+      console.log('✅ Resposta do banco de dados:', data);
+      console.log('✅ Foto atualizada no perfil com sucesso');
       
     } catch (error) {
       console.error('❌ Erro ao atualizar foto do vendedor:', error);
