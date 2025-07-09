@@ -235,18 +235,7 @@ export class FormPersistenceService {
       throw new Error('Erro ao atualizar dados do aluno: ' + alunoError.message);
     }
 
-    // 3. Deletar respostas antigas e criar novas
-    const { error: deleteError } = await supabase
-      .from('respostas_formulario')
-      .delete()
-      .eq('form_entry_id', editId);
-
-    if (deleteError) {
-      console.error('❌ Erro ao deletar respostas antigas:', deleteError);
-      throw new Error('Erro ao atualizar respostas: ' + deleteError.message);
-    }
-
-    // 4. Salvar novas respostas
+    // 3. Salvar novas respostas (usando upsert, não precisamos deletar antes)
     await FormResponsesService.saveFormResponses(editId, formData);
 
     console.log('✅ VENDA ATUALIZADA COM SUCESSO!');
