@@ -20,7 +20,8 @@ export class FormPersistenceService {
     console.log('📤 INICIANDO SALVAMENTO DO FORMULÁRIO');
     console.log('👤 Vendedor ID:', data.vendedorId);
     console.log('📋 Dados do formulário:', data.formData);
-    console.log('✏️ EditId:', data.editId);
+    console.log('✏️ EditId recebido:', data.editId);
+    console.log('🔍 É edição?', !!data.editId);
 
     try {
       // 1. Validar dados obrigatórios
