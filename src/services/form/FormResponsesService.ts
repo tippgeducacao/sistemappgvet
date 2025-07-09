@@ -17,16 +17,20 @@ export class FormResponsesService {
 
     console.log(`💾 Salvando ${responses.length} respostas:`, responses);
 
+    // CORREÇÃO: Usar upsert para evitar duplicatas
     const { error } = await supabase
       .from('respostas_formulario')
-      .insert(responses);
+      .upsert(responses, { 
+        onConflict: 'form_entry_id,campo_nome',
+        ignoreDuplicates: false 
+      });
 
     if (error) {
       console.error('❌ Erro ao salvar respostas:', error);
       throw error;
     }
 
-    console.log('✅ Respostas salvas com sucesso!');
+    console.log('✅ Respostas salvas com sucesso usando upsert!');
     
     // Verificação imediata
     const { data: savedRespostas, error: verifyError } = await supabase

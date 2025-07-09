@@ -466,6 +466,10 @@ export type Database = {
           metadata: Json
         }[]
       }
+      recalculate_venda_score: {
+        Args: { venda_id: string }
+        Returns: undefined
+      }
       update_venda_status: {
         Args: {
           venda_id_param: string
