@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type AppRole = 'admin' | 'secretaria' | 'vendedor';
+export type AppRole = 'admin' | 'secretaria' | 'vendedor' | 'diretor';
 
 export interface UserRole {
   id: string;

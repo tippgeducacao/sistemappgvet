@@ -16,7 +16,7 @@ interface DashboardContainerProps {
 }
 
 const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => {
-  const { isAdmin, isSecretaria } = useUserRoles();
+  const { isDiretor, isAdmin, isSecretaria } = useUserRoles();
   
   // Estados para filtro por período
   const currentDate = new Date();
@@ -33,15 +33,16 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
 
   console.log('📊 DashboardContainer - Configuração:', {
     userType,
+    isDiretor,
     isAdmin,
     isSecretaria,
-    shouldShowFullDashboard: isAdmin || isSecretaria,
+    shouldShowFullDashboard: isDiretor || isAdmin || isSecretaria,
     selectedMonth,
     selectedYear
   });
 
-  // Admin, secretaria (que agora é admin) veem o dashboard completo
-  if (isAdmin || isSecretaria || userType === 'admin' || userType === 'secretaria') {
+  // Diretor, Admin, secretaria veem o dashboard completo
+  if (isDiretor || isAdmin || isSecretaria || userType === 'diretor' || userType === 'admin' || userType === 'secretaria') {
     return (
       <div className="space-y-6">
         

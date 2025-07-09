@@ -14,11 +14,12 @@ import LeadsManager from '@/components/leads/LeadsManager';
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
-  const { isAdmin, isSecretaria, isVendedor } = useUserRoles();
+  const { isDiretor, isAdmin, isSecretaria, isVendedor } = useUserRoles();
 
   console.log('🔄 RouteRenderer: Estado atual:', { 
     activeSection, 
     showNovaVenda, 
+    isDiretor,
     isAdmin, 
     isSecretaria, 
     isVendedor 
@@ -35,8 +36,8 @@ const RouteRenderer: React.FC = () => {
       if (isVendedor) {
         return <VendedorDashboard />;
       }
-      // Para admin e secretaria, usar o DashboardContainer completo
-      return <DashboardContainer userType={isAdmin ? 'admin' : 'secretaria'} />;
+      // Para diretor, admin e secretaria, usar o DashboardContainer completo
+      return <DashboardContainer userType={isDiretor ? 'diretor' : (isAdmin ? 'admin' : 'secretaria')} />;
 
     case 'gerenciar-vendas':
       return <GerenciarVendas />;

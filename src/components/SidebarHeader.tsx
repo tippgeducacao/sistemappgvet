@@ -28,6 +28,8 @@ const SidebarHeaderComponent: React.FC<SidebarHeaderComponentProps> = ({ userTyp
     }
     
     switch (userType) {
+      case 'diretor':
+        return 'Painel Diretoria';
       case 'admin':
         return 'Painel Administrativo';
       case 'secretaria':
