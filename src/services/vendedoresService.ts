@@ -44,27 +44,45 @@ export class VendedoresService {
     try {
       console.log('👤 Criando novo vendedor:', vendedorData.email);
       
-      // Criar usuário no Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Criar usuário usando signUp normal (não admin)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: vendedorData.email,
         password: vendedorData.password,
-        user_metadata: {
-          name: vendedorData.name,
-          user_type: 'vendedor'
-        },
-        email_confirm: true
+        options: {
+          data: {
+            name: vendedorData.name,
+            user_type: 'vendedor'
+          }
+        }
       });
 
       if (authError) {
         console.error('❌ Erro ao criar usuário:', authError);
-        throw new Error(`Erro ao criar usuário: ${authError.message}`);
+        
+        // Mapear erros para mensagens mais amigáveis
+        let friendlyMessage = 'Erro ao criar vendedor';
+        if (authError.message.includes('User already registered')) {
+          friendlyMessage = 'Este email já está cadastrado no sistema.';
+        } else if (authError.message.includes('Invalid email')) {
+          friendlyMessage = 'Email inválido.';
+        } else if (authError.message.includes('Password should be at least')) {
+          friendlyMessage = 'A senha deve ter pelo menos 6 caracteres.';
+        } else {
+          friendlyMessage = authError.message;
+        }
+        
+        throw new Error(friendlyMessage);
       }
 
-      console.log('✅ Usuário criado no Auth:', authData.user?.id);
+      if (!authData?.user) {
+        throw new Error('Falha ao criar usuário - dados inválidos retornados');
+      }
+
+      console.log('✅ Usuário criado no Auth:', authData.user.id);
 
       // O perfil será criado automaticamente via trigger
       // Aguardar um pouco para o trigger executar
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       console.log('✅ Vendedor criado com sucesso');
       
