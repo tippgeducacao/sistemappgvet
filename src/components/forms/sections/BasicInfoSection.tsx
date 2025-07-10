@@ -44,6 +44,14 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ formData, updateFie
         options={FORMACAO_OPTIONS}
         placeholder="Selecione a formação"
       />
+
+      <FormInputField
+        id="dataMatricula"
+        label="Data de matrícula"
+        type="date"
+        value={formData.dataMatricula || ''}
+        onChange={(value) => updateField('dataMatricula', value)}
+      />
     </>
   );
 };

@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string | null
           crmv: string | null
+          data_matricula: string | null
           email: string
           form_entry_id: string | null
           id: string
@@ -29,6 +30,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           crmv?: string | null
+          data_matricula?: string | null
           email: string
           form_entry_id?: string | null
           id?: string
@@ -40,6 +42,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           crmv?: string | null
+          data_matricula?: string | null
           email?: string
           form_entry_id?: string | null
           id?: string

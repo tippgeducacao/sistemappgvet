@@ -14,7 +14,8 @@ export class AlunoCreationService {
       nome: formData.nomeAluno,
       email: formData.emailAluno,
       telefone: formData.telefone,
-      crmv: formData.crmv
+      crmv: formData.crmv,
+      dataMatricula: formData.dataMatricula
     });
 
     const { data: aluno, error: alunoError } = await supabase
@@ -24,6 +25,7 @@ export class AlunoCreationService {
         email: formData.emailAluno,
         telefone: formData.telefone || null,
         crmv: formData.crmv || null,
+        data_matricula: formData.dataMatricula || null,
         form_entry_id: formEntryId,
         vendedor_id: vendedorId
       })
