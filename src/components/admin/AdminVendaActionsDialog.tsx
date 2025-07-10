@@ -175,6 +175,12 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   };
   
   const dataMatricula = formatarDataBrasileira(dataMatriculaRaw);
+  
+  console.log('🗓️ Debug formatação de data:', {
+    dataMatriculaRaw,
+    dataMatriculaFormatada: dataMatricula,
+    formDetails: formDetails?.map(r => ({ campo: r.campo_nome, valor: r.valor_informado }))
+  });
   const handleSaveValidations = async (validations: any[]) => {
     setIsSavingValidations(true);
     try {
