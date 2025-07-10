@@ -10,8 +10,7 @@ import { SecretariaUpdateService } from '@/services/vendas/SecretariaUpdateServi
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
-import RejectVendaDialog from '@/components/vendas/dialogs/RejectVendaDialog';
-import ManageVendaDialog from '@/components/vendas/dialogs/ManageVendaDialog';
+import AdminVendaActionsDialog from '@/components/admin/AdminVendaActionsDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { VendaCompleta } from '@/hooks/useVendas';
@@ -24,9 +23,6 @@ const SecretariaGerenciarVendas: React.FC = () => {
   } = useAllVendas();
   
   const { toast } = useToast();
-  const [isUpdating, setIsUpdating] = React.useState(false);
-  const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
-  const [vendaToReject, setVendaToReject] = React.useState<VendaCompleta | null>(null);
   const [manageDialogOpen, setManageDialogOpen] = React.useState(false);
   const [vendaToManage, setVendaToManage] = React.useState<VendaCompleta | null>(null);
 
@@ -54,69 +50,9 @@ const SecretariaGerenciarVendas: React.FC = () => {
     );
   }
 
-  const updateStatus = async (
-    vendaId: string, 
-    status: 'pendente' | 'matriculado' | 'desistiu',
-    pontuacaoValidada?: number,
-    motivoPendencia?: string
-  ) => {
-    setIsUpdating(true);
-    
-    try {
-      const success = await SecretariaUpdateService.updateVendaStatus(
-        vendaId, 
-        status, 
-        pontuacaoValidada,
-        motivoPendencia
-      );
-      
-      if (!success) {
-        throw new Error('Falha na atualização');
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await refetch();
-      
-      toast({
-        title: 'Sucesso',
-        description: `Venda ${status === 'matriculado' ? 'aprovada' : status === 'pendente' ? 'marcada como pendente' : 'rejeitada'} com sucesso!`,
-      });
-      
-    } catch (error: any) {
-      toast({
-        title: 'Erro',
-        description: error.message || 'Erro ao atualizar status da venda',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleAprovar = async (vendaId: string, pontuacaoEsperada: number) => {
-    await updateStatus(vendaId, 'matriculado', pontuacaoEsperada);
-  };
-
-  const handleRejeitar = (venda: any) => {
-    setVendaToReject(venda);
-    setRejectDialogOpen(true);
-  };
-
-  const handleConfirmReject = async (motivo: string) => {
-    if (!vendaToReject) return;
-    
-    await updateStatus(vendaToReject.id, 'desistiu', undefined, motivo);
-    setRejectDialogOpen(false);
-    setVendaToReject(null);
-  };
-
   const handleManage = (venda: VendaCompleta) => {
     setVendaToManage(venda);
     setManageDialogOpen(true);
-  };
-
-  const handleMarcarPendente = async (vendaId: string, motivo: string) => {
-    await updateStatus(vendaId, 'pendente', undefined, motivo);
   };
 
   const getStatusBadge = (status: string) => {
@@ -268,26 +204,15 @@ const SecretariaGerenciarVendas: React.FC = () => {
                           <Settings className="h-4 w-4" />
                         </Button>
                         {venda.status === 'pendente' && (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleAprovar(venda.id, venda.pontuacao_esperada || 0)} 
-                              disabled={isUpdating}
-                              className="text-green-600 hover:text-green-700"
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleRejeitar(venda)} 
-                              disabled={isUpdating}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleManage(venda)}
+                            className="text-gray-600"
+                          >
+                            <Settings className="h-4 w-4" />
+                            Gerenciar
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -337,23 +262,12 @@ const SecretariaGerenciarVendas: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <Button 
                             variant="outline" 
-                            size="sm" 
-                            onClick={() => handleAprovar(venda.id, venda.pontuacao_esperada || 0)} 
-                            disabled={isUpdating}
-                            className="text-green-600 hover:text-green-700"
+                            size="sm"
+                            onClick={() => handleManage(venda)}
+                            className="text-blue-600 hover:text-blue-700"
                           >
-                            <Check className="h-4 w-4" />
-                            {isUpdating ? 'Aprovando...' : 'Aprovar'}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleRejeitar(venda)} 
-                            disabled={isUpdating}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4" />
-                            Rejeitar
+                            <Settings className="h-4 w-4" />
+                            Gerenciar
                           </Button>
                         </div>
                       </div>
@@ -440,24 +354,11 @@ const SecretariaGerenciarVendas: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Dialog de rejeição */}
-      <RejectVendaDialog
-        open={rejectDialogOpen}
-        onOpenChange={setRejectDialogOpen}
-        onConfirm={handleConfirmReject}
-        isLoading={isUpdating}
-        vendaNome={vendaToReject?.aluno?.nome}
-      />
-
       {/* Dialog de gerenciar venda */}
-      <ManageVendaDialog
+      <AdminVendaActionsDialog
+        venda={vendaToManage}
         open={manageDialogOpen}
         onOpenChange={setManageDialogOpen}
-        venda={vendaToManage}
-        onAprovar={handleAprovar}
-        onRejeitar={handleConfirmReject}
-        onMarcarPendente={handleMarcarPendente}
-        isUpdating={isUpdating}
       />
     </div>
   );
