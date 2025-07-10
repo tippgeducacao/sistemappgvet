@@ -1,19 +1,15 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Clock, CheckCircle, XCircle, Users, Eye, Settings, Check, X } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Users } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
-import { SecretariaUpdateService } from '@/services/vendas/SecretariaUpdateService';
-import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
-import AdminVendaActionsDialog from '@/components/admin/AdminVendaActionsDialog';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import type { VendaCompleta } from '@/hooks/useVendas';
+import TodasVendasTab from '@/components/vendas/TodasVendasTab';
+import PendentesTab from '@/components/vendas/PendentesTab';
+import MatriculadasTab from '@/components/vendas/MatriculadasTab';
+import RejeitadasTab from '@/components/vendas/RejeitadasTab';
+import { Card, CardContent } from '@/components/ui/card';
 
 const SecretariaGerenciarVendas: React.FC = () => {
   const { 
@@ -22,10 +18,6 @@ const SecretariaGerenciarVendas: React.FC = () => {
     refetch
   } = useAllVendas();
   
-  const { toast } = useToast();
-  const [manageDialogOpen, setManageDialogOpen] = React.useState(false);
-  const [vendaToManage, setVendaToManage] = React.useState<VendaCompleta | null>(null);
-
   // Filtrar vendas por status
   const vendasPendentes = React.useMemo(() => {
     return vendas.filter(v => v.status === 'pendente');
@@ -49,24 +41,6 @@ const SecretariaGerenciarVendas: React.FC = () => {
       </div>
     );
   }
-
-  const handleManage = (venda: VendaCompleta) => {
-    setVendaToManage(venda);
-    setManageDialogOpen(true);
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'matriculado':
-        return <Badge className="bg-green-100 text-green-800">Matriculado</Badge>;
-      case 'pendente':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge>;
-      case 'desistiu':
-        return <Badge className="bg-red-100 text-red-800">Rejeitado</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -141,225 +115,22 @@ const SecretariaGerenciarVendas: React.FC = () => {
 
         {/* Conteúdo das abas */}
         <TabsContent value="todas" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico Completo de Vendas</CardTitle>
-              <p className="text-sm text-gray-600">{vendas.length} vendas encontradas em 06/2025</p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {vendas.map((venda, index) => (
-                  <div key={venda.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-sm text-gray-500">#{index + 1}</span>
-                          <h3 className="font-semibold text-lg">
-                            {venda.aluno?.nome || 'Nome não informado'}
-                          </h3>
-                          {getStatusBadge(venda.status)}
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                          <div>
-                            <p><strong>Email:</strong> {venda.aluno?.email || 'Não informado'}</p>
-                          </div>
-                          <div>
-                            <p><strong>Curso:</strong> {venda.curso?.nome || 'Não informado'}</p>
-                          </div>
-                          <div>
-                            <p><strong>Vendedor:</strong> {venda.vendedor?.name || 'Não informado'}</p>
-                          </div>
-                          <div>
-                            <p><strong>Enviado:</strong> {venda.enviado_em ? format(new Date(venda.enviado_em), 'dd/MM/yyyy, HH:mm', { locale: ptBR }) : 'Não informado'}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-2 text-sm">
-                          <span className="text-gray-600">
-                            <strong>Pontuação:</strong> {venda.pontuacao_esperada || 0} pts
-                          </span>
-                          {venda.pontuacao_validada && (
-                            <span className="ml-4 text-gray-600">
-                              <strong>Validada:</strong> {venda.pontuacao_validada} pts
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-gray-600"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleManage(venda)}
-                          className="text-gray-600"
-                        >
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                        {venda.status === 'pendente' && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleManage(venda)}
-                            className="text-gray-600"
-                          >
-                            <Settings className="h-4 w-4" />
-                            Gerenciar
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <TodasVendasTab vendas={vendas} />
         </TabsContent>
 
         <TabsContent value="pendentes" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-yellow-600" />
-                Vendas Pendentes ({vendasPendentes.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {vendasPendentes.length === 0 ? (
-                <div className="text-center py-8 bg-green-50 rounded-lg">
-                  <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                  <p className="text-green-800 font-medium">Nenhuma venda pendente</p>
-                  <p className="text-green-600">Todas as vendas foram processadas! 🎉</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {vendasPendentes.map(venda => (
-                    <div key={venda.id} className="border rounded-lg p-4 bg-yellow-50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold">
-                              {venda.aluno?.nome || 'Nome não informado'}
-                            </h3>
-                            <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge>
-                          </div>
-                          
-                          <div className="text-sm text-gray-600 space-y-1">
-                            <p><strong>Email:</strong> {venda.aluno?.email || 'Não informado'}</p>
-                            <p><strong>Curso:</strong> {venda.curso?.nome || 'Não informado'}</p>
-                            <p><strong>Pontuação:</strong> {venda.pontuacao_esperada || 0} pts</p>
-                            <p><strong>Vendedor:</strong> {venda.vendedor?.name || venda.vendedor_id}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleManage(venda)}
-                            className="text-blue-600 hover:text-blue-700"
-                          >
-                            <Settings className="h-4 w-4" />
-                            Gerenciar
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <PendentesTab vendas={vendasPendentes} />
         </TabsContent>
 
         <TabsContent value="matriculadas" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                Vendas Matriculadas ({vendasMatriculadas.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {vendasMatriculadas.map(venda => (
-                  <div key={venda.id} className="border rounded-lg p-4 bg-green-50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold">
-                            {venda.aluno?.nome || 'Nome não informado'}
-                          </h3>
-                          <Badge className="bg-green-100 text-green-800">Matriculado</Badge>
-                        </div>
-                        
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p><strong>Email:</strong> {venda.aluno?.email || 'Não informado'}</p>
-                          <p><strong>Curso:</strong> {venda.curso?.nome || 'Não informado'}</p>
-                          <p><strong>Pontuação:</strong> {venda.pontuacao_validada || venda.pontuacao_esperada || 0} pts</p>
-                          <p><strong>Vendedor:</strong> {venda.vendedor?.name || venda.vendedor_id}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <MatriculadasTab vendas={vendasMatriculadas} />
         </TabsContent>
 
         <TabsContent value="rejeitadas" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-600" />
-                Vendas Rejeitadas ({vendasRejeitadas.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {vendasRejeitadas.map(venda => (
-                  <div key={venda.id} className="border rounded-lg p-4 bg-red-50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold">
-                            {venda.aluno?.nome || 'Nome não informado'}
-                          </h3>
-                          <Badge className="bg-red-100 text-red-800">Rejeitado</Badge>
-                        </div>
-                        
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p><strong>Email:</strong> {venda.aluno?.email || 'Não informado'}</p>
-                          <p><strong>Curso:</strong> {venda.curso?.nome || 'Não informado'}</p>
-                          <p><strong>Vendedor:</strong> {venda.vendedor?.name || venda.vendedor_id}</p>
-                          {venda.motivo_pendencia && (
-                            <p><strong>Motivo:</strong> {venda.motivo_pendencia}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <RejeitadasTab vendas={vendasRejeitadas} />
         </TabsContent>
       </Tabs>
 
-      {/* Dialog de gerenciar venda */}
-      <AdminVendaActionsDialog
-        venda={vendaToManage}
-        open={manageDialogOpen}
-        onOpenChange={setManageDialogOpen}
-      />
     </div>
   );
 };
