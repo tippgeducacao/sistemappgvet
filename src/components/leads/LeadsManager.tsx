@@ -93,7 +93,7 @@ const LeadsManager: React.FC = () => {
     const paginaSubdominio = extractPaginaSubdominio(lead.pagina_nome);
     const matchesPagina = paginaFilter === 'todos' || paginaSubdominio === paginaFilter;
     
-    const matchesFonte = fonteFilter === 'todos' || lead.fonte_referencia === fonteFilter;
+    const matchesFonte = fonteFilter === 'todos' || lead.fonte_captura === fonteFilter;
     
     return matchesSearch && matchesStatus && matchesProfissao && matchesPagina && matchesFonte;
   });
@@ -105,8 +105,8 @@ const LeadsManager: React.FC = () => {
     contatados: filteredLeads.filter(l => l.status === 'contatado').length,
     qualificados: filteredLeads.filter(l => l.status === 'qualificado').length,
     convertidos: filteredLeads.filter(l => l.convertido_em_venda).length,
-    sprinthub: filteredLeads.filter(l => l.fonte_referencia === 'SprintHub').length,
-    greatpages: filteredLeads.filter(l => l.fonte_referencia === 'GreatPages').length,
+    sprinthub: filteredLeads.filter(l => l.fonte_captura === 'SprintHub').length,
+    greatpages: filteredLeads.filter(l => l.fonte_captura === 'GreatPages').length,
   };
 
   // Obter profissões únicas
@@ -446,12 +446,12 @@ const LeadsManager: React.FC = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                         <div className="flex items-center space-x-2">
-                           {getFonteIcon(lead.fonte_referencia)}
-                           <Badge className={`text-xs ${getFonteBadgeColor(lead.fonte_referencia)}`}>
-                             {lead.fonte_referencia || 'GreatPages'}
-                           </Badge>
-                         </div>
+                        <div className="flex items-center space-x-2">
+                          {getFonteIcon(lead.fonte_captura)}
+                          <Badge className={`text-xs ${getFonteBadgeColor(lead.fonte_captura)}`}>
+                            {lead.fonte_captura || 'GreatPages'}
+                          </Badge>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-1">
