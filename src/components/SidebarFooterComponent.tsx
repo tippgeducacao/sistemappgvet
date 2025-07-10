@@ -28,6 +28,8 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
     }
     
     switch (userType) {
+      case 'diretor':
+        return 'Diretor';
       case 'admin':
         return 'Administrador';
       case 'secretaria':
@@ -52,6 +54,8 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
     }
     
     switch (userType) {
+      case 'diretor':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'admin':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'secretaria':
