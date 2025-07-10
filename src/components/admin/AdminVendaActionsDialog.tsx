@@ -82,7 +82,8 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
       return;
     }
     
-    const pontos = parseFloat(pontuacaoValidada) || 0;
+    // Usar pontuação esperada (calculada automaticamente)
+    const pontos = venda.pontuacao_esperada || 0;
     updateStatus({
       vendaId: venda.id,
       status: 'matriculado',
@@ -203,7 +204,7 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   };
   return <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
@@ -226,7 +227,7 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
           </DialogHeader>
 
           {/* Conteúdo Principal */}
-          <div className="flex-1 overflow-y-auto max-h-[60vh]">
+          <div className="flex-1 overflow-y-auto min-h-0">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
               {/* Coluna Esquerda */}
               <div className="space-y-6">
@@ -243,15 +244,18 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
                         {getStatusLabel(venda.status)}
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-3">
                       <div>
-                        <span className="text-sm text-gray-600">Pontuação Esperada:</span>
-                        <p className="font-medium">{DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts</p>
+                        <span className="text-sm text-gray-600">Pontuação (calculada automaticamente):</span>
+                        <p className="font-medium text-lg text-ppgvet-teal">{DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts</p>
+                        <span className="text-xs text-gray-500">Esta pontuação é calculada automaticamente com base nas regras de negócio</span>
                       </div>
-                      <div>
-                        <span className="text-sm text-gray-600">Pontuação Validada:</span>
-                        <p className="font-medium">{venda.pontuacao_validada ? DataFormattingService.formatPoints(venda.pontuacao_validada) + ' pts' : '-'}</p>
-                      </div>
+                      {venda.pontuacao_validada && (
+                        <div>
+                          <span className="text-sm text-gray-600">Pontuação Validada:</span>
+                          <p className="font-medium">{DataFormattingService.formatPoints(venda.pontuacao_validada)} pts</p>
+                        </div>
+                      )}
                     </div>
                     {venda.motivo_pendencia && <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
                         <span className="text-sm font-medium text-yellow-800">Motivo da Pendência:</span>
@@ -280,32 +284,19 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
           </div>
 
           {/* Seção de Gerenciamento */}
-          <div className="border-t pt-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="pontuacao">Pontuação Final *</Label>
-                <Input
-                  id="pontuacao"
-                  type="number"
-                  value={pontuacaoValidada}
-                  onChange={(e) => setPontuacaoValidada(e.target.value)}
-                  placeholder="Pontuação final validada"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="dataAssinatura">Data de Assinatura do Contrato *</Label>
-                <Input
-                  id="dataAssinatura"
-                  type="date"
-                  value={dataAssinaturaContrato}
-                  onChange={(e) => setDataAssinaturaContrato(e.target.value)}
-                  placeholder="Data de assinatura"
-                />
-                <span className="text-xs text-gray-600 mt-1">
-                  Obrigatório para aprovação da venda
-                </span>
-              </div>
+          <div className="border-t pt-4 space-y-4 flex-shrink-0">
+            <div>
+              <Label htmlFor="dataAssinatura">Data de Assinatura do Contrato *</Label>
+              <Input
+                id="dataAssinatura"
+                type="date"
+                value={dataAssinaturaContrato}
+                onChange={(e) => setDataAssinaturaContrato(e.target.value)}
+                placeholder="Data de assinatura"
+              />
+              <span className="text-xs text-gray-600 mt-1">
+                Obrigatório para aprovação da venda
+              </span>
             </div>
 
             <div>
@@ -334,7 +325,7 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
               </div>}
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 flex-shrink-0 border-t pt-4">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUpdating || isDeleting}>
               Cancelar
             </Button>
