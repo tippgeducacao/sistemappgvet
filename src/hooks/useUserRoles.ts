@@ -25,8 +25,8 @@ export const useUserRoles = () => {
   // Diretor: acesso total ao sistema (exceto criar vendas)
   const isDiretor = hasRole('diretor');
   
-  // Admin: quem tem role admin OU é secretaria por perfil (mas não diretor)
-  const isAdmin = (hasRole('admin') || isSecretariaByProfile) && !isDiretor;
+  // Admin: quem tem role admin, é secretaria por perfil, OU é diretor
+  const isAdmin = hasRole('admin') || isSecretariaByProfile || isDiretor;
   
   // Secretaria: quem tem role secretaria OU é secretaria por perfil (mas não é admin nem diretor)
   const isSecretaria = (hasRole('secretaria') || isSecretariaByProfile) && !hasRole('admin') && !isDiretor;
