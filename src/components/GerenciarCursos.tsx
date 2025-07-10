@@ -3,13 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Edit } from 'lucide-react';
 import { useCourses } from '@/hooks/useCourses';
+import { MODALIDADE_OPTIONS } from '@/constants/formOptions';
 
 const GerenciarCursos: React.FC = () => {
   const { courses, loading, addCourse, updateCourse } = useCourses();
   const [novoCurso, setNovoCurso] = useState('');
+  const [modalidadeSelecionada, setModalidadeSelecionada] = useState<'Curso' | 'Pós-Graduação'>('Curso');
   const [adicionando, setAdicionando] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEditando, setNomeEditando] = useState('');
@@ -20,7 +23,7 @@ const GerenciarCursos: React.FC = () => {
     
     try {
       setAdicionando(true);
-      await addCourse(novoCurso.trim());
+      await addCourse(novoCurso.trim(), modalidadeSelecionada);
       setNovoCurso('');
     } catch (error) {
       console.error('Erro ao adicionar curso:', error);
@@ -67,28 +70,45 @@ const GerenciarCursos: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            Adicionar Novo Curso
+            Adicionar Novo {modalidadeSelecionada}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <Label htmlFor="novoCurso">Nome do Curso</Label>
-              <Input
-                id="novoCurso"
-                value={novoCurso}
-                onChange={(e) => setNovoCurso(e.target.value)}
-                placeholder="Digite o nome do novo curso"
-                onKeyPress={(e) => e.key === 'Enter' && handleAdicionarCurso()}
-              />
+          <div className="space-y-4">
+            <div>
+              <Label>Modalidade</Label>
+              <Select value={modalidadeSelecionada} onValueChange={(value: 'Curso' | 'Pós-Graduação') => setModalidadeSelecionada(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a modalidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODALIDADE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value as 'Curso' | 'Pós-Graduação'}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Button 
-              onClick={handleAdicionarCurso}
-              disabled={!novoCurso.trim() || adicionando}
-              className="min-w-[120px]"
-            >
-              {adicionando ? 'Adicionando...' : 'Adicionar'}
-            </Button>
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <Label htmlFor="novoCurso">Nome do {modalidadeSelecionada}</Label>
+                <Input
+                  id="novoCurso"
+                  value={novoCurso}
+                  onChange={(e) => setNovoCurso(e.target.value)}
+                  placeholder={`Digite o nome do novo ${modalidadeSelecionada.toLowerCase()}`}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAdicionarCurso()}
+                />
+              </div>
+              <Button 
+                onClick={handleAdicionarCurso}
+                disabled={!novoCurso.trim() || adicionando}
+                className="min-w-[120px]"
+              >
+                {adicionando ? 'Adicionando...' : 'Adicionar'}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -116,7 +136,8 @@ const GerenciarCursos: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px]">#</TableHead>
-                    <TableHead>Nome do Curso</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead className="w-[120px]">Modalidade</TableHead>
                     <TableHead className="w-[100px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -158,6 +179,15 @@ const GerenciarCursos: React.FC = () => {
                         ) : (
                           <span className="font-medium">{curso.nome}</span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          curso.modalidade === 'Curso' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {curso.modalidade}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {editandoId !== curso.id && (

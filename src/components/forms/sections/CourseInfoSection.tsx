@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FormSelectField, FormInputField } from '@/components/ui/form-field';
-import { IES_OPTIONS } from '@/constants/formOptions';
+import { IES_OPTIONS, MODALIDADE_OPTIONS } from '@/constants/formOptions';
 import { useCourses } from '@/hooks/useCourses';
 
 interface CourseInfoSectionProps {
@@ -10,9 +10,40 @@ interface CourseInfoSectionProps {
 }
 
 const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateField }) => {
-  const { courses, loading: coursesLoading } = useCourses();
+  const { fetchCoursesByModalidade } = useCourses();
+  const [coursesLoading, setCoursesLoading] = useState(false);
+  const [availableCourses, setAvailableCourses] = useState<any[]>([]);
+  const [selectedModalidade, setSelectedModalidade] = useState('');
 
-  const courseOptions = courses.map(curso => ({ 
+  useEffect(() => {
+    const loadCoursesByModalidade = async () => {
+      if (!selectedModalidade) {
+        setAvailableCourses([]);
+        return;
+      }
+      
+      setCoursesLoading(true);
+      try {
+        const courses = await fetchCoursesByModalidade(selectedModalidade as 'Curso' | 'Pós-Graduação');
+        setAvailableCourses(courses);
+      } catch (error) {
+        console.error('Erro ao carregar cursos:', error);
+      } finally {
+        setCoursesLoading(false);
+      }
+    };
+
+    loadCoursesByModalidade();
+  }, [selectedModalidade, fetchCoursesByModalidade]);
+
+  const handleModalidadeChange = (value: string) => {
+    setSelectedModalidade(value);
+    updateField('modalidadeCurso', value);
+    // Limpar curso selecionado quando modalidade mudar
+    updateField('cursoId', '');
+  };
+
+  const courseOptions = availableCourses.map(curso => ({ 
     value: curso.id, 
     label: curso.nome 
   }));
@@ -51,13 +82,23 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
       />
 
       <FormSelectField
+        id="modalidadeCurso"
+        label="Modalidade *"
+        value={formData.modalidadeCurso || ''}
+        onChange={handleModalidadeChange}
+        options={MODALIDADE_OPTIONS}
+        placeholder="Selecione a modalidade"
+      />
+
+      <FormSelectField
         id="cursoId"
-        label="Curso *"
+        label={selectedModalidade ? `${selectedModalidade} *` : "Selecione primeiro a modalidade"}
         value={formData.cursoId || ''}
         onChange={(value) => updateField('cursoId', value)}
         options={courseOptions}
         loading={coursesLoading}
-        placeholder="Selecione o curso"
+        placeholder={selectedModalidade ? `Selecione o ${selectedModalidade.toLowerCase()}` : "Primeiro selecione a modalidade"}
+        disabled={!selectedModalidade}
       />
 
       <FormInputField

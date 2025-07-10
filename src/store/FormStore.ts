@@ -22,6 +22,7 @@ export interface FormData {
   crmv?: string;
   formacaoAluno: string;
   ies: string;
+  modalidadeCurso?: string;
   cursoId: string;
   vendedor?: string;
 
@@ -62,6 +63,7 @@ const initialFormData: FormData = {
   emailAluno: '',
   formacaoAluno: '',
   ies: '',
+  modalidadeCurso: '',
   cursoId: '',
 
   // Scoring Info

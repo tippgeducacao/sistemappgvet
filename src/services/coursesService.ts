@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface Course {
   id: string;
   nome: string;
+  modalidade: 'Curso' | 'Pós-Graduação';
   ativo: boolean;
   created_at: string;
   updated_at: string;
@@ -19,20 +20,32 @@ export class CoursesService {
       .order('nome');
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as Course[];
   }
 
-  static async addCourse(nome: string): Promise<Course> {
+  static async addCourse(nome: string, modalidade: 'Curso' | 'Pós-Graduação' = 'Curso'): Promise<Course> {
     const { data: { user } } = await supabase.auth.getUser();
     
     const { data, error } = await supabase
       .from('cursos')
-      .insert([{ nome, criado_por: user?.id }])
+      .insert([{ nome, modalidade, criado_por: user?.id }])
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Course;
+  }
+
+  static async fetchCoursesByModalidade(modalidade: 'Curso' | 'Pós-Graduação'): Promise<Course[]> {
+    const { data, error } = await supabase
+      .from('cursos')
+      .select('*')
+      .eq('ativo', true)
+      .eq('modalidade', modalidade)
+      .order('nome');
+
+    if (error) throw error;
+    return (data || []) as Course[];
   }
 
   static async updateCourse(id: string, nome: string): Promise<Course> {
@@ -44,7 +57,7 @@ export class CoursesService {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Course;
   }
 
   static async removeCourse(id: string): Promise<void> {

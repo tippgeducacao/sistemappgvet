@@ -25,23 +25,41 @@ export const useCourses = () => {
     }
   };
 
-  const addCourse = async (nome: string) => {
+  const addCourse = async (nome: string, modalidade: 'Curso' | 'Pós-Graduação' = 'Curso') => {
     try {
-      const newCourse = await CoursesService.addCourse(nome);
+      const newCourse = await CoursesService.addCourse(nome, modalidade);
       setCourses(prev => [...prev, newCourse]);
       toast({
         title: "Sucesso",
-        description: "Curso adicionado com sucesso!",
+        description: `${modalidade} adicionado com sucesso!`,
       });
       return newCourse;
     } catch (error) {
       console.error('Erro ao adicionar curso:', error);
       toast({
         title: "Erro",
-        description: "Erro ao adicionar curso",
+        description: `Erro ao adicionar ${modalidade.toLowerCase()}`,
         variant: "destructive",
       });
       throw error;
+    }
+  };
+
+  const fetchCoursesByModalidade = async (modalidade: 'Curso' | 'Pós-Graduação') => {
+    try {
+      setLoading(true);
+      const data = await CoursesService.fetchCoursesByModalidade(modalidade);
+      return data;
+    } catch (error) {
+      console.error('Erro ao buscar cursos por modalidade:', error);
+      toast({
+        title: "Erro",
+        description: `Erro ao carregar ${modalidade.toLowerCase()}s`,
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,6 +112,7 @@ export const useCourses = () => {
     courses,
     loading,
     fetchCourses,
+    fetchCoursesByModalidade,
     addCourse,
     updateCourse,
     removeCourse,

@@ -65,3 +65,8 @@ export const FORMA_CAPTACAO_OPTIONS = [
   { value: 'META ADS', label: 'META ADS' },
   { value: 'LINKEDIN', label: 'LINKEDIN' }
 ];
+
+export const MODALIDADE_OPTIONS = [
+  { value: 'Curso', label: 'Curso' },
+  { value: 'Pós-Graduação', label: 'Pós-Graduação' }
+];
