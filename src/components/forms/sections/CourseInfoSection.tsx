@@ -13,7 +13,7 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
   const { fetchCoursesByModalidade } = useCourses();
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
-  const [selectedModalidade, setSelectedModalidade] = useState('');
+  const [selectedModalidade, setSelectedModalidade] = useState(formData.modalidadeCurso || '');
 
   useEffect(() => {
     const loadCoursesByModalidade = async () => {
@@ -34,7 +34,7 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
     };
 
     loadCoursesByModalidade();
-  }, [selectedModalidade, fetchCoursesByModalidade]);
+  }, [selectedModalidade]);
 
   const handleModalidadeChange = (value: string) => {
     setSelectedModalidade(value);
