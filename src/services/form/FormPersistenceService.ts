@@ -53,17 +53,41 @@ export class FormPersistenceService {
         return await this.updateExistingVenda(data.editId, data.formData, data.vendedorId, pontuacaoEsperada);
       }
 
-      // 3. Criar nova entrada do formulário
+      // 3. Criar nova entrada do formulário primeiro
       const formEntry = await FormEntryCreationService.createFormEntry(
         data.vendedorId,
         data.formData,
         pontuacaoEsperada,
-        null // documento será tratado separadamente
+        null // documento será enviado após criar o form_entry
       );
+
+      // 4. Upload do documento se fornecido
+      if (data.formData.documentoComprobatorio) {
+        console.log('📎 Fazendo upload do documento...');
+        try {
+          const { DocumentUploadService } = await import('./DocumentUploadService');
+          const documentPath = await DocumentUploadService.uploadDocument(
+            data.formData.documentoComprobatorio,
+            data.vendedorId,
+            formEntry.id
+          );
+          
+          // Atualizar form_entry com o caminho do documento
+          await supabase
+            .from('form_entries')
+            .update({ documento_comprobatorio: documentPath })
+            .eq('id', formEntry.id);
+            
+          console.log('✅ Documento enviado e vinculado:', documentPath);
+        } catch (error) {
+          console.error('❌ Erro no upload do documento:', error);
+          // Não bloquear o salvamento, apenas alertar
+        }
+      }
 
       console.log('📄 Form entry criado:', formEntry.id);
 
-      // 4. Criar ou buscar aluno
+      // 5. Criar ou buscar aluno
       const alunoId = await AlunoCreationService.createAluno(
         data.formData,
         formEntry.id, // formEntryId já definido
@@ -72,12 +96,12 @@ export class FormPersistenceService {
 
       console.log('👨‍🎓 Aluno processado:', alunoId);
 
-      // 5. Atualizar form_entry com o aluno_id se necessário
+      // 6. Atualizar form_entry com o aluno_id se necessário
       if (alunoId) {
         await AlunoCreationService.linkAlunoToFormEntry(alunoId, formEntry.id);
       }
 
-      // 6. Salvar respostas do formulário
+      // 7. Salvar respostas do formulário
       await FormResponsesService.saveFormResponses(formEntry.id, data.formData);
 
       console.log('✅ FORMULÁRIO SALVO COM SUCESSO!');
@@ -164,9 +188,10 @@ export class FormPersistenceService {
 
     // Validações de comprovação obrigatória
     const tiposQueRequeremComprovacao = ['LIGAÇÃO', 'LIGAÇÃO E FECHAMENTO NO WHATSAPP'];
-    if (tiposQueRequeremComprovacao.includes(formData.tipoVenda) && !formData.observacoes?.trim()) {
-      console.warn('⚠️ Aviso: Tipo de venda requer comprovação, mas não há observações');
-      // Não bloquear o salvamento, apenas alertar
+    if (tiposQueRequeremComprovacao.includes(formData.tipoVenda)) {
+      if (!formData.documentoComprobatorio && !formData.observacoes?.trim()) {
+        errors.push('Para este tipo de venda é obrigatório anexar um documento comprobatório ou adicionar observações detalhadas');
+      }
     }
 
     if (errors.length > 0) {
