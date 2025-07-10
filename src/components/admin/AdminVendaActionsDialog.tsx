@@ -138,8 +138,9 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
     }
   };
 
-  // Extrair tipo de venda das respostas do formulário
+  // Extrair tipo de venda e data de matrícula das respostas do formulário
   const tipoVenda = formDetails?.find(r => r.campo_nome === 'Tipo de Venda')?.valor_informado || 'Não informado';
+  const dataMatricula = formDetails?.find(r => r.campo_nome === 'Data de Matrícula')?.valor_informado;
   const handleSaveValidations = async (validations: any[]) => {
     setIsSavingValidations(true);
     try {
@@ -172,6 +173,11 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
                 <DialogDescription>
                   Aprovar, rejeitar ou alterar status da venda
                 </DialogDescription>
+                {dataMatricula && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    <span className="font-medium">Data de Matrícula:</span> {dataMatricula}
+                  </div>
+                )}
               </div>
               <Badge variant={getStatusBadgeVariant(venda.status)}>
                 {getStatusLabel(venda.status)}

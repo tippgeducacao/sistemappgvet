@@ -50,8 +50,9 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
     }
   };
 
-  // Extrair tipo de venda das respostas do formulário
+  // Extrair tipo de venda e data de matrícula das respostas do formulário
   const tipoVenda = formDetails?.find(r => r.campo_nome === 'Tipo de Venda')?.valor_informado || 'Não informado';
+  const dataMatricula = formDetails?.find(r => r.campo_nome === 'Data de Matrícula')?.valor_informado;
 
   // Debug logs para entender o que está acontecendo
   console.log('🔍 Dados da venda para documento:', {
@@ -73,6 +74,11 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
               <DialogDescription>
                 Informações completas sobre a venda cadastrada
               </DialogDescription>
+              {dataMatricula && (
+                <div className="mt-2 text-sm text-gray-600">
+                  <span className="font-medium">Data de Matrícula:</span> {dataMatricula}
+                </div>
+              )}
             </div>
             <Badge className={getStatusColor(venda.status)}>
               {getStatusLabel(venda.status)}
