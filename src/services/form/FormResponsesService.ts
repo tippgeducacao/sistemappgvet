@@ -17,20 +17,13 @@ export class FormResponsesService {
 
     console.log(`💾 Salvando ${responses.length} respostas:`, responses);
 
-    // CORREÇÃO: Deletar respostas antigas e inserir novas para evitar conflitos
-    const { error: deleteError } = await supabase
-      .from('respostas_formulario')
-      .delete()
-      .eq('form_entry_id', formEntryId);
-
-    if (deleteError) {
-      console.error('❌ Erro ao deletar respostas antigas:', deleteError);
-      throw deleteError;
-    }
-
+    // CORREÇÃO: Usar UPSERT correto com a constraint única
     const { error } = await supabase
       .from('respostas_formulario')
-      .insert(responses);
+      .upsert(responses, { 
+        onConflict: 'form_entry_id,campo_nome',
+        ignoreDuplicates: false 
+      });
 
     if (error) {
       console.error('❌ Erro ao salvar respostas:', error);
