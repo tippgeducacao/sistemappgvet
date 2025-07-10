@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { format, isValid, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -140,7 +142,39 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
 
   // Extrair tipo de venda e data de matrícula das respostas do formulário
   const tipoVenda = formDetails?.find(r => r.campo_nome === 'Tipo de Venda')?.valor_informado || 'Não informado';
-  const dataMatricula = formDetails?.find(r => r.campo_nome === 'Data de Matrícula')?.valor_informado;
+  const dataMatriculaRaw = formDetails?.find(r => r.campo_nome === 'Data de Matrícula')?.valor_informado;
+  
+  // Formatar data de matrícula para padrão brasileiro
+  const formatarDataBrasileira = (dataString: string | undefined): string => {
+    if (!dataString) return '';
+    
+    try {
+      // Tentar parsear diferentes formatos de data
+      let date: Date | null = null;
+      
+      if (dataString.includes('-')) {
+        // Formato ISO: YYYY-MM-DD ou YYYY-MM-DD HH:mm:ss
+        date = parseISO(dataString);
+      } else if (dataString.includes('/')) {
+        // Formato brasileiro: DD/MM/YYYY
+        const [dia, mes, ano] = dataString.split('/');
+        if (dia && mes && ano) {
+          date = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+        }
+      }
+      
+      if (date && isValid(date)) {
+        return format(date, 'dd/MM/yyyy', { locale: ptBR });
+      }
+      
+      return dataString; // Retorna o valor original se não conseguir formatar
+    } catch (error) {
+      console.warn('Erro ao formatar data:', error);
+      return dataString || '';
+    }
+  };
+  
+  const dataMatricula = formatarDataBrasileira(dataMatriculaRaw);
   const handleSaveValidations = async (validations: any[]) => {
     setIsSavingValidations(true);
     try {
