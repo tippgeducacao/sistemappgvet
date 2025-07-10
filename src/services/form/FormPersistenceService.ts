@@ -181,6 +181,19 @@ export class FormPersistenceService {
       errors.push('Curso é obrigatório');
     }
 
+    // Validar se pelo menos alguns campos de scoring estão preenchidos
+    const scoringFields = [
+      formData.lotePos, formData.matricula, formData.modalidade, 
+      formData.parcelamento, formData.pagamento, formData.formaCaptacao, 
+      formData.tipoVenda
+    ];
+    
+    const filledScoringFields = scoringFields.filter(field => field && field.trim() !== '');
+    
+    if (filledScoringFields.length === 0) {
+      errors.push('Pelo menos um campo de pontuação deve ser preenchido');
+    }
+
     // Validações específicas para venda casada
     if (formData.vendaCasada === 'SIM' && !formData.detalhesVendaCasada?.trim()) {
       errors.push('Detalhes da venda casada são obrigatórios quando venda casada = SIM');

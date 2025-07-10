@@ -58,16 +58,32 @@ export class FormDataMappingService {
       
       console.log(`🔍 Processando campo: ${fieldKey} -> ${fieldName}:`, value);
       
-      if (value !== undefined && value !== null && value.toString().trim() !== '') {
-        responses.push({
-          form_entry_id: formEntryId,
-          campo_nome: fieldName,
-          valor_informado: value.toString().trim()
-        });
-        
-        console.log(`✅ Campo adicionado: ${fieldName} = ${value}`);
+      if (value !== undefined && value !== null && value !== '') {
+        // Tratamento especial para File objects
+        if (value instanceof File) {
+          responses.push({
+            form_entry_id: formEntryId,
+            campo_nome: fieldName,
+            valor_informado: `Arquivo enviado: ${value.name}`
+          });
+          console.log(`✅ Campo de arquivo adicionado: ${fieldName} = ${value.name}`);
+        } else if (typeof value === 'string' && value.trim() !== '') {
+          responses.push({
+            form_entry_id: formEntryId,
+            campo_nome: fieldName,
+            valor_informado: value.trim()
+          });
+          console.log(`✅ Campo string adicionado: ${fieldName} = ${value}`);
+        } else if (value !== null && value !== undefined) {
+          responses.push({
+            form_entry_id: formEntryId,
+            campo_nome: fieldName,
+            valor_informado: String(value)
+          });
+          console.log(`✅ Campo adicionado: ${fieldName} = ${value}`);
+        }
       } else {
-        console.log(`⚠️ Campo vazio/nulo ignorado: ${fieldKey}`);
+        console.log(`⚠️ Campo vazio/nulo ignorado: ${fieldKey} = ${value}`);
       }
     });
 
