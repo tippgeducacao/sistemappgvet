@@ -9,9 +9,17 @@ export class FormResponsesService {
     
     const responses = FormDataMappingService.prepareFormResponses(formEntryId, formData);
     
+    console.log('🔍 DETALHES DA PREPARAÇÃO:');
+    console.log('📋 FormData recebido:', JSON.stringify(formData, null, 2));
+    console.log('📝 Responses preparadas:', JSON.stringify(responses, null, 2));
+    
     if (responses.length === 0) {
       console.warn('⚠️ NENHUMA RESPOSTA preparada para salvamento!');
       console.log('📋 FormData recebido:', formData);
+      console.log('🔍 Todos os campos do FormData:');
+      Object.keys(formData).forEach(key => {
+        console.log(`  ${key}: ${formData[key as keyof typeof formData]}`);
+      });
       return;
     }
 
