@@ -7,12 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, AlertTriangle } from 'lucide-react';
 
 const GerenciarVendas: React.FC = () => {
-  const { isAdmin, isSecretaria, isVendedor, isLoading } = useUserRoles();
+  const { isAdmin, isSecretaria, isVendedor, isDiretor, isLoading } = useUserRoles();
 
   console.log('🔍 GerenciarVendas: Verificando permissões:', {
     isAdmin,
     isSecretaria,
     isVendedor,
+    isDiretor,
     isLoading
   });
 
@@ -27,8 +28,8 @@ const GerenciarVendas: React.FC = () => {
     );
   }
 
-  // Admin sempre pode gerenciar vendas
-  const canManageVendas = isAdmin || isSecretaria;
+  // Admin, secretaria e diretor podem gerenciar vendas
+  const canManageVendas = isAdmin || isSecretaria || isDiretor;
 
   if (!canManageVendas) {
     return (
@@ -56,9 +57,9 @@ const GerenciarVendas: React.FC = () => {
     );
   }
 
-  // Se é admin ou secretaria, mostrar interface completa
-  if (isAdmin || isSecretaria) {  
-    console.log('🎭 Renderizando SecretariaGerenciarVendas para admin/secretaria');
+  // Se é admin, secretaria ou diretor, mostrar interface completa
+  if (isAdmin || isSecretaria || isDiretor) {  
+    console.log('🎭 Renderizando SecretariaGerenciarVendas para admin/secretaria/diretor');
     return <SecretariaGerenciarVendas />;
   }
 
