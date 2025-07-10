@@ -183,6 +183,9 @@ serve(async (req) => {
       utm_content: body.utm_content || null,
       utm_term: body.utm_term || null,
       
+      // Fonte de captura para filtros (baseado no utm_source)
+      fonte_captura: body.utm_source || 'GreatPages',
+      
       // Informações técnicas
       ip_address: body.IP_do_usuario || body.ip || body.ip_address || body.client_ip || 
                  req.headers.get('x-forwarded-for') || 
