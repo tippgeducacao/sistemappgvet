@@ -30,15 +30,18 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
       'Nome do Aluno': 'Nome Completo',
       'Email do Aluno': 'Email',
       'Telefone do Aluno': 'Telefone',
+      'CRMV': 'Número do CRMV',
       'Formação do Aluno': 'Formação Acadêmica',
       'Data de Matrícula': 'Data de Matrícula',
       'IES': 'Instituição de Ensino Superior',
       'Vendedor': 'Vendedor Responsável',
       'Curso ID': 'Curso Selecionado',
+      'Modalidade Selecionada': 'Modalidade do Curso',
       'Valor do Contrato': 'Valor Total do Contrato',
       'Percentual de Desconto': 'Desconto Aplicado (%)',
       'Data do Primeiro Pagamento': 'Data do 1º Pagamento',
       'Carência da Primeira Cobrança': 'Carência para 1ª Cobrança',
+      'Detalhes da Carência': 'Detalhes da Carência',
       'Reembolso da Matrícula': 'Reembolso de Matrícula',
       'Indicação': 'Foi Indicado?',
       'Nome do Indicador': 'Nome de Quem Indicou',
@@ -50,6 +53,7 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
       'Forma de Captação do Lead': 'Como Chegou o Lead',
       'Tipo de Venda': 'Tipo da Venda',
       'Venda Casada': 'É Venda Casada?',
+      'Detalhes da Venda Casada': 'Detalhes da Venda Casada',
       'Observações Gerais': 'Observações',
     };
     
@@ -62,19 +66,19 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
     const categories = {
       'Informações Básicas': [
         'Data de Chegada', 'Nome do Aluno', 'Email do Aluno', 'Telefone do Aluno',
-        'Formação do Aluno', 'Data de Matrícula', 'IES', 'Vendedor'
+        'Formação do Aluno', 'Data de Matrícula', 'IES', 'Vendedor', 'CRMV'
       ],
       'Informações do Curso': [
-        'Curso ID', 'Modalidade do Curso', 'Lote da Pós-Graduação', 'Matrícula'
+        'Curso ID', 'Modalidade do Curso', 'Modalidade Selecionada', 'Lote da Pós-Graduação', 'Matrícula'
       ],
       'Condições Comerciais': [
         'Valor do Contrato', 'Percentual de Desconto', 'Data do Primeiro Pagamento',
-        'Carência da Primeira Cobrança', 'Reembolso da Matrícula', 'Condições de Parcelamento',
-        'Forma de Pagamento'
+        'Carência da Primeira Cobrança', 'Detalhes da Carência', 'Reembolso da Matrícula', 
+        'Condições de Parcelamento', 'Forma de Pagamento'
       ],
       'Origem e Captação': [
         'Forma de Captação do Lead', 'Tipo de Venda', 'Venda Casada',
-        'Indicação', 'Nome do Indicador'
+        'Indicação', 'Nome do Indicador', 'Detalhes da Venda Casada'
       ],
       'Observações': [
         'Observações Gerais'
