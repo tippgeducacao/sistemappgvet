@@ -93,7 +93,7 @@ const LeadsManager: React.FC = () => {
     const paginaSubdominio = extractPaginaSubdominio(lead.pagina_nome);
     const matchesPagina = paginaFilter === 'todos' || paginaSubdominio === paginaFilter;
     
-    const matchesFonte = fonteFilter === 'todos' || lead.fonte_referencia === fonteFilter;
+    const matchesFonte = fonteFilter === 'todos' || lead.utm_source === fonteFilter;
     
     return matchesSearch && matchesStatus && matchesProfissao && matchesPagina && matchesFonte;
   });
@@ -105,8 +105,8 @@ const LeadsManager: React.FC = () => {
     contatados: filteredLeads.filter(l => l.status === 'contatado').length,
     qualificados: filteredLeads.filter(l => l.status === 'qualificado').length,
     convertidos: filteredLeads.filter(l => l.convertido_em_venda).length,
-    sprinthub: filteredLeads.filter(l => l.fonte_referencia === 'SprintHub').length,
-    greatpages: filteredLeads.filter(l => l.fonte_referencia === 'GreatPages').length,
+    sprinthub: filteredLeads.filter(l => l.utm_source === 'SprintHub').length,
+    greatpages: filteredLeads.filter(l => l.utm_source === 'GreatPages').length,
   };
 
   // Obter profissões únicas
@@ -447,9 +447,9 @@ const LeadsManager: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                           {getFonteIcon(lead.fonte_referencia)}
-                           <Badge className={`text-xs ${getFonteBadgeColor(lead.fonte_referencia)}`}>
-                             {lead.fonte_referencia || 'GreatPages'}
+                           {getFonteIcon(lead.utm_source)}
+                           <Badge className={`text-xs ${getFonteBadgeColor(lead.utm_source)}`}>
+                             {lead.utm_source || 'GreatPages'}
                           </Badge>
                         </div>
                       </TableCell>
