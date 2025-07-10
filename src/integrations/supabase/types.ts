@@ -59,6 +59,13 @@ export type Database = {
             referencedRelation: "form_entries"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_alunos_form_entry"
+            columns: ["form_entry_id"]
+            isOneToOne: false
+            referencedRelation: "form_entries"
+            referencedColumns: ["id"]
+          },
         ]
       }
       cursos: {
