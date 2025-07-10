@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { CacheService } from '@/services/cache/CacheService';
 
 export interface RelatedData {
   alunos: any[];

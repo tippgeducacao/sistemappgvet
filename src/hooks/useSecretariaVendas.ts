@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SecretariaUpdateService } from '@/services/vendas/SecretariaUpdateService';
+import { VendasDataService } from '@/services/vendas/VendasDataService';
+import { CacheService } from '@/services/cache/CacheService';
 import { useToast } from '@/hooks/use-toast';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
@@ -26,81 +28,32 @@ export const useSecretariaVendas = () => {
 
       console.log('👤 Usuário autenticado:', user.id, user.email);
 
-      // Buscar as vendas com os relacionamentos corretos
-      const { data, error } = await supabase
-        .from('form_entries')
-        .select(`
-          *,
-          alunos!form_entries_aluno_id_fkey(*),
-          cursos(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Erro ao carregar vendas:', error);
+      // Usar o serviço de dados que lida melhor com relacionamentos
+      const vendasCarregadas = await VendasDataService.getAllVendas();
+      
+      console.log('✅ Vendas carregadas via serviço:', vendasCarregadas.length);
+      setVendas(vendasCarregadas);
+      
+    } catch (error: any) {
+      console.error('❌ Erro ao carregar vendas:', error);
+      
+      // Se for erro de relacionamento, tentar limpar cache
+      if (error.message?.includes('relationship') || error.message?.includes('schema cache')) {
+        console.log('🔄 Erro de relacionamento detectado, limpando cache...');
+        CacheService.clearRelationshipCache();
+        
+        toast({
+          title: 'Problema de Cache Detectado',
+          description: 'Limpando cache. Tente novamente em alguns segundos.',
+          variant: 'default',
+        });
+      } else {
         toast({
           title: 'Erro',
           description: 'Erro ao carregar vendas: ' + error.message,
           variant: 'destructive',
         });
-        return;
       }
-
-      console.log('✅ Vendas carregadas:', data?.length || 0);
-
-      // Buscar informações dos vendedores separadamente
-      const vendedorIds = [...new Set(data?.map(v => v.vendedor_id).filter(Boolean) || [])];
-      
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .in('id', vendedorIds);
-
-      // Mapear as vendas com as informações dos vendedores
-      const vendasMapeadas: VendaCompleta[] = (data || []).map(venda => {
-        const vendedorProfile = profiles?.find(p => p.id === venda.vendedor_id);
-        const aluno = Array.isArray(venda.alunos) ? venda.alunos[0] : venda.alunos;
-        
-        const vendaMapeada: VendaCompleta = {
-          id: venda.id,
-          vendedor_id: venda.vendedor_id,
-          curso_id: venda.curso_id || '',
-          observacoes: venda.observacoes || '',
-          status: (venda.status as 'pendente' | 'matriculado' | 'desistiu') || 'pendente',
-          pontuacao_esperada: venda.pontuacao_esperada || 0,
-          pontuacao_validada: venda.pontuacao_validada,
-          enviado_em: venda.created_at || new Date().toISOString(),
-          atualizado_em: venda.atualizado_em || venda.created_at || new Date().toISOString(),
-          motivo_pendencia: venda.motivo_pendencia,
-          aluno: aluno ? {
-            id: aluno.id,
-            nome: aluno.nome,
-            email: aluno.email,
-            telefone: aluno.telefone,
-            crmv: aluno.crmv
-          } : null,
-          curso: venda.cursos ? {
-            id: venda.cursos.id,
-            nome: venda.cursos.nome
-          } : null,
-          vendedor: vendedorProfile ? {
-            id: vendedorProfile.id,
-            name: vendedorProfile.name,
-            email: vendedorProfile.email
-          } : undefined
-        };
-        
-        return vendaMapeada;
-      });
-      
-      setVendas(vendasMapeadas);
-    } catch (error) {
-      console.error('❌ Erro inesperado ao carregar vendas:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro inesperado ao carregar vendas',
-        variant: 'destructive',
-      });
     } finally {
       setIsLoading(false);
     }

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import MatriculadaVendaCard from '@/components/vendas/matriculadas/MatriculadaVendaCard';
 import MatriculadasEmptyState from '@/components/vendas/matriculadas/MatriculadasEmptyState';
 import MatriculadasNotice from '@/components/vendas/matriculadas/MatriculadasNotice';
+import CacheClearButton from '@/components/debug/CacheClearButton';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
@@ -100,10 +101,13 @@ const MatriculadasTab: React.FC<MatriculadasTabProps> = ({ vendas, showDeleteBut
           }}
         >
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              Alunos Matriculados
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <CardTitle>Alunos Matriculados</CardTitle>
+              </div>
+              <CacheClearButton />
+            </div>
             <CardDescription>
               {vendas.length} {vendas.length === 1 ? 'aluno' : 'alunos'} com matrícula efetivada. 
               Use os botões para ver detalhes ou reverter status.
