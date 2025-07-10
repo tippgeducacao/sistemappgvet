@@ -17,11 +17,13 @@ export class FormDataMappingService {
       telefone: 'Telefone do Aluno',
       crmv: 'CRMV',
       formacaoAluno: 'Formação do Aluno',
+      dataMatricula: 'Data de Matrícula',
       ies: 'IES',
       vendedor: 'Vendedor',
       
       // Informações do Curso
       cursoId: 'Curso ID',
+      modalidadeCurso: 'Modalidade do Curso',
       
       // Informações de Pagamento
       valorContrato: 'Valor do Contrato',

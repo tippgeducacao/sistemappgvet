@@ -48,6 +48,7 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   } = useToast();
   const [pontuacaoValidada, setPontuacaoValidada] = useState('');
   const [motivoPendencia, setMotivoPendencia] = useState('');
+  const [dataAssinaturaContrato, setDataAssinaturaContrato] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [isSavingValidations, setIsSavingValidations] = useState(false);
@@ -69,11 +70,22 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   const userEmail = profile?.email || currentUser?.email || '';
   const canDeleteVendas = userEmail === 'wallasmonteiro019@gmail.com';
   const handleApprove = () => {
+    // Validar se a data de assinatura foi preenchida
+    if (!dataAssinaturaContrato) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Para aprovar a venda é obrigatório informar a data de assinatura do contrato",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const pontos = parseFloat(pontuacaoValidada) || 0;
     updateStatus({
       vendaId: venda.id,
       status: 'matriculado',
-      pontuacaoValidada: pontos
+      pontuacaoValidada: pontos,
+      dataAssinaturaContrato
     });
     onOpenChange(false);
   };
@@ -224,12 +236,41 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
           {/* Seção de Gerenciamento */}
           <div className="border-t pt-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
+              <div>
+                <Label htmlFor="pontuacao">Pontuação Final *</Label>
+                <Input
+                  id="pontuacao"
+                  type="number"
+                  value={pontuacaoValidada}
+                  onChange={(e) => setPontuacaoValidada(e.target.value)}
+                  placeholder="Pontuação final validada"
+                />
+              </div>
 
               <div>
-                <Label htmlFor="motivo">Motivo da Pendência (opcional)</Label>
-                <Textarea id="motivo" value={motivoPendencia} onChange={e => setMotivoPendencia(e.target.value)} placeholder="Digite o motivo caso seja necessário..." rows={3} />
+                <Label htmlFor="dataAssinatura">Data de Assinatura do Contrato *</Label>
+                <Input
+                  id="dataAssinatura"
+                  type="date"
+                  value={dataAssinaturaContrato}
+                  onChange={(e) => setDataAssinaturaContrato(e.target.value)}
+                  placeholder="Data de assinatura"
+                />
+                <span className="text-xs text-gray-600 mt-1">
+                  Obrigatório para aprovação da venda
+                </span>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="motivo">Motivo da Pendência (opcional)</Label>
+              <Textarea 
+                id="motivo" 
+                value={motivoPendencia} 
+                onChange={e => setMotivoPendencia(e.target.value)} 
+                placeholder="Digite o motivo caso seja necessário..." 
+                rows={3} 
+              />
             </div>
 
             {/* Seção de Exclusão */}

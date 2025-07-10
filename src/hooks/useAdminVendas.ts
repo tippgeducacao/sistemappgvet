@@ -30,23 +30,27 @@ export const useAdminVendas = () => {
       vendaId,
       status,
       pontuacaoValidada,
-      motivoPendencia
+      motivoPendencia,
+      dataAssinaturaContrato
     }: {
       vendaId: string;
       status: 'pendente' | 'matriculado' | 'desistiu';
       pontuacaoValidada?: number;
       motivoPendencia?: string;
+      dataAssinaturaContrato?: string;
     }) => {
       console.log('🎯 MUTATION SIMPLES: Iniciando atualização', { 
         vendaId: vendaId.substring(0, 8), 
-        status 
+        status,
+        dataAssinaturaContrato
       });
       
       const result = await AdminVendasService.updateVendaStatus(
         vendaId,
         status,
         pontuacaoValidada,
-        motivoPendencia
+        motivoPendencia,
+        dataAssinaturaContrato
       );
       
       console.log('✅ MUTATION SIMPLES: Concluída');

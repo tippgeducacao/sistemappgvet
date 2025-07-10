@@ -6,10 +6,11 @@ export class DirectUpdateService {
     vendaId: string, 
     status: 'pendente' | 'matriculado' | 'desistiu',
     pontuacaoValidada?: number,
-    motivoPendencia?: string
+    motivoPendencia?: string,
+    dataAssinaturaContrato?: string
   ): Promise<boolean> {
     console.log('🚀 DirectUpdateService: ATUALIZAÇÃO SIMPLES E DIRETA');
-    console.log('📋 Parâmetros:', { vendaId: vendaId.substring(0, 8), status, pontuacaoValidada });
+    console.log('📋 Parâmetros:', { vendaId: vendaId.substring(0, 8), status, pontuacaoValidada, dataAssinaturaContrato });
     
     try {
       // Preparar dados para atualização
@@ -24,6 +25,20 @@ export class DirectUpdateService {
 
       if (motivoPendencia) {
         updateData.motivo_pendencia = motivoPendencia;
+      }
+
+      // Se aprovando e tiver data de assinatura, adicionar às observações
+      if (status === 'matriculado' && dataAssinaturaContrato) {
+        // Buscar observações existentes
+        const { data: currentData } = await supabase
+          .from('form_entries')
+          .select('observacoes')
+          .eq('id', vendaId)
+          .single();
+        
+        const observacoesExistentes = currentData?.observacoes || '';
+        const observacaoDataAssinatura = `\n\n📅 Data de assinatura do contrato: ${dataAssinaturaContrato}`;
+        updateData.observacoes = observacoesExistentes + observacaoDataAssinatura;
       }
 
       console.log('📊 DADOS PARA UPDATE:', updateData);

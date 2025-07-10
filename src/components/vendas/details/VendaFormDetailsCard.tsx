@@ -29,7 +29,9 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
       'Data de Chegada': 'Data de Chegada do Lead',
       'Nome do Aluno': 'Nome Completo',
       'Email do Aluno': 'Email',
+      'Telefone do Aluno': 'Telefone',
       'Formação do Aluno': 'Formação Acadêmica',
+      'Data de Matrícula': 'Data de Matrícula',
       'IES': 'Instituição de Ensino Superior',
       'Vendedor': 'Vendedor Responsável',
       'Curso ID': 'Curso Selecionado',
@@ -59,8 +61,8 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
     
     const categories = {
       'Informações Básicas': [
-        'Data de Chegada', 'Nome do Aluno', 'Email do Aluno', 
-        'Formação do Aluno', 'IES', 'Vendedor'
+        'Data de Chegada', 'Nome do Aluno', 'Email do Aluno', 'Telefone do Aluno',
+        'Formação do Aluno', 'Data de Matrícula', 'IES', 'Vendedor'
       ],
       'Informações do Curso': [
         'Curso ID', 'Modalidade do Curso', 'Lote da Pós-Graduação', 'Matrícula'
