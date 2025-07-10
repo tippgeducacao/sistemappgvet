@@ -239,10 +239,25 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
       
     } catch (error) {
       console.error('❌ Erro ao salvar venda:', error);
+      console.error('❌ Erro completo:', JSON.stringify(error, null, 2));
       
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Erro desconhecido ao salvar a venda';
+      let errorMessage = 'Erro desconhecido ao salvar a venda';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        console.error('❌ Error name:', error.name);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+      } else if (typeof error === 'object' && error !== null) {
+        // Supabase error
+        if ('message' in error) {
+          errorMessage = (error as any).message;
+        } else if ('details' in error) {
+          errorMessage = (error as any).details;
+        } else if ('hint' in error) {
+          errorMessage = (error as any).hint;
+        }
+      }
 
       toast({
         variant: "destructive",
