@@ -345,15 +345,17 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                       {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <p className="font-medium">{vendedor.nome}</p>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {vendedor.vendas} {vendedor.vendas === 1 ? 'venda aprovada' : 'vendas aprovadas'}
-                    </p>
+                  <div className="flex items-center justify-between flex-1">
+                    <div>
+                      <p className="font-medium">{vendedor.nome}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {vendedor.vendas} {vendedor.vendas === 1 ? 'venda aprovada' : 'vendas aprovadas'}
+                      </p>
+                    </div>
                     
-                    {/* Mini barras de progresso */}
-                    <div className="flex gap-3">
-                      <div className="flex-1">
+                    {/* Mini barras de progresso ao lado */}
+                    <div className="flex gap-4 ml-4">
+                      <div className="w-24">
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-xs font-medium text-muted-foreground">Meta Mês</span>
                           <span className="text-xs text-muted-foreground">{vendedor.vendas}/{vendedor.metaMensal}</span>
@@ -363,7 +365,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                           className="h-1.5"
                         />
                       </div>
-                      <div className="flex-1">
+                      <div className="w-24">
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-xs font-medium text-muted-foreground">Meta Semana</span>
                           <span className="text-xs text-muted-foreground">{vendedor.vendasSemanais}/{vendedor.metaSemanal}</span>
