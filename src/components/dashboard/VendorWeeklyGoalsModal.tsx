@@ -84,13 +84,38 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
     
-    return todasVendas.filter(venda => {
-      if (venda.vendedor_id !== vendedorId) return false;
-      if (venda.status !== 'matriculado') return false;
-      
+    console.log('🔍 Calculando vendas aprovadas:', {
+      vendedorId,
+      year,
+      month,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      totalVendas: todasVendas.length
+    });
+    
+    const vendasAprovadas = todasVendas.filter(venda => {
+      const isVendedor = venda.vendedor_id === vendedorId;
+      const isAprovada = venda.status === 'matriculado';
       const vendaDate = new Date(venda.enviado_em);
-      return vendaDate >= startDate && vendaDate <= endDate;
-    }).length;
+      const isNoPeriodo = vendaDate >= startDate && vendaDate <= endDate;
+      
+      if (isVendedor) {
+        console.log('📋 Venda do vendedor:', {
+          id: venda.id,
+          aluno: venda.aluno?.nome,
+          status: venda.status,
+          enviado_em: venda.enviado_em,
+          vendaDate: vendaDate.toISOString(),
+          isAprovada,
+          isNoPeriodo
+        });
+      }
+      
+      return isVendedor && isAprovada && isNoPeriodo;
+    });
+    
+    console.log('✅ Total de vendas aprovadas:', vendasAprovadas.length);
+    return vendasAprovadas.length;
   };
 
   // Função para calcular progresso semanal
@@ -101,14 +126,28 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
       currentDate >= week.start && currentDate <= week.end
     );
     
+    console.log('📅 Calculando progresso semanal:', {
+      vendedorId,
+      year,
+      month,
+      totalSemanas: weeks.length,
+      semanaAtual: currentWeekIndex + 1
+    });
+    
     return weeks.map((week, index) => {
       const weekSales = todasVendas.filter(venda => {
-        if (venda.vendedor_id !== vendedorId) return false;
-        if (venda.status !== 'matriculado') return false;
-        
+        const isVendedor = venda.vendedor_id === vendedorId;
+        const isAprovada = venda.status === 'matriculado';
         const vendaDate = new Date(venda.enviado_em);
-        return vendaDate >= week.start && vendaDate <= week.end;
+        const isNaSemana = vendaDate >= week.start && vendaDate <= week.end;
+        
+        return isVendedor && isAprovada && isNaSemana;
       }).length;
+      
+      console.log(`📊 Semana ${index + 1}:`, {
+        periodo: `${week.start.toLocaleDateString('pt-BR')} - ${week.end.toLocaleDateString('pt-BR')}`,
+        vendas: weekSales
+      });
       
       return {
         week: index + 1,
