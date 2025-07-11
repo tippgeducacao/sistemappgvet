@@ -198,53 +198,53 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
             <div className="text-2xl text-white/60">Carregando dados...</div>
           </div>
         ) : (
-          <div className="flex-1 p-4 flex flex-col">
+          <div className="flex-1 p-4 flex flex-col overflow-hidden">
             {/* Pódium - Top 3 com destaque */}
             {ranking.length > 0 && (
-              <div className="mb-4">
-                <h2 className="text-xl font-bold text-center mb-4 text-yellow-400">PÓDIUM</h2>
-                <div className="flex justify-center items-end gap-6 mb-4">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-center mb-4 text-yellow-400">PÓDIUM</h2>
+                <div className="flex justify-center items-end gap-8 mb-6">
                   {ranking.slice(0, 3).map((vendedor, index) => {
                     const icons = [Trophy, Medal, Award];
                     const IconComponent = icons[index];
                     const colors = ['from-yellow-400 to-yellow-600', 'from-gray-300 to-gray-500', 'from-amber-400 to-amber-600'];
                     const positions = ['1º', '2º', '3º'];
-                    const heights = ['h-32', 'h-28', 'h-24'];
+                    const heights = ['h-40', 'h-36', 'h-32'];
                     
                     return (
                       <div 
                         key={vendedor.id} 
-                        className={`bg-white/15 backdrop-blur-sm rounded-xl p-3 border-2 border-yellow-400/50 ${heights[index]} flex flex-col justify-between w-40`}
+                        className={`bg-white/15 backdrop-blur-sm rounded-xl p-4 border-2 border-yellow-400/50 ${heights[index]} flex flex-col justify-between w-48`}
                       >
                         <div className="text-center">
                           {/* Position Icon */}
-                          <div className={`inline-flex items-center justify-center w-10 h-10 bg-gradient-to-r ${colors[index]} rounded-full mb-2 text-white`}>
-                            <IconComponent className="h-5 w-5" />
+                          <div className={`inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r ${colors[index]} rounded-full mb-2 text-white`}>
+                            <IconComponent className="h-6 w-6" />
                           </div>
                           
                           {/* Position Badge */}
-                          <Badge className={`bg-gradient-to-r ${colors[index]} text-white text-xs px-2 py-1 mb-2`}>
+                          <Badge className={`bg-gradient-to-r ${colors[index]} text-white text-sm px-2 py-1 mb-2`}>
                             {positions[index]}
                           </Badge>
                           
                           {/* Avatar */}
-                          <Avatar className="h-12 w-12 mx-auto mb-2 border-2 border-white/30">
+                          <Avatar className="h-16 w-16 mx-auto mb-2 border-2 border-white/30">
                             <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
-                            <AvatarFallback className="text-sm bg-white/20 text-white">
+                            <AvatarFallback className="text-lg bg-white/20 text-white">
                               {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           
                           {/* Nome */}
-                          <h3 className="text-sm font-bold mb-2 text-white leading-tight" title={vendedor.nome}>
-                            {vendedor.nome.length > 12 ? vendedor.nome.substring(0, 12) + '...' : vendedor.nome}
+                          <h3 className="text-lg font-bold mb-2 text-white leading-tight" title={vendedor.nome}>
+                            {vendedor.nome.length > 14 ? vendedor.nome.substring(0, 14) + '...' : vendedor.nome}
                           </h3>
                         </div>
                         
                         {/* Stats */}
                         <div className="space-y-1">
                           <div className="bg-white/10 rounded p-2 text-center">
-                            <div className="text-xl font-bold text-yellow-300">
+                            <div className="text-2xl font-bold text-yellow-300">
                               {vendedor.vendas}
                             </div>
                             <div className="text-xs text-white/60">
@@ -266,43 +266,43 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
               </div>
             )}
 
-            {/* Demais vendedores - Ajustado para não ter scroll */}
+            {/* Demais vendedores - Grid responsivo sem sobreposição */}
             {ranking.length > 3 && (
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-center mb-3 text-white/80">CLASSIFICAÇÃO GERAL</h3>
-                <div className="grid grid-cols-8 gap-2 h-full">
+              <div className="flex-1 min-h-0">
+                <h3 className="text-xl font-bold text-center mb-4 text-white/80">CLASSIFICAÇÃO GERAL</h3>
+                <div className="grid grid-cols-8 gap-3 h-full content-start">
                   {ranking.slice(3).map((vendedor, index) => {
                     const position = index + 4;
                     
                     return (
                       <div 
                         key={vendedor.id} 
-                        className="bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col justify-between"
+                        className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col justify-between max-h-48"
                       >
                         <div className="text-center">
                           {/* Position */}
-                          <div className="inline-flex items-center justify-center w-6 h-6 bg-gradient-to-r from-teal-400 to-blue-500 rounded-full mb-2 text-white font-bold text-xs">
+                          <div className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-r from-teal-400 to-blue-500 rounded-full mb-2 text-white font-bold text-sm">
                             {position}
                           </div>
                           
                           {/* Avatar */}
-                          <Avatar className="h-10 w-10 mx-auto mb-2 border border-white/30">
+                          <Avatar className="h-14 w-14 mx-auto mb-2 border border-white/30">
                             <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
-                            <AvatarFallback className="text-xs bg-white/20 text-white">
+                            <AvatarFallback className="text-sm bg-white/20 text-white">
                               {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           
                           {/* Nome */}
-                          <h4 className="text-xs font-bold mb-2 text-white leading-tight" title={vendedor.nome}>
-                            {vendedor.nome.length > 8 ? vendedor.nome.substring(0, 8) + '...' : vendedor.nome}
+                          <h4 className="text-sm font-bold mb-2 text-white leading-tight" title={vendedor.nome}>
+                            {vendedor.nome.length > 10 ? vendedor.nome.substring(0, 10) + '...' : vendedor.nome}
                           </h4>
                         </div>
                         
                         {/* Stats Compactas */}
                         <div className="space-y-1">
                           <div className="bg-white/5 rounded p-1 text-center">
-                            <div className="text-sm font-bold text-white">
+                            <div className="text-lg font-bold text-white">
                               {vendedor.vendas}
                             </div>
                             <div className="text-xs text-white/60">
