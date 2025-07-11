@@ -329,6 +329,39 @@ export type Database = {
           },
         ]
       }
+      metas_semanais_vendedores: {
+        Row: {
+          ano: number
+          created_at: string
+          created_by: string | null
+          id: string
+          meta_vendas: number
+          semana: number
+          updated_at: string
+          vendedor_id: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meta_vendas?: number
+          semana: number
+          updated_at?: string
+          vendedor_id: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meta_vendas?: number
+          semana?: number
+          updated_at?: string
+          vendedor_id?: string
+        }
+        Relationships: []
+      }
       metas_vendedores: {
         Row: {
           ano: number
