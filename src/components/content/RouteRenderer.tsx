@@ -12,6 +12,7 @@ import GerenciarPontuacoes from '@/components/GerenciarPontuacoes';
 import MinhasVendas from '@/components/MinhasVendas';
 import LeadsManager from '@/components/leads/LeadsManager';
 import GerenciarMetas from '@/components/GerenciarMetas';
+import GerenciarMetasSemanais from '@/components/GerenciarMetasSemanais';
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
@@ -106,6 +107,18 @@ const RouteRenderer: React.FC = () => {
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
           <p className="text-gray-600 mt-2">Apenas administradores e diretores podem gerenciar metas.</p>
+        </div>
+      );
+
+    case 'gerenciar-metas-semanais':
+      // Apenas admin e diretor podem gerenciar metas semanais
+      if (isAdmin || isDiretor) {
+        return <GerenciarMetasSemanais />;
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Apenas administradores e diretores podem gerenciar metas semanais.</p>
         </div>
       );
 

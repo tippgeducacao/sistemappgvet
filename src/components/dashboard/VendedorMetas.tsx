@@ -166,8 +166,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Grid com os três principais cards de metas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Grid com os dois principais cards de metas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Meta Mensal */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -209,27 +209,44 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             <p className="text-xs text-muted-foreground">
               Semana {semanaAtual} de {selectedYear}
             </p>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between text-xs">
+                <span>Progresso</span>
+                <span>
+                  {vendas.filter(venda => {
+                    if (venda.vendedor_id !== profile.id) return false;
+                    if (venda.status !== 'matriculado') return false;
+                    
+                    const vendaDate = new Date(venda.enviado_em);
+                    const startOfYear = new Date(selectedYear, 0, 1);
+                    const diff = vendaDate.getTime() - startOfYear.getTime();
+                    const oneWeek = 1000 * 60 * 60 * 24 * 7;
+                    const semanaVenda = Math.ceil(diff / oneWeek);
+                    
+                    return semanaVenda === semanaAtual;
+                  }).length}/{metaSemanaAtual?.meta_vendas || 0}
+                </span>
+              </div>
+              {metaSemanaAtual && metaSemanaAtual.meta_vendas > 0 && (
+                <Progress 
+                  value={Math.min((vendas.filter(venda => {
+                    if (venda.vendedor_id !== profile.id) return false;
+                    if (venda.status !== 'matriculado') return false;
+                    
+                    const vendaDate = new Date(venda.enviado_em);
+                    const startOfYear = new Date(selectedYear, 0, 1);
+                    const diff = vendaDate.getTime() - startOfYear.getTime();
+                    const oneWeek = 1000 * 60 * 60 * 24 * 7;
+                    const semanaVenda = Math.ceil(diff / oneWeek);
+                    
+                    return semanaVenda === semanaAtual;
+                  }).length / metaSemanaAtual.meta_vendas) * 100, 100)} 
+                  className="h-2" 
+                />
+              )}
+            </div>
             <Badge variant={metaSemanaAtual ? "default" : "secondary"} className="mt-2">
               {metaSemanaAtual ? "Meta Definida" : "Não Definida"}
-            </Badge>
-          </CardContent>
-        </Card>
-
-        {/* Resumo Semanal */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resumo Semanal</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {semanasDoMes.filter(semana => getMetaSemanalVendedor(profile.id, selectedYear, semana)).length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              de {semanasDoMes.length} semanas com meta
-            </p>
-            <Badge variant="outline" className="mt-2">
-              {Math.round((semanasDoMes.filter(semana => getMetaSemanalVendedor(profile.id, selectedYear, semana)).length / semanasDoMes.length) * 100)}% configurado
             </Badge>
           </CardContent>
         </Card>
