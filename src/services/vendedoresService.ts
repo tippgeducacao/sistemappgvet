@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { VendedorCadastroService } from './vendedores/VendedorCadastroService';
 
 export interface Vendedor {
   id: string;
@@ -68,44 +69,12 @@ export class VendedoresService {
         throw new Error('Você não tem permissão para criar vendedores. Apenas administradores podem realizar esta ação.');
       }
       
-      // Criar usuário usando admin API (não afeta sessão atual)
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: vendedorData.email,
-        password: vendedorData.password,
-        user_metadata: {
-          name: vendedorData.name,
-          user_type: 'vendedor'
-        },
-        email_confirm: true
-      });
-
-      if (authError) {
-        console.error('❌ Erro ao criar usuário:', authError);
-        
-        // Mapear erros para mensagens mais amigáveis
-        let friendlyMessage = 'Erro ao criar vendedor';
-        if (authError.message.includes('User already registered')) {
-          friendlyMessage = 'Este email já está cadastrado no sistema.';
-        } else if (authError.message.includes('Invalid email')) {
-          friendlyMessage = 'Email inválido.';
-        } else if (authError.message.includes('Password should be at least')) {
-          friendlyMessage = 'A senha deve ter pelo menos 6 caracteres.';
-        } else {
-          friendlyMessage = authError.message;
-        }
-        
-        throw new Error(friendlyMessage);
-      }
-
-      if (!authData?.user) {
-        throw new Error('Falha ao criar usuário - dados inválidos retornados');
-      }
-
-      console.log('✅ Usuário criado no Auth:', authData.user.id);
-
-      // O perfil será criado automaticamente via trigger
-      // Aguardar um pouco para o trigger executar
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Usar o serviço de cadastro que não afeta a sessão atual
+      await VendedorCadastroService.cadastrarVendedor(
+        vendedorData.email,
+        vendedorData.password,
+        vendedorData.name
+      );
       
       console.log('✅ Vendedor criado com sucesso');
       
