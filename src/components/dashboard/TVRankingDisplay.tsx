@@ -151,139 +151,181 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white z-50 overflow-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center p-8 border-b border-white/20">
-        <div className="flex items-center gap-6">
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-3 rounded-xl">
-            <Trophy className="h-12 w-12 text-white" />
+      <div className="w-[1200px] h-[900px] mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-white/20">
+          <div className="flex items-center gap-4">
+            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-2 rounded-xl">
+              <Trophy className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                RANKING DE VENDEDORES
+              </h1>
+              <p className="text-lg text-white/80 mt-1">
+                {mesAtualSelecionado} • {totalVendas} vendas • {ranking.length} vendedores
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-6xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-              RANKING DE VENDEDORES
-            </h1>
-            <p className="text-2xl text-white/80 mt-2">
-              {mesAtualSelecionado} • {totalVendas} vendas • {ranking.length} vendedores
-            </p>
+          
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Filter className="h-5 w-5 text-white/60" />
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-48 h-10 text-sm bg-white/10 border-white/20 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {mesesDisponiveis.map((mes) => (
+                    <SelectItem key={mes.value} value={mes.value}>
+                      {mes.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
           </div>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <Filter className="h-6 w-6 text-white/60" />
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-64 h-12 text-lg bg-white/10 border-white/20 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {mesesDisponiveis.map((mes) => (
-                  <SelectItem key={mes.value} value={mes.value}>
-                    {mes.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-3 hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <X className="h-8 w-8" />
-          </button>
-        </div>
-      </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center h-96">
-          <div className="text-4xl text-white/60">Carregando dados...</div>
-        </div>
-      ) : (
-        <div className="p-8">
-          {/* Ranking Completo - Layout Compacto */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 max-w-full mx-auto">
-            {ranking.map((vendedor, index) => {
-              const isTop3 = index < 3;
-              const icons = [Trophy, Medal, Award];
-              const IconComponent = icons[index];
-              const colors = ['from-yellow-400 to-yellow-600', 'from-gray-300 to-gray-500', 'from-amber-400 to-amber-600'];
-              const positions = ['1º', '2º', '3º'];
-              
-              return (
-                <div 
-                  key={vendedor.id} 
-                  className={`bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/15 transition-all duration-300 ${
-                    isTop3 ? 'ring-2 ring-yellow-400/50' : ''
-                  }`}
-                >
-                  <div className="text-center">
-                    {/* Position */}
-                    <div className={`inline-flex items-center justify-center w-10 h-10 ${
-                      isTop3 
-                        ? `bg-gradient-to-r ${colors[index]}` 
-                        : 'bg-gradient-to-r from-teal-400 to-blue-500'
-                    } rounded-full mb-3 text-white font-bold text-lg`}>
-                      {isTop3 ? <IconComponent className="h-5 w-5 text-white" /> : index + 1}
-                    </div>
-                    
-                    {/* Position Badge for Top 3 */}
-                    {isTop3 && (
-                      <Badge className={`bg-gradient-to-r ${colors[index]} text-white text-xs px-2 py-1 mb-3`}>
-                        {positions[index]}
-                      </Badge>
-                    )}
-                    
-                    {/* Avatar */}
-                    <Avatar className="h-16 w-16 mx-auto mb-3 border-2 border-white/30">
-                      <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
-                      <AvatarFallback className="text-sm bg-white/20 text-white">
-                        {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    {/* Nome */}
-                    <h4 className="text-lg font-bold mb-2 text-white leading-tight" title={vendedor.nome}>
-                      {vendedor.nome.length > 15 ? vendedor.nome.substring(0, 15) + '...' : vendedor.nome}
-                    </h4>
-                    
-                    {/* Stats Compactas */}
-                    <div className="space-y-2">
-                      <div className="bg-white/5 rounded-lg p-2">
-                        <div className={`text-xl font-bold ${isTop3 ? 'text-yellow-300' : 'text-white'}`}>
-                          {vendedor.vendas}
-                        </div>
-                        <div className="text-xs text-white/60">
-                          {vendedor.vendas === 1 ? 'venda' : 'vendas'}
-                        </div>
-                      </div>
-                      
-                      <div className="bg-white/5 rounded-lg p-2">
-                        <div className="text-sm font-semibold text-yellow-400">
-                          {DataFormattingService.formatPoints(vendedor.pontuacao)}
-                        </div>
-                        <div className="text-xs text-white/60">pontos</div>
-                      </div>
-                      
-                      {/* Mini progress */}
-                      <div className="bg-white/5 rounded-lg p-2">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>Meta</span>
-                          <span>{vendedor.vendas}/{vendedor.metaMensal}</span>
-                        </div>
-                        <Progress 
-                          value={Math.min(vendedor.progressoMensal, 100)} 
-                          className="h-1.5"
-                        />
-                        <div className="text-xs text-white/50 mt-1">
-                          {vendedor.progressoMensal.toFixed(0)}%
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        {isLoading ? (
+          <div className="flex items-center justify-center h-96">
+            <div className="text-3xl text-white/60">Carregando dados...</div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="p-6 h-[820px] overflow-y-auto">
+            {/* Pódium - Top 3 com destaque */}
+            {ranking.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-center mb-6 text-yellow-400">PÓDIUM</h2>
+                <div className="flex justify-center items-end gap-8 mb-8">
+                  {ranking.slice(0, 3).map((vendedor, index) => {
+                    const icons = [Trophy, Medal, Award];
+                    const IconComponent = icons[index];
+                    const colors = ['from-yellow-400 to-yellow-600', 'from-gray-300 to-gray-500', 'from-amber-400 to-amber-600'];
+                    const positions = ['1º', '2º', '3º'];
+                    const heights = ['h-48', 'h-40', 'h-36'];
+                    
+                    return (
+                      <div 
+                        key={vendedor.id} 
+                        className={`bg-white/15 backdrop-blur-sm rounded-2xl p-6 border-2 border-yellow-400/50 ${heights[index]} flex flex-col justify-between min-w-[200px]`}
+                      >
+                        <div className="text-center">
+                          {/* Position Icon */}
+                          <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${colors[index]} rounded-full mb-4 text-white`}>
+                            <IconComponent className="h-8 w-8" />
+                          </div>
+                          
+                          {/* Position Badge */}
+                          <Badge className={`bg-gradient-to-r ${colors[index]} text-white text-sm px-3 py-1 mb-4`}>
+                            {positions[index]}
+                          </Badge>
+                          
+                          {/* Avatar */}
+                          <Avatar className="h-20 w-20 mx-auto mb-4 border-4 border-white/30">
+                            <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
+                            <AvatarFallback className="text-lg bg-white/20 text-white">
+                              {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          {/* Nome */}
+                          <h3 className="text-xl font-bold mb-3 text-white leading-tight" title={vendedor.nome}>
+                            {vendedor.nome.length > 12 ? vendedor.nome.substring(0, 12) + '...' : vendedor.nome}
+                          </h3>
+                        </div>
+                        
+                        {/* Stats */}
+                        <div className="space-y-2">
+                          <div className="bg-white/10 rounded-lg p-3 text-center">
+                            <div className="text-3xl font-bold text-yellow-300">
+                              {vendedor.vendas}
+                            </div>
+                            <div className="text-sm text-white/60">
+                              {vendedor.vendas === 1 ? 'venda' : 'vendas'}
+                            </div>
+                          </div>
+                          
+                          <div className="bg-white/10 rounded-lg p-2 text-center">
+                            <div className="text-lg font-semibold text-yellow-400">
+                              {DataFormattingService.formatPoints(vendedor.pontuacao)}
+                            </div>
+                            <div className="text-xs text-white/60">pontos</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Demais vendedores */}
+            {ranking.length > 3 && (
+              <div>
+                <h3 className="text-xl font-bold text-center mb-4 text-white/80">CLASSIFICAÇÃO GERAL</h3>
+                <div className="grid grid-cols-6 gap-3">
+                  {ranking.slice(3).map((vendedor, index) => {
+                    const position = index + 4;
+                    
+                    return (
+                      <div 
+                        key={vendedor.id} 
+                        className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/15 transition-all duration-300"
+                      >
+                        <div className="text-center">
+                          {/* Position */}
+                          <div className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-r from-teal-400 to-blue-500 rounded-full mb-2 text-white font-bold text-sm">
+                            {position}
+                          </div>
+                          
+                          {/* Avatar */}
+                          <Avatar className="h-12 w-12 mx-auto mb-2 border-2 border-white/30">
+                            <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
+                            <AvatarFallback className="text-xs bg-white/20 text-white">
+                              {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          {/* Nome */}
+                          <h4 className="text-sm font-bold mb-2 text-white leading-tight" title={vendedor.nome}>
+                            {vendedor.nome.length > 10 ? vendedor.nome.substring(0, 10) + '...' : vendedor.nome}
+                          </h4>
+                          
+                          {/* Stats Compactas */}
+                          <div className="space-y-1">
+                            <div className="bg-white/5 rounded p-1">
+                              <div className="text-lg font-bold text-white">
+                                {vendedor.vendas}
+                              </div>
+                              <div className="text-xs text-white/60">
+                                {vendedor.vendas === 1 ? 'venda' : 'vendas'}
+                              </div>
+                            </div>
+                            
+                            <div className="bg-white/5 rounded p-1">
+                              <div className="text-xs font-semibold text-yellow-400">
+                                {DataFormattingService.formatPoints(vendedor.pontuacao)}
+                              </div>
+                              <div className="text-xs text-white/60">pts</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
