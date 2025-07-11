@@ -8,7 +8,7 @@ import { ScoringRule } from '@/services/scoringService';
 import { useUserRoles } from '@/hooks/useUserRoles';
 
 const GerenciarPontuacoes: React.FC = () => {
-  const { isAdmin, isSecretaria } = useUserRoles();
+  const { isDiretor } = useUserRoles();
   const {
     rules,
     isLoading,
@@ -29,8 +29,8 @@ const GerenciarPontuacoes: React.FC = () => {
     handleAddRule,
   } = useScoring();
 
-  // Verificar se o usuário tem permissão (admin ou secretaria)
-  const hasPermission = isAdmin || isSecretaria;
+  // Verificar se o usuário tem permissão (apenas diretor)
+  const hasPermission = isDiretor;
 
   // Se não tiver permissão, mostrar mensagem de acesso negado
   if (!hasPermission) {
@@ -40,11 +40,11 @@ const GerenciarPontuacoes: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Acesso Restrito</h2>
           <p className="text-gray-600 mb-6">
             Você não tem permissão para acessar esta área. 
-            Esta funcionalidade está disponível apenas para administradores autorizados.
+            Esta funcionalidade está disponível apenas para diretores.
           </p>
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-red-700 text-sm">
-              Entre em contato com o administrador do sistema se você acredita que deveria ter acesso a esta área.
+              Apenas usuários com perfil de diretor podem gerenciar as regras de pontuação do sistema.
             </p>
           </div>
         </div>

@@ -74,9 +74,10 @@ const AddRuleDialog: React.FC<AddRuleDialogProps> = ({
             <Input
               id="pontos"
               type="number"
+              step="0.1"
               value={newRule.pontos}
               onChange={(e) => setNewRule({ ...newRule, pontos: Number(e.target.value) })}
-              placeholder="0"
+              placeholder="0.0"
             />
           </div>
         </div>

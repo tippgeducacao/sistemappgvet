@@ -43,10 +43,10 @@ const RuleItem: React.FC<RuleItemProps> = ({
           <>
             <Input
               type="number"
+              step="0.1"
               value={editValue}
               onChange={(e) => onEditValueChange(Number(e.target.value))}
-              className="w-20"
-              min="0"
+              className="w-24"
             />
             <Button
               size="sm"
