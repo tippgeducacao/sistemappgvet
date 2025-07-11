@@ -71,7 +71,7 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
     const aprovadas = filteredVendas.filter(v => v.status === 'matriculado').length;
     const pendentes = filteredVendas.filter(v => v.status === 'pendente').length;
     const rejeitadas = filteredVendas.filter(v => v.status === 'desistiu').length;
-    const totalPontuacao = filteredVendas.reduce((sum, v) => sum + (v.pontuacao_esperada || 0), 0);
+    const totalPontuacao = filteredVendas.filter(v => v.status === 'matriculado').reduce((sum, v) => sum + (v.pontuacao_validada || v.pontuacao_esperada || 0), 0);
     const totalPontuacaoValidada = filteredVendas.reduce((sum, v) => sum + (v.pontuacao_validada || 0), 0);
 
     // Para vendedores, calcular pontos aguardando validação
