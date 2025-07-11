@@ -198,153 +198,90 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         </div>
       ) : (
         <div className="p-8">
-          {/* Top 3 */}
-          <div className="mb-12">
-            <h2 className="text-4xl font-bold text-center mb-8 text-yellow-400">
-              🏆 TOP 3 VENDEDORES
-            </h2>
-            
-            <div className="grid grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {ranking.slice(0, 3).map((vendedor, index) => {
-                const icons = [Trophy, Medal, Award];
-                const IconComponent = icons[index];
-                const colors = ['from-yellow-400 to-yellow-600', 'from-gray-300 to-gray-500', 'from-amber-400 to-amber-600'];
-                const positions = ['1º', '2º', '3º'];
-                
-                return (
-                  <div 
-                    key={vendedor.id} 
-                    className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 relative overflow-hidden"
-                  >
-                    {/* Background gradient */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${colors[index]} opacity-10`}></div>
-                    
-                    <div className="relative z-10 text-center">
-                      {/* Position badge */}
-                      <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${colors[index]} rounded-full mb-4`}>
-                        <IconComponent className="h-8 w-8 text-white" />
-                      </div>
-                      
-                      <Badge className={`bg-gradient-to-r ${colors[index]} text-white text-xl px-4 py-2 mb-4`}>
-                        {positions[index]} LUGAR
-                      </Badge>
-                      
-                      {/* Avatar */}
-                      <Avatar className="h-32 w-32 mx-auto mb-6 border-4 border-white/30">
-                        <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
-                        <AvatarFallback className="text-2xl bg-white/20 text-white">
-                          {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      {/* Nome */}
-                      <h3 className="text-3xl font-bold mb-4 text-white">{vendedor.nome}</h3>
-                      
-                      {/* Stats */}
-                      <div className="space-y-3">
-                        <div className="bg-white/10 rounded-2xl p-4">
-                          <div className="text-5xl font-black text-white mb-2">
-                            {vendedor.vendas}
-                          </div>
-                          <div className="text-xl text-white/80">
-                            {vendedor.vendas === 1 ? 'VENDA' : 'VENDAS'}
-                          </div>
-                        </div>
-                        
-                        <div className="bg-white/10 rounded-2xl p-4">
-                          <div className="text-3xl font-bold text-yellow-400 mb-2">
-                            {DataFormattingService.formatPoints(vendedor.pontuacao)}
-                          </div>
-                          <div className="text-lg text-white/80">PONTOS</div>
-                        </div>
-                        
-                        {/* Progress bar */}
-                        <div className="bg-white/10 rounded-2xl p-4">
-                          <div className="flex justify-between text-lg mb-2">
-                            <span>META MENSAL</span>
-                            <span>{vendedor.vendas}/{vendedor.metaMensal}</span>
-                          </div>
-                          <Progress 
-                            value={Math.min(vendedor.progressoMensal, 100)} 
-                            className="h-3"
-                          />
-                          <div className="text-sm text-white/60 mt-1">
-                            {vendedor.progressoMensal.toFixed(1)}% concluída
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Restante do ranking */}
-          {ranking.length > 3 && (
-            <div>
-              <h2 className="text-3xl font-bold text-center mb-8 text-white">
-                🔥 DEMAIS VENDEDORES
-              </h2>
+          {/* Ranking Completo - Layout Compacto */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 max-w-full mx-auto">
+            {ranking.map((vendedor, index) => {
+              const isTop3 = index < 3;
+              const icons = [Trophy, Medal, Award];
+              const IconComponent = icons[index];
+              const colors = ['from-yellow-400 to-yellow-600', 'from-gray-300 to-gray-500', 'from-amber-400 to-amber-600'];
+              const positions = ['1º', '2º', '3º'];
               
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
-                {ranking.slice(3).map((vendedor, index) => (
-                  <div 
-                    key={vendedor.id} 
-                    className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300"
-                  >
-                    <div className="text-center">
-                      {/* Position */}
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-teal-400 to-blue-500 rounded-full mb-4 text-white font-bold text-xl">
-                        {index + 4}
+              return (
+                <div 
+                  key={vendedor.id} 
+                  className={`bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/15 transition-all duration-300 ${
+                    isTop3 ? 'ring-2 ring-yellow-400/50' : ''
+                  }`}
+                >
+                  <div className="text-center">
+                    {/* Position */}
+                    <div className={`inline-flex items-center justify-center w-10 h-10 ${
+                      isTop3 
+                        ? `bg-gradient-to-r ${colors[index]}` 
+                        : 'bg-gradient-to-r from-teal-400 to-blue-500'
+                    } rounded-full mb-3 text-white font-bold text-lg`}>
+                      {isTop3 ? <IconComponent className="h-5 w-5 text-white" /> : index + 1}
+                    </div>
+                    
+                    {/* Position Badge for Top 3 */}
+                    {isTop3 && (
+                      <Badge className={`bg-gradient-to-r ${colors[index]} text-white text-xs px-2 py-1 mb-3`}>
+                        {positions[index]}
+                      </Badge>
+                    )}
+                    
+                    {/* Avatar */}
+                    <Avatar className="h-16 w-16 mx-auto mb-3 border-2 border-white/30">
+                      <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
+                      <AvatarFallback className="text-sm bg-white/20 text-white">
+                        {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    {/* Nome */}
+                    <h4 className="text-lg font-bold mb-2 text-white leading-tight" title={vendedor.nome}>
+                      {vendedor.nome.length > 15 ? vendedor.nome.substring(0, 15) + '...' : vendedor.nome}
+                    </h4>
+                    
+                    {/* Stats Compactas */}
+                    <div className="space-y-2">
+                      <div className="bg-white/5 rounded-lg p-2">
+                        <div className={`text-xl font-bold ${isTop3 ? 'text-yellow-300' : 'text-white'}`}>
+                          {vendedor.vendas}
+                        </div>
+                        <div className="text-xs text-white/60">
+                          {vendedor.vendas === 1 ? 'venda' : 'vendas'}
+                        </div>
                       </div>
                       
-                      {/* Avatar */}
-                      <Avatar className="h-20 w-20 mx-auto mb-4 border-2 border-white/30">
-                        <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
-                        <AvatarFallback className="text-lg bg-white/20 text-white">
-                          {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      {/* Nome */}
-                      <h4 className="text-xl font-bold mb-3 text-white truncate">{vendedor.nome}</h4>
-                      
-                      {/* Stats */}
-                      <div className="space-y-2">
-                        <div className="bg-white/5 rounded-lg p-3">
-                          <div className="text-2xl font-bold text-white">
-                            {vendedor.vendas}
-                          </div>
-                          <div className="text-sm text-white/60">
-                            {vendedor.vendas === 1 ? 'venda' : 'vendas'}
-                          </div>
+                      <div className="bg-white/5 rounded-lg p-2">
+                        <div className="text-sm font-semibold text-yellow-400">
+                          {DataFormattingService.formatPoints(vendedor.pontuacao)}
                         </div>
-                        
-                        <div className="bg-white/5 rounded-lg p-3">
-                          <div className="text-lg font-semibold text-yellow-400">
-                            {DataFormattingService.formatPoints(vendedor.pontuacao)} pts
-                          </div>
+                        <div className="text-xs text-white/60">pontos</div>
+                      </div>
+                      
+                      {/* Mini progress */}
+                      <div className="bg-white/5 rounded-lg p-2">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>Meta</span>
+                          <span>{vendedor.vendas}/{vendedor.metaMensal}</span>
                         </div>
-                        
-                        {/* Mini progress */}
-                        <div className="bg-white/5 rounded-lg p-3">
-                          <div className="flex justify-between text-xs mb-1">
-                            <span>Meta</span>
-                            <span>{vendedor.vendas}/{vendedor.metaMensal}</span>
-                          </div>
-                          <Progress 
-                            value={Math.min(vendedor.progressoMensal, 100)} 
-                            className="h-2"
-                          />
+                        <Progress 
+                          value={Math.min(vendedor.progressoMensal, 100)} 
+                          className="h-1.5"
+                        />
+                        <div className="text-xs text-white/50 mt-1">
+                          {vendedor.progressoMensal.toFixed(0)}%
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
