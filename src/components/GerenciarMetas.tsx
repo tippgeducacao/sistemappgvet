@@ -8,10 +8,12 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { useMetas } from '@/hooks/useMetas';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Target, Save } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface VendedorMeta {
   vendedorId: string;
   vendedorNome: string;
+  vendedorFoto: string | null;
   metaAtual: number;
   novoValor: number;
 }
@@ -44,6 +46,16 @@ const GerenciarMetas = () => {
 
   const anos = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i);
 
+  // Função para gerar iniciais do nome
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  };
+
   // Atualizar vendedoresMetas quando vendedores, metas, mes ou ano mudarem
   useEffect(() => {
     if (vendedores.length > 0) {
@@ -57,6 +69,7 @@ const GerenciarMetas = () => {
         return {
           vendedorId: vendedor.id,
           vendedorNome: vendedor.name,
+          vendedorFoto: vendedor.photo_url,
           metaAtual: metaExistente?.meta_vendas || 0,
           novoValor: metaExistente?.meta_vendas || 0
         };
@@ -201,7 +214,15 @@ const GerenciarMetas = () => {
             
             {vendedoresMetas.map((vendedorMeta) => (
               <div key={vendedorMeta.vendedorId} className="grid grid-cols-3 gap-4 p-3 border rounded-lg items-center">
-                <div className="font-medium">{vendedorMeta.vendedorNome}</div>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={vendedorMeta.vendedorFoto || undefined} alt={vendedorMeta.vendedorNome} />
+                    <AvatarFallback className="text-sm font-medium">
+                      {getInitials(vendedorMeta.vendedorNome)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium">{vendedorMeta.vendedorNome}</span>
+                </div>
                 <div className="text-muted-foreground">
                   {vendedorMeta.metaAtual > 0 ? `${vendedorMeta.metaAtual} vendas` : 'Não definida'}
                 </div>
