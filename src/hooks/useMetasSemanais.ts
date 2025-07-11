@@ -96,32 +96,80 @@ export const useMetasSemanais = () => {
     );
   };
 
-  // Função para obter a semana atual do ano
+  // Função para obter a semana atual do mês (não do ano)
   const getSemanaAtual = () => {
     const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const diff = now.getTime() - startOfYear.getTime();
-    const oneWeek = 1000 * 60 * 60 * 24 * 7;
-    return Math.ceil(diff / oneWeek);
-  };
-
-  // Função para obter todas as semanas de um mês
-  const getSemanasDoMes = (ano: number, mes: number) => {
-    const primeiroDiaMes = new Date(ano, mes - 1, 1);
-    const ultimoDiaMes = new Date(ano, mes, 0);
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
     
-    const semanas = new Set<number>();
+    // Usar a mesma lógica do admin para calcular semanas do mês
+    const semanas = getSemanasDoMes(currentYear, currentMonth);
     
-    for (let dia = 1; dia <= ultimoDiaMes.getDate(); dia++) {
-      const data = new Date(ano, mes - 1, dia);
-      const startOfYear = new Date(ano, 0, 1);
-      const diff = data.getTime() - startOfYear.getTime();
-      const oneWeek = 1000 * 60 * 60 * 24 * 7;
-      const semana = Math.ceil(diff / oneWeek);
-      semanas.add(semana);
+    // Encontrar em qual semana do mês estamos
+    for (let i = 0; i < semanas.length; i++) {
+      const semana = semanas[i];
+      const inicioSemana = getDataInicioSemana(currentYear, currentMonth, semana);
+      const fimSemana = getDataFimSemana(currentYear, currentMonth, semana);
+      
+      if (now >= inicioSemana && now <= fimSemana) {
+        return semana;
+      }
     }
     
-    return Array.from(semanas).sort((a, b) => a - b);
+    return 1; // fallback para primeira semana
+  };
+
+  // Função para obter todas as semanas de um mês (semanas do mês, não do ano)
+  const getSemanasDoMes = (ano: number, mes: number) => {
+    const firstDay = new Date(ano, mes - 1, 1);
+    const lastDay = new Date(ano, mes, 0);
+    
+    // Encontrar a primeira quarta-feira
+    let firstWednesday = new Date(firstDay);
+    while (firstWednesday.getDay() !== 3) { // 3 = Wednesday
+      firstWednesday.setDate(firstWednesday.getDate() + 1);
+    }
+    
+    // Contar semanas completas
+    const weeks = [];
+    let currentWednesday = new Date(firstWednesday);
+    let weekNumber = 1;
+    
+    while (currentWednesday <= lastDay) {
+      const weekEnd = new Date(currentWednesday);
+      weekEnd.setDate(weekEnd.getDate() + 6); // Próxima terça-feira
+      
+      weeks.push(weekNumber);
+      weekNumber++;
+      currentWednesday.setDate(currentWednesday.getDate() + 7);
+    }
+    
+    return weeks;
+  };
+
+  // Função auxiliar para obter data de início da semana
+  const getDataInicioSemana = (ano: number, mes: number, numeroSemana: number) => {
+    const firstDay = new Date(ano, mes - 1, 1);
+    
+    let firstWednesday = new Date(firstDay);
+    while (firstWednesday.getDay() !== 3) {
+      firstWednesday.setDate(firstWednesday.getDate() + 1);
+    }
+    
+    const targetWednesday = new Date(firstWednesday);
+    targetWednesday.setDate(targetWednesday.getDate() + (numeroSemana - 1) * 7);
+    
+    return targetWednesday;
+  };
+
+  // Função auxiliar para obter data de fim da semana
+  const getDataFimSemana = (ano: number, mes: number, numeroSemana: number) => {
+    const inicioSemana = getDataInicioSemana(ano, mes, numeroSemana);
+    const fimSemana = new Date(inicioSemana);
+    fimSemana.setDate(fimSemana.getDate() + 6);
+    
+    const lastDay = new Date(ano, mes, 0);
+    return fimSemana > lastDay ? lastDay : fimSemana;
   };
 
   useEffect(() => {

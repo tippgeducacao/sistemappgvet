@@ -224,34 +224,64 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               <div className="flex justify-between text-xs">
                 <span>Progresso</span>
                 <span>
-                  {vendas.filter(venda => {
-                    if (venda.vendedor_id !== profile.id) return false;
-                    if (venda.status !== 'matriculado') return false;
+                  {(() => {
+                    // Calcular vendas da semana atual usando o mesmo sistema
+                    const inicioSemana = new Date(selectedYear, selectedMonth - 1, 1);
+                    let firstWednesday = new Date(inicioSemana);
+                    while (firstWednesday.getDay() !== 3) {
+                      firstWednesday.setDate(firstWednesday.getDate() + 1);
+                    }
                     
-                    const vendaDate = new Date(venda.enviado_em);
-                    const startOfYear = new Date(selectedYear, 0, 1);
-                    const diff = vendaDate.getTime() - startOfYear.getTime();
-                    const oneWeek = 1000 * 60 * 60 * 24 * 7;
-                    const semanaVenda = Math.ceil(diff / oneWeek);
+                    const targetWednesday = new Date(firstWednesday);
+                    targetWednesday.setDate(targetWednesday.getDate() + (semanaAtual - 1) * 7);
                     
-                    return semanaVenda === semanaAtual;
-                  }).length}/{metaSemanaAtual?.meta_vendas || 0}
+                    const fimSemana = new Date(targetWednesday);
+                    fimSemana.setDate(fimSemana.getDate() + 6);
+                    
+                    const lastDay = new Date(selectedYear, selectedMonth, 0);
+                    const endDate = fimSemana > lastDay ? lastDay : fimSemana;
+
+                    const vendasSemanaAtual = vendas.filter(venda => {
+                      if (venda.vendedor_id !== profile.id) return false;
+                      if (venda.status !== 'matriculado') return false;
+                      
+                      const vendaDate = new Date(venda.enviado_em);
+                      return vendaDate >= targetWednesday && vendaDate <= endDate;
+                    }).length;
+                    
+                    return `${vendasSemanaAtual}/${metaSemanaAtual?.meta_vendas || 0}`;
+                  })()}
                 </span>
               </div>
               {metaSemanaAtual && metaSemanaAtual.meta_vendas > 0 && (
                 <Progress 
-                  value={Math.min((vendas.filter(venda => {
-                    if (venda.vendedor_id !== profile.id) return false;
-                    if (venda.status !== 'matriculado') return false;
+                  value={(() => {
+                    // Mesmo cálculo para o progresso
+                    const inicioSemana = new Date(selectedYear, selectedMonth - 1, 1);
+                    let firstWednesday = new Date(inicioSemana);
+                    while (firstWednesday.getDay() !== 3) {
+                      firstWednesday.setDate(firstWednesday.getDate() + 1);
+                    }
                     
-                    const vendaDate = new Date(venda.enviado_em);
-                    const startOfYear = new Date(selectedYear, 0, 1);
-                    const diff = vendaDate.getTime() - startOfYear.getTime();
-                    const oneWeek = 1000 * 60 * 60 * 24 * 7;
-                    const semanaVenda = Math.ceil(diff / oneWeek);
+                    const targetWednesday = new Date(firstWednesday);
+                    targetWednesday.setDate(targetWednesday.getDate() + (semanaAtual - 1) * 7);
                     
-                    return semanaVenda === semanaAtual;
-                  }).length / metaSemanaAtual.meta_vendas) * 100, 100)} 
+                    const fimSemana = new Date(targetWednesday);
+                    fimSemana.setDate(fimSemana.getDate() + 6);
+                    
+                    const lastDay = new Date(selectedYear, selectedMonth, 0);
+                    const endDate = fimSemana > lastDay ? lastDay : fimSemana;
+
+                    const vendasSemanaAtual = vendas.filter(venda => {
+                      if (venda.vendedor_id !== profile.id) return false;
+                      if (venda.status !== 'matriculado') return false;
+                      
+                      const vendaDate = new Date(venda.enviado_em);
+                      return vendaDate >= targetWednesday && vendaDate <= endDate;
+                    }).length;
+                    
+                    return Math.min((vendasSemanaAtual / metaSemanaAtual.meta_vendas) * 100, 100);
+                  })()} 
                   className="h-2" 
                 />
               )}
@@ -277,18 +307,28 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               const metaSemanal = getMetaSemanalVendedor(profile.id, selectedYear, numeroSemana);
               const isAtual = numeroSemana === semanaAtual;
               
-              // Calcular vendas desta semana específica
+              // Calcular vendas desta semana específica usando as datas corretas
+              const inicioSemana = new Date(selectedYear, selectedMonth - 1, 1);
+              let firstWednesday = new Date(inicioSemana);
+              while (firstWednesday.getDay() !== 3) {
+                firstWednesday.setDate(firstWednesday.getDate() + 1);
+              }
+              
+              const targetWednesday = new Date(firstWednesday);
+              targetWednesday.setDate(targetWednesday.getDate() + (numeroSemana - 1) * 7);
+              
+              const fimSemana = new Date(targetWednesday);
+              fimSemana.setDate(fimSemana.getDate() + 6);
+              
+              const lastDay = new Date(selectedYear, selectedMonth, 0);
+              const endDate = fimSemana > lastDay ? lastDay : fimSemana;
+
               const vendasDaSemana = vendas.filter(venda => {
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
                 
                 const vendaDate = new Date(venda.enviado_em);
-                const startOfYear = new Date(selectedYear, 0, 1);
-                const diff = vendaDate.getTime() - startOfYear.getTime();
-                const oneWeek = 1000 * 60 * 60 * 24 * 7;
-                const semanaVenda = Math.ceil(diff / oneWeek);
-                
-                return semanaVenda === numeroSemana;
+                return vendaDate >= targetWednesday && vendaDate <= endDate;
               }).length;
 
               const progressoSemanal = metaSemanal?.meta_vendas && metaSemanal.meta_vendas > 0 
