@@ -6,6 +6,7 @@ import StatusDistributionChart from './StatusDistributionChart';
 import SalesByCourseChart from './SalesByCourseChart';
 import VendorsRanking from './VendorsRanking';
 import RecentSales from './RecentSales';
+import WeeklyApprovedSalesChart from './WeeklyApprovedSalesChart';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -66,6 +67,8 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
         </div>
 
         <SalesByCourseChart />
+
+        <WeeklyApprovedSalesChart />
 
         <VendorsRanking />
       </div>
