@@ -164,6 +164,17 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   const semanasDoMes = getSemanasDoMes(selectedYear, selectedMonth);
   const metaSemanaAtual = getMetaSemanalVendedor(profile.id, selectedYear, semanaAtual);
 
+  console.log('🎯 VendedorMetas DEBUG:', {
+    semanaAtual,
+    selectedYear,
+    selectedMonth,
+    semanasDoMes,
+    metaSemanaAtual,
+    todasMetasSemanais: metasSemanais,
+    metasDoVendedor: metasSemanais.filter(m => m.vendedor_id === profile.id),
+    profileId: profile.id
+  });
+
   return (
     <div className="space-y-4">
       {/* Grid com os dois principais cards de metas */}
