@@ -68,16 +68,15 @@ export class VendedoresService {
         throw new Error('Você não tem permissão para criar vendedores. Apenas administradores podem realizar esta ação.');
       }
       
-      // Criar usuário usando signUp normal (não admin)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Criar usuário usando admin API (não afeta sessão atual)
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: vendedorData.email,
         password: vendedorData.password,
-        options: {
-          data: {
-            name: vendedorData.name,
-            user_type: 'vendedor'
-          }
-        }
+        user_metadata: {
+          name: vendedorData.name,
+          user_type: 'vendedor'
+        },
+        email_confirm: true
       });
 
       if (authError) {
