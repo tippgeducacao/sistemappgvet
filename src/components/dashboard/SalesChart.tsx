@@ -4,7 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAllVendas } from '@/hooks/useVendas';
 
-const SalesChart: React.FC = () => {
+interface SalesChartProps {
+  selectedVendedor?: string;
+}
+
+const SalesChart: React.FC<SalesChartProps> = ({ selectedVendedor }) => {
   const { vendas, isLoading } = useAllVendas();
 
   if (isLoading) {
@@ -23,8 +27,13 @@ const SalesChart: React.FC = () => {
     );
   }
 
+  // Filtrar vendas por vendedor se selecionado
+  const vendasFiltradas = selectedVendedor && selectedVendedor !== 'todos' 
+    ? vendas.filter(venda => venda.vendedor_id === selectedVendedor)
+    : vendas;
+
   // Agrupar apenas vendas aprovadas por mês
-  const vendasPorMes = vendas.reduce((acc, venda) => {
+  const vendasPorMes = vendasFiltradas.reduce((acc, venda) => {
     if (!venda.enviado_em) return acc;
     
     const data = new Date(venda.enviado_em);
@@ -50,9 +59,9 @@ const SalesChart: React.FC = () => {
     return new Date(`${mesA} 1, ${anoA}`).getTime() - new Date(`${mesB} 1, ${anoB}`).getTime();
   });
 
-  const totalAprovadas = vendas.filter(v => v.status === 'matriculado').length;
+  const totalAprovadas = vendasFiltradas.filter(v => v.status === 'matriculado').length;
 
-  if (vendas.length === 0) {
+  if (vendasFiltradas.length === 0) {
     return (
       <Card>
         <CardHeader>

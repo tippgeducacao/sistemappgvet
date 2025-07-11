@@ -10,7 +10,11 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 
-const VendorsRanking: React.FC = () => {
+interface VendorsRankingProps {
+  selectedVendedor?: string;
+}
+
+const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor }) => {
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { vendedores, loading: vendedoresLoading } = useVendedores();
   const { currentUser, profile } = useAuthStore();
@@ -39,16 +43,26 @@ const VendorsRanking: React.FC = () => {
     });
   }, [vendedores, profile?.email, currentUser?.email]);
 
-  // Filtrar vendas por mês selecionado
+  // Filtrar vendas por mês selecionado e vendedor se especificado
   const vendasFiltradas = useMemo(() => {
-    if (!selectedMonth) return vendas;
+    let vendas_filtered = vendas;
     
-    return vendas.filter(venda => {
-      const vendaDate = new Date(venda.enviado_em);
-      const vendaMonth = `${vendaDate.getFullYear()}-${String(vendaDate.getMonth() + 1).padStart(2, '0')}`;
-      return vendaMonth === selectedMonth;
-    });
-  }, [vendas, selectedMonth]);
+    // Filtrar por mês se selecionado
+    if (selectedMonth) {
+      vendas_filtered = vendas_filtered.filter(venda => {
+        const vendaDate = new Date(venda.enviado_em);
+        const vendaMonth = `${vendaDate.getFullYear()}-${String(vendaDate.getMonth() + 1).padStart(2, '0')}`;
+        return vendaMonth === selectedMonth;
+      });
+    }
+    
+    // Filtrar por vendedor se especificado (usado quando selecionado no dashboard geral)
+    if (selectedVendedor && selectedVendedor !== 'todos') {
+      vendas_filtered = vendas_filtered.filter(venda => venda.vendedor_id === selectedVendedor);
+    }
+    
+    return vendas_filtered;
+  }, [vendas, selectedMonth, selectedVendedor]);
 
   // Gerar lista de meses disponíveis
   const mesesDisponiveis = useMemo(() => {

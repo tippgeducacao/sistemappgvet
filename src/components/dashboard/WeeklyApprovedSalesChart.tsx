@@ -13,9 +13,12 @@ interface WeeklyData {
   vendas: number;
 }
 
-const WeeklyApprovedSalesChart: React.FC = () => {
+interface WeeklyApprovedSalesChartProps {
+  selectedVendedor?: string;
+}
+
+const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ selectedVendedor: propSelectedVendedor }) => {
   const { vendedores } = useVendedores();
-  const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
   const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -68,9 +71,9 @@ const WeeklyApprovedSalesChart: React.FC = () => {
       console.log('📊 Buscando dados de vendas aprovadas por semana...');
       
       // Buscar todas as vendas ou vendas de um vendedor específico
-      const vendas: VendaCompleta[] = selectedVendedor === 'todos' 
+      const vendas: VendaCompleta[] = propSelectedVendedor === 'todos' || !propSelectedVendedor
         ? await VendasDataService.getAllVendas()
-        : await VendasDataService.getVendasByVendedor(selectedVendedor);
+        : await VendasDataService.getVendasByVendedor(propSelectedVendedor);
 
       console.log(`📈 Total de vendas encontradas: ${vendas.length}`);
 
@@ -110,37 +113,19 @@ const WeeklyApprovedSalesChart: React.FC = () => {
 
   useEffect(() => {
     fetchWeeklyData();
-  }, [selectedVendedor]);
+  }, [propSelectedVendedor]);
 
-  const selectedVendedorName = selectedVendedor === 'todos' 
+  const selectedVendedorName = propSelectedVendedor === 'todos' || !propSelectedVendedor
     ? 'Todos os Vendedores'
-    : vendedores.find(v => v.id === selectedVendedor)?.name || 'Vendedor Desconhecido';
+    : vendedores.find(v => v.id === propSelectedVendedor)?.name || 'Vendedor Desconhecido';
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Vendas Aprovadas por Semana</CardTitle>
-            <CardDescription>
-              Vendas matriculadas agrupadas por semana (Quarta a Terça)
-            </CardDescription>
-          </div>
-          
-          <Select value={selectedVendedor} onValueChange={setSelectedVendedor}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Selecionar vendedor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os Vendedores</SelectItem>
-              {vendedores.map((vendedor) => (
-                <SelectItem key={vendedor.id} value={vendedor.id}>
-                  {vendedor.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <CardTitle>Vendas Aprovadas por Semana</CardTitle>
+        <CardDescription>
+          Vendas matriculadas agrupadas por semana (Quarta a Terça)
+        </CardDescription>
       </CardHeader>
       
       <CardContent>

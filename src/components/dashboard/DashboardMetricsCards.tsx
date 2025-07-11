@@ -16,12 +16,14 @@ interface DashboardMetricsCardsProps {
   userType: UserType;
   selectedMonth?: number;
   selectedYear?: number;
+  selectedVendedor?: string;
 }
 
 const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
   userType,
   selectedMonth,
-  selectedYear
+  selectedYear,
+  selectedVendedor
 }) => {
   const {
     isAdmin,
@@ -42,7 +44,12 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
   } = useAuthStore();
 
   // Escolher quais vendas usar baseado no tipo de usuário
-  const vendas = isAdmin || isSecretaria || userType === 'admin' || userType === 'secretaria' ? todasVendas : minhasVendas;
+  let vendas = isAdmin || isSecretaria || userType === 'admin' || userType === 'secretaria' ? todasVendas : minhasVendas;
+  
+  // Filtrar por vendedor se selecionado
+  if (selectedVendedor && selectedVendedor !== 'todos') {
+    vendas = vendas.filter(venda => venda.vendedor_id === selectedVendedor);
+  }
 
   // Filtrar vendas por período se os filtros estiverem definidos
   const filteredVendas = useMemo(() => {

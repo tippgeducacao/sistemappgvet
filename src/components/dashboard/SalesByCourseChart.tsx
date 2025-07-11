@@ -6,7 +6,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, 
 import { useAllVendas } from '@/hooks/useVendas';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
-const SalesByCourseChart: React.FC = () => {
+interface SalesByCourseChartProps {
+  selectedVendedor?: string;
+}
+
+const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedor }) => {
   const { vendas, isLoading } = useAllVendas();
 
   const courseColors = [
@@ -62,9 +66,14 @@ const SalesByCourseChart: React.FC = () => {
   };
 
   const chartData = React.useMemo(() => {
-    if (!vendas || vendas.length === 0) return [];
+    // Filtrar vendas por vendedor se selecionado
+    const vendasFiltradas = selectedVendedor && selectedVendedor !== 'todos' 
+      ? vendas.filter(venda => venda.vendedor_id === selectedVendedor)
+      : vendas;
+    
+    if (!vendasFiltradas || vendasFiltradas.length === 0) return [];
 
-    const vendasPorCurso = vendas.reduce((acc, venda) => {
+    const vendasPorCurso = vendasFiltradas.reduce((acc, venda) => {
       const cursoNome = venda.curso?.nome || 'Curso não informado';
       const cursoLimpo = extractCourseNameAfterColon(cursoNome);
       
@@ -99,7 +108,7 @@ const SalesByCourseChart: React.FC = () => {
         ...item,
         color: courseColors[index % courseColors.length]
       }));
-  }, [vendas]);
+  }, [vendas, selectedVendedor]);
 
   const chartConfig = {
     total: {
@@ -195,7 +204,9 @@ const SalesByCourseChart: React.FC = () => {
         <CardHeader>
           <CardTitle>Vendas por Curso</CardTitle>
           <CardDescription>
-            Distribuição de {vendas.length} vendas entre os cursos oferecidos
+            Distribuição de {selectedVendedor && selectedVendedor !== 'todos' 
+              ? chartData.reduce((acc, item) => acc + item.total, 0) 
+              : vendas.length} vendas entre os cursos oferecidos
           </CardDescription>
         </CardHeader>
         <CardContent>

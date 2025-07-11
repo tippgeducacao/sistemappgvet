@@ -3,7 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useAllVendas } from '@/hooks/useVendas';
 
-const StatusDistributionChart: React.FC = () => {
+interface StatusDistributionChartProps {
+  selectedVendedor?: string;
+}
+
+const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ selectedVendedor }) => {
   const { vendas, isLoading } = useAllVendas();
 
   if (isLoading) {
@@ -22,17 +26,22 @@ const StatusDistributionChart: React.FC = () => {
     );
   }
 
-  const vendasRejeitadas = vendas.filter(v => v.status === 'desistiu' && v.motivo_pendencia);
+  // Filtrar vendas por vendedor se selecionado
+  const vendasFiltradas = selectedVendedor && selectedVendedor !== 'todos' 
+    ? vendas.filter(venda => venda.vendedor_id === selectedVendedor)
+    : vendas;
+
+  const vendasRejeitadas = vendasFiltradas.filter(v => v.status === 'desistiu' && v.motivo_pendencia);
 
   const statusData = [
     {
       name: 'Matriculados',
-      value: vendas.filter(v => v.status === 'matriculado').length,
+      value: vendasFiltradas.filter(v => v.status === 'matriculado').length,
       color: '#10b981'
     },
     {
       name: 'Pendentes',
-      value: vendas.filter(v => v.status === 'pendente').length,
+      value: vendasFiltradas.filter(v => v.status === 'pendente').length,
       color: '#f59e0b'
     },
     {
@@ -42,7 +51,7 @@ const StatusDistributionChart: React.FC = () => {
     }
   ].filter(item => item.value > 0);
 
-  if (vendas.length === 0) {
+  if (vendasFiltradas.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -88,7 +97,7 @@ const StatusDistributionChart: React.FC = () => {
       <CardHeader>
         <CardTitle>Status das Matrículas</CardTitle>
         <CardDescription>
-          Distribuição atual: {vendas.length} {vendas.length === 1 ? 'venda' : 'vendas'} cadastradas
+          Distribuição atual: {vendasFiltradas.length} {vendasFiltradas.length === 1 ? 'venda' : 'vendas'} cadastradas
         </CardDescription>
       </CardHeader>
       <CardContent>
