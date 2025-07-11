@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Filter, Trophy } from 'lucide-react';
+import { Filter, Trophy, Medal, Award } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetas } from '@/hooks/useMetas';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
+import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 
 interface VendorsRankingProps {
   selectedVendedor?: string;
@@ -29,6 +30,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+
+  // Estado para modal de metas semanais
+  const [selectedVendedorForGoals, setSelectedVendedorForGoals] = useState<{
+    id: string;
+    name: string;
+    photo_url?: string;
+  } | null>(null);
   
   // Usar filtro externo se disponível, senão usar interno
   const selectedMonth = propSelectedMonth && propSelectedYear 
@@ -227,11 +235,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     ? `${new Date(propSelectedYear, propSelectedMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`.charAt(0).toUpperCase() + `${new Date(propSelectedYear, propSelectedMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`.slice(1)
     : mesesDisponiveis.find(m => m.value === selectedMonth)?.label || 'Mês atual';
 
-  // Melhor vendedor (primeiro do ranking)
-  const melhorVendedor = ranking[0];
+  // Top 3 vendedores
+  const top3Vendedores = ranking.slice(0, 3);
   
-  // Lista do ranking sem o primeiro colocado (para não duplicar)
-  const rankingSemPrimeiro = ranking.slice(1);
+  // Lista do ranking sem o top 3 (para não duplicar)
+  const rankingSemTop3 = ranking.slice(3);
 
   return (
     <Card>
@@ -270,71 +278,99 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Destaque do Melhor Vendedor */}
-            {melhorVendedor && (
+            {/* Top 3 Vendedores */}
+            {top3Vendedores.length > 0 && (
               <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-lg p-6 mb-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-6">
-                    <div className="flex items-center justify-center w-12 h-12 bg-yellow-500 text-white rounded-full">
-                      <Trophy className="h-6 w-6" />
-                    </div>
-                    <Avatar className="h-20 w-20 border-4 border-yellow-300">
-                      <AvatarImage 
-                        src={melhorVendedor.photo_url} 
-                        alt={melhorVendedor.nome}
-                      />
-                      <AvatarFallback className="text-xl bg-yellow-100">
-                        {melhorVendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-bold text-2xl text-yellow-800">Melhor Vendedor</h3>
-                        <Badge className="bg-yellow-500 text-white text-sm px-3 py-1">🏆 #1</Badge>
-                      </div>
-                      <p className="font-bold text-xl text-ppgvet-teal mb-1">{melhorVendedor.nome}</p>
-                      <p className="text-lg font-semibold text-yellow-700">
-                        {melhorVendedor.vendas} {melhorVendedor.vendas === 1 ? 'venda aprovada' : 'vendas aprovadas'}
-                      </p>
-                      <p className="text-lg font-bold text-ppgvet-magenta">
-                        {DataFormattingService.formatPoints(melhorVendedor.pontuacao)} pts
-                      </p>
-                      
-                      {/* Mini barras de progresso para o melhor vendedor */}
-                      <div className="flex gap-4 mt-3">
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs font-medium text-yellow-700">Meta Mês</span>
-                            <span className="text-xs text-yellow-600">{melhorVendedor.vendas}/{melhorVendedor.metaMensal}</span>
+                <div className="flex items-center gap-2 mb-4">
+                  <Trophy className="h-6 w-6 text-yellow-600" />
+                  <h3 className="font-bold text-xl text-yellow-800">Top 3 Vendedores</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {top3Vendedores.map((vendedor, index) => {
+                    const icons = [Trophy, Medal, Award];
+                    const IconComponent = icons[index];
+                    const colors = ['text-yellow-500', 'text-gray-400', 'text-amber-600'];
+                    const bgColors = ['bg-yellow-100', 'bg-gray-100', 'bg-amber-100'];
+                    const positions = ['#1', '#2', '#3'];
+                    
+                    return (
+                      <div 
+                        key={vendedor.id} 
+                        className="bg-white rounded-lg p-4 border cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => setSelectedVendedorForGoals({
+                          id: vendedor.id,
+                          name: vendedor.nome,
+                          photo_url: vendedor.photo_url
+                        })}
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`flex items-center justify-center w-10 h-10 ${bgColors[index]} rounded-full`}>
+                            <IconComponent className={`h-5 w-5 ${colors[index]}`} />
                           </div>
-                          <Progress 
-                            value={Math.min(melhorVendedor.progressoMensal, 100)} 
-                            className="h-2 bg-yellow-100"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs font-medium text-yellow-700">Meta Semana</span>
-                            <span className="text-xs text-yellow-600">{melhorVendedor.vendasSemanais}/{melhorVendedor.metaSemanal}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-gray-800">{vendedor.nome}</h4>
+                              <Badge className={`${index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-amber-600'} text-white text-xs`}>
+                                {positions[index]}
+                              </Badge>
+                            </div>
+                            <Avatar className="h-12 w-12 mt-2 border-2 border-yellow-300">
+                              <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
+                              <AvatarFallback className="text-sm">
+                                {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
                           </div>
-                          <Progress 
-                            value={Math.min(melhorVendedor.progressoSemanal, 100)} 
-                            className="h-2 bg-yellow-100"
-                          />
+                        </div>
+                        
+                        <div className="space-y-1 text-sm">
+                          <p className="font-semibold text-gray-700">
+                            {vendedor.vendas} {vendedor.vendas === 1 ? 'venda' : 'vendas'}
+                          </p>
+                          <p className="font-bold text-ppgvet-magenta">
+                            {DataFormattingService.formatPoints(vendedor.pontuacao)} pts
+                          </p>
+                        </div>
+                        
+                        {/* Mini barras para o top 3 */}
+                        <div className="flex gap-2 mt-3">
+                          <div className="flex-1">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs font-medium text-gray-600">Mês</span>
+                              <span className="text-xs text-gray-500">{vendedor.vendas}/{vendedor.metaMensal}</span>
+                            </div>
+                            <Progress value={Math.min(vendedor.progressoMensal, 100)} className="h-1.5" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs font-medium text-gray-600">Sem</span>
+                              <span className="text-xs text-gray-500">{vendedor.vendasSemanais}/{vendedor.metaSemanal}</span>
+                            </div>
+                            <Progress value={Math.min(vendedor.progressoSemanal, 100)} className="h-1.5" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Lista do Ranking a partir do 2º lugar */}
-            {rankingSemPrimeiro.map((vendedor, index) => (
-              <div key={vendedor.id} className="flex items-center justify-between p-4 border rounded-lg">
+            {/* Lista do Ranking a partir do 4º lugar */}
+            {rankingSemTop3.map((vendedor, index) => (
+              <div 
+                key={vendedor.id} 
+                className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => setSelectedVendedorForGoals({
+                  id: vendedor.id,
+                  name: vendedor.nome,
+                  photo_url: vendedor.photo_url
+                })}
+              >
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center justify-center w-8 h-8 bg-ppgvet-teal text-white rounded-full font-bold">
-                    {index + 2}
+                    {index + 4}
                   </div>
                   <Avatar className="h-10 w-10">
                     <AvatarImage 
@@ -390,6 +426,17 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
             ))}
           </div>
         )}
+        
+        {/* Modal de Metas Semanais */}
+        <VendorWeeklyGoalsModal
+          vendedorId={selectedVendedorForGoals?.id}
+          vendedorNome={selectedVendedorForGoals?.name}
+          vendedorPhoto={selectedVendedorForGoals?.photo_url}
+          selectedMonth={propSelectedMonth || parseInt(selectedMonth.split('-')[1])}
+          selectedYear={propSelectedYear || parseInt(selectedMonth.split('-')[0])}
+          isOpen={!!selectedVendedorForGoals}
+          onClose={() => setSelectedVendedorForGoals(null)}
+        />
       </CardContent>
     </Card>
   );

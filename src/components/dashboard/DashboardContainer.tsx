@@ -7,7 +7,7 @@ import SalesByCourseChart from './SalesByCourseChart';
 import VendorsRanking from './VendorsRanking';
 import RecentSales from './RecentSales';
 import WeeklyApprovedSalesChart from './WeeklyApprovedSalesChart';
-import VendorGoalsProgress from './VendorGoalsProgress';
+
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -112,12 +112,6 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
         />
 
         <VendorsRanking 
-          selectedVendedor={selectedVendedor}
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
-        />
-        
-        <VendorGoalsProgress 
           selectedVendedor={selectedVendedor}
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
