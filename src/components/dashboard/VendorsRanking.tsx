@@ -4,10 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { Filter, Trophy } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useAuthStore } from '@/stores/AuthStore';
+import { useMetas } from '@/hooks/useMetas';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 
 interface VendorsRankingProps {
@@ -19,6 +21,7 @@ interface VendorsRankingProps {
 const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selectedMonth: propSelectedMonth, selectedYear: propSelectedYear }) => {
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { vendedores, loading: vendedoresLoading } = useVendedores();
+  const { metas, loading: metasLoading } = useMetas();
   const { currentUser, profile } = useAuthStore();
   
   // Estado interno para o filtro de mês (apenas quando não há filtro externo)
@@ -32,7 +35,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     ? `${propSelectedYear}-${String(propSelectedMonth).padStart(2, '0')}`
     : internalSelectedMonth;
 
-  const isLoading = vendasLoading || vendedoresLoading;
+  const isLoading = vendasLoading || vendedoresLoading || metasLoading;
 
   // Filtrar vendedores - remover "Vendedor teste" exceto para admin específico
   const vendedoresFiltrados = useMemo(() => {
@@ -150,15 +153,55 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     return acc;
   }, {} as Record<string, { id: string; nome: string; photo_url?: string; vendas: number; pontuacao: number }>);
 
+  // Função para calcular vendas semanais
+  const getWeeklyProgress = (vendedorId: string, year: number, month: number) => {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay()); // Início da semana (domingo)
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Final da semana (sábado)
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    return vendasFiltradas.filter(venda => {
+      if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
+      
+      const vendaDate = new Date(venda.enviado_em);
+      return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
+    }).length;
+  };
+
   // Incluir TODOS os vendedores filtrados, mesmo os que não fizeram vendas
   const todosVendedoresStats = vendedoresFiltrados.map(vendedor => {
     const statsExistentes = vendedoresStats[vendedor.id];
+    const [year, monthStr] = selectedMonth.split('-');
+    const currentYear = parseInt(year);
+    const currentMonth = parseInt(monthStr);
+    
+    // Buscar meta do vendedor para o período
+    const metaVendedor = metas.find(meta => 
+      meta.vendedor_id === vendedor.id && 
+      meta.ano === currentYear && 
+      meta.mes === currentMonth
+    );
+    
+    const vendasAprovadas = statsExistentes?.vendas || 0;
+    const metaMensal = metaVendedor?.meta_vendas || 0;
+    const metaSemanal = Math.ceil(metaMensal / 4); // Meta semanal aproximada
+    const vendasSemanais = getWeeklyProgress(vendedor.id, currentYear, currentMonth);
+    
     return {
       id: vendedor.id,
       nome: vendedor.name,
       photo_url: vendedor.photo_url,
-      vendas: statsExistentes?.vendas || 0,
-      pontuacao: statsExistentes?.pontuacao || 0
+      vendas: vendasAprovadas,
+      pontuacao: statsExistentes?.pontuacao || 0,
+      metaMensal,
+      metaSemanal,
+      vendasSemanais,
+      progressoMensal: metaMensal > 0 ? (vendasAprovadas / metaMensal) * 100 : 0,
+      progressoSemanal: metaSemanal > 0 ? (vendasSemanais / metaSemanal) * 100 : 0
     };
   });
 
@@ -256,6 +299,30 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                       <p className="text-lg font-bold text-ppgvet-magenta">
                         {DataFormattingService.formatPoints(melhorVendedor.pontuacao)} pts
                       </p>
+                      
+                      {/* Mini barras de progresso para o melhor vendedor */}
+                      <div className="flex gap-4 mt-3">
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs font-medium text-yellow-700">Meta Mês</span>
+                            <span className="text-xs text-yellow-600">{melhorVendedor.vendas}/{melhorVendedor.metaMensal}</span>
+                          </div>
+                          <Progress 
+                            value={Math.min(melhorVendedor.progressoMensal, 100)} 
+                            className="h-2 bg-yellow-100"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs font-medium text-yellow-700">Meta Semana</span>
+                            <span className="text-xs text-yellow-600">{melhorVendedor.vendasSemanais}/{melhorVendedor.metaSemanal}</span>
+                          </div>
+                          <Progress 
+                            value={Math.min(melhorVendedor.progressoSemanal, 100)} 
+                            className="h-2 bg-yellow-100"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -278,11 +345,35 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                       {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium">{vendedor.nome}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-2">
                       {vendedor.vendas} {vendedor.vendas === 1 ? 'venda aprovada' : 'vendas aprovadas'}
                     </p>
+                    
+                    {/* Mini barras de progresso */}
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-medium text-muted-foreground">Meta Mês</span>
+                          <span className="text-xs text-muted-foreground">{vendedor.vendas}/{vendedor.metaMensal}</span>
+                        </div>
+                        <Progress 
+                          value={Math.min(vendedor.progressoMensal, 100)} 
+                          className="h-1.5"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-medium text-muted-foreground">Meta Semana</span>
+                          <span className="text-xs text-muted-foreground">{vendedor.vendasSemanais}/{vendedor.metaSemanal}</span>
+                        </div>
+                        <Progress 
+                          value={Math.min(vendedor.progressoSemanal, 100)} 
+                          className="h-1.5"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
