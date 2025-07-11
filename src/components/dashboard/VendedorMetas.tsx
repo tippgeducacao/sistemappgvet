@@ -98,6 +98,15 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     m.ano === selectedYear
   );
 
+  console.log('🎯 VendedorMetas Debug:', {
+    vendedorId: profile.id,
+    selectedMonth,
+    selectedYear,
+    todasMetas: metas,
+    metaEncontrada: meta,
+    metasDoVendedor: metas.filter(m => m.vendedor_id === profile.id)
+  });
+
   const approvedSales = getApprovedSales(selectedYear, selectedMonth);
   const progressPercentage = meta?.meta_vendas && meta.meta_vendas > 0 ? (approvedSales / meta.meta_vendas) * 100 : 0;
   const weeks = getWeeksInMonth(selectedYear, selectedMonth);
