@@ -6,6 +6,7 @@ import StatusDistributionChart from './StatusDistributionChart';
 import SalesByCourseChart from './SalesByCourseChart';
 import VendorsRanking from './VendorsRanking';
 import RecentSales from './RecentSales';
+import VendedorMetas from './VendedorMetas';
 import WeeklyApprovedSalesChart from './WeeklyApprovedSalesChart';
 
 import MonthYearFilter from '@/components/common/MonthYearFilter';
@@ -132,6 +133,11 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
       
       <DashboardMetricsCards 
         userType="vendedor" 
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+      />
+      
+      <VendedorMetas 
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
       />
