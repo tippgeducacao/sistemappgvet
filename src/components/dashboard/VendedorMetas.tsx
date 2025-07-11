@@ -159,10 +159,14 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     );
   }
 
-  // Dados para metas semanais
-  const semanaAtual = getSemanaAtual();
+  // Dados para metas semanais  
   const semanasDoMes = getSemanasDoMes(selectedYear, selectedMonth);
-  const metaSemanaAtual = getMetaSemanalVendedor(profile.id, selectedYear, semanaAtual);
+  const semanaAtual = getSemanaAtual();
+  const metaSemanaAtual = metasSemanais.find(meta => 
+    meta.vendedor_id === profile.id && 
+    meta.ano === selectedYear && 
+    meta.semana === semanaAtual
+  );
 
   console.log('🎯 VendedorMetas DEBUG:', {
     semanaAtual,
@@ -304,7 +308,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         <CardContent>
           <div className="grid gap-3">
             {semanasDoMes.map((numeroSemana) => {
-              const metaSemanal = getMetaSemanalVendedor(profile.id, selectedYear, numeroSemana);
+              // Buscar meta semanal para o mês e semana específicos
+              const metaSemanal = metasSemanais.find(meta => 
+                meta.vendedor_id === profile.id && 
+                meta.ano === selectedYear && 
+                meta.semana === numeroSemana
+              );
               const isAtual = numeroSemana === semanaAtual;
               
               // Calcular vendas desta semana específica usando as datas corretas
