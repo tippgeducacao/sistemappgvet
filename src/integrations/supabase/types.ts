@@ -329,6 +329,39 @@ export type Database = {
           },
         ]
       }
+      metas_vendedores: {
+        Row: {
+          ano: number
+          created_at: string
+          created_by: string | null
+          id: string
+          mes: number
+          meta_vendas: number
+          updated_at: string
+          vendedor_id: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mes: number
+          meta_vendas?: number
+          updated_at?: string
+          vendedor_id: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mes?: number
+          meta_vendas?: number
+          updated_at?: string
+          vendedor_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null

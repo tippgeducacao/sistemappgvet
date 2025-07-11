@@ -31,6 +31,11 @@ export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
     title: 'Gestão de Leads',
     section: 'gestao-leads',
     icon: 'Target'
+  },
+  {
+    title: 'Gerenciar Metas',
+    section: 'gerenciar-metas',
+    icon: 'Target'
   }
 ];
 
@@ -58,6 +63,11 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
   {
     title: 'Gestão de Leads',
     section: 'gestao-leads',
+    icon: 'Target'
+  },
+  {
+    title: 'Gerenciar Metas',
+    section: 'gerenciar-metas',
     icon: 'Target'
   }
 ];
