@@ -5,13 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Filter, Trophy, Medal, Award } from 'lucide-react';
+import { Filter, Trophy, Medal, Award, Tv } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetas } from '@/hooks/useMetas';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
+import TVRankingDisplay from './TVRankingDisplay';
 
 interface VendorsRankingProps {
   selectedVendedor?: string;
@@ -37,6 +38,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     name: string;
     photo_url?: string;
   } | null>(null);
+
+  // Estado para modo TV
+  const [isTVMode, setIsTVMode] = useState(false);
   
   // Usar filtro externo se disponível, senão usar interno
   const selectedMonth = propSelectedMonth && propSelectedYear 
@@ -246,7 +250,16 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Ranking de Vendedores</CardTitle>
+            <CardTitle className="flex items-center gap-3">
+              Ranking de Vendedores
+              <button
+                onClick={() => setIsTVMode(true)}
+                className="inline-flex items-center justify-center p-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 hover:scale-105 group"
+                title="Exibir em tela cheia (Modo TV)"
+              >
+                <Tv className="h-5 w-5 group-hover:animate-pulse" />
+              </button>
+            </CardTitle>
             <CardDescription>
               Todos os {ranking.length} vendedores por vendas aprovadas - {mesAtualSelecionado}
             </CardDescription>
@@ -436,6 +449,12 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           selectedYear={propSelectedYear || parseInt(selectedMonth.split('-')[0])}
           isOpen={!!selectedVendedorForGoals}
           onClose={() => setSelectedVendedorForGoals(null)}
+        />
+
+        {/* Componente de exibição TV */}
+        <TVRankingDisplay 
+          isOpen={isTVMode}
+          onClose={() => setIsTVMode(false)}
         />
       </CardContent>
     </Card>
