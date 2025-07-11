@@ -19,7 +19,23 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   const { vendas } = useVendas();
   const { profile } = useAuthStore();
 
-  if (!profile?.id) return null;
+  console.log('🔍 VendedorMetas - Verificação inicial:', {
+    profile,
+    profileId: profile?.id,
+    metas,
+    vendas: vendas.length
+  });
+
+  if (!profile?.id) {
+    console.log('❌ VendedorMetas - Profile não encontrado:', profile);
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-muted-foreground">Carregando dados do perfil...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Função para calcular o número de semanas no mês
   const getWeeksInMonth = (year: number, month: number) => {
