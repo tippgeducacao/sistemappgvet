@@ -16,7 +16,7 @@ const Index = () => {
   return (
     <UserGuard user={user || currentUser} loading={loading}>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-ppgvet-gray-50">
+        <div className="min-h-screen flex w-full bg-ppgvet-gray-50 touch-pan-y select-none">
           <AppSidebar />
           
           <SidebarInset>
