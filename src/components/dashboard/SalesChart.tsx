@@ -6,9 +6,11 @@ import { useAllVendas } from '@/hooks/useVendas';
 
 interface SalesChartProps {
   selectedVendedor?: string;
+  selectedMonth?: number;
+  selectedYear?: number;
 }
 
-const SalesChart: React.FC<SalesChartProps> = ({ selectedVendedor }) => {
+const SalesChart: React.FC<SalesChartProps> = ({ selectedVendedor, selectedMonth, selectedYear }) => {
   const { vendas, isLoading } = useAllVendas();
 
   if (isLoading) {
@@ -27,10 +29,23 @@ const SalesChart: React.FC<SalesChartProps> = ({ selectedVendedor }) => {
     );
   }
 
-  // Filtrar vendas por vendedor se selecionado
-  const vendasFiltradas = selectedVendedor && selectedVendedor !== 'todos' 
-    ? vendas.filter(venda => venda.vendedor_id === selectedVendedor)
-    : vendas;
+  // Filtrar vendas por vendedor e período se selecionados
+  const vendasFiltradas = vendas.filter(venda => {
+    // Filtro por vendedor
+    if (selectedVendedor && selectedVendedor !== 'todos' && venda.vendedor_id !== selectedVendedor) {
+      return false;
+    }
+    
+    // Filtro por período
+    if (selectedMonth && selectedYear && venda.enviado_em) {
+      const dataVenda = new Date(venda.enviado_em);
+      if (dataVenda.getMonth() + 1 !== selectedMonth || dataVenda.getFullYear() !== selectedYear) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
 
   // Agrupar apenas vendas aprovadas por mês
   const vendasPorMes = vendasFiltradas.reduce((acc, venda) => {

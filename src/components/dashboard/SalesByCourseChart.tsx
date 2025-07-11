@@ -8,9 +8,11 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface SalesByCourseChartProps {
   selectedVendedor?: string;
+  selectedMonth?: number;
+  selectedYear?: number;
 }
 
-const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedor }) => {
+const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedor, selectedMonth, selectedYear }) => {
   const { vendas, isLoading } = useAllVendas();
 
   const courseColors = [
@@ -66,10 +68,23 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
   };
 
   const chartData = React.useMemo(() => {
-    // Filtrar vendas por vendedor se selecionado
-    const vendasFiltradas = selectedVendedor && selectedVendedor !== 'todos' 
-      ? vendas.filter(venda => venda.vendedor_id === selectedVendedor)
-      : vendas;
+    // Filtrar vendas por vendedor e período se selecionados
+    const vendasFiltradas = vendas.filter(venda => {
+      // Filtro por vendedor
+      if (selectedVendedor && selectedVendedor !== 'todos' && venda.vendedor_id !== selectedVendedor) {
+        return false;
+      }
+      
+      // Filtro por período
+      if (selectedMonth && selectedYear && venda.enviado_em) {
+        const dataVenda = new Date(venda.enviado_em);
+        if (dataVenda.getMonth() + 1 !== selectedMonth || dataVenda.getFullYear() !== selectedYear) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
     
     if (!vendasFiltradas || vendasFiltradas.length === 0) return [];
 
@@ -108,7 +123,7 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
         ...item,
         color: courseColors[index % courseColors.length]
       }));
-  }, [vendas, selectedVendedor]);
+  }, [vendas, selectedVendedor, selectedMonth, selectedYear]);
 
   const chartConfig = {
     total: {

@@ -15,9 +15,11 @@ interface WeeklyData {
 
 interface WeeklyApprovedSalesChartProps {
   selectedVendedor?: string;
+  selectedMonth?: number;
+  selectedYear?: number;
 }
 
-const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ selectedVendedor: propSelectedVendedor }) => {
+const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ selectedVendedor: propSelectedVendedor, selectedMonth, selectedYear }) => {
   const { vendedores } = useVendedores();
   const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,10 +79,23 @@ const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ sel
 
       console.log(`📈 Total de vendas encontradas: ${vendas.length}`);
 
-      // Filtrar apenas vendas aprovadas (matriculadas)
-      const vendasAprovadas = vendas.filter(venda => 
-        venda.status?.toLowerCase() === 'matriculado'
-      );
+      // Filtrar vendas aprovadas (matriculadas) e por período se especificado
+      const vendasAprovadas = vendas.filter(venda => {
+        // Filtro por status
+        if (venda.status?.toLowerCase() !== 'matriculado') {
+          return false;
+        }
+        
+        // Filtro por período
+        if (selectedMonth && selectedYear && venda.enviado_em) {
+          const dataVenda = new Date(venda.enviado_em);
+          if (dataVenda.getMonth() + 1 !== selectedMonth || dataVenda.getFullYear() !== selectedYear) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
 
       console.log(`✅ Vendas aprovadas: ${vendasAprovadas.length}`);
 
@@ -113,7 +128,7 @@ const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ sel
 
   useEffect(() => {
     fetchWeeklyData();
-  }, [propSelectedVendedor]);
+  }, [propSelectedVendedor, selectedMonth, selectedYear]);
 
   const selectedVendedorName = propSelectedVendedor === 'todos' || !propSelectedVendedor
     ? 'Todos os Vendedores'

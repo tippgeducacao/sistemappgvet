@@ -12,18 +12,25 @@ import { DataFormattingService } from '@/services/formatting/DataFormattingServi
 
 interface VendorsRankingProps {
   selectedVendedor?: string;
+  selectedMonth?: number;
+  selectedYear?: number;
 }
 
-const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor }) => {
+const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selectedMonth: propSelectedMonth, selectedYear: propSelectedYear }) => {
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { vendedores, loading: vendedoresLoading } = useVendedores();
   const { currentUser, profile } = useAuthStore();
   
-  // Estado para o filtro de mês
-  const [selectedMonth, setSelectedMonth] = useState(() => {
+  // Estado interno para o filtro de mês (apenas quando não há filtro externo)
+  const [internalSelectedMonth, setInternalSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  
+  // Usar filtro externo se disponível, senão usar interno
+  const selectedMonth = propSelectedMonth && propSelectedYear 
+    ? `${propSelectedYear}-${String(propSelectedMonth).padStart(2, '0')}`
+    : internalSelectedMonth;
 
   const isLoading = vendasLoading || vendedoresLoading;
 
@@ -43,26 +50,35 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor }) => 
     });
   }, [vendedores, profile?.email, currentUser?.email]);
 
-  // Filtrar vendas por mês selecionado e vendedor se especificado
+  // Filtrar vendas por período e vendedor se especificados
   const vendasFiltradas = useMemo(() => {
-    let vendas_filtered = vendas;
-    
-    // Filtrar por mês se selecionado
-    if (selectedMonth) {
-      vendas_filtered = vendas_filtered.filter(venda => {
-        const vendaDate = new Date(venda.enviado_em);
-        const vendaMonth = `${vendaDate.getFullYear()}-${String(vendaDate.getMonth() + 1).padStart(2, '0')}`;
-        return vendaMonth === selectedMonth;
-      });
-    }
-    
-    // Filtrar por vendedor se especificado (usado quando selecionado no dashboard geral)
-    if (selectedVendedor && selectedVendedor !== 'todos') {
-      vendas_filtered = vendas_filtered.filter(venda => venda.vendedor_id === selectedVendedor);
-    }
-    
-    return vendas_filtered;
-  }, [vendas, selectedMonth, selectedVendedor]);
+    return vendas.filter(venda => {
+      // Filtro por vendedor
+      if (selectedVendedor && selectedVendedor !== 'todos' && venda.vendedor_id !== selectedVendedor) {
+        return false;
+      }
+      
+      // Filtro por período
+      if ((propSelectedMonth && propSelectedYear) || internalSelectedMonth) {
+        const dataVenda = new Date(venda.enviado_em);
+        
+        if (propSelectedMonth && propSelectedYear) {
+          // Usar filtros externos do dashboard
+          if (dataVenda.getMonth() + 1 !== propSelectedMonth || dataVenda.getFullYear() !== propSelectedYear) {
+            return false;
+          }
+        } else {
+          // Usar filtro interno mensal
+          const vendaMonth = `${dataVenda.getFullYear()}-${String(dataVenda.getMonth() + 1).padStart(2, '0')}`;
+          if (vendaMonth !== internalSelectedMonth) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    });
+  }, [vendas, selectedVendedor, propSelectedMonth, propSelectedYear, internalSelectedMonth]);
 
   // Gerar lista de meses disponíveis
   const mesesDisponiveis = useMemo(() => {
@@ -164,7 +180,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor }) => 
     });
 
   // Obter nome do mês selecionado
-  const mesAtualSelecionado = mesesDisponiveis.find(m => m.value === selectedMonth)?.label || 'Mês atual';
+  const mesAtualSelecionado = propSelectedMonth && propSelectedYear 
+    ? `${new Date(propSelectedYear, propSelectedMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`.charAt(0).toUpperCase() + `${new Date(propSelectedYear, propSelectedMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`.slice(1)
+    : mesesDisponiveis.find(m => m.value === selectedMonth)?.label || 'Mês atual';
 
   // Melhor vendedor (primeiro do ranking)
   const melhorVendedor = ranking[0];
@@ -182,21 +200,24 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor }) => 
               Todos os {ranking.length} vendedores por vendas aprovadas - {mesAtualSelecionado}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {mesesDisponiveis.map((mes) => (
-                  <SelectItem key={mes.value} value={mes.value}>
-                    {mes.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Mostrar filtro de mês apenas se não houver filtros externos */}
+          {!propSelectedMonth && !propSelectedYear && (
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={internalSelectedMonth} onValueChange={setInternalSelectedMonth}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {mesesDisponiveis.map((mes) => (
+                    <SelectItem key={mes.value} value={mes.value}>
+                      {mes.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>

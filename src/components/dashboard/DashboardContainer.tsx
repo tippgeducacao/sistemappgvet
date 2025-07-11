@@ -86,15 +86,35 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
         />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SalesChart selectedVendedor={selectedVendedor} />
-          <StatusDistributionChart selectedVendedor={selectedVendedor} />
+          <SalesChart 
+            selectedVendedor={selectedVendedor}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+          />
+          <StatusDistributionChart 
+            selectedVendedor={selectedVendedor}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+          />
         </div>
 
-        <SalesByCourseChart selectedVendedor={selectedVendedor} />
+        <SalesByCourseChart 
+          selectedVendedor={selectedVendedor}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+        />
 
-        <WeeklyApprovedSalesChart selectedVendedor={selectedVendedor} />
+        <WeeklyApprovedSalesChart 
+          selectedVendedor={selectedVendedor}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+        />
 
-        <VendorsRanking selectedVendedor={selectedVendedor} />
+        <VendorsRanking 
+          selectedVendedor={selectedVendedor}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+        />
       </div>
     );
   }

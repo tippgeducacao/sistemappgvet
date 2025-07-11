@@ -5,9 +5,11 @@ import { useAllVendas } from '@/hooks/useVendas';
 
 interface StatusDistributionChartProps {
   selectedVendedor?: string;
+  selectedMonth?: number;
+  selectedYear?: number;
 }
 
-const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ selectedVendedor }) => {
+const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ selectedVendedor, selectedMonth, selectedYear }) => {
   const { vendas, isLoading } = useAllVendas();
 
   if (isLoading) {
@@ -26,10 +28,23 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ selec
     );
   }
 
-  // Filtrar vendas por vendedor se selecionado
-  const vendasFiltradas = selectedVendedor && selectedVendedor !== 'todos' 
-    ? vendas.filter(venda => venda.vendedor_id === selectedVendedor)
-    : vendas;
+  // Filtrar vendas por vendedor e período se selecionados
+  const vendasFiltradas = vendas.filter(venda => {
+    // Filtro por vendedor
+    if (selectedVendedor && selectedVendedor !== 'todos' && venda.vendedor_id !== selectedVendedor) {
+      return false;
+    }
+    
+    // Filtro por período
+    if (selectedMonth && selectedYear && venda.enviado_em) {
+      const dataVenda = new Date(venda.enviado_em);
+      if (dataVenda.getMonth() + 1 !== selectedMonth || dataVenda.getFullYear() !== selectedYear) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
 
   const vendasRejeitadas = vendasFiltradas.filter(v => v.status === 'desistiu' && v.motivo_pendencia);
 
