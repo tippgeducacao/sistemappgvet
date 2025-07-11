@@ -20,6 +20,7 @@ export const useMetas = () => {
 
   const fetchMetas = async () => {
     try {
+      console.log('📋 useMetas - Iniciando busca de metas...');
       setLoading(true);
       const { data, error } = await supabase
         .from('metas_vendedores')
@@ -28,6 +29,7 @@ export const useMetas = () => {
         .order('mes', { ascending: false });
 
       if (error) throw error;
+      console.log('✅ useMetas - Metas carregadas:', data?.length || 0, 'metas encontradas');
       setMetas(data || []);
     } catch (error) {
       console.error('Error fetching metas:', error);

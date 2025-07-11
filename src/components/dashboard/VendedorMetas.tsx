@@ -15,23 +15,25 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   selectedMonth,
   selectedYear
 }) => {
-  const { metas } = useMetas();
-  const { vendas } = useAllVendas();
+  console.log('🎯 VendedorMetas - COMPONENTE INICIADO', { selectedMonth, selectedYear });
+  const { metas, loading: metasLoading } = useMetas();
+  const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { profile } = useAuthStore();
 
-  console.log('🔍 VendedorMetas - Verificação inicial:', {
-    profile,
-    profileId: profile?.id,
-    metas,
-    vendas: vendas.length
+  console.log('🔍 VendedorMetas - Estado dos hooks:', {
+    metasLoading,
+    vendasLoading,
+    metasLength: metas?.length || 0,
+    vendasLength: vendas?.length || 0,
+    profile: profile ? { id: profile.id, name: profile.name } : 'null'
   });
 
-  if (!profile?.id) {
-    console.log('❌ VendedorMetas - Profile não encontrado:', profile);
+  if (metasLoading || vendasLoading) {
+    console.log('⏳ VendedorMetas - Ainda carregando dados...');
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground">Carregando dados do perfil...</p>
+          <p className="text-muted-foreground">Carregando metas...</p>
         </CardContent>
       </Card>
     );
