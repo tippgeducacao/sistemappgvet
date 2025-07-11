@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Target, Calendar, TrendingUp, Trophy } from 'lucide-react';
 import { useMetas } from '@/hooks/useMetas';
-import { useVendas } from '@/hooks/useVendas';
+import { useAllVendas } from '@/hooks/useVendas';
 import { useAuthStore } from '@/stores/AuthStore';
 
 interface VendedorMetasProps {
@@ -16,7 +16,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   selectedYear
 }) => {
   const { metas } = useMetas();
-  const { vendas } = useVendas();
+  const { vendas } = useAllVendas();
   const { profile } = useAuthStore();
 
   console.log('🔍 VendedorMetas - Verificação inicial:', {
