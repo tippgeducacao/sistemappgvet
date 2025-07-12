@@ -8,6 +8,7 @@ import VendorsRanking from './VendorsRanking';
 import RecentSales from './RecentSales';
 import VendedorMetas from './VendedorMetas';
 import WeeklyApprovedSalesChart from './WeeklyApprovedSalesChart';
+import GoalsAchievementChart from './GoalsAchievementChart';
 
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
@@ -107,6 +108,12 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
         />
 
         <WeeklyApprovedSalesChart 
+          selectedVendedor={selectedVendedor}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+        />
+
+        <GoalsAchievementChart 
           selectedVendedor={selectedVendedor}
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
