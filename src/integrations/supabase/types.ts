@@ -522,6 +522,10 @@ export type Database = {
         Args: { search_pattern: string }
         Returns: string
       }
+      get_weeks_in_month: {
+        Args: { ano: number; mes: number }
+        Returns: number
+      }
       has_role: {
         Args: { user_id: string; role_name: string }
         Returns: boolean
