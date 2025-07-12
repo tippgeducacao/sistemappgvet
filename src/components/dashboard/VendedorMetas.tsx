@@ -42,35 +42,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     );
   }
 
-  // Função para calcular o número de semanas no mês
-  const getWeeksInMonth = (year: number, month: number) => {
-    const firstDay = new Date(year, month - 1, 1);
-    const lastDay = new Date(year, month, 0);
-    
-    // Encontrar a primeira quarta-feira
-    let firstWednesday = new Date(firstDay);
-    while (firstWednesday.getDay() !== 3) { // 3 = Wednesday
-      firstWednesday.setDate(firstWednesday.getDate() + 1);
-    }
-    
-    // Contar semanas completas
-    const weeks = [];
-    let currentWednesday = new Date(firstWednesday);
-    
-    while (currentWednesday <= lastDay) {
-      const weekEnd = new Date(currentWednesday);
-      weekEnd.setDate(weekEnd.getDate() + 6); // Próxima terça-feira
-      
-      weeks.push({
-        start: new Date(currentWednesday),
-        end: weekEnd > lastDay ? lastDay : weekEnd
-      });
-      
-      currentWednesday.setDate(currentWednesday.getDate() + 7);
-    }
-    
-    return weeks;
-  };
+  // Usar a mesma lógica do admin para calcular semanas
+  const semanasDoMes = getSemanasDoMes(selectedYear, selectedMonth);
 
   // Função para calcular vendas aprovadas no período
   const getApprovedSales = (year: number, month: number) => {
@@ -86,32 +59,6 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     }).length;
   };
 
-  // Função para calcular progresso semanal
-  const getWeeklyProgress = (year: number, month: number) => {
-    const weeks = getWeeksInMonth(year, month);
-    const currentDate = new Date();
-    const currentWeekIndex = weeks.findIndex(week => 
-      currentDate >= week.start && currentDate <= week.end
-    );
-    
-    return weeks.map((week, index) => {
-      const weekSales = vendas.filter(venda => {
-        if (venda.vendedor_id !== profile.id) return false;
-        if (venda.status !== 'matriculado') return false;
-        
-        const vendaDate = new Date(venda.enviado_em);
-        return vendaDate >= week.start && vendaDate <= week.end;
-      }).length;
-      
-      return {
-        week: index + 1,
-        sales: weekSales,
-        isCurrentWeek: index === currentWeekIndex,
-        isPastWeek: index < currentWeekIndex,
-        period: `${week.start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - ${week.end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
-      };
-    });
-  };
 
   const meta = metas.find(m => 
     m.vendedor_id === profile.id && 
@@ -130,9 +77,6 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
   const approvedSales = getApprovedSales(selectedYear, selectedMonth);
   const progressPercentage = meta?.meta_vendas && meta.meta_vendas > 0 ? (approvedSales / meta.meta_vendas) * 100 : 0;
-  const weeks = getWeeksInMonth(selectedYear, selectedMonth);
-  const metaPorSemana = meta?.meta_vendas ? Math.ceil(meta.meta_vendas / weeks.length) : 0;
-  const weeklyProgress = getWeeklyProgress(selectedYear, selectedMonth);
 
   const mesNome = new Date(selectedYear, selectedMonth - 1).toLocaleDateString('pt-BR', { 
     month: 'long', 
@@ -160,7 +104,6 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   }
 
   // Dados para metas semanais  
-  const semanasDoMes = getSemanasDoMes(selectedYear, selectedMonth);
   const semanaAtual = getSemanaAtual();
   const metaSemanaAtual = metasSemanais.find(meta => 
     meta.vendedor_id === profile.id && 
