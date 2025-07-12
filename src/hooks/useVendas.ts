@@ -82,7 +82,7 @@ export const useAllVendas = () => {
       
       return vendas;
     },
-    refetchInterval: 30000, // Recarrega a cada 30 segundos para pegar novas vendas
+    refetchInterval: 10000, // Recarrega a cada 10 segundos para pegar novas vendas
     staleTime: 1000 // Considera os dados obsoletos após 1 segundo
   });
 
