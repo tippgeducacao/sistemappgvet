@@ -275,6 +275,16 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               const lastDay = new Date(selectedYear, selectedMonth, 0);
               const endDate = fimSemana > lastDay ? lastDay : fimSemana;
 
+              // Formatar datas para exibição (DD/MM)
+              const formatDate = (date: Date) => {
+                return date.toLocaleDateString('pt-BR', { 
+                  day: '2-digit', 
+                  month: '2-digit' 
+                });
+              };
+
+              const periodoSemana = `${formatDate(targetWednesday)} - ${formatDate(endDate)}`;
+
               const vendasDaSemana = vendas.filter(venda => {
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
@@ -314,6 +324,13 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                           Vendas: {vendasDaSemana}
                         </span>
                       </div>
+                    </div>
+
+                    {/* Período da semana */}
+                    <div className="mb-2">
+                      <span className="text-xs text-muted-foreground font-medium">
+                        {periodoSemana}
+                      </span>
                     </div>
                     
                     {metaSemanal && metaSemanal.meta_vendas > 0 && (
