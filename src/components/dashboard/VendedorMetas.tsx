@@ -105,11 +105,18 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
   // Dados para metas semanais  
   const semanaAtual = getSemanaAtual();
-  const metaSemanaAtual = metasSemanais.find(meta => 
-    meta.vendedor_id === profile.id && 
-    meta.ano === selectedYear && 
-    meta.semana === semanaAtual
-  );
+  const dataAtual = new Date();
+  const mesAtual = dataAtual.getMonth() + 1;
+  const anoAtual = dataAtual.getFullYear();
+  
+  // Só buscar meta da semana atual se estivermos no mês correto
+  const metaSemanaAtual = (selectedMonth === mesAtual && selectedYear === anoAtual) 
+    ? metasSemanais.find(meta => 
+        meta.vendedor_id === profile.id && 
+        meta.ano === selectedYear && 
+        meta.semana === semanaAtual
+      )
+    : null;
 
   console.log('🎯 VendedorMetas DEBUG:', {
     semanaAtual,
@@ -157,7 +164,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         {/* Meta da Semana Atual */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Meta da Semana Atual</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {selectedMonth === mesAtual && selectedYear === anoAtual 
+                ? "Meta da Semana Atual" 
+                : "Meta da Semana"
+              }
+            </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -165,7 +177,10 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               {metaSemanaAtual?.meta_vendas || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              Semana {semanaAtual} de {selectedYear}
+              {selectedMonth === mesAtual && selectedYear === anoAtual 
+                ? `Semana ${semanaAtual} de ${selectedYear}` 
+                : "Visualizando mês anterior/posterior"
+              }
             </p>
             <div className="mt-2 space-y-1">
               <div className="flex justify-between text-xs">
@@ -257,7 +272,11 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 meta.ano === selectedYear && 
                 meta.semana === numeroSemana
               );
-              const isAtual = numeroSemana === semanaAtual;
+              // Só considerar como atual se estivermos no mês e ano corretos
+              const dataAtual = new Date();
+              const mesAtual = dataAtual.getMonth() + 1;
+              const anoAtual = dataAtual.getFullYear();
+              const isAtual = numeroSemana === semanaAtual && selectedMonth === mesAtual && selectedYear === anoAtual;
               
               // Calcular vendas desta semana específica usando as datas corretas
               const inicioSemana = new Date(selectedYear, selectedMonth - 1, 1);
