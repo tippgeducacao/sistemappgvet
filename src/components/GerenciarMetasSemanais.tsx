@@ -116,13 +116,29 @@ const GerenciarMetasSemanais = () => {
 
           const metaAtual = metaAtualBanco?.meta_vendas || 0;
 
+          console.log('🎯 Salvando meta:', {
+            vendedorId: vendedorMeta.vendedorId,
+            semana: parseInt(semana),
+            meta,
+            metaAtual,
+            metaAtualBanco,
+            ano: selectedAno
+          });
+
           if (meta !== metaAtual) {
-            if (metaAtualBanco) {
-              await updateMetaSemanal(metaAtualBanco.id, meta);
-            } else {
-              await createMetaSemanal(vendedorMeta.vendedorId, selectedAno, parseInt(semana), meta);
+            try {
+              if (metaAtualBanco) {
+                const result = await updateMetaSemanal(metaAtualBanco.id, meta);
+                console.log('✅ Meta atualizada:', result);
+              } else {
+                const result = await createMetaSemanal(vendedorMeta.vendedorId, selectedAno, parseInt(semana), meta);
+                console.log('✅ Meta criada:', result);
+              }
+              sucessos++;
+            } catch (error) {
+              console.error('❌ Erro ao salvar meta:', error);
+              throw error;
             }
-            sucessos++;
           }
         }
       }
