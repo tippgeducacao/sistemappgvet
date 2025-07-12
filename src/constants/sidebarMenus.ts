@@ -36,11 +36,6 @@ export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
     title: 'Gerenciar Metas',
     section: 'gerenciar-metas',
     icon: 'Target'
-  },
-  {
-    title: 'Metas Semanais',
-    section: 'gerenciar-metas-semanais',
-    icon: 'Calendar'
   }
 ];
 
@@ -74,11 +69,6 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     title: 'Gerenciar Metas',
     section: 'gerenciar-metas',
     icon: 'Target'
-  },
-  {
-    title: 'Metas Semanais',
-    section: 'gerenciar-metas-semanais',
-    icon: 'Calendar'
   }
 ];
 
