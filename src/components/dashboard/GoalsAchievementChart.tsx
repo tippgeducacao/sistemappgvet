@@ -107,6 +107,47 @@ const GoalsAchievementChart: React.FC<GoalsAchievementChartProps> = ({
     return null;
   };
 
+  // Componente customizado para renderizar nomes com quebra de linha
+  const CustomXAxisTick = (props: any) => {
+    const { x, y, payload } = props;
+    const words = payload.value.split(' ');
+    const maxCharsPerLine = 12;
+    const lines: string[] = [];
+    let currentLine = '';
+
+    words.forEach((word: string) => {
+      if ((currentLine + word).length > maxCharsPerLine && currentLine.length > 0) {
+        lines.push(currentLine.trim());
+        currentLine = word + ' ';
+      } else {
+        currentLine += word + ' ';
+      }
+    });
+    
+    if (currentLine.trim().length > 0) {
+      lines.push(currentLine.trim());
+    }
+
+    return (
+      <g transform={`translate(${x},${y})`}>
+        {lines.map((line, index) => (
+          <text
+            key={index}
+            x={0}
+            y={index * 12}
+            dy={0}
+            textAnchor="middle"
+            fill="currentColor"
+            fontSize="11"
+            className="fill-muted-foreground"
+          >
+            {line}
+          </text>
+        ))}
+      </g>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -153,10 +194,9 @@ const GoalsAchievementChart: React.FC<GoalsAchievementChartProps> = ({
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="nome" 
-                tick={{ fontSize: 12 }}
-                angle={-45}
-                textAnchor="end"
-                height={80}
+                tick={<CustomXAxisTick />}
+                interval={0}
+                height={60}
               />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip content={<CustomTooltip />} />
