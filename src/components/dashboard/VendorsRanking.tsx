@@ -49,12 +49,22 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   const isLoading = vendasLoading || vendedoresLoading || metasLoading;
 
-  // Filtrar vendedores - remover "Vendedor teste" exceto para admin específico
+  // Filtrar vendedores - apenas vendedores ativos e remover "Vendedor teste" exceto para admin específico
   const vendedoresFiltrados = useMemo(() => {
     const userEmail = profile?.email || currentUser?.email;
     const isSpecificAdmin = userEmail === 'wallasmonteiro019@gmail.com';
     
     return vendedores.filter(vendedor => {
+      // Filtrar apenas vendedores (não mostrar admin, SDR etc)
+      if (vendedor.user_type !== 'vendedor') {
+        return false;
+      }
+      
+      // Filtrar apenas vendedores ativos
+      if (!vendedor.ativo) {
+        return false;
+      }
+      
       // Se for o admin específico, mostrar todos os vendedores
       if (isSpecificAdmin) {
         return true;

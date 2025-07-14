@@ -4,12 +4,13 @@ import type { Vendedor } from '../vendedoresService';
 
 export class VendedorDataService {
   static async fetchVendedores(): Promise<Vendedor[]> {
-    console.log('🔍 Buscando vendedores...');
+    console.log('🔍 Buscando vendedores ativos...');
     
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_type', 'vendedor')
+      .eq('ativo', true)
       .order('name');
 
     if (error) {
