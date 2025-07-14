@@ -7,20 +7,21 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings } from 'lucide-react';
+import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings, KeyRound } from 'lucide-react';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import NovoVendedorDialog from '@/components/vendedores/NovoVendedorDialog';
 import VendorWeeklyGoalsModal from '@/components/dashboard/VendorWeeklyGoalsModal';
 import EditarVendedorDialog from '@/components/vendedores/EditarVendedorDialog';
+import ResetPasswordDialog from '@/components/vendedores/ResetPasswordDialog';
 import ConfigurarNiveisDialog from '@/components/niveis/ConfigurarNiveisDialog';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { NiveisService } from '@/services/niveisService';
 import type { Vendedor } from '@/services/vendedoresService';
 
 const GerenciarVendedores: React.FC = () => {
-  const { vendedores, allUsers, loading, fetchVendedores, fetchAllUsers, uploadPhoto, removePhoto, toggleUserStatus } = useVendedores();
+  const { vendedores, allUsers, loading, fetchVendedores, fetchAllUsers, uploadPhoto, removePhoto, toggleUserStatus, resetPassword } = useVendedores();
   const [showNewVendedorDialog, setShowNewVendedorDialog] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
@@ -29,6 +30,7 @@ const GerenciarVendedores: React.FC = () => {
     photo_url?: string;
   } | null>(null);
   const [editingVendedor, setEditingVendedor] = useState<Vendedor | null>(null);
+  const [resetPasswordVendedor, setResetPasswordVendedor] = useState<Vendedor | null>(null);
   const [showNiveisConfig, setShowNiveisConfig] = useState(false);
   const { toast } = useToast();
   const { isAdmin, isSecretaria, isDiretor } = useUserRoles();
@@ -172,6 +174,7 @@ const GerenciarVendedores: React.FC = () => {
                 onToggleStatus={handleToggleUserStatus}
                 onViewProfile={setSelectedUserProfile}
                 onEditVendedor={setEditingVendedor}
+                onResetPassword={setResetPasswordVendedor}
                 getInitials={getInitials}
               />
             ))}
@@ -207,6 +210,7 @@ const GerenciarVendedores: React.FC = () => {
                 onToggleStatus={handleToggleUserStatus}
                 onViewProfile={setSelectedUserProfile}
                 onEditVendedor={setEditingVendedor}
+                onResetPassword={setResetPasswordVendedor}
                 getInitials={getInitials}
               />
             ))}
@@ -366,6 +370,16 @@ const GerenciarVendedores: React.FC = () => {
         open={showNiveisConfig}
         onOpenChange={setShowNiveisConfig}
       />
+      
+      <ResetPasswordDialog
+        vendedor={resetPasswordVendedor}
+        open={!!resetPasswordVendedor}
+        onOpenChange={(open) => !open && setResetPasswordVendedor(null)}
+        onSuccess={() => {
+          // Não precisa recarregar listas pois a senha é independente
+          setResetPasswordVendedor(null);
+        }}
+      />
     </div>
   );
 };
@@ -380,6 +394,7 @@ interface UserCardProps {
   onToggleStatus: (userId: string, currentStatus: boolean) => void;
   onViewProfile: (user: { id: string; name: string; photo_url?: string }) => void;
   onEditVendedor: (vendedor: Vendedor) => void;
+  onResetPassword: (vendedor: Vendedor) => void;
   getInitials: (name: string) => string;
 }
 
@@ -392,6 +407,7 @@ const UserCard: React.FC<UserCardProps> = ({
   onToggleStatus,
   onViewProfile,
   onEditVendedor,
+  onResetPassword,
   getInitials
 }) => {
   return (
@@ -537,6 +553,17 @@ const UserCard: React.FC<UserCardProps> = ({
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
+                
+                {/* Botão para resetar senha */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onResetPassword(vendedor)}
+                  className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-800"
+                >
+                  <KeyRound className="h-4 w-4 mr-1" />
+                  Resetar Senha
+                </Button>
                 
                 <Button
                   variant={vendedor.ativo ? "destructive" : "default"}

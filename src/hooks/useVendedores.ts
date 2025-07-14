@@ -77,6 +77,29 @@ export const useVendedores = () => {
     }
   };
 
+  const resetPassword = async (userId: string, newPassword: string) => {
+    try {
+      console.log('🔐 Resetando senha do usuário:', userId);
+      
+      await VendedoresService.resetUserPassword(userId, newPassword);
+      
+      toast({
+        title: "Sucesso",
+        description: "Senha resetada com sucesso!",
+      });
+    } catch (error) {
+      console.error('❌ Erro ao resetar senha:', error);
+      const errorMessage = error instanceof Error ? error.message : "Erro ao resetar senha";
+      
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const uploadPhoto = async (vendedorId: string, file: File) => {
     try {
       console.log('📤 Iniciando processo de upload para:', vendedorId);
@@ -152,5 +175,6 @@ export const useVendedores = () => {
     uploadPhoto,
     removePhoto,
     toggleUserStatus,
+    resetPassword,
   };
 };
