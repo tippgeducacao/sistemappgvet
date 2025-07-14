@@ -432,7 +432,7 @@ const UserCard: React.FC<UserCardProps> = ({
             </span>
           </div>
           
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             {uploadingPhoto === vendedor.id ? (
               <Button disabled size="sm" className="flex-1">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -440,6 +440,23 @@ const UserCard: React.FC<UserCardProps> = ({
               </Button>
             ) : (
               <>
+                {/* Botão para visualizar perfil - destacado e primeiro */}
+                {vendedor.user_type === 'vendedor' && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => onViewProfile({
+                      id: vendedor.id,
+                      name: vendedor.name,
+                      photo_url: vendedor.photo_url
+                    })}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <User className="h-4 w-4 mr-1" />
+                    Ver Perfil
+                  </Button>
+                )}
+                
                 {canEditPhotos && vendedor.ativo && (
                   <Button 
                     variant="outline" 
@@ -484,23 +501,6 @@ const UserCard: React.FC<UserCardProps> = ({
                     </>
                   )}
                 </Button>
-                
-                {/* Botão para visualizar perfil - apenas para vendedores */}
-                {vendedor.user_type === 'vendedor' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onViewProfile({
-                      id: vendedor.id,
-                      name: vendedor.name,
-                      photo_url: vendedor.photo_url
-                    })}
-                    className="bg-blue-50 hover:bg-blue-100 border-blue-200"
-                  >
-                    <User className="h-4 w-4 mr-1" />
-                    Perfil
-                  </Button>
-                )}
               </>
             )}
           </div>
