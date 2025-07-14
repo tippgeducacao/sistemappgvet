@@ -69,7 +69,7 @@ export class VendedoresService {
         .select('role')
         .eq('user_id', currentUser.user.id);
 
-      const isDiretor = roles?.some(r => r.role === 'diretor');
+      const isDiretor = roles?.some(r => r.role === 'diretor') || profile?.user_type === 'diretor';
       
       if (!isDiretor) {
         throw new Error('Você não tem permissão para criar usuários. Apenas diretores podem realizar esta ação.');
@@ -242,12 +242,18 @@ export class VendedoresService {
         throw new Error('Usuário não autenticado');
       }
 
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('id', currentUser.user.id)
+        .single();
+
       const { data: roles } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', currentUser.user.id);
 
-      const isDiretor = roles?.some(r => r.role === 'diretor');
+      const isDiretor = roles?.some(r => r.role === 'diretor') || profile?.user_type === 'diretor';
       
       if (!isDiretor) {
         throw new Error('Apenas diretores podem ativar/desativar usuários.');
