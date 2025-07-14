@@ -177,15 +177,19 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     return acc;
   }, {} as Record<string, { id: string; nome: string; photo_url?: string; vendas: number; pontuacao: number }>);
 
-  // Função para calcular vendas semanais
+  // Função para calcular vendas semanais (quarta a terça)
   const getWeeklyProgress = (vendedorId: string, year: number, month: number) => {
     const now = new Date();
+    
+    // Calcular início da semana (quarta-feira anterior ou atual)
     const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay()); // Início da semana (domingo)
+    const dayOfWeek = now.getDay(); // 0=domingo, 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado
+    const daysToWednesday = dayOfWeek < 3 ? dayOfWeek + 4 : dayOfWeek - 3; // Quantos dias até a quarta
+    startOfWeek.setDate(now.getDate() - daysToWednesday);
     startOfWeek.setHours(0, 0, 0, 0);
     
     const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // Final da semana (sábado)
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Final da semana (terça)
     endOfWeek.setHours(23, 59, 59, 999);
 
     return vendasFiltradas.filter(venda => {
@@ -194,6 +198,25 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       const vendaDate = new Date(venda.enviado_em);
       return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
     }).length;
+  };
+
+  // Função para calcular qual dia da semana estamos (1=quarta, 7=terça)
+  const getCurrentWeekDay = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=domingo, 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado
+    
+    // Mapear para nosso sistema (quarta=1, terça=7)
+    const weekDayMap = {
+      3: 1, // quarta
+      4: 2, // quinta  
+      5: 3, // sexta
+      6: 4, // sábado
+      0: 5, // domingo
+      1: 6, // segunda
+      2: 7  // terça
+    };
+    
+    return weekDayMap[dayOfWeek as keyof typeof weekDayMap] || 1;
   };
 
   // Incluir TODOS os vendedores filtrados, mesmo os que não fizeram vendas
@@ -208,8 +231,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
     
     const vendasAprovadas = statsExistentes?.vendas || 0;
+    const pontuacaoAtual = statsExistentes?.pontuacao || 0;
     const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6; // Usar meta do banco ou 6 como fallback
-    const metaDiaria = metaSemanal / 6; // Meta diária (dividir por 6 dias úteis)
+    
+    // Calcular meta diária progressiva
+    const diaAtualNaSemana = getCurrentWeekDay(); // 1=quarta, 7=terça
+    const metaEsperadaAteHoje = (metaSemanal / 7) * diaAtualNaSemana;
+    
     const vendasSemanais = getWeeklyProgress(vendedor.id, currentYear, currentMonth);
     
     return {
@@ -217,12 +245,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       nome: vendedor.name,
       photo_url: vendedor.photo_url,
       vendas: vendasAprovadas,
-      pontuacao: statsExistentes?.pontuacao || 0,
+      pontuacao: pontuacaoAtual,
       metaSemanal,
-      metaDiaria,
+      metaEsperadaAteHoje,
+      diaAtualNaSemana,
       vendasSemanais,
-      progressoSemanal: metaSemanal > 0 ? ((statsExistentes?.pontuacao || 0) / metaSemanal) * 100 : 0,
-      progressoDiario: metaDiaria > 0 ? ((statsExistentes?.pontuacao || 0) / metaDiaria) * 100 : 0
+      progressoSemanal: metaSemanal > 0 ? (pontuacaoAtual / metaSemanal) * 100 : 0,
+      progressoDiario: metaEsperadaAteHoje > 0 ? (pontuacaoAtual / metaEsperadaAteHoje) * 100 : 0
     };
   });
 
@@ -367,7 +396,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                           <div className="flex-1">
                             <div className="flex justify-between items-center mb-1">
                               <span className="text-xs font-medium text-gray-600">Meta Dia</span>
-                              <span className="text-xs text-gray-500">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{DataFormattingService.formatPoints(vendedor.metaDiaria)} pts</span>
+                              <span className="text-xs text-gray-500">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{DataFormattingService.formatPoints(vendedor.metaEsperadaAteHoje)} pts</span>
                             </div>
                             <Progress value={Math.min(vendedor.progressoDiario, 100)} className="h-1.5" />
                           </div>
@@ -424,10 +453,10 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                          />
                        </div>
                        <div className="w-24">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs font-medium text-muted-foreground">Meta Dia</span>
-                            <span className="text-xs text-muted-foreground">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{DataFormattingService.formatPoints(vendedor.metaDiaria)} pts</span>
-                          </div>
+                           <div className="flex justify-between items-center mb-1">
+                             <span className="text-xs font-medium text-muted-foreground">Meta Dia</span>
+                             <span className="text-xs text-muted-foreground">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{DataFormattingService.formatPoints(vendedor.metaEsperadaAteHoje)} pts</span>
+                           </div>
                          <Progress 
                            value={Math.min(vendedor.progressoDiario, 100)} 
                            className="h-1.5"
