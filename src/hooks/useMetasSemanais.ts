@@ -102,38 +102,40 @@ export const useMetasSemanais = () => {
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
     
-    // Obter todas as semanas do mês atual
-    const semanas = getSemanasDoMes(currentYear, currentMonth);
-    
     // Encontrar a primeira terça-feira do mês
     let primeiraTerca = new Date(currentYear, currentMonth - 1, 1);
     while (primeiraTerca.getDay() !== 2) {
       primeiraTerca.setDate(primeiraTerca.getDate() + 1);
     }
     
-    // Verificar se precisamos incluir semana anterior
+    // Se a primeira terça-feira é muito tarde no mês (depois do dia 7),
+    // verificar se existe uma semana anterior que termina neste mês
     if (primeiraTerca.getDate() > 7) {
       const tercaAnterior = new Date(primeiraTerca);
       tercaAnterior.setDate(tercaAnterior.getDate() - 7);
-      const quartaAnterior = new Date(tercaAnterior);
-      quartaAnterior.setDate(quartaAnterior.getDate() - 6);
       
-      if (quartaAnterior.getMonth() !== currentMonth - 1) {
+      // Se a terça anterior está no mês anterior, ela conta para este mês
+      if (tercaAnterior.getMonth() !== currentMonth - 1) {
         primeiraTerca = tercaAnterior;
       }
     }
     
     // Encontrar em qual semana estamos baseado na terça-feira
-    for (let i = 0; i < semanas.length; i++) {
-      const inicioSemana = new Date(primeiraTerca);
-      inicioSemana.setDate(inicioSemana.getDate() + (i * 7) - 6); // Quarta-feira
+    let currentTuesday = new Date(primeiraTerca);
+    let weekNumber = 1;
+    
+    while (currentTuesday.getMonth() === currentMonth - 1 && currentTuesday.getFullYear() === currentYear) {
+      const inicioSemana = new Date(currentTuesday);
+      inicioSemana.setDate(inicioSemana.getDate() - 6); // Quarta-feira anterior
       
-      const fimSemana = new Date(primeiraTerca);
-      fimSemana.setDate(fimSemana.getDate() + (i * 7)); // Terça-feira
+      const fimSemana = new Date(currentTuesday); // Terça-feira (fim da semana)
       
       if (now >= inicioSemana && now <= fimSemana) {
-        return semanas[i];
+        return weekNumber;
       }
+      
+      weekNumber++;
+      currentTuesday.setDate(currentTuesday.getDate() + 7);
     }
     
     return 1; // fallback para primeira semana
