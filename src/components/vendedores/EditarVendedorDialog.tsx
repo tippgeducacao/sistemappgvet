@@ -23,12 +23,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
   onSuccess
 }) => {
   const { updateVendedorNivel } = useNiveis();
-  const [selectedNivel, setSelectedNivel] = useState<'junior' | 'pleno' | 'senior'>('junior');
+  const [selectedNivel, setSelectedNivel] = useState<'junior' | 'pleno' | 'senior' | 'sdr_inbound' | 'sdr_outbound'>('junior');
   const [saving, setSaving] = useState(false);
 
   React.useEffect(() => {
     if (vendedor?.nivel) {
-      setSelectedNivel(vendedor.nivel as 'junior' | 'pleno' | 'senior');
+      setSelectedNivel(vendedor.nivel as 'junior' | 'pleno' | 'senior' | 'sdr_inbound' | 'sdr_outbound');
     }
   }, [vendedor]);
 
@@ -79,7 +79,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
             <Label className="text-sm font-medium text-gray-700">
               Novo Nível
             </Label>
-            <Select value={selectedNivel} onValueChange={(value) => setSelectedNivel(value as 'junior' | 'pleno' | 'senior')}>
+            <Select value={selectedNivel} onValueChange={(value) => setSelectedNivel(value as 'junior' | 'pleno' | 'senior' | 'sdr_inbound' | 'sdr_outbound')}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -102,6 +102,18 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                     <Badge className="bg-purple-100 text-purple-800 text-xs">Meta: 8 pts/sem</Badge>
                   </div>
                 </SelectItem>
+                <SelectItem value="sdr_inbound">
+                  <div className="flex items-center gap-2">
+                    <span>SDR Inbound</span>
+                    <Badge className="bg-orange-100 text-orange-800 text-xs">Meta: 55 pts/sem</Badge>
+                  </div>
+                </SelectItem>
+                <SelectItem value="sdr_outbound">
+                  <div className="flex items-center gap-2">
+                    <span>SDR Outbound</span>
+                    <Badge className="bg-red-100 text-red-800 text-xs">Meta: 60 pts/sem</Badge>
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -115,7 +127,10 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                   <span className="text-gray-600">Fixo Mensal:</span>
                   <p className="font-medium">R$ {
                     selectedNivel === 'junior' ? '2.200' :
-                    selectedNivel === 'pleno' ? '2.600' : '3.000'
+                    selectedNivel === 'pleno' ? '2.600' :
+                    selectedNivel === 'senior' ? '3.000' :
+                    selectedNivel === 'sdr_inbound' ? '1.800' :
+                    selectedNivel === 'sdr_outbound' ? '2.000' : '0'
                   }</p>
                 </div>
                 <div>
@@ -126,7 +141,10 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                   <span className="text-gray-600">Variável Semanal:</span>
                   <p className="font-medium">R$ {
                     selectedNivel === 'junior' ? '450' :
-                    selectedNivel === 'pleno' ? '500' : '550'
+                    selectedNivel === 'pleno' ? '500' :
+                    selectedNivel === 'senior' ? '550' :
+                    selectedNivel === 'sdr_inbound' ? '450' :
+                    selectedNivel === 'sdr_outbound' ? '500' : '0'
                   }</p>
                 </div>
                 <div>
@@ -135,7 +153,10 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                     <TrendingUp className="h-3 w-3" />
                     {
                       selectedNivel === 'junior' ? '6' :
-                      selectedNivel === 'pleno' ? '7' : '8'
+                      selectedNivel === 'pleno' ? '7' :
+                      selectedNivel === 'senior' ? '8' :
+                      selectedNivel === 'sdr_inbound' ? '55' :
+                      selectedNivel === 'sdr_outbound' ? '60' : '0'
                     } pts
                   </p>
                 </div>

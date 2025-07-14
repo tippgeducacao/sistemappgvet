@@ -33,9 +33,9 @@ export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
     icon: 'Target'
   },
   {
-    title: 'Gerenciar Metas',
-    section: 'gerenciar-metas',
-    icon: 'Target'
+    title: 'Gerenciar Níveis',
+    section: 'gerenciar-niveis',
+    icon: 'Trophy'
   }
 ];
 
@@ -61,9 +61,9 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     icon: 'Target'
   },
   {
-    title: 'Gerenciar Metas',
-    section: 'gerenciar-metas',
-    icon: 'Target'
+    title: 'Gerenciar Níveis',
+    section: 'gerenciar-niveis',
+    icon: 'Trophy'
   }
 ];
 

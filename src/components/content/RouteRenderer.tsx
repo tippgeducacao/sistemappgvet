@@ -11,7 +11,7 @@ import GerenciarVendedores from '@/components/GerenciarVendedores';
 import GerenciarPontuacoes from '@/components/GerenciarPontuacoes';
 import MinhasVendas from '@/components/MinhasVendas';
 import LeadsManager from '@/components/leads/LeadsManager';
-import GerenciarMetas from '@/components/GerenciarMetas';
+import GerenciarNiveis from '@/components/GerenciarNiveis';
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
@@ -97,15 +97,15 @@ const RouteRenderer: React.FC = () => {
     case 'gestao-leads':
       return <LeadsManager />;
 
-    case 'gerenciar-metas':
-      // Apenas admin e diretor podem gerenciar metas
+    case 'gerenciar-niveis':
+      // Apenas admin e diretor podem gerenciar níveis
       if (isAdmin || isDiretor) {
-        return <GerenciarMetas />;
+        return <GerenciarNiveis />;
       }
       return (
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
-          <p className="text-gray-600 mt-2">Apenas administradores e diretores podem gerenciar metas.</p>
+          <p className="text-gray-600 mt-2">Apenas administradores e diretores podem gerenciar níveis.</p>
         </div>
       );
 

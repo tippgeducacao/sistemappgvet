@@ -44,7 +44,7 @@ export const useNiveis = () => {
     }
   };
 
-  const updateVendedorNivel = async (vendedorId: string, nivel: 'junior' | 'pleno' | 'senior') => {
+  const updateVendedorNivel = async (vendedorId: string, nivel: 'junior' | 'pleno' | 'senior' | 'sdr_inbound' | 'sdr_outbound') => {
     try {
       await NiveisService.updateVendedorNivel(vendedorId, nivel);
       

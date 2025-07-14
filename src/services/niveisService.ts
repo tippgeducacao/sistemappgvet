@@ -2,7 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface NivelVendedor {
   id: string;
-  nivel: 'junior' | 'pleno' | 'senior';
+  nivel: 'junior' | 'pleno' | 'senior' | 'sdr_inbound' | 'sdr_outbound';
+  tipo_usuario: 'vendedor' | 'sdr';
   fixo_mensal: number;
   vale: number;
   variavel_semanal: number;
@@ -19,7 +20,8 @@ export class NiveisService {
     const { data, error } = await supabase
       .from('niveis_vendedores')
       .select('*')
-      .order('meta_semanal_pontos');
+      .order('tipo_usuario', { ascending: true })
+      .order('meta_semanal_pontos', { ascending: true });
 
     if (error) {
       console.error('❌ Erro ao buscar níveis:', error);
@@ -29,7 +31,8 @@ export class NiveisService {
     console.log('✅ Níveis encontrados:', data?.length);
     return (data || []).map(item => ({
       ...item,
-      nivel: item.nivel as 'junior' | 'pleno' | 'senior'
+      nivel: item.nivel as 'junior' | 'pleno' | 'senior' | 'sdr_inbound' | 'sdr_outbound',
+      tipo_usuario: item.tipo_usuario as 'vendedor' | 'sdr'
     }));
   }
 
@@ -49,7 +52,7 @@ export class NiveisService {
     console.log('✅ Nível atualizado com sucesso');
   }
 
-  static async updateVendedorNivel(vendedorId: string, nivel: 'junior' | 'pleno' | 'senior'): Promise<void> {
+  static async updateVendedorNivel(vendedorId: string, nivel: 'junior' | 'pleno' | 'senior' | 'sdr_inbound' | 'sdr_outbound'): Promise<void> {
     console.log('🔄 Atualizando nível do vendedor:', vendedorId, 'para', nivel);
     
     const { error } = await supabase
@@ -73,6 +76,10 @@ export class NiveisService {
         return 'Vendedor Pleno';
       case 'senior':
         return 'Vendedor Sênior';
+      case 'sdr_inbound':
+        return 'SDR Inbound';
+      case 'sdr_outbound':
+        return 'SDR Outbound';
       default:
         return 'Indefinido';
     }
@@ -86,6 +93,10 @@ export class NiveisService {
         return 'bg-blue-100 text-blue-800';
       case 'senior':
         return 'bg-purple-100 text-purple-800';
+      case 'sdr_inbound':
+        return 'bg-orange-100 text-orange-800';
+      case 'sdr_outbound':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }

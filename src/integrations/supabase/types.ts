@@ -403,6 +403,7 @@ export type Database = {
           id: string
           meta_semanal_pontos: number
           nivel: string
+          tipo_usuario: string
           updated_at: string
           vale: number
           variavel_semanal: number
@@ -414,6 +415,7 @@ export type Database = {
           id?: string
           meta_semanal_pontos?: number
           nivel: string
+          tipo_usuario?: string
           updated_at?: string
           vale?: number
           variavel_semanal?: number
@@ -425,6 +427,7 @@ export type Database = {
           id?: string
           meta_semanal_pontos?: number
           nivel?: string
+          tipo_usuario?: string
           updated_at?: string
           vale?: number
           variavel_semanal?: number
