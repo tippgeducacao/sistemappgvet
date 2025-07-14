@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { useVendas } from '@/hooks/useVendas';
 import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards';
 import VendedorMetas from '@/components/dashboard/VendedorMetas';
+import VendedorMetasDiarias from '@/components/dashboard/VendedorMetasDiarias';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 import { FileText } from 'lucide-react';
 
@@ -40,6 +41,12 @@ const VendedorDashboard: React.FC = () => {
       {/* Cards de métricas */}
       <DashboardMetricsCards
         userType="vendedor"
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+      />
+
+      {/* Metas Diárias */}
+      <VendedorMetasDiarias
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
       />
