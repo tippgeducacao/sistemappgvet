@@ -75,13 +75,33 @@ export class VendedoresService {
         throw new Error('Você não tem permissão para criar usuários. Apenas diretores podem realizar esta ação.');
       }
       
-      // Usar o serviço de cadastro que não afeta a sessão atual
-      await VendedorCadastroService.cadastrarVendedor(
+      // Primeiro, criar o usuário usando o serviço de cadastro
+      const newUserId = await VendedorCadastroService.cadastrarVendedor(
         vendedorData.email,
         vendedorData.password,
         vendedorData.name,
         vendedorData.userType
       );
+      
+      // Depois, criar a role no contexto do diretor (se necessário)
+      if (vendedorData.userType !== 'vendedor') {
+        console.log('🔧 Criando role para usuário no contexto do diretor:', { userType: vendedorData.userType, userId: newUserId });
+        
+        const { error: roleCreateError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: newUserId,
+            role: vendedorData.userType as 'admin' | 'sdr_inbound' | 'sdr_outbound',
+            created_by: currentUser.user.id
+          });
+
+        if (roleCreateError) {
+          console.error('❌ Erro ao criar role:', roleCreateError);
+          throw new Error(`Erro ao criar role: ${roleCreateError.message}`);
+        } else {
+          console.log('✅ Role criada no contexto do diretor:', vendedorData.userType);
+        }
+      }
       
       console.log('✅ Usuário criado com sucesso');
       

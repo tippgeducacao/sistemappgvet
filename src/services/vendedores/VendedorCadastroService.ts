@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export class VendedorCadastroService {
-  static async cadastrarVendedor(email: string, password: string, name: string, userType: string = 'vendedor'): Promise<void> {
+  static async cadastrarVendedor(email: string, password: string, name: string, userType: string = 'vendedor'): Promise<string> {
     console.log('📝 Iniciando cadastro de usuário:', { email, name, userType });
 
     // Validações básicas
@@ -118,27 +118,8 @@ export class VendedorCadastroService {
         throw new Error('Usuário criado mas perfil não encontrado');
       }
 
-      // 6. Criar role apropriada para o usuário
-      if (userType !== 'vendedor') {
-        try {
-          const { data: roleData, error: roleError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: signUpData.user.id,
-              role: userType as 'admin' | 'sdr_inbound' | 'sdr_outbound',
-              created_by: (await supabase.auth.getUser()).data.user?.id
-            });
-
-          if (roleError) {
-            console.error('❌ Erro ao criar role:', roleError);
-            // Não falhamos completamente aqui, apenas logamos o erro
-          } else {
-            console.log('✅ Role criada:', userType);
-          }
-        } catch (roleError) {
-          console.error('❌ Erro ao criar role:', roleError);
-        }
-      }
+      // 6. Não criar role aqui - será criado no contexto do diretor
+      console.log('📝 Usuário criado, role será criada no contexto do diretor se necessário');
 
       console.log('🎉 Usuário cadastrado completamente:', { 
         userId: signUpData.user.id,
@@ -146,6 +127,8 @@ export class VendedorCadastroService {
         name: finalProfile.name,
         userType: finalProfile.user_type
       });
+
+      return signUpData.user.id;
 
     } catch (error: any) {
       console.error('❌ Erro geral no cadastro:', error);
