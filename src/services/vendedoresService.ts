@@ -10,6 +10,7 @@ export interface Vendedor {
   photo_url?: string;
   created_at: string;
   updated_at: string;
+  ativo: boolean;
 }
 
 export class VendedoresService {
@@ -21,6 +22,7 @@ export class VendedoresService {
         .from('profiles')
         .select('*')
         .in('user_type', ['vendedor', 'admin', 'sdr'])
+        .eq('ativo', true)
         .order('name');
 
       if (error) {
@@ -202,6 +204,72 @@ export class VendedoresService {
       
     } catch (error) {
       console.error('❌ Erro ao remover foto:', error);
+      throw error;
+    }
+  }
+
+  static async toggleUserStatus(userId: string, ativo: boolean): Promise<void> {
+    try {
+      console.log(`🔄 ${ativo ? 'Ativando' : 'Desativando'} usuário:`, userId);
+      
+      // Verificar permissão (apenas diretores)
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.user.id);
+
+      const isDiretor = roles?.some(r => r.role === 'diretor');
+      
+      if (!isDiretor) {
+        throw new Error('Apenas diretores podem ativar/desativar usuários.');
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          ativo,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('❌ Erro ao atualizar status do usuário:', error);
+        throw new Error(`Erro ao atualizar status do usuário: ${error.message}`);
+      }
+
+      console.log(`✅ Usuário ${ativo ? 'ativado' : 'desativado'} com sucesso`);
+      
+    } catch (error) {
+      console.error('❌ Erro ao alterar status do usuário:', error);
+      throw error;
+    }
+  }
+
+  static async fetchAllUsers(): Promise<Vendedor[]> {
+    try {
+      console.log('🔍 Buscando todos os usuários (ativos e inativos)...');
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('user_type', ['vendedor', 'admin', 'sdr'])
+        .order('name');
+
+      if (error) {
+        console.error('❌ Erro ao buscar todos os usuários:', error);
+        throw new Error(`Erro ao buscar usuários: ${error.message}`);
+      }
+
+      console.log('✅ Todos os usuários encontrados:', data?.length || 0);
+      return data || [];
+      
+    } catch (error) {
+      console.error('❌ Erro inesperado ao buscar todos os usuários:', error);
       throw error;
     }
   }

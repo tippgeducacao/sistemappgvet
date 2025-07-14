@@ -47,6 +47,26 @@ export class AuthService {
         return { error: { ...error, message: friendlyMessage } };
       }
       
+      // Verificar se o usuário está ativo após o login bem-sucedido
+      if (data.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('ativo')
+          .eq('id', data.user.id)
+          .single();
+          
+        if (profileError) {
+          console.error('Erro ao verificar status do usuário:', profileError);
+          return { error: { message: 'Erro ao verificar permissões do usuário.' } };
+        }
+        
+        if (!profile?.ativo) {
+          // Fazer logout do usuário inativo
+          await supabase.auth.signOut();
+          return { error: { message: 'Sua conta foi desativada. Entre em contato com o administrador.' } };
+        }
+      }
+      
       return { error: null };
       
     } catch (error) {

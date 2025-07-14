@@ -5,6 +5,7 @@ import { VendedoresService, type Vendedor } from '@/services/vendedoresService';
 
 export const useVendedores = () => {
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
+  const [allUsers, setAllUsers] = useState<Vendedor[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -29,6 +30,50 @@ export const useVendedores = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllUsers = async () => {
+    try {
+      setLoading(true);
+      console.log('🔄 Carregando todos os usuários...');
+      const data = await VendedoresService.fetchAllUsers();
+      setAllUsers(data);
+    } catch (error) {
+      console.error('❌ Erro ao buscar todos os usuários:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar usuários",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleUserStatus = async (userId: string, ativo: boolean) => {
+    try {
+      console.log(`🔄 ${ativo ? 'Ativando' : 'Desativando'} usuário:`, userId);
+      
+      await VendedoresService.toggleUserStatus(userId, ativo);
+      
+      // Recarregar ambas as listas
+      await Promise.all([fetchVendedores(), fetchAllUsers()]);
+
+      toast({
+        title: "Sucesso",
+        description: `Usuário ${ativo ? 'ativado' : 'desativado'} com sucesso!`,
+      });
+    } catch (error) {
+      console.error('❌ Erro ao alterar status do usuário:', error);
+      const errorMessage = error instanceof Error ? error.message : "Erro ao alterar status do usuário";
+      
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
@@ -95,13 +140,17 @@ export const useVendedores = () => {
 
   useEffect(() => {
     fetchVendedores();
+    fetchAllUsers();
   }, []);
 
   return {
     vendedores,
+    allUsers,
     loading,
     fetchVendedores,
+    fetchAllUsers,
     uploadPhoto,
     removePhoto,
+    toggleUserStatus,
   };
 };

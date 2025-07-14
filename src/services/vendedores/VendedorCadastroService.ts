@@ -91,7 +91,8 @@ export class VendedorCadastroService {
             id: signUpData.user.id,
             email: email.trim().toLowerCase(),
             name: name.trim(),
-            user_type: userType
+            user_type: userType,
+            ativo: true
           })
           .select()
           .single();
