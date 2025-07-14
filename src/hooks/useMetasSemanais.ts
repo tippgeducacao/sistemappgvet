@@ -143,16 +143,13 @@ export const useMetasSemanais = () => {
 
   // Função para obter todas as semanas de um mês (baseado no término da semana - terça-feira)
   const getSemanasDoMes = (ano: number, mes: number) => {
+    // Último dia do mês
+    const ultimaDataMes = new Date(ano, mes, 0);
+    
     // Encontrar a primeira terça-feira do mês
     let primeiraTerca = new Date(ano, mes - 1, 1);
     while (primeiraTerca.getDay() !== 2) { // 2 = Tuesday
       primeiraTerca.setDate(primeiraTerca.getDate() + 1);
-    }
-    
-    // Encontrar a última terça-feira do mês
-    let ultimaTerca = new Date(ano, mes, 0); // Último dia do mês
-    while (ultimaTerca.getDay() !== 2) { // 2 = Tuesday
-      ultimaTerca.setDate(ultimaTerca.getDate() - 1);
     }
     
     // Se a primeira terça-feira é muito tarde no mês (depois do dia 7),
@@ -160,54 +157,72 @@ export const useMetasSemanais = () => {
     if (primeiraTerca.getDate() > 7) {
       const tercaAnterior = new Date(primeiraTerca);
       tercaAnterior.setDate(tercaAnterior.getDate() - 7);
-      
-      // A quarta-feira da semana anterior
-      const quartaAnterior = new Date(tercaAnterior);
-      quartaAnterior.setDate(quartaAnterior.getDate() - 6);
-      
-      // Se a quarta anterior não está no mês atual, a semana termina no mês atual
-      if (quartaAnterior.getMonth() !== mes - 1) {
-        primeiraTerca = tercaAnterior;
-      }
+      primeiraTerca = tercaAnterior;
     }
     
     const weeks = [];
     let currentTuesday = new Date(primeiraTerca);
     let weekNumber = 1;
     
-    // Só incluir semanas que realmente terminam no mês atual
+    // Só incluir semanas que terminam no mês, excluindo aquelas muito próximas do fim
     while (currentTuesday.getMonth() === mes - 1 && currentTuesday.getFullYear() === ano) {
-      weeks.push(weekNumber);
-      weekNumber++;
+      // Aplicar a mesma lógica do backend: excluir se sobram menos de 3 dias ou está muito próximo do fim
+      const diasRestantes = (ultimaDataMes.getTime() - currentTuesday.getTime()) / (1000 * 60 * 60 * 24);
+      const seisAntes = new Date(ultimaDataMes);
+      seisAntes.setDate(seisAntes.getDate() - 6);
+      
+      if (diasRestantes >= 3 || currentTuesday < seisAntes) {
+        weeks.push(weekNumber);
+        weekNumber++;
+      }
       currentTuesday.setDate(currentTuesday.getDate() + 7);
     }
     
     return weeks;
   };
 
-  // Função auxiliar para obter data de início da semana
+  // Função auxiliar para obter data de início da semana (quarta-feira)
   const getDataInicioSemana = (ano: number, mes: number, numeroSemana: number) => {
-    const firstDay = new Date(ano, mes - 1, 1);
-    
-    let firstWednesday = new Date(firstDay);
-    while (firstWednesday.getDay() !== 3) {
-      firstWednesday.setDate(firstWednesday.getDate() + 1);
+    // Encontrar a primeira terça-feira do mês
+    let primeiraTerca = new Date(ano, mes - 1, 1);
+    while (primeiraTerca.getDay() !== 2) {
+      primeiraTerca.setDate(primeiraTerca.getDate() + 1);
     }
     
-    const targetWednesday = new Date(firstWednesday);
-    targetWednesday.setDate(targetWednesday.getDate() + (numeroSemana - 1) * 7);
+    // Se a primeira terça-feira é muito tarde no mês, usar a anterior
+    if (primeiraTerca.getDate() > 7) {
+      primeiraTerca.setDate(primeiraTerca.getDate() - 7);
+    }
     
-    return targetWednesday;
+    // Calcular a terça-feira da semana desejada
+    const tercaSemana = new Date(primeiraTerca);
+    tercaSemana.setDate(tercaSemana.getDate() + (numeroSemana - 1) * 7);
+    
+    // Início da semana é a quarta-feira anterior à terça
+    const inicioSemana = new Date(tercaSemana);
+    inicioSemana.setDate(inicioSemana.getDate() - 6);
+    
+    return inicioSemana;
   };
 
-  // Função auxiliar para obter data de fim da semana
+  // Função auxiliar para obter data de fim da semana (terça-feira)
   const getDataFimSemana = (ano: number, mes: number, numeroSemana: number) => {
-    const inicioSemana = getDataInicioSemana(ano, mes, numeroSemana);
-    const fimSemana = new Date(inicioSemana);
-    fimSemana.setDate(fimSemana.getDate() + 6);
+    // Encontrar a primeira terça-feira do mês
+    let primeiraTerca = new Date(ano, mes - 1, 1);
+    while (primeiraTerca.getDay() !== 2) {
+      primeiraTerca.setDate(primeiraTerca.getDate() + 1);
+    }
     
-    const lastDay = new Date(ano, mes, 0);
-    return fimSemana > lastDay ? lastDay : fimSemana;
+    // Se a primeira terça-feira é muito tarde no mês, usar a anterior
+    if (primeiraTerca.getDate() > 7) {
+      primeiraTerca.setDate(primeiraTerca.getDate() - 7);
+    }
+    
+    // Calcular a terça-feira da semana desejada (fim da semana)
+    const fimSemana = new Date(primeiraTerca);
+    fimSemana.setDate(fimSemana.getDate() + (numeroSemana - 1) * 7);
+    
+    return fimSemana;
   };
 
   useEffect(() => {
@@ -222,6 +237,8 @@ export const useMetasSemanais = () => {
     updateMetaSemanal,
     getMetaSemanalVendedor,
     getSemanaAtual,
-    getSemanasDoMes
+    getSemanasDoMes,
+    getDataInicioSemana,
+    getDataFimSemana
   };
 };

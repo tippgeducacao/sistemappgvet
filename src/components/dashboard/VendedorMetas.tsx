@@ -17,7 +17,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   selectedYear
 }) => {
   console.log('🎯 VendedorMetas - COMPONENTE INICIADO', { selectedMonth, selectedYear });
-  const { metasSemanais, getSemanaAtual, getSemanasDoMes, loading: metasSemanaisLoading } = useMetasSemanais();
+  const { metasSemanais, getSemanaAtual, getSemanasDoMes, getDataInicioSemana, getDataFimSemana, loading: metasSemanaisLoading } = useMetasSemanais();
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { profile } = useAuthStore();
 
@@ -209,21 +209,10 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               const semanaAtual = getSemanaAtual();
               const isAtual = numeroSemana === semanaAtual && selectedMonth === mesAtual && selectedYear === anoAtual;
               
-              // Calcular vendas desta semana específica usando as datas corretas
-              const inicioSemana = new Date(selectedYear, selectedMonth - 1, 1);
-              let firstWednesday = new Date(inicioSemana);
-              while (firstWednesday.getDay() !== 3) {
-                firstWednesday.setDate(firstWednesday.getDate() + 1);
-              }
               
-              const targetWednesday = new Date(firstWednesday);
-              targetWednesday.setDate(targetWednesday.getDate() + (numeroSemana - 1) * 7);
-              
-              const fimSemana = new Date(targetWednesday);
-              fimSemana.setDate(fimSemana.getDate() + 6);
-              
-              const lastDay = new Date(selectedYear, selectedMonth, 0);
-              const endDate = fimSemana > lastDay ? lastDay : fimSemana;
+              // Usar as funções auxiliares do hook para obter as datas corretas
+              const startSemana = getDataInicioSemana(selectedYear, selectedMonth, numeroSemana);
+              const endSemana = getDataFimSemana(selectedYear, selectedMonth, numeroSemana);
 
               // Formatar datas para exibição (DD/MM)
               const formatDate = (date: Date) => {
@@ -233,14 +222,14 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 });
               };
 
-              const periodoSemana = `${formatDate(targetWednesday)} - ${formatDate(endDate)}`;
+              const periodoSemana = `${formatDate(startSemana)} - ${formatDate(endSemana)}`;
 
               const pontosDaSemana = vendas.filter(venda => {
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
                 
                 const vendaDate = new Date(venda.enviado_em);
-                return vendaDate >= targetWednesday && vendaDate <= endDate;
+                return vendaDate >= startSemana && vendaDate <= endSemana;
               }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
 
               const progressoSemanal = metaSemanal?.meta_vendas && metaSemanal.meta_vendas > 0 
