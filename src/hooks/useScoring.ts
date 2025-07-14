@@ -26,10 +26,12 @@ export const useScoring = () => {
       ScoringService.updateScoringRule(id, pontos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scoring-rules'] });
+      queryClient.invalidateQueries({ queryKey: ['vendas'] });
+      queryClient.invalidateQueries({ queryKey: ['all-vendas'] });
       setEditingId(null);
       toast({
         title: "Sucesso",
-        description: "Pontuação atualizada com sucesso",
+        description: "Pontuação atualizada com sucesso. Todas as vendas foram recalculadas.",
       });
     },
     onError: (error: Error) => {
