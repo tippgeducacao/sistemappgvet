@@ -72,8 +72,13 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   const userEmail = profile?.email || currentUser?.email || '';
   const canDeleteVendas = userEmail === 'wallasmonteiro019@gmail.com';
   const handleApprove = () => {
+    console.log('🎯 AdminVendaActionsDialog: BOTÃO APROVAÇÃO CLICADO!');
+    console.log('📋 Dados da venda:', { id: venda.id.substring(0, 8), status: venda.status });
+    console.log('📅 Data assinatura:', dataAssinaturaContrato);
+    
     // Validar se a data de assinatura foi preenchida
     if (!dataAssinaturaContrato) {
+      console.log('❌ Faltou data de assinatura');
       toast({
         title: "Campo obrigatório",
         description: "Para aprovar a venda é obrigatório informar a data de assinatura do contrato",
@@ -82,8 +87,11 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
       return;
     }
     
+    console.log('✅ Validação passou, chamando updateStatus...');
     // Usar pontuação esperada (calculada automaticamente)
     const pontos = venda.pontuacao_esperada || 0;
+    console.log('🔢 Pontuação a ser usada:', pontos);
+    
     updateStatus({
       vendaId: venda.id,
       status: 'matriculado',
