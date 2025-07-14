@@ -125,7 +125,7 @@ export class VendedorCadastroService {
             .from('user_roles')
             .insert({
               user_id: signUpData.user.id,
-              role: userType as 'admin' | 'sdr',
+              role: userType as 'admin' | 'sdr' | 'sdr_inbound' | 'sdr_outbound',
               created_by: (await supabase.auth.getUser()).data.user?.id
             });
 

@@ -36,6 +36,12 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
         return 'Secretária';
       case 'vendedor':
         return 'Vendedor';
+      case 'sdr':
+        return 'SDR';
+      case 'sdr_inbound':
+        return 'SDR Inbound';
+      case 'sdr_outbound':
+        return 'SDR Outbound';
       default:
         return 'Usuário';
     }
@@ -62,6 +68,12 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
         return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'vendedor':
         return 'bg-green-100 text-green-800 border-green-200';
+      case 'sdr':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'sdr_inbound':
+        return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+      case 'sdr_outbound':
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
