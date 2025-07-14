@@ -2,12 +2,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface NivelVendedor {
   id: string;
-  nivel: 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior';
+  nivel: 'junior' | 'pleno' | 'senior' | 'sdr_junior' | 'sdr_pleno' | 'sdr_senior';
   tipo_usuario: 'vendedor' | 'sdr';
   fixo_mensal: number;
   vale: number;
   variavel_semanal: number;
-  meta_semanal_pontos: number;
+  meta_semanal_vendedor: number;
+  meta_semanal_inbound: number;
+  meta_semanal_outbound: number;
   created_at: string;
   updated_at: string;
   created_by?: string;
@@ -21,7 +23,7 @@ export class NiveisService {
       .from('niveis_vendedores')
       .select('*')
       .order('tipo_usuario', { ascending: true })
-      .order('meta_semanal_pontos', { ascending: true });
+      .order('meta_semanal_vendedor', { ascending: true });
 
     if (error) {
       console.error('❌ Erro ao buscar níveis:', error);
@@ -31,7 +33,7 @@ export class NiveisService {
     console.log('✅ Níveis encontrados:', data?.length);
     return (data || []).map(item => ({
       ...item,
-      nivel: item.nivel as 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior',
+      nivel: item.nivel as 'junior' | 'pleno' | 'senior' | 'sdr_junior' | 'sdr_pleno' | 'sdr_senior',
       tipo_usuario: item.tipo_usuario as 'vendedor' | 'sdr'
     }));
   }
@@ -52,7 +54,7 @@ export class NiveisService {
     console.log('✅ Nível atualizado com sucesso');
   }
 
-  static async updateVendedorNivel(vendedorId: string, nivel: 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior'): Promise<void> {
+  static async updateVendedorNivel(vendedorId: string, nivel: 'junior' | 'pleno' | 'senior' | 'sdr_junior' | 'sdr_pleno' | 'sdr_senior'): Promise<void> {
     console.log('🔄 Atualizando nível do vendedor:', vendedorId, 'para', nivel);
     
     const { error } = await supabase
@@ -76,18 +78,12 @@ export class NiveisService {
         return 'Vendedor Pleno';
       case 'senior':
         return 'Vendedor Sênior';
-      case 'sdr_inbound_junior':
-        return 'SDR Inbound Júnior';
-      case 'sdr_inbound_pleno':
-        return 'SDR Inbound Pleno';
-      case 'sdr_inbound_senior':
-        return 'SDR Inbound Sênior';
-      case 'sdr_outbound_junior':
-        return 'SDR Outbound Júnior';
-      case 'sdr_outbound_pleno':
-        return 'SDR Outbound Pleno';
-      case 'sdr_outbound_senior':
-        return 'SDR Outbound Sênior';
+      case 'sdr_junior':
+        return 'SDR Júnior';
+      case 'sdr_pleno':
+        return 'SDR Pleno';
+      case 'sdr_senior':
+        return 'SDR Sênior';
       default:
         return 'Indefinido';
     }
@@ -101,18 +97,12 @@ export class NiveisService {
         return 'bg-blue-100 text-blue-800';
       case 'senior':
         return 'bg-purple-100 text-purple-800';
-      case 'sdr_inbound_junior':
+      case 'sdr_junior':
         return 'bg-orange-100 text-orange-800';
-      case 'sdr_inbound_pleno':
+      case 'sdr_pleno':
         return 'bg-orange-200 text-orange-900';
-      case 'sdr_inbound_senior':
+      case 'sdr_senior':
         return 'bg-orange-300 text-orange-950';
-      case 'sdr_outbound_junior':
-        return 'bg-red-100 text-red-800';
-      case 'sdr_outbound_pleno':
-        return 'bg-red-200 text-red-900';
-      case 'sdr_outbound_senior':
-        return 'bg-red-300 text-red-950';
       default:
         return 'bg-gray-100 text-gray-800';
     }

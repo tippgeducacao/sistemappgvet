@@ -29,12 +29,18 @@ const GerenciarNiveis: React.FC = () => {
     if (!editingNivel) return;
 
     const formData = new FormData(e.target as HTMLFormElement);
-    const dados = {
+    const dados: any = {
       fixo_mensal: parseFloat(formData.get('fixo_mensal') as string),
       vale: parseFloat(formData.get('vale') as string),
       variavel_semanal: parseFloat(formData.get('variavel_semanal') as string),
-      meta_semanal_pontos: parseInt(formData.get('meta_semanal_pontos') as string),
     };
+
+    if (editingNivel.tipo_usuario === 'sdr') {
+      dados.meta_semanal_inbound = parseInt(formData.get('meta_semanal_inbound') as string);
+      dados.meta_semanal_outbound = parseInt(formData.get('meta_semanal_outbound') as string);
+    } else {
+      dados.meta_semanal_vendedor = parseInt(formData.get('meta_semanal_vendedor') as string);
+    }
 
     try {
       await updateNivel(editingNivel.id, dados);
@@ -88,8 +94,17 @@ const GerenciarNiveis: React.FC = () => {
             <p className="text-lg font-semibold">{formatCurrency(nivel.variavel_semanal)}</p>
           </div>
           <div>
-            <Label className="text-sm font-medium text-muted-foreground">Meta Semanal</Label>
-            <p className="text-lg font-semibold">{nivel.meta_semanal_pontos} pontos</p>
+            <Label className="text-sm font-medium text-muted-foreground">
+              {nivel.tipo_usuario === 'sdr' ? 'Metas Semanais' : 'Meta Semanal'}
+            </Label>
+            {nivel.tipo_usuario === 'sdr' ? (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Inbound: {nivel.meta_semanal_inbound} reuniões</p>
+                <p className="text-sm font-medium">Outbound: {nivel.meta_semanal_outbound} reuniões</p>
+              </div>
+            ) : (
+              <p className="text-lg font-semibold">{nivel.meta_semanal_vendedor} pontos</p>
+            )}
           </div>
         </div>
       </CardContent>
@@ -202,16 +217,41 @@ const GerenciarNiveis: React.FC = () => {
                     required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="meta_semanal_pontos">Meta Semanal (pontos)</Label>
-                  <Input
-                    id="meta_semanal_pontos"
-                    name="meta_semanal_pontos"
-                    type="number"
-                    defaultValue={editingNivel.meta_semanal_pontos}
-                    required
-                  />
-                </div>
+                {editingNivel.tipo_usuario === 'sdr' ? (
+                  <>
+                    <div>
+                      <Label htmlFor="meta_semanal_inbound">Meta Inbound (reuniões)</Label>
+                      <Input
+                        id="meta_semanal_inbound"
+                        name="meta_semanal_inbound"
+                        type="number"
+                        defaultValue={editingNivel.meta_semanal_inbound}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="meta_semanal_outbound">Meta Outbound (reuniões)</Label>
+                      <Input
+                        id="meta_semanal_outbound"
+                        name="meta_semanal_outbound"
+                        type="number"
+                        defaultValue={editingNivel.meta_semanal_outbound}
+                        required
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <Label htmlFor="meta_semanal_vendedor">Meta Semanal (pontos)</Label>
+                    <Input
+                      id="meta_semanal_vendedor"
+                      name="meta_semanal_vendedor"
+                      type="number"
+                      defaultValue={editingNivel.meta_semanal_vendedor}
+                      required
+                    />
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>

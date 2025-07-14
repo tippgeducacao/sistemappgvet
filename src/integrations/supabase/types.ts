@@ -401,7 +401,9 @@ export type Database = {
           created_by: string | null
           fixo_mensal: number
           id: string
-          meta_semanal_pontos: number
+          meta_semanal_inbound: number | null
+          meta_semanal_outbound: number | null
+          meta_semanal_vendedor: number
           nivel: string
           tipo_usuario: string
           updated_at: string
@@ -413,7 +415,9 @@ export type Database = {
           created_by?: string | null
           fixo_mensal?: number
           id?: string
-          meta_semanal_pontos?: number
+          meta_semanal_inbound?: number | null
+          meta_semanal_outbound?: number | null
+          meta_semanal_vendedor?: number
           nivel: string
           tipo_usuario?: string
           updated_at?: string
@@ -425,7 +429,9 @@ export type Database = {
           created_by?: string | null
           fixo_mensal?: number
           id?: string
-          meta_semanal_pontos?: number
+          meta_semanal_inbound?: number | null
+          meta_semanal_outbound?: number | null
+          meta_semanal_vendedor?: number
           nivel?: string
           tipo_usuario?: string
           updated_at?: string

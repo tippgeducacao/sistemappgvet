@@ -23,12 +23,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
   onSuccess
 }) => {
   const { updateVendedorNivel } = useNiveis();
-  const [selectedNivel, setSelectedNivel] = useState<'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior'>('junior');
+  const [selectedNivel, setSelectedNivel] = useState<'junior' | 'pleno' | 'senior' | 'sdr_junior' | 'sdr_pleno' | 'sdr_senior'>('junior');
   const [saving, setSaving] = useState(false);
 
   React.useEffect(() => {
     if (vendedor?.nivel) {
-      setSelectedNivel(vendedor.nivel as 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior');
+      setSelectedNivel(vendedor.nivel as 'junior' | 'pleno' | 'senior' | 'sdr_junior' | 'sdr_pleno' | 'sdr_senior');
     }
   }, [vendedor]);
 
@@ -87,12 +87,9 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                 <SelectItem value="junior">Vendedor Júnior</SelectItem>
                 <SelectItem value="pleno">Vendedor Pleno</SelectItem>
                 <SelectItem value="senior">Vendedor Sênior</SelectItem>
-                <SelectItem value="sdr_inbound_junior">SDR Inbound Júnior</SelectItem>
-                <SelectItem value="sdr_inbound_pleno">SDR Inbound Pleno</SelectItem>
-                <SelectItem value="sdr_inbound_senior">SDR Inbound Sênior</SelectItem>
-                <SelectItem value="sdr_outbound_junior">SDR Outbound Júnior</SelectItem>
-                <SelectItem value="sdr_outbound_pleno">SDR Outbound Pleno</SelectItem>
-                <SelectItem value="sdr_outbound_senior">SDR Outbound Sênior</SelectItem>
+                <SelectItem value="sdr_junior">SDR Júnior</SelectItem>
+                <SelectItem value="sdr_pleno">SDR Pleno</SelectItem>
+                <SelectItem value="sdr_senior">SDR Sênior</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -108,12 +105,9 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                     selectedNivel === 'junior' ? '2.200' :
                     selectedNivel === 'pleno' ? '2.600' :
                     selectedNivel === 'senior' ? '3.000' :
-                    selectedNivel === 'sdr_inbound_junior' ? '1.500' :
-                    selectedNivel === 'sdr_inbound_pleno' ? '1.800' :
-                    selectedNivel === 'sdr_inbound_senior' ? '2.200' :
-                    selectedNivel === 'sdr_outbound_junior' ? '1.600' :
-                    selectedNivel === 'sdr_outbound_pleno' ? '2.000' :
-                    selectedNivel === 'sdr_outbound_senior' ? '2.400' : '0'
+                    selectedNivel === 'sdr_junior' ? '1.800' :
+                    selectedNivel === 'sdr_pleno' ? '2.000' :
+                    selectedNivel === 'sdr_senior' ? '2.200' : '0'
                   }</p>
                 </div>
                 <div>
@@ -126,30 +120,38 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                     selectedNivel === 'junior' ? '450' :
                     selectedNivel === 'pleno' ? '500' :
                     selectedNivel === 'senior' ? '550' :
-                    selectedNivel === 'sdr_inbound_junior' ? '300' :
-                    selectedNivel === 'sdr_inbound_pleno' ? '450' :
-                    selectedNivel === 'sdr_inbound_senior' ? '600' :
-                    selectedNivel === 'sdr_outbound_junior' ? '350' :
-                    selectedNivel === 'sdr_outbound_pleno' ? '500' :
-                    selectedNivel === 'sdr_outbound_senior' ? '650' : '0'
+                    selectedNivel === 'sdr_junior' ? '450' :
+                    selectedNivel === 'sdr_pleno' ? '500' :
+                    selectedNivel === 'sdr_senior' ? '550' : '0'
                   }</p>
                 </div>
                 <div>
-                  <span className="text-gray-600">Meta Semanal:</span>
-                  <p className="font-medium flex items-center gap-1">
-                    <TrendingUp className="h-3 w-3" />
-                    {
-                      selectedNivel === 'junior' ? '6' :
-                      selectedNivel === 'pleno' ? '7' :
-                      selectedNivel === 'senior' ? '8' :
-                      selectedNivel === 'sdr_inbound_junior' ? '8' :
-                      selectedNivel === 'sdr_inbound_pleno' ? '12' :
-                      selectedNivel === 'sdr_inbound_senior' ? '16' :
-                      selectedNivel === 'sdr_outbound_junior' ? '10' :
-                      selectedNivel === 'sdr_outbound_pleno' ? '14' :
-                      selectedNivel === 'sdr_outbound_senior' ? '18' : '0'
-                    } {selectedNivel.includes('sdr') ? 'reuniões' : 'pts'}
-                  </p>
+                  <span className="text-gray-600">
+                    {selectedNivel.includes('sdr') ? 'Metas Semanais:' : 'Meta Semanal:'}
+                  </span>
+                  {selectedNivel.includes('sdr') ? (
+                    <div className="font-medium">
+                      <p>Inbound: {
+                        selectedNivel === 'sdr_junior' ? '55' :
+                        selectedNivel === 'sdr_pleno' ? '60' :
+                        selectedNivel === 'sdr_senior' ? '65' : '0'
+                      } reuniões</p>
+                      <p>Outbound: {
+                        selectedNivel === 'sdr_junior' ? '27' :
+                        selectedNivel === 'sdr_pleno' ? '30' :
+                        selectedNivel === 'sdr_senior' ? '35' : '0'
+                      } reuniões</p>
+                    </div>
+                  ) : (
+                    <p className="font-medium flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3" />
+                      {
+                        selectedNivel === 'junior' ? '6' :
+                        selectedNivel === 'pleno' ? '7' :
+                        selectedNivel === 'senior' ? '8' : '0'
+                      } pts
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
