@@ -10,6 +10,7 @@ import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetas } from '@/hooks/useMetas';
+import { useNiveis } from '@/hooks/useNiveis';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
@@ -24,6 +25,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { vendedores, loading: vendedoresLoading } = useVendedores();
   const { metas, loading: metasLoading } = useMetas();
+  const { niveis, loading: niveisLoading } = useNiveis();
   const { currentUser, profile } = useAuthStore();
   
   // Estado interno para o filtro de mês (apenas quando não há filtro externo)
@@ -47,7 +49,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     ? `${propSelectedYear}-${String(propSelectedMonth).padStart(2, '0')}`
     : internalSelectedMonth;
 
-  const isLoading = vendasLoading || vendedoresLoading || metasLoading;
+  const isLoading = vendasLoading || vendedoresLoading || metasLoading || niveisLoading;
 
   // Filtrar vendedores - apenas vendedores ativos e remover "Vendedor teste" exceto para admin específico
   const vendedoresFiltrados = useMemo(() => {
@@ -201,16 +203,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const currentYear = parseInt(year);
     const currentMonth = parseInt(monthStr);
     
-    // Buscar meta do vendedor para o período
-    const metaVendedor = metas.find(meta => 
-      meta.vendedor_id === vendedor.id && 
-      meta.ano === currentYear && 
-      meta.mes === currentMonth
-    );
+    // Buscar meta semanal baseada no nível do vendedor
+    const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
+    const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
     
     const vendasAprovadas = statsExistentes?.vendas || 0;
-    const metaMensal = metaVendedor?.meta_vendas || 0;
-    const metaSemanal = Math.ceil(metaMensal / 4); // Meta semanal aproximada
+    const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6; // Usar meta do banco ou 6 como fallback
+    const metaDiaria = metaSemanal / 6; // Meta diária (dividir por 6 dias úteis)
     const vendasSemanais = getWeeklyProgress(vendedor.id, currentYear, currentMonth);
     
     return {
@@ -219,11 +218,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       photo_url: vendedor.photo_url,
       vendas: vendasAprovadas,
       pontuacao: statsExistentes?.pontuacao || 0,
-      metaMensal,
       metaSemanal,
+      metaDiaria,
       vendasSemanais,
-      progressoMensal: metaMensal > 0 ? (vendasAprovadas / metaMensal) * 100 : 0,
-      progressoSemanal: metaSemanal > 0 ? (vendasSemanais / metaSemanal) * 100 : 0
+      progressoSemanal: metaSemanal > 0 ? ((statsExistentes?.pontuacao || 0) / metaSemanal) * 100 : 0,
+      progressoDiario: metaDiaria > 0 ? ((statsExistentes?.pontuacao || 0) / metaDiaria) * 100 : 0
     };
   });
 
@@ -360,17 +359,17 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                         <div className="flex gap-2 mt-3">
                           <div className="flex-1">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs font-medium text-gray-600">Mês</span>
-                              <span className="text-xs text-gray-500">{vendedor.vendas}/{vendedor.metaMensal}</span>
+                              <span className="text-xs font-medium text-gray-600">Meta Semana</span>
+                              <span className="text-xs text-gray-500">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{vendedor.metaSemanal} pts</span>
                             </div>
-                            <Progress value={Math.min(vendedor.progressoMensal, 100)} className="h-1.5" />
+                            <Progress value={Math.min(vendedor.progressoSemanal, 100)} className="h-1.5" />
                           </div>
                           <div className="flex-1">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs font-medium text-gray-600">Sem</span>
-                              <span className="text-xs text-gray-500">{vendedor.vendasSemanais}/{vendedor.metaSemanal}</span>
+                              <span className="text-xs font-medium text-gray-600">Meta Dia</span>
+                              <span className="text-xs text-gray-500">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{DataFormattingService.formatPoints(vendedor.metaDiaria)} pts</span>
                             </div>
-                            <Progress value={Math.min(vendedor.progressoSemanal, 100)} className="h-1.5" />
+                            <Progress value={Math.min(vendedor.progressoDiario, 100)} className="h-1.5" />
                           </div>
                         </div>
                       </div>
@@ -412,29 +411,29 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                       </p>
                     </div>
                     
-                    {/* Mini barras de progresso ao lado */}
-                    <div className="flex gap-4 ml-4">
-                      <div className="w-24">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs font-medium text-muted-foreground">Meta Mês</span>
-                          <span className="text-xs text-muted-foreground">{vendedor.vendas}/{vendedor.metaMensal}</span>
-                        </div>
-                        <Progress 
-                          value={Math.min(vendedor.progressoMensal, 100)} 
-                          className="h-1.5"
-                        />
-                      </div>
-                      <div className="w-24">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs font-medium text-muted-foreground">Meta Semana</span>
-                          <span className="text-xs text-muted-foreground">{vendedor.vendasSemanais}/{vendedor.metaSemanal}</span>
-                        </div>
-                        <Progress 
-                          value={Math.min(vendedor.progressoSemanal, 100)} 
-                          className="h-1.5"
-                        />
-                      </div>
-                    </div>
+                     {/* Mini barras de progresso ao lado */}
+                     <div className="flex gap-4 ml-4">
+                       <div className="w-24">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs font-medium text-muted-foreground">Meta Semana</span>
+                            <span className="text-xs text-muted-foreground">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{vendedor.metaSemanal} pts</span>
+                          </div>
+                         <Progress 
+                           value={Math.min(vendedor.progressoSemanal, 100)} 
+                           className="h-1.5"
+                         />
+                       </div>
+                       <div className="w-24">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs font-medium text-muted-foreground">Meta Dia</span>
+                            <span className="text-xs text-muted-foreground">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{DataFormattingService.formatPoints(vendedor.metaDiaria)} pts</span>
+                          </div>
+                         <Progress 
+                           value={Math.min(vendedor.progressoDiario, 100)} 
+                           className="h-1.5"
+                         />
+                       </div>
+                     </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
