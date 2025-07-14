@@ -23,12 +23,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
   onSuccess
 }) => {
   const { updateVendedorNivel } = useNiveis();
-  const [selectedNivel, setSelectedNivel] = useState<'junior' | 'pleno' | 'senior' | 'sdr_inbound' | 'sdr_outbound'>('junior');
+  const [selectedNivel, setSelectedNivel] = useState<'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior'>('junior');
   const [saving, setSaving] = useState(false);
 
   React.useEffect(() => {
     if (vendedor?.nivel) {
-      setSelectedNivel(vendedor.nivel as 'junior' | 'pleno' | 'senior' | 'sdr_inbound' | 'sdr_outbound');
+      setSelectedNivel(vendedor.nivel as 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior');
     }
   }, [vendedor]);
 
@@ -79,41 +79,20 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
             <Label className="text-sm font-medium text-gray-700">
               Novo Nível
             </Label>
-            <Select value={selectedNivel} onValueChange={(value) => setSelectedNivel(value as 'junior' | 'pleno' | 'senior' | 'sdr_inbound' | 'sdr_outbound')}>
+            <Select value={selectedNivel} onValueChange={(value) => setSelectedNivel(value as any)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="junior">
-                  <div className="flex items-center gap-2">
-                    <span>Vendedor Júnior</span>
-                    <Badge className="bg-green-100 text-green-800 text-xs">Meta: 6 pts/sem</Badge>
-                  </div>
-                </SelectItem>
-                <SelectItem value="pleno">
-                  <div className="flex items-center gap-2">
-                    <span>Vendedor Pleno</span>
-                    <Badge className="bg-blue-100 text-blue-800 text-xs">Meta: 7 pts/sem</Badge>
-                  </div>
-                </SelectItem>
-                <SelectItem value="senior">
-                  <div className="flex items-center gap-2">
-                    <span>Vendedor Sênior</span>
-                    <Badge className="bg-purple-100 text-purple-800 text-xs">Meta: 8 pts/sem</Badge>
-                  </div>
-                </SelectItem>
-                <SelectItem value="sdr_inbound">
-                  <div className="flex items-center gap-2">
-                    <span>SDR Inbound</span>
-                    <Badge className="bg-orange-100 text-orange-800 text-xs">Meta: 55 pts/sem</Badge>
-                  </div>
-                </SelectItem>
-                <SelectItem value="sdr_outbound">
-                  <div className="flex items-center gap-2">
-                    <span>SDR Outbound</span>
-                    <Badge className="bg-red-100 text-red-800 text-xs">Meta: 60 pts/sem</Badge>
-                  </div>
-                </SelectItem>
+                <SelectItem value="junior">Vendedor Júnior</SelectItem>
+                <SelectItem value="pleno">Vendedor Pleno</SelectItem>
+                <SelectItem value="senior">Vendedor Sênior</SelectItem>
+                <SelectItem value="sdr_inbound_junior">SDR Inbound Júnior</SelectItem>
+                <SelectItem value="sdr_inbound_pleno">SDR Inbound Pleno</SelectItem>
+                <SelectItem value="sdr_inbound_senior">SDR Inbound Sênior</SelectItem>
+                <SelectItem value="sdr_outbound_junior">SDR Outbound Júnior</SelectItem>
+                <SelectItem value="sdr_outbound_pleno">SDR Outbound Pleno</SelectItem>
+                <SelectItem value="sdr_outbound_senior">SDR Outbound Sênior</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -129,8 +108,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                     selectedNivel === 'junior' ? '2.200' :
                     selectedNivel === 'pleno' ? '2.600' :
                     selectedNivel === 'senior' ? '3.000' :
-                    selectedNivel === 'sdr_inbound' ? '1.800' :
-                    selectedNivel === 'sdr_outbound' ? '2.000' : '0'
+                    selectedNivel === 'sdr_inbound_junior' ? '1.500' :
+                    selectedNivel === 'sdr_inbound_pleno' ? '1.800' :
+                    selectedNivel === 'sdr_inbound_senior' ? '2.200' :
+                    selectedNivel === 'sdr_outbound_junior' ? '1.600' :
+                    selectedNivel === 'sdr_outbound_pleno' ? '2.000' :
+                    selectedNivel === 'sdr_outbound_senior' ? '2.400' : '0'
                   }</p>
                 </div>
                 <div>
@@ -143,8 +126,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                     selectedNivel === 'junior' ? '450' :
                     selectedNivel === 'pleno' ? '500' :
                     selectedNivel === 'senior' ? '550' :
-                    selectedNivel === 'sdr_inbound' ? '450' :
-                    selectedNivel === 'sdr_outbound' ? '500' : '0'
+                    selectedNivel === 'sdr_inbound_junior' ? '300' :
+                    selectedNivel === 'sdr_inbound_pleno' ? '450' :
+                    selectedNivel === 'sdr_inbound_senior' ? '600' :
+                    selectedNivel === 'sdr_outbound_junior' ? '350' :
+                    selectedNivel === 'sdr_outbound_pleno' ? '500' :
+                    selectedNivel === 'sdr_outbound_senior' ? '650' : '0'
                   }</p>
                 </div>
                 <div>
@@ -155,9 +142,13 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                       selectedNivel === 'junior' ? '6' :
                       selectedNivel === 'pleno' ? '7' :
                       selectedNivel === 'senior' ? '8' :
-                      selectedNivel === 'sdr_inbound' ? '55' :
-                      selectedNivel === 'sdr_outbound' ? '60' : '0'
-                    } pts
+                      selectedNivel === 'sdr_inbound_junior' ? '8' :
+                      selectedNivel === 'sdr_inbound_pleno' ? '12' :
+                      selectedNivel === 'sdr_inbound_senior' ? '16' :
+                      selectedNivel === 'sdr_outbound_junior' ? '10' :
+                      selectedNivel === 'sdr_outbound_pleno' ? '14' :
+                      selectedNivel === 'sdr_outbound_senior' ? '18' : '0'
+                    } {selectedNivel.includes('sdr') ? 'reuniões' : 'pts'}
                   </p>
                 </div>
               </div>
