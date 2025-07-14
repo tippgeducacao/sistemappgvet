@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { VendedoresService } from '@/services/vendedoresService';
 import { UserPlus } from 'lucide-react';
@@ -22,7 +23,8 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    userType: 'vendedor'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -30,7 +32,7 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim() || !formData.userType) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos",
@@ -53,19 +55,22 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
       
       await VendedoresService.createVendedor(formData);
       
+      const userTypeLabel = formData.userType === 'admin' ? 'Administrador' : 
+                            formData.userType === 'sdr' ? 'SDR' : 'Vendedor';
+      
       toast({
-        title: "Vendedor criado",
-        description: `${formData.name} foi cadastrado com sucesso!`,
+        title: "Usuário criado",
+        description: `${formData.name} foi cadastrado como ${userTypeLabel} com sucesso!`,
       });
 
-      setFormData({ name: '', email: '', password: '' });
+      setFormData({ name: '', email: '', password: '', userType: 'vendedor' });
       onSuccess();
       
     } catch (error) {
-      console.error('Erro ao criar vendedor:', error);
+      console.error('Erro ao criar usuário:', error);
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao criar vendedor",
+        description: error instanceof Error ? error.message : "Erro ao criar usuário",
         variant: "destructive",
       });
     } finally {
@@ -79,7 +84,7 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Novo Vendedor
+            Novo Usuário
           </DialogTitle>
         </DialogHeader>
         
@@ -89,7 +94,7 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
             <Input
               id="name"
               type="text"
-              placeholder="Digite o nome do vendedor"
+              placeholder="Digite o nome do usuário"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               disabled={isSubmitting}
@@ -102,7 +107,7 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
             <Input
               id="email"
               type="email"
-              placeholder="vendedor@email.com"
+              placeholder="usuario@email.com"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               disabled={isSubmitting}
@@ -122,6 +127,24 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
               required
               minLength={6}
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="userType">Tipo de usuário</Label>
+            <Select
+              value={formData.userType}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, userType: value }))}
+              disabled={isSubmitting}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo de usuário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="vendedor">Vendedor</SelectItem>
+                <SelectItem value="admin">Administrador</SelectItem>
+                <SelectItem value="sdr">SDR</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="flex space-x-3 pt-4">
@@ -145,7 +168,7 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
                   <span>Criando...</span>
                 </div>
               ) : (
-                'Criar Vendedor'
+                'Criar Usuário'
               )}
             </Button>
           </div>

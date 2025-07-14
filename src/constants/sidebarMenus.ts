@@ -18,7 +18,7 @@ export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
     icon: 'GraduationCap'
   },
   {
-    title: 'Gerenciar Vendedores',
+    title: 'Gerenciar Usuários',
     section: 'gerenciar-vendedores',
     icon: 'Users'
   },
@@ -56,11 +56,6 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     icon: 'GraduationCap'
   },
   {
-    title: 'Gerenciar Vendedores',
-    section: 'gerenciar-vendedores',
-    icon: 'Users'
-  },
-  {
     title: 'Gestão de Leads',
     section: 'gestao-leads',
     icon: 'Target'
@@ -88,11 +83,6 @@ export const SECRETARY_MENU_ITEMS: MenuItem[] = [
     section: 'gerenciar-cursos',
     icon: 'GraduationCap'
   },
-  {
-    title: 'Gerenciar Vendedores',
-    section: 'gerenciar-vendedores',
-    icon: 'Users'
-  }
 ];
 
 export const VENDOR_MENU_ITEMS: MenuItem[] = [

@@ -15,24 +15,24 @@ export interface Vendedor {
 export class VendedoresService {
   static async fetchVendedores(): Promise<Vendedor[]> {
     try {
-      console.log('🔍 Buscando vendedores...');
+      console.log('🔍 Buscando usuários...');
       
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_type', 'vendedor')
+        .in('user_type', ['vendedor', 'admin', 'sdr'])
         .order('name');
 
       if (error) {
-        console.error('❌ Erro ao buscar vendedores:', error);
-        throw new Error(`Erro ao buscar vendedores: ${error.message}`);
+        console.error('❌ Erro ao buscar usuários:', error);
+        throw new Error(`Erro ao buscar usuários: ${error.message}`);
       }
 
-      console.log('✅ Vendedores encontrados:', data?.length || 0);
+      console.log('✅ Usuários encontrados:', data?.length || 0);
       return data || [];
       
     } catch (error) {
-      console.error('❌ Erro inesperado ao buscar vendedores:', error);
+      console.error('❌ Erro inesperado ao buscar usuários:', error);
       throw error;
     }
   }
@@ -41,11 +41,12 @@ export class VendedoresService {
     name: string;
     email: string;
     password: string;
+    userType: string;
   }): Promise<void> {
     try {
-      console.log('👤 Criando novo vendedor:', vendedorData.email);
+      console.log('👤 Criando novo usuário:', vendedorData.email, 'tipo:', vendedorData.userType);
       
-      // Verificar se o usuário atual tem permissão para criar vendedores
+      // Verificar se o usuário atual tem permissão para criar usuários (apenas diretores)
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) {
         throw new Error('Usuário não autenticado');
@@ -62,24 +63,24 @@ export class VendedoresService {
         .select('role')
         .eq('user_id', currentUser.user.id);
 
-      const hasAdminRole = roles?.some(r => ['admin', 'secretaria', 'diretor'].includes(r.role));
-      const isAdminByProfile = profile?.user_type === 'secretaria';
+      const isDiretor = roles?.some(r => r.role === 'diretor');
       
-      if (!hasAdminRole && !isAdminByProfile) {
-        throw new Error('Você não tem permissão para criar vendedores. Apenas administradores podem realizar esta ação.');
+      if (!isDiretor) {
+        throw new Error('Você não tem permissão para criar usuários. Apenas diretores podem realizar esta ação.');
       }
       
       // Usar o serviço de cadastro que não afeta a sessão atual
       await VendedorCadastroService.cadastrarVendedor(
         vendedorData.email,
         vendedorData.password,
-        vendedorData.name
+        vendedorData.name,
+        vendedorData.userType
       );
       
-      console.log('✅ Vendedor criado com sucesso');
+      console.log('✅ Usuário criado com sucesso');
       
     } catch (error) {
-      console.error('❌ Erro ao criar vendedor:', error);
+      console.error('❌ Erro ao criar usuário:', error);
       throw error;
     }
   }

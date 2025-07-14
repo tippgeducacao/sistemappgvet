@@ -56,14 +56,14 @@ const RouteRenderer: React.FC = () => {
       );
 
     case 'gerenciar-vendedores':
-      // Apenas admin, secretaria e diretor podem gerenciar vendedores
-      if (isAdmin || isSecretaria || isDiretor) {
+      // Apenas diretores podem gerenciar usuários
+      if (isDiretor) {
         return <GerenciarVendedores />;
       }
       return (
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
-          <p className="text-gray-600 mt-2">Apenas administradores podem gerenciar vendedores.</p>
+          <p className="text-gray-600 mt-2">Apenas diretores podem gerenciar usuários.</p>
         </div>
       );
 

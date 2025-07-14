@@ -21,23 +21,23 @@ const GerenciarVendedores: React.FC = () => {
   const { toast } = useToast();
   const { isAdmin, isSecretaria, isDiretor } = useUserRoles();
 
-  // Verificar se o usuário tem permissão para gerenciar vendedores
-  const canManageVendedores = isAdmin || isSecretaria || isDiretor;
+  // Verificar se o usuário tem permissão para gerenciar usuários (apenas diretores)
+  const canManageUsers = isDiretor;
 
-  if (!canManageVendedores) {
+  if (!canManageUsers) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Acesso Negado</h1>
-          <p className="text-gray-600 mb-4">Você não tem permissão para gerenciar vendedores.</p>
-          <p className="text-sm text-gray-500">Apenas administradores podem acessar esta seção.</p>
+          <p className="text-gray-600 mb-4">Você não tem permissão para gerenciar usuários.</p>
+          <p className="text-sm text-gray-500">Apenas diretores podem acessar esta seção.</p>
         </div>
       </div>
     );
   }
 
   // Verificar se o usuário tem permissão para alterar fotos
-  const canEditPhotos = isAdmin || isSecretaria || isDiretor;
+  const canEditPhotos = isDiretor;
 
   const handlePhotoUpload = async (vendedorId: string, file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -103,13 +103,13 @@ const GerenciarVendedores: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gerenciar Vendedores</h2>
-          <p className="text-gray-600">Cadastre e gerencie vendedores do sistema</p>
+          <h2 className="text-2xl font-bold text-gray-900">Gerenciar Usuários</h2>
+          <p className="text-gray-600">Cadastre e gerencie usuários do sistema</p>
         </div>
         
         <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
           <UserPlus className="h-4 w-4 mr-2" />
-          Novo Vendedor
+          Novo Usuário
         </Button>
       </div>
 
@@ -117,7 +117,7 @@ const GerenciarVendedores: React.FC = () => {
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="lista" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Lista de Vendedores ({vendedores.length})
+            Lista de Usuários ({vendedores.length})
           </TabsTrigger>
           <TabsTrigger value="estatisticas">
             Estatísticas
@@ -177,8 +177,13 @@ const GerenciarVendedores: React.FC = () => {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        Vendedor
+                      <Badge variant="secondary" className={
+                        vendedor.user_type === 'admin' ? 'bg-red-100 text-red-800' :
+                        vendedor.user_type === 'sdr' ? 'bg-purple-100 text-purple-800' :
+                        'bg-green-100 text-green-800'
+                      }>
+                        {vendedor.user_type === 'admin' ? 'Admin' : 
+                         vendedor.user_type === 'sdr' ? 'SDR' : 'Vendedor'}
                       </Badge>
                       <span className="text-sm text-gray-500">
                         Desde {new Date(vendedor.created_at).toLocaleDateString('pt-BR')}
@@ -218,7 +223,7 @@ const GerenciarVendedores: React.FC = () => {
                           
                           {!canEditPhotos && (
                             <div className="flex-1 text-center text-sm text-gray-500 py-2">
-                              Apenas administradores podem alterar fotos
+                              Apenas diretores podem alterar fotos
                             </div>
                           )}
                         </>
@@ -233,14 +238,14 @@ const GerenciarVendedores: React.FC = () => {
               <div className="col-span-full text-center py-12">
                 <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Nenhum vendedor cadastrado
+                  Nenhum usuário cadastrado
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Comece cadastrando o primeiro vendedor do sistema
+                  Comece cadastrando o primeiro usuário do sistema
                 </p>
                 <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Cadastrar Primeiro Vendedor
+                  Cadastrar Primeiro Usuário
                 </Button>
               </div>
             )}
@@ -251,7 +256,7 @@ const GerenciarVendedores: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Total de Vendedores</CardTitle>
+                <CardTitle className="text-lg">Total de Usuários</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-ppgvet-teal">{vendedores.length}</div>
