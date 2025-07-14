@@ -11,7 +11,9 @@ export interface Vendedor {
   created_at: string;
   updated_at: string;
   ativo: boolean;
-  nivel?: 'junior' | 'pleno' | 'senior';
+  nivel?: string;
+  pos_graduacoes?: string[] | null;
+  horario_trabalho?: any;
 }
 
 export class VendedoresService {

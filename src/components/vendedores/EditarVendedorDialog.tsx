@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { User, TrendingUp, Save, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { User, TrendingUp, Save, X, Clock, GraduationCap } from 'lucide-react';
 import { useNiveis } from '@/hooks/useNiveis';
+import { useCursos } from '@/hooks/useCursos';
 import { NiveisService } from '@/services/niveisService';
+import { UserService } from '@/services/user/UserService';
 import type { Vendedor } from '@/services/vendedoresService';
+import { useToast } from '@/hooks/use-toast';
 
 interface EditarVendedorDialogProps {
   vendedor: Vendedor | null;
@@ -23,11 +28,26 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
   onSuccess
 }) => {
   const { updateVendedorNivel } = useNiveis();
+  const { cursos } = useCursos();
+  const { toast } = useToast();
   const [selectedNivel, setSelectedNivel] = useState<'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior'>('junior');
+  const [selectedPosGraduacoes, setSelectedPosGraduacoes] = useState<string[]>([]);
+  const [horarioTrabalho, setHorarioTrabalho] = useState({
+    manha_inicio: '09:00',
+    manha_fim: '12:00',
+    tarde_inicio: '13:00',
+    tarde_fim: '18:00'
+  });
   const [saving, setSaving] = useState(false);
 
+  // Filtrar apenas pós-graduações
+  const posGraduacoes = cursos.filter(curso => 
+    curso.modalidade?.toLowerCase().includes('pós') || 
+    curso.modalidade?.toLowerCase().includes('pos')
+  );
+
   React.useEffect(() => {
-    if (vendedor?.nivel) {
+    if (vendedor) {
       // Mapear níveis antigos para novos
       const nivelMap: Record<string, typeof selectedNivel> = {
         'sdr_junior': 'sdr_inbound_junior',
@@ -36,6 +56,16 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
       };
       const novoNivel = nivelMap[vendedor.nivel] || vendedor.nivel as typeof selectedNivel;
       setSelectedNivel(novoNivel);
+
+      // Carregar pós-graduações do vendedor
+      if (vendedor.pos_graduacoes) {
+        setSelectedPosGraduacoes(vendedor.pos_graduacoes);
+      }
+
+      // Carregar horário de trabalho do vendedor
+      if (vendedor.horario_trabalho) {
+        setHorarioTrabalho(vendedor.horario_trabalho);
+      }
     }
   }, [vendedor]);
 
@@ -44,21 +74,57 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
 
     try {
       setSaving(true);
+      
+      // Atualizar nível
       await updateVendedorNivel(vendedor.id, selectedNivel);
+      
+      // Atualizar pós-graduações e horário de trabalho
+      await UserService.updateProfile(vendedor.id, {
+        pos_graduacoes: selectedPosGraduacoes,
+        horario_trabalho: horarioTrabalho
+      });
+
+      toast({
+        title: "Sucesso",
+        description: "Vendedor atualizado com sucesso!",
+      });
+      
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error('Erro ao salvar:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar vendedor",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
+  };
+
+  const togglePosGraduacao = (cursoId: string) => {
+    setSelectedPosGraduacoes(prev => {
+      if (prev.includes(cursoId)) {
+        return prev.filter(id => id !== cursoId);
+      } else if (prev.length < 5) {
+        return [...prev, cursoId];
+      } else {
+        toast({
+          title: "Limite atingido",
+          description: "Máximo de 5 pós-graduações por vendedor",
+          variant: "destructive",
+        });
+        return prev;
+      }
+    });
   };
 
   if (!vendedor) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <User className="h-5 w-5" />
@@ -168,6 +234,111 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Pós-graduações (apenas para vendedores) */}
+          {(vendedor.user_type === 'vendedor' || 
+            vendedor.user_type === 'sdr_inbound' || 
+            vendedor.user_type === 'sdr_outbound') && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                <Label className="text-sm font-medium text-gray-700">
+                  Pós-graduações ({selectedPosGraduacoes.length}/5)
+                </Label>
+              </div>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {posGraduacoes.length > 0 ? (
+                  posGraduacoes.map((curso) => (
+                    <div key={curso.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={curso.id}
+                        checked={selectedPosGraduacoes.includes(curso.id)}
+                        onCheckedChange={() => togglePosGraduacao(curso.id)}
+                        disabled={!selectedPosGraduacoes.includes(curso.id) && selectedPosGraduacoes.length >= 5}
+                      />
+                      <Label
+                        htmlFor={curso.id}
+                        className={`text-sm cursor-pointer ${
+                          !selectedPosGraduacoes.includes(curso.id) && selectedPosGraduacoes.length >= 5
+                            ? 'text-gray-400' 
+                            : 'text-gray-700'
+                        }`}
+                      >
+                        {curso.nome}
+                      </Label>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    Nenhuma pós-graduação disponível
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Horário de trabalho */}
+          {(vendedor.user_type === 'vendedor' || 
+            vendedor.user_type === 'sdr_inbound' || 
+            vendedor.user_type === 'sdr_outbound') && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <Label className="text-sm font-medium text-gray-700">
+                  Horário de Trabalho
+                </Label>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs text-gray-600">Manhã - Início</Label>
+                  <Input
+                    type="time"
+                    value={horarioTrabalho.manha_inicio}
+                    onChange={(e) => setHorarioTrabalho(prev => ({
+                      ...prev,
+                      manha_inicio: e.target.value
+                    }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-gray-600">Manhã - Fim</Label>
+                  <Input
+                    type="time"
+                    value={horarioTrabalho.manha_fim}
+                    onChange={(e) => setHorarioTrabalho(prev => ({
+                      ...prev,
+                      manha_fim: e.target.value
+                    }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-gray-600">Tarde - Início</Label>
+                  <Input
+                    type="time"
+                    value={horarioTrabalho.tarde_inicio}
+                    onChange={(e) => setHorarioTrabalho(prev => ({
+                      ...prev,
+                      tarde_inicio: e.target.value
+                    }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-gray-600">Tarde - Fim</Label>
+                  <Input
+                    type="time"
+                    value={horarioTrabalho.tarde_fim}
+                    onChange={(e) => setHorarioTrabalho(prev => ({
+                      ...prev,
+                      tarde_fim: e.target.value
+                    }))}
+                  />
+                </div>
+              </div>
+              <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                <span className="font-medium">Horário atual:</span> {horarioTrabalho.manha_inicio} às {horarioTrabalho.manha_fim} | {horarioTrabalho.tarde_inicio} às {horarioTrabalho.tarde_fim}
+              </div>
+            </div>
+          )}
 
           {/* Botões */}
           <div className="flex gap-3">

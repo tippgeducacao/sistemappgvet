@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface Curso {
   id: string;
   nome: string;
+  modalidade: string;
   ativo: boolean;
   created_at: string;
   updated_at: string;

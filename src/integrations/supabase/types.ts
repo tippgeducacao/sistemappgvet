@@ -445,10 +445,12 @@ export type Database = {
           ativo: boolean
           created_at: string | null
           email: string
+          horario_trabalho: Json | null
           id: string
           name: string
           nivel: string | null
           photo_url: string | null
+          pos_graduacoes: string[] | null
           updated_at: string | null
           user_type: string
         }
@@ -456,10 +458,12 @@ export type Database = {
           ativo?: boolean
           created_at?: string | null
           email: string
+          horario_trabalho?: Json | null
           id: string
           name: string
           nivel?: string | null
           photo_url?: string | null
+          pos_graduacoes?: string[] | null
           updated_at?: string | null
           user_type: string
         }
@@ -467,10 +471,12 @@ export type Database = {
           ativo?: boolean
           created_at?: string | null
           email?: string
+          horario_trabalho?: Json | null
           id?: string
           name?: string
           nivel?: string | null
           photo_url?: string | null
+          pos_graduacoes?: string[] | null
           updated_at?: string | null
           user_type?: string
         }
