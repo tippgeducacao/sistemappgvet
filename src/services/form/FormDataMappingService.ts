@@ -42,7 +42,7 @@ export class FormDataMappingService {
       parcelamento: 'Condições de Parcelamento',
       pagamento: 'Forma de Pagamento',
       formaCaptacao: 'Forma de Captação do Lead',
-      tipoVenda: 'Tipo de Venda',
+      
       vendaCasada: 'Venda Casada',
       detalhesVendaCasada: 'Detalhes da Venda Casada',
       

@@ -20,7 +20,7 @@ const initialScoringInfo: ScoringInfo = {
   parcelamento: '',
   pagamento: '',
   formaCaptacao: '',
-  tipoVenda: '',
+  
   vendaCasada: '',
 };
 

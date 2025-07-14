@@ -10,7 +10,7 @@ export class ScoringCalculationService {
     parcelamento: 'Condições de Parcelamento',
     pagamento: 'Forma de Pagamento',
     formaCaptacao: 'Forma de Captação do Lead',
-    tipoVenda: 'Tipo de Venda',
+    
     vendaCasada: 'Venda Casada'
   };
 
@@ -65,7 +65,7 @@ export class ScoringCalculationService {
       'Forma de Captação': 'Forma de Captação do Lead',
       'Forma de Captação do Lead': 'Forma de Captação do Lead',
       'Tipo de Venda': 'Tipo de Venda',
-      'Canal/Local da Venda': 'Tipo de Venda',
+      
       'Venda Casada': 'Venda Casada'
     };
 

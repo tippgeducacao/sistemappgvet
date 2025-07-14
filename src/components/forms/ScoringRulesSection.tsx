@@ -81,13 +81,9 @@ const ScoringRulesSection: React.FC = () => {
                 <SelectValue placeholder="Selecione o lote" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Lote Integral">
-                  Lote Integral
-                  {getSelectItemPoints('Lote da Pós-Graduação', 'Lote Integral')}
-                </SelectItem>
-                <SelectItem value="Lote 3">
-                  Lote 3
-                  {getSelectItemPoints('Lote da Pós-Graduação', 'Lote 3')}
+                <SelectItem value="Lote 3 - LOTE INTEGRAL">
+                  Lote 3 - LOTE INTEGRAL
+                  {getSelectItemPoints('Lote da Pós-Graduação', 'Lote 3 - LOTE INTEGRAL')}
                 </SelectItem>
                 <SelectItem value="Lote 2">
                   Lote 2
@@ -281,56 +277,6 @@ const ScoringRulesSection: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="tipoVenda">
-              Canal/Local da Venda
-              {renderPointsBadge(getFieldPoints('Tipo de Venda', formData.tipoVenda))}
-            </Label>
-            <Select value={formData.tipoVenda} onValueChange={(value) => updateField('tipoVenda', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o canal da venda" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="LIGAÇÃO">
-                  LIGAÇÃO ⚠️ (Comprovação obrigatória)
-                  {getSelectItemPoints('Tipo de Venda', 'LIGAÇÃO')}
-                </SelectItem>
-                <SelectItem value="LIGAÇÃO E FECHAMENTO NO WHATSAPP">
-                  LIGAÇÃO E FECHAMENTO NO WHATSAPP ⚠️ (Comprovação obrigatória)
-                  {getSelectItemPoints('Tipo de Venda', 'LIGAÇÃO E FECHAMENTO NO WHATSAPP')}
-                </SelectItem>
-                <SelectItem value="REUNIÃO MEET">
-                  REUNIÃO MEET
-                  {getSelectItemPoints('Tipo de Venda', 'REUNIÃO MEET')}
-                </SelectItem>
-                <SelectItem value="VENDA DIRETA">
-                  VENDA DIRETA
-                  {getSelectItemPoints('Tipo de Venda', 'VENDA DIRETA')}
-                </SelectItem>
-                <SelectItem value="PRESENCIAL">
-                  PRESENCIAL
-                  {getSelectItemPoints('Tipo de Venda', 'PRESENCIAL')}
-                </SelectItem>
-                <SelectItem value="LANÇAMENTO ( CAMPANHA )">
-                  LANÇAMENTO ( CAMPANHA )
-                  {getSelectItemPoints('Tipo de Venda', 'LANÇAMENTO ( CAMPANHA )')}
-                </SelectItem>
-                <SelectItem value="EMAIL">
-                  EMAIL
-                  {getSelectItemPoints('Tipo de Venda', 'EMAIL')}
-                </SelectItem>
-                <SelectItem value="OUTRO">
-                  OUTRO
-                  {getSelectItemPoints('Tipo de Venda', 'OUTRO')}
-                </SelectItem>
-                <SelectItem value="WHATSAPP">
-                  WHATSAPP
-                  {getSelectItemPoints('Tipo de Venda', 'WHATSAPP')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="space-y-3">
             <div>
               <Label htmlFor="vendaCasada">
@@ -382,26 +328,6 @@ const ScoringRulesSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Alerta para comprovação obrigatória */}
-        {(formData.tipoVenda === 'LIGAÇÃO' || formData.tipoVenda === 'LIGAÇÃO E FECHAMENTO NO WHATSAPP') && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">
-                  Comprovação Obrigatória
-                </h3>
-                <div className="mt-2 text-sm text-yellow-700">
-                  <p>Para este tipo de venda, você deve anexar um documento comprobatório (áudio, print, etc.) na seção de observações.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

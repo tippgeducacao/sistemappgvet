@@ -34,7 +34,7 @@ export interface FormData {
   parcelamento: string;
   pagamento: string;
   formaCaptacao: string;
-  tipoVenda: string;
+  
   vendaCasada: string;
   detalhesVendaCasada?: string;
 
@@ -74,7 +74,7 @@ const initialFormData: FormData = {
   parcelamento: '',
   pagamento: '',
   formaCaptacao: '',
-  tipoVenda: '',
+  
   vendaCasada: '',
 
   // Payment Info

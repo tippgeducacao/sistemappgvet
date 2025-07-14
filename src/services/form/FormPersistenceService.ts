@@ -184,8 +184,7 @@ export class FormPersistenceService {
     // Validar se pelo menos alguns campos de scoring estão preenchidos
     const scoringFields = [
       formData.lotePos, formData.matricula, formData.modalidade, 
-      formData.parcelamento, formData.pagamento, formData.formaCaptacao, 
-      formData.tipoVenda
+      formData.parcelamento, formData.pagamento, formData.formaCaptacao
     ];
     
     const filledScoringFields = scoringFields.filter(field => field && field.trim() !== '');
@@ -199,13 +198,7 @@ export class FormPersistenceService {
       errors.push('Detalhes da venda casada são obrigatórios quando venda casada = SIM');
     }
 
-    // Validações de comprovação obrigatória
-    const tiposQueRequeremComprovacao = ['LIGAÇÃO', 'LIGAÇÃO E FECHAMENTO NO WHATSAPP'];
-    if (tiposQueRequeremComprovacao.includes(formData.tipoVenda)) {
-      if (!formData.documentoComprobatorio && !formData.observacoes?.trim()) {
-        errors.push('Para este tipo de venda é obrigatório anexar um documento comprobatório ou adicionar observações detalhadas');
-      }
-    }
+    // Como todos os canais agora são reuniões, não há mais validação de comprovação obrigatória
 
     if (errors.length > 0) {
       const errorMessage = `Erros de validação: ${errors.join(', ')}`;

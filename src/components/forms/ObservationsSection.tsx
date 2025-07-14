@@ -13,9 +13,8 @@ const ObservationsSection: React.FC = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Verificar se o tipo de venda requer comprovação obrigatória
-  const tiposQueRequeremComprovacao = ['LIGAÇÃO', 'LIGAÇÃO E FECHAMENTO NO WHATSAPP'];
-  const requerComprovacao = tiposQueRequeremComprovacao.includes(formData.tipoVenda || '');
+  // Como todos os canais agora são reuniões, não há mais necessidade de comprovação obrigatória
+  const requerComprovacao = false;
   
   const handleFileSelect = () => {
     fileInputRef.current?.click();

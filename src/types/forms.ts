@@ -16,7 +16,7 @@ export interface ScoringInfo {
   parcelamento: string;
   pagamento: string;
   formaCaptacao: string;
-  tipoVenda: string;
+  
   vendaCasada: string;
 }
 

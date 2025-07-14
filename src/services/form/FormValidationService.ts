@@ -40,7 +40,7 @@ export class FormValidationService {
     ErrorService.validateRequired(formData.emailAluno, 'Email do aluno');
     ErrorService.validateRequired(formData.cursoId, 'Curso');
     ErrorService.validateRequired(formData.modalidade, 'Modalidade');
-    ErrorService.validateRequired(formData.tipoVenda, 'Tipo de Venda');
+    
     ErrorService.validateRequired(formData.vendaCasada, 'Venda Casada');
 
     // Validar detalhes da carência se carência for SIM
@@ -48,25 +48,7 @@ export class FormValidationService {
       ErrorService.validateRequired(formData.detalhesCarencia, 'Detalhes da carência são obrigatórios quando há carência');
     }
 
-    // Validar documento comprobatório para LIGAÇÃO e LIGAÇÃO E FECHAMENTO NO WHATSAPP
-    const tiposQueRequeremComprovacao = ['LIGAÇÃO', 'LIGAÇÃO E FECHAMENTO NO WHATSAPP'];
-    if (tiposQueRequeremComprovacao.includes(formData.tipoVenda)) {
-      if (!formData.documentoComprobatorio) {
-        throw new Error(`Para o tipo de venda "${formData.tipoVenda}" é obrigatório anexar um documento comprobatório.`);
-      }
-      
-      // Validar tamanho do arquivo (máximo 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (formData.documentoComprobatorio.size > maxSize) {
-        throw new Error('O documento comprobatório deve ter no máximo 10MB.');
-      }
-
-      // Validar tipo do arquivo
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-      if (!allowedTypes.includes(formData.documentoComprobatorio.type)) {
-        throw new Error('O documento comprobatório deve ser um arquivo PDF, JPG ou PNG.');
-      }
-    }
+    // Como todos os canais agora são reuniões, não há mais validação de documento comprobatório obrigatório
 
     if (formData.emailAluno) {
       ErrorService.validateEmail(formData.emailAluno);

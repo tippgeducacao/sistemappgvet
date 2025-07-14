@@ -166,7 +166,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
                 updateField('formaCaptacao', valor);
                 break;
               case 'Tipo de Venda':
-                updateField('tipoVenda', valor);
+                
                 break;
               case 'Venda Casada':
                 updateField('vendaCasada', valor);
