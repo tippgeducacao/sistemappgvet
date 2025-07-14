@@ -305,36 +305,32 @@ export class VendedoresService {
     try {
       console.log('🔐 Resetando senha do usuário:', userId);
       
-      // Verificar se o usuário atual tem permissão (apenas diretores)
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) {
-        throw new Error('Usuário não autenticado');
-      }
-
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', currentUser.user.id);
-
-      const isDiretor = roles?.some(r => r.role === 'diretor');
-      
-      if (!isDiretor) {
-        throw new Error('Apenas diretores podem resetar senhas de usuários.');
-      }
-
       // Validar nova senha
       if (!newPassword || newPassword.length < 6) {
         throw new Error('A nova senha deve ter pelo menos 6 caracteres');
       }
 
-      // Resetar senha usando o Admin API do Supabase
-      const { error } = await supabase.auth.admin.updateUserById(userId, {
-        password: newPassword
+      // Chamar a edge function para resetar senha
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const response = await fetch('https://lrpyxyhhqfzozrkklxwu.supabase.co/functions/v1/reset-user-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          userId,
+          newPassword
+        })
       });
 
-      if (error) {
-        console.error('❌ Erro ao resetar senha:', error);
-        throw new Error(`Erro ao resetar senha: ${error.message}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao resetar senha');
       }
 
       console.log('✅ Senha resetada com sucesso');
