@@ -34,27 +34,35 @@ export const useUserRoles = () => {
   // Vendedor: quem tem role vendedor OU tem user_type vendedor (mas não é secretaria, admin, diretor nem sdr)
   const isVendedor = (hasRole('vendedor') || 
                      (profile?.user_type === 'vendedor' || currentUser?.user_type === 'vendedor')) && 
-                     !isSecretariaByProfile && !hasRole('admin') && !isDiretor && !hasRole('sdr');
+                     !isSecretariaByProfile && !hasRole('admin') && !isDiretor && !hasRole('sdr_inbound') && !hasRole('sdr_outbound');
   
-  // SDR: quem tem role sdr OU tem user_type sdr (mas não é vendedor, secretaria, admin nem diretor)
-  const isSDR = (hasRole('sdr') || 
-                (profile?.user_type === 'sdr' || currentUser?.user_type === 'sdr')) && 
+  // SDR: quem tem role sdr_inbound/sdr_outbound OU tem user_type sdr_inbound/sdr_outbound (mas não é vendedor, secretaria, admin nem diretor)
+  const isSDR = (hasRole('sdr_inbound') || hasRole('sdr_outbound') || 
+                (profile?.user_type === 'sdr_inbound' || currentUser?.user_type === 'sdr_inbound' || 
+                 profile?.user_type === 'sdr_outbound' || currentUser?.user_type === 'sdr_outbound')) && 
                 !hasRole('vendedor') && !isSecretariaByProfile && !hasRole('admin') && !isDiretor;
 
+  // Funções auxiliares para SDR
+  const isSDRInbound = hasRole('sdr_inbound') || profile?.user_type === 'sdr_inbound' || currentUser?.user_type === 'sdr_inbound';
+  const isSDROutbound = hasRole('sdr_outbound') || profile?.user_type === 'sdr_outbound' || currentUser?.user_type === 'sdr_outbound';
+  
   console.log('🔐 useUserRoles: Verificando roles do usuário:', {
     userEmail: profile?.email || currentUser?.email,
     userType: profile?.user_type || currentUser?.user_type,
     roles: roles?.map(r => r.role),
     hasVendedorRole: hasRole('vendedor'),
-    hasSDRRole: hasRole('sdr'),
+    hasSDRInboundRole: hasRole('sdr_inbound'),
+    hasSDROutboundRole: hasRole('sdr_outbound'),
     isSecretariaByProfile,
     isDiretor,
     isAdmin,
     isSecretaria,
     isVendedor,
-    isSDR
+    isSDR,
+    isSDRInbound,
+    isSDROutbound
   });
-
+  
   return {
     roles: roles || [],
     isLoading,
@@ -63,6 +71,8 @@ export const useUserRoles = () => {
     isAdmin,
     isSecretaria,
     isVendedor,
-    isSDR
+    isSDR,
+    isSDRInbound,
+    isSDROutbound
   };
 };

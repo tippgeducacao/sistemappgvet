@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type AppRole = 'admin' | 'secretaria' | 'vendedor' | 'diretor' | 'sdr';
+export type AppRole = 'admin' | 'secretaria' | 'vendedor' | 'diretor' | 'sdr_inbound' | 'sdr_outbound';
 
 export interface UserRole {
   id: string;
@@ -59,6 +59,18 @@ export class UserRoleService {
 
   static async isAdmin(userId: string): Promise<boolean> {
     return this.hasRole(userId, 'admin');
+  }
+
+  static async isSDRInbound(userId: string): Promise<boolean> {
+    return this.hasRole(userId, 'sdr_inbound');
+  }
+
+  static async isSDROutbound(userId: string): Promise<boolean> {
+    return this.hasRole(userId, 'sdr_outbound');
+  }
+
+  static async isSDR(userId: string): Promise<boolean> {
+    return (await this.hasRole(userId, 'sdr_inbound')) || (await this.hasRole(userId, 'sdr_outbound'));
   }
 
   static async addRole(userId: string, role: AppRole): Promise<boolean> {

@@ -56,7 +56,6 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
       await VendedoresService.createVendedor(formData);
       
       const userTypeLabel = formData.userType === 'admin' ? 'Administrador' : 
-                            formData.userType === 'sdr' ? 'SDR' : 
                             formData.userType === 'sdr_inbound' ? 'SDR Inbound' :
                             formData.userType === 'sdr_outbound' ? 'SDR Outbound' : 'Vendedor';
       
@@ -144,7 +143,6 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
               <SelectContent>
                 <SelectItem value="vendedor">Vendedor</SelectItem>
                 <SelectItem value="admin">Administrador</SelectItem>
-                <SelectItem value="sdr">SDR</SelectItem>
                 <SelectItem value="sdr_inbound">SDR Inbound</SelectItem>
                 <SelectItem value="sdr_outbound">SDR Outbound</SelectItem>
               </SelectContent>
