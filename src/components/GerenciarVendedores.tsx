@@ -7,13 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User } from 'lucide-react';
+import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings } from 'lucide-react';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import NovoVendedorDialog from '@/components/vendedores/NovoVendedorDialog';
 import VendorWeeklyGoalsModal from '@/components/dashboard/VendorWeeklyGoalsModal';
+import EditarVendedorDialog from '@/components/vendedores/EditarVendedorDialog';
+import ConfigurarNiveisDialog from '@/components/niveis/ConfigurarNiveisDialog';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { NiveisService } from '@/services/niveisService';
 import type { Vendedor } from '@/services/vendedoresService';
 
 const GerenciarVendedores: React.FC = () => {
@@ -25,6 +28,8 @@ const GerenciarVendedores: React.FC = () => {
     name: string;
     photo_url?: string;
   } | null>(null);
+  const [editingVendedor, setEditingVendedor] = useState<Vendedor | null>(null);
+  const [showNiveisConfig, setShowNiveisConfig] = useState(false);
   const { toast } = useToast();
   const { isAdmin, isSecretaria, isDiretor } = useUserRoles();
 
@@ -122,10 +127,21 @@ const GerenciarVendedores: React.FC = () => {
           <p className="text-gray-600">Cadastre e gerencie usuários do sistema</p>
         </div>
         
-        <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
-          <UserPlus className="h-4 w-4 mr-2" />
-          Novo Usuário
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={() => setShowNiveisConfig(true)} 
+            variant="outline" 
+            className="border-gray-300 hover:bg-gray-50"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Configurar Níveis
+          </Button>
+          
+          <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Novo Usuário
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="ativos" className="w-full">
@@ -155,6 +171,7 @@ const GerenciarVendedores: React.FC = () => {
                 onRemovePhoto={handleRemovePhoto}
                 onToggleStatus={handleToggleUserStatus}
                 onViewProfile={setSelectedUserProfile}
+                onEditVendedor={setEditingVendedor}
                 getInitials={getInitials}
               />
             ))}
@@ -189,6 +206,7 @@ const GerenciarVendedores: React.FC = () => {
                 onRemovePhoto={handleRemovePhoto}
                 onToggleStatus={handleToggleUserStatus}
                 onViewProfile={setSelectedUserProfile}
+                onEditVendedor={setEditingVendedor}
                 getInitials={getInitials}
               />
             ))}
@@ -333,6 +351,21 @@ const GerenciarVendedores: React.FC = () => {
         isOpen={!!selectedUserProfile}
         onClose={() => setSelectedUserProfile(null)}
       />
+      
+      <EditarVendedorDialog
+        vendedor={editingVendedor}
+        open={!!editingVendedor}
+        onOpenChange={(open) => !open && setEditingVendedor(null)}
+        onSuccess={() => {
+          fetchVendedores();
+          fetchAllUsers();
+        }}
+      />
+      
+      <ConfigurarNiveisDialog
+        open={showNiveisConfig}
+        onOpenChange={setShowNiveisConfig}
+      />
     </div>
   );
 };
@@ -346,6 +379,7 @@ interface UserCardProps {
   onRemovePhoto: (vendedorId: string) => void;
   onToggleStatus: (userId: string, currentStatus: boolean) => void;
   onViewProfile: (user: { id: string; name: string; photo_url?: string }) => void;
+  onEditVendedor: (vendedor: Vendedor) => void;
   getInitials: (name: string) => string;
 }
 
@@ -357,6 +391,7 @@ const UserCard: React.FC<UserCardProps> = ({
   onRemovePhoto,
   onToggleStatus,
   onViewProfile,
+  onEditVendedor,
   getInitials
 }) => {
   return (
@@ -421,6 +456,14 @@ const UserCard: React.FC<UserCardProps> = ({
                 {vendedor.user_type === 'admin' ? 'Admin' : 
                  vendedor.user_type === 'sdr' ? 'SDR' : 'Vendedor'}
               </Badge>
+              
+              {/* Badge de nível para vendedores */}
+              {vendedor.user_type === 'vendedor' && vendedor.nivel && (
+                <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel)}>
+                  {NiveisService.getNivelLabel(vendedor.nivel)}
+                </Badge>
+              )}
+              
               <Badge variant={vendedor.ativo ? "default" : "secondary"} className={
                 vendedor.ativo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
               }>
@@ -440,6 +483,19 @@ const UserCard: React.FC<UserCardProps> = ({
               </Button>
             ) : (
               <>
+                {/* Botão para editar vendedor - apenas para vendedores */}
+                {vendedor.user_type === 'vendedor' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEditVendedor(vendedor)}
+                    className="bg-orange-50 hover:bg-orange-100 border-orange-200"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Editar
+                  </Button>
+                )}
+                
                 {/* Botão para visualizar perfil - destacado e primeiro */}
                 {vendedor.user_type === 'vendedor' && (
                   <Button

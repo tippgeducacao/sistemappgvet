@@ -21,6 +21,9 @@ export class VendedorDataService {
     console.log('✅ Vendedores encontrados:', data?.length);
     console.log('📸 Vendedores com fotos:', data?.filter(v => v.photo_url).length);
     
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      nivel: item.nivel as 'junior' | 'pleno' | 'senior'
+    }));
   }
 }

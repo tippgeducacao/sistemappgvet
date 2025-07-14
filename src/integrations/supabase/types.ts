@@ -395,6 +395,42 @@ export type Database = {
         }
         Relationships: []
       }
+      niveis_vendedores: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fixo_mensal: number
+          id: string
+          meta_semanal_pontos: number
+          nivel: string
+          updated_at: string
+          vale: number
+          variavel_semanal: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fixo_mensal?: number
+          id?: string
+          meta_semanal_pontos?: number
+          nivel: string
+          updated_at?: string
+          vale?: number
+          variavel_semanal?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fixo_mensal?: number
+          id?: string
+          meta_semanal_pontos?: number
+          nivel?: string
+          updated_at?: string
+          vale?: number
+          variavel_semanal?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean
@@ -402,6 +438,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          nivel: string | null
           photo_url: string | null
           updated_at: string | null
           user_type: string
@@ -412,6 +449,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          nivel?: string | null
           photo_url?: string | null
           updated_at?: string | null
           user_type: string
@@ -422,6 +460,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          nivel?: string | null
           photo_url?: string | null
           updated_at?: string | null
           user_type?: string

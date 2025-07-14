@@ -11,6 +11,7 @@ export interface Vendedor {
   created_at: string;
   updated_at: string;
   ativo: boolean;
+  nivel?: 'junior' | 'pleno' | 'senior';
 }
 
 export class VendedoresService {
@@ -31,7 +32,10 @@ export class VendedoresService {
       }
 
       console.log('✅ Usuários encontrados:', data?.length || 0);
-      return data || [];
+      return (data || []).map(item => ({
+        ...item,
+        nivel: item.nivel as 'junior' | 'pleno' | 'senior'
+      }));
       
     } catch (error) {
       console.error('❌ Erro inesperado ao buscar usuários:', error);
@@ -266,7 +270,10 @@ export class VendedoresService {
       }
 
       console.log('✅ Todos os usuários encontrados:', data?.length || 0);
-      return data || [];
+      return (data || []).map(item => ({
+        ...item,
+        nivel: item.nivel as 'junior' | 'pleno' | 'senior'
+      }));
       
     } catch (error) {
       console.error('❌ Erro inesperado ao buscar todos os usuários:', error);

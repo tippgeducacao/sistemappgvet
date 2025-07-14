@@ -92,7 +92,8 @@ export class VendedorCadastroService {
             email: email.trim().toLowerCase(),
             name: name.trim(),
             user_type: userType,
-            ativo: true
+            ativo: true,
+            nivel: userType === 'vendedor' ? 'junior' : undefined
           })
           .select()
           .single();
