@@ -173,16 +173,11 @@ export const useMetasSemanais = () => {
     let currentTuesday = new Date(primeiraTerca);
     let weekNumber = 1;
     
-    while (currentTuesday <= ultimaTerca) {
+    // Só incluir semanas que realmente terminam no mês atual
+    while (currentTuesday.getMonth() === mes - 1 && currentTuesday.getFullYear() === ano) {
       weeks.push(weekNumber);
       weekNumber++;
       currentTuesday.setDate(currentTuesday.getDate() + 7);
-    }
-    
-    // Garantir mínimo de 4 semanas
-    while (weeks.length < 4) {
-      weeks.push(weekNumber);
-      weekNumber++;
     }
     
     return weeks;
