@@ -7,11 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff } from 'lucide-react';
+import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User } from 'lucide-react';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import NovoVendedorDialog from '@/components/vendedores/NovoVendedorDialog';
+import VendorWeeklyGoalsModal from '@/components/dashboard/VendorWeeklyGoalsModal';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import type { Vendedor } from '@/services/vendedoresService';
 
@@ -19,7 +20,11 @@ const GerenciarVendedores: React.FC = () => {
   const { vendedores, allUsers, loading, fetchVendedores, fetchAllUsers, uploadPhoto, removePhoto, toggleUserStatus } = useVendedores();
   const [showNewVendedorDialog, setShowNewVendedorDialog] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null);
-  const [showInactiveUsers, setShowInactiveUsers] = useState(false);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<{
+    id: string;
+    name: string;
+    photo_url?: string;
+  } | null>(null);
   const { toast } = useToast();
   const { isAdmin, isSecretaria, isDiretor } = useUserRoles();
 
@@ -149,6 +154,7 @@ const GerenciarVendedores: React.FC = () => {
                 onPhotoUpload={handlePhotoUpload}
                 onRemovePhoto={handleRemovePhoto}
                 onToggleStatus={handleToggleUserStatus}
+                onViewProfile={setSelectedUserProfile}
                 getInitials={getInitials}
               />
             ))}
@@ -182,6 +188,7 @@ const GerenciarVendedores: React.FC = () => {
                 onPhotoUpload={handlePhotoUpload}
                 onRemovePhoto={handleRemovePhoto}
                 onToggleStatus={handleToggleUserStatus}
+                onViewProfile={setSelectedUserProfile}
                 getInitials={getInitials}
               />
             ))}
@@ -316,6 +323,16 @@ const GerenciarVendedores: React.FC = () => {
           setShowNewVendedorDialog(false);
         }}
       />
+      
+      <VendorWeeklyGoalsModal
+        vendedorId={selectedUserProfile?.id}
+        vendedorNome={selectedUserProfile?.name}
+        vendedorPhoto={selectedUserProfile?.photo_url}
+        selectedMonth={new Date().getMonth() + 1}
+        selectedYear={new Date().getFullYear()}
+        isOpen={!!selectedUserProfile}
+        onClose={() => setSelectedUserProfile(null)}
+      />
     </div>
   );
 };
@@ -328,6 +345,7 @@ interface UserCardProps {
   onPhotoUpload: (vendedorId: string, file: File) => void;
   onRemovePhoto: (vendedorId: string) => void;
   onToggleStatus: (userId: string, currentStatus: boolean) => void;
+  onViewProfile: (user: { id: string; name: string; photo_url?: string }) => void;
   getInitials: (name: string) => string;
 }
 
@@ -338,6 +356,7 @@ const UserCard: React.FC<UserCardProps> = ({
   onPhotoUpload,
   onRemovePhoto,
   onToggleStatus,
+  onViewProfile,
   getInitials
 }) => {
   return (
@@ -465,6 +484,23 @@ const UserCard: React.FC<UserCardProps> = ({
                     </>
                   )}
                 </Button>
+                
+                {/* Botão para visualizar perfil - apenas para vendedores */}
+                {vendedor.user_type === 'vendedor' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onViewProfile({
+                      id: vendedor.id,
+                      name: vendedor.name,
+                      photo_url: vendedor.photo_url
+                    })}
+                    className="bg-blue-50 hover:bg-blue-100 border-blue-200"
+                  >
+                    <User className="h-4 w-4 mr-1" />
+                    Perfil
+                  </Button>
+                )}
               </>
             )}
           </div>
