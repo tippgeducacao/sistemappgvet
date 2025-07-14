@@ -620,7 +620,6 @@ export type Database = {
         | "secretaria"
         | "vendedor"
         | "diretor"
-        | "sdr"
         | "sdr_inbound"
         | "sdr_outbound"
     }
@@ -755,7 +754,6 @@ export const Constants = {
         "secretaria",
         "vendedor",
         "diretor",
-        "sdr",
         "sdr_inbound",
         "sdr_outbound",
       ],
