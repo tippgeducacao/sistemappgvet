@@ -10,7 +10,7 @@ export interface Profile {
   id: string;
   email: string;
   name: string;
-  user_type: 'secretaria' | 'vendedor';
+  user_type: 'secretaria' | 'vendedor' | 'sdr' | 'admin' | 'diretor';
 }
 
 export class AuthService {
@@ -58,7 +58,7 @@ export class AuthService {
     email: string, 
     password: string, 
     name: string, 
-    userType: 'secretaria' | 'vendedor'
+    userType: 'secretaria' | 'vendedor' | 'sdr' | 'admin' | 'diretor'
   ): Promise<AuthResult> {
     try {
       if (!email || !password || !name) {

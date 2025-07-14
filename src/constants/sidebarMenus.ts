@@ -113,3 +113,26 @@ export const VENDOR_MENU_ITEMS: MenuItem[] = [
   }
 ];
 
+export const SDR_MENU_ITEMS: MenuItem[] = [
+  {
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
+  },
+  {
+    title: 'Gestão de Leads',
+    section: 'gestao-leads',
+    icon: 'Users'
+  },
+  {
+    title: 'Vendas',
+    section: 'vendas',
+    icon: 'ShoppingCart'
+  },
+  {
+    title: 'Alunos',
+    section: 'matriculas',
+    icon: 'GraduationCap'
+  }
+];
+

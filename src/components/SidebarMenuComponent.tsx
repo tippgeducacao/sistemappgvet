@@ -14,7 +14,8 @@ import {
   DIRECTOR_MENU_ITEMS,
   ADMIN_MENU_ITEMS, 
   SECRETARY_MENU_ITEMS, 
-  VENDOR_MENU_ITEMS
+  VENDOR_MENU_ITEMS,
+  SDR_MENU_ITEMS
 } from '@/constants/sidebarMenus';
 import * as Icons from 'lucide-react';
 import type { MenuItem } from '@/types/navigation';
@@ -22,7 +23,7 @@ import type { MenuItem } from '@/types/navigation';
 const SidebarMenuComponent: React.FC = () => {
   const { activeSection, navigateToSection } = useAppStateStore();
   const { currentUser, profile } = useAuthStore();
-  const { isDiretor, isAdmin, isSecretaria, isVendedor } = useUserRoles();
+  const { isDiretor, isAdmin, isSecretaria, isVendedor, isSDR } = useUserRoles();
 
   console.log('🔄 SidebarMenuComponent: Estados atuais:', { 
     activeSection, 
@@ -30,14 +31,15 @@ const SidebarMenuComponent: React.FC = () => {
     isAdmin, 
     isSecretaria, 
     isVendedor,
+    isSDR,
     userEmail: profile?.email || currentUser?.email 
   });
 
-  // Determinar menu baseado no tipo de usuário
-  let menuItems: MenuItem[] = VENDOR_MENU_ITEMS;
+  // Determinar menu baseado no tipo de usuário (hierarquia: Diretor > Admin > Vendedor > SDR)
+  let menuItems: MenuItem[] = SDR_MENU_ITEMS;
   
   if (isDiretor) {
-    // Diretor tem acesso total exceto "Nova Venda"
+    // Diretor tem acesso total ao sistema
     menuItems = DIRECTOR_MENU_ITEMS;
   } else if (isAdmin) {
     // Admin tem acesso a todos os menus exceto pontuações (só diretor)
@@ -46,6 +48,9 @@ const SidebarMenuComponent: React.FC = () => {
     menuItems = SECRETARY_MENU_ITEMS;
   } else if (isVendedor) {
     menuItems = VENDOR_MENU_ITEMS;
+  } else if (isSDR) {
+    // SDR tem acesso limitado: leads, vendas (visualização), alunos
+    menuItems = SDR_MENU_ITEMS;
   }
 
   console.log('🔄 SidebarMenuComponent: Menu items determinados:', menuItems.length);
