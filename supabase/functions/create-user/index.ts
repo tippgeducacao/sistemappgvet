@@ -133,13 +133,15 @@ Deno.serve(async (req) => {
     // Create profile directly in the database
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({
+      .upsert({
         id: userId,
         email: email.trim().toLowerCase(),
         name: name.trim(),
         user_type: userType,
         ativo: true,
         nivel: userType === 'vendedor' ? 'junior' : undefined
+      }, {
+        onConflict: 'id'
       })
 
     if (profileError) {
