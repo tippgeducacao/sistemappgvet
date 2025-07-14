@@ -567,6 +567,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_weekly_goals_for_vendor: {
+        Args: { p_vendedor_id: string; p_ano: number; p_mes: number }
+        Returns: undefined
+      }
       delete_venda_cascade: {
         Args: { venda_id: string }
         Returns: boolean
@@ -578,6 +582,10 @@ export type Database = {
       find_document_in_bucket: {
         Args: { search_pattern: string }
         Returns: string
+      }
+      generate_monthly_weekly_goals: {
+        Args: { p_ano: number; p_mes: number }
+        Returns: undefined
       }
       get_weeks_in_month: {
         Args: { ano: number; mes: number }
