@@ -131,15 +131,15 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                         const lastDay = new Date(selectedYear, selectedMonth, 0);
                         const endDate = fimSemana > lastDay ? lastDay : fimSemana;
 
-                        const vendasSemanaAtual = vendas.filter(venda => {
-                          if (venda.vendedor_id !== profile.id) return false;
-                          if (venda.status !== 'matriculado') return false;
-                          
-                          const vendaDate = new Date(venda.enviado_em);
-                          return vendaDate >= targetWednesday && vendaDate <= endDate;
-                        }).length;
-                        
-                        return `${vendasSemanaAtual}/${metaSemanaAtual.meta_vendas}`;
+                         const pontosSemanaAtual = vendas.filter(venda => {
+                           if (venda.vendedor_id !== profile.id) return false;
+                           if (venda.status !== 'matriculado') return false;
+                           
+                           const vendaDate = new Date(venda.enviado_em);
+                           return vendaDate >= targetWednesday && vendaDate <= endDate;
+                         }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                         
+                         return `${pontosSemanaAtual.toFixed(1)}/${metaSemanaAtual.meta_vendas}`;
                       })()}
                     </span>
                   </div>
@@ -162,15 +162,15 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                         const lastDay = new Date(selectedYear, selectedMonth, 0);
                         const endDate = fimSemana > lastDay ? lastDay : fimSemana;
 
-                        const vendasSemanaAtual = vendas.filter(venda => {
-                          if (venda.vendedor_id !== profile.id) return false;
-                          if (venda.status !== 'matriculado') return false;
-                          
-                          const vendaDate = new Date(venda.enviado_em);
-                          return vendaDate >= targetWednesday && vendaDate <= endDate;
-                        }).length;
-                        
-                        return Math.min((vendasSemanaAtual / metaSemanaAtual.meta_vendas) * 100, 100);
+                         const pontosSemanaAtual = vendas.filter(venda => {
+                           if (venda.vendedor_id !== profile.id) return false;
+                           if (venda.status !== 'matriculado') return false;
+                           
+                           const vendaDate = new Date(venda.enviado_em);
+                           return vendaDate >= targetWednesday && vendaDate <= endDate;
+                         }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                         
+                         return Math.min((pontosSemanaAtual / metaSemanaAtual.meta_vendas) * 100, 100);
                       })()} 
                       className="h-2" 
                     />
@@ -235,16 +235,16 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
               const periodoSemana = `${formatDate(targetWednesday)} - ${formatDate(endDate)}`;
 
-              const vendasDaSemana = vendas.filter(venda => {
+              const pontosDaSemana = vendas.filter(venda => {
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
                 
                 const vendaDate = new Date(venda.enviado_em);
                 return vendaDate >= targetWednesday && vendaDate <= endDate;
-              }).length;
+              }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
 
               const progressoSemanal = metaSemanal?.meta_vendas && metaSemanal.meta_vendas > 0 
-                ? (vendasDaSemana / metaSemanal.meta_vendas) * 100 
+                ? (pontosDaSemana / metaSemanal.meta_vendas) * 100 
                 : 0;
               
               return (
@@ -270,9 +270,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                         <Badge variant={metaSemanal ? "default" : "outline"} className="text-xs">
                           Meta: {metaSemanal?.meta_vendas || 0}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          Vendas: {vendasDaSemana}
-                        </span>
+                         <span className="text-xs text-muted-foreground">
+                           Pontos: {pontosDaSemana.toFixed(1)}
+                         </span>
                       </div>
                     </div>
 
@@ -302,7 +302,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                     )}
                   </div>
                   
-                  {metaSemanal && vendasDaSemana >= metaSemanal.meta_vendas && (
+                  {metaSemanal && pontosDaSemana >= metaSemanal.meta_vendas && (
                     <Trophy className="h-4 w-4 text-green-500" />
                   )}
                 </div>

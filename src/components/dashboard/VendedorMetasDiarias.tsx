@@ -67,21 +67,21 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
   // Calcular meta diária (meta semanal / 7 dias)
   const metaDiaria = metaSemanaAtual ? Math.ceil(metaSemanaAtual.meta_vendas / 7) : 0;
 
-  // Calcular vendas de hoje
+  // Calcular pontos de hoje
   const hoje = new Date();
   const inicioDoHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
   const fimDoHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59);
 
-  const vendasHoje = vendas.filter(venda => {
+  const pontosHoje = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
     const vendaDate = new Date(venda.enviado_em);
     return vendaDate >= inicioDoHoje && vendaDate <= fimDoHoje;
-  }).length;
+  }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
 
   // Calcular progresso do dia
-  const progressoDiario = metaDiaria > 0 ? (vendasHoje / metaDiaria) * 100 : 0;
+  const progressoDiario = metaDiaria > 0 ? (pontosHoje / metaDiaria) * 100 : 0;
 
-  // Calcular vendas da semana atual
+  // Calcular período da semana atual
   const inicioSemana = new Date(selectedYear, selectedMonth - 1, 1);
   let firstWednesday = new Date(inicioSemana);
   while (firstWednesday.getDay() !== 3) {
@@ -97,18 +97,18 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
   const lastDay = new Date(selectedYear, selectedMonth, 0);
   const endDate = fimSemana > lastDay ? lastDay : fimSemana;
 
-  const vendasSemanaAtual = vendas.filter(venda => {
+  // Calcular pontos da semana atual
+  const pontosSemanaAtual = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
     const vendaDate = new Date(venda.enviado_em);
     return vendaDate >= targetWednesday && vendaDate <= endDate;
-  }).length;
+  }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
 
   // Calcular dias restantes na semana
   const diasRestantes = Math.max(0, Math.ceil((endDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)));
-  const diasDecorridos = Math.max(1, 7 - diasRestantes);
 
   // Meta diária ajustada baseada no progresso da semana
-  const metaRestante = Math.max(0, (metaSemanaAtual?.meta_vendas || 0) - vendasSemanaAtual);
+  const metaRestante = Math.max(0, (metaSemanaAtual?.meta_vendas || 0) - pontosSemanaAtual);
   const metaDiariaAjustada = diasRestantes > 0 ? Math.ceil(metaRestante / diasRestantes) : 0;
 
   return (
@@ -122,12 +122,12 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
         <CardContent>
           <div className="text-2xl font-bold">{metaDiaria}</div>
           <p className="text-xs text-muted-foreground">
-            vendas para hoje
+            pontos para hoje
           </p>
           <div className="mt-3 space-y-2">
             <div className="flex justify-between text-xs">
               <span>Progresso</span>
-              <span>{vendasHoje}/{metaDiaria}</span>
+              <span>{pontosHoje.toFixed(1)}/{metaDiaria}</span>
             </div>
             {metaDiaria > 0 && (
               <Progress 
@@ -137,10 +137,10 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
             )}
           </div>
           <div className="flex items-center gap-2 mt-2">
-            <Badge variant={vendasHoje >= metaDiaria ? "default" : "secondary"}>
-              {vendasHoje >= metaDiaria ? "Meta Atingida" : `${Math.round(progressoDiario)}%`}
+            <Badge variant={pontosHoje >= metaDiaria ? "default" : "secondary"}>
+              {pontosHoje >= metaDiaria ? "Meta Atingida" : `${Math.round(progressoDiario)}%`}
             </Badge>
-            {vendasHoje >= metaDiaria && (
+            {pontosHoje >= metaDiaria && (
               <TrendingUp className="h-4 w-4 text-green-500" />
             )}
           </div>
@@ -156,14 +156,14 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
         <CardContent>
           <div className="text-2xl font-bold">{metaDiariaAjustada}</div>
           <p className="text-xs text-muted-foreground">
-            para cumprir a meta semanal
+            pontos para cumprir a meta semanal
           </p>
           <div className="mt-3 space-y-1">
             <div className="text-xs text-muted-foreground">
-              • {vendasSemanaAtual} vendas na semana
+              • {pontosSemanaAtual.toFixed(1)} pontos na semana
             </div>
             <div className="text-xs text-muted-foreground">
-              • {metaRestante} vendas restantes
+              • {metaRestante.toFixed(1)} pontos restantes
             </div>
             <div className="text-xs text-muted-foreground">
               • {diasRestantes} dias restantes
