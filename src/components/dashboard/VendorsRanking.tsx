@@ -395,7 +395,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                           </div>
                           <div className="flex-1">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs font-medium text-gray-600">Meta Dia</span>
+                              <span className="text-xs font-medium text-gray-600">Meta até Hoje</span>
                               <span className="text-xs text-gray-500">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{DataFormattingService.formatPoints(vendedor.metaEsperadaAteHoje)} pts</span>
                             </div>
                             <Progress value={Math.min(vendedor.progressoDiario, 100)} className="h-1.5" />
@@ -454,7 +454,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                        </div>
                        <div className="w-24">
                            <div className="flex justify-between items-center mb-1">
-                             <span className="text-xs font-medium text-muted-foreground">Meta Dia</span>
+                             <span className="text-xs font-medium text-muted-foreground">Meta até Hoje</span>
                              <span className="text-xs text-muted-foreground">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{DataFormattingService.formatPoints(vendedor.metaEsperadaAteHoje)} pts</span>
                            </div>
                          <Progress 
