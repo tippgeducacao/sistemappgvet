@@ -27,7 +27,9 @@ const ConfigurarNiveisDialog: React.FC<ConfigurarNiveisDialogProps> = ({
       ...prev,
       [nivelId]: {
         ...prev[nivelId],
-        [field]: field.includes('pontos') ? parseInt(value) || 0 : parseFloat(value) || 0
+        [field]: field.includes('pontos') || field.includes('vendedor') || field.includes('inbound') || field.includes('outbound') 
+          ? parseInt(value) || 0 
+          : parseFloat(value) || 0
       }
     }));
   };
@@ -37,7 +39,8 @@ const ConfigurarNiveisDialog: React.FC<ConfigurarNiveisDialogProps> = ({
     if (editingValue !== undefined) {
       return editingValue.toString();
     }
-    return (nivel[field as keyof NivelVendedor] as number).toString();
+    const originalValue = nivel[field as keyof NivelVendedor] as number;
+    return originalValue !== undefined ? originalValue.toString() : '0';
   };
 
   const hasChanges = Object.keys(editingNiveis).length > 0;
@@ -156,19 +159,34 @@ const ConfigurarNiveisDialog: React.FC<ConfigurarNiveisDialogProps> = ({
                       />
                     </div>
 
-                    {/* Meta Semanal */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium flex items-center gap-1">
-                        <Target className="h-3 w-3" />
-                        Meta Semanal (Pontos)
-                      </Label>
-                      <Input
-                        type="number"
-                        value={getDisplayValue(nivel, 'meta_semanal_pontos')}
-                        onChange={(e) => handleChange(nivel.id, 'meta_semanal_pontos', e.target.value)}
-                        className="text-center font-medium"
-                      />
-                    </div>
+                    {/* Meta Semanal - Condicional baseado no tipo */}
+                    {nivel.tipo_usuario === 'vendedor' ? (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium flex items-center gap-1">
+                          <Target className="h-3 w-3" />
+                          Meta Semanal (Pontos)
+                        </Label>
+                        <Input
+                          type="number"
+                          value={getDisplayValue(nivel, 'meta_semanal_vendedor')}
+                          onChange={(e) => handleChange(nivel.id, 'meta_semanal_vendedor', e.target.value)}
+                          className="text-center font-medium"
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium flex items-center gap-1">
+                          <Target className="h-3 w-3" />
+                          {nivel.nivel.includes('inbound') ? 'Meta Inbound' : 'Meta Outbound'} (Reuniões)
+                        </Label>
+                        <Input
+                          type="number"
+                          value={getDisplayValue(nivel, nivel.nivel.includes('inbound') ? 'meta_semanal_inbound' : 'meta_semanal_outbound')}
+                          onChange={(e) => handleChange(nivel.id, nivel.nivel.includes('inbound') ? 'meta_semanal_inbound' : 'meta_semanal_outbound', e.target.value)}
+                          className="text-center font-medium"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Preview dos valores calculados */}
@@ -196,7 +214,12 @@ const ConfigurarNiveisDialog: React.FC<ConfigurarNiveisDialogProps> = ({
                       <div>
                         <span className="text-gray-500">Meta total:</span>
                         <span className="ml-1 font-medium">
-                          {parseInt(getDisplayValue(nivel, 'meta_semanal_pontos')) * 4} pts/mês
+                          {nivel.tipo_usuario === 'vendedor' 
+                            ? `${parseInt(getDisplayValue(nivel, 'meta_semanal_vendedor')) * 4} pts/mês`
+                            : nivel.nivel.includes('inbound')
+                              ? `${parseInt(getDisplayValue(nivel, 'meta_semanal_inbound')) * 4} reuniões/mês`
+                              : `${parseInt(getDisplayValue(nivel, 'meta_semanal_outbound')) * 4} reuniões/mês`
+                          }
                         </span>
                       </div>
                     </div>
