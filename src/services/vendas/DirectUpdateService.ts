@@ -12,6 +12,18 @@ export class DirectUpdateService {
     console.log('🚀 DirectUpdateService: ATUALIZAÇÃO SIMPLES E DIRETA');
     console.log('📋 Parâmetros:', { vendaId: vendaId.substring(0, 8), status, pontuacaoValidada, dataAssinaturaContrato });
     
+    // DEBUG: Verificar usuário atual
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('👤 Usuário logado:', user?.email);
+    
+    // DEBUG: Verificar se tem permissão
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_type')
+      .eq('id', user?.id)
+      .single();
+    console.log('🔐 Tipo de usuário:', profile?.user_type);
+    
     try {
       // Preparar dados para atualização
       const updateData: any = {
