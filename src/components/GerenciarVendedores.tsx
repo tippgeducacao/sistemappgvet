@@ -294,7 +294,7 @@ const GerenciarVendedores: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>SDRs:</span>
-                    <span className="font-semibold">{allUsers.filter(u => u.user_type === 'sdr').length}</span>
+                    <span className="font-semibold">{allUsers.filter(u => u.user_type === 'sdr_inbound' || u.user_type === 'sdr_outbound').length}</span>
                   </div>
                 </div>
               </CardContent>
@@ -450,11 +450,13 @@ const UserCard: React.FC<UserCardProps> = ({
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className={
                 vendedor.user_type === 'admin' ? 'bg-red-100 text-red-800' :
-                vendedor.user_type === 'sdr' ? 'bg-purple-100 text-purple-800' :
+                vendedor.user_type === 'sdr_inbound' ? 'bg-cyan-100 text-cyan-800' :
+                vendedor.user_type === 'sdr_outbound' ? 'bg-indigo-100 text-indigo-800' :
                 'bg-green-100 text-green-800'
               }>
                 {vendedor.user_type === 'admin' ? 'Admin' : 
-                 vendedor.user_type === 'sdr' ? 'SDR' : 'Vendedor'}
+                 vendedor.user_type === 'sdr_inbound' ? 'SDR Inbound' :
+                 vendedor.user_type === 'sdr_outbound' ? 'SDR Outbound' : 'Vendedor'}
               </Badge>
               
               {/* Badge de nível para vendedores */}

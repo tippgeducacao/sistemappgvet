@@ -22,7 +22,7 @@ export class VendedoresService {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_type', ['vendedor', 'admin', 'sdr'])
+        .in('user_type', ['vendedor', 'admin', 'sdr_inbound', 'sdr_outbound'])
         .eq('ativo', true)
         .order('name');
 
@@ -261,7 +261,7 @@ export class VendedoresService {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_type', ['vendedor', 'admin', 'sdr'])
+        .in('user_type', ['vendedor', 'admin', 'sdr_inbound', 'sdr_outbound'])
         .order('name');
 
       if (error) {
