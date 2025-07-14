@@ -164,17 +164,10 @@ export const useMetasSemanais = () => {
     let currentTuesday = new Date(primeiraTerca);
     let weekNumber = 1;
     
-    // Só incluir semanas que terminam no mês, excluindo aquelas muito próximas do fim
+    // Só incluir semanas que terminam no mês (todas as terças do mês)
     while (currentTuesday.getMonth() === mes - 1 && currentTuesday.getFullYear() === ano) {
-      // Aplicar a mesma lógica do backend: excluir se sobram menos de 3 dias ou está muito próximo do fim
-      const diasRestantes = (ultimaDataMes.getTime() - currentTuesday.getTime()) / (1000 * 60 * 60 * 24);
-      const seisAntes = new Date(ultimaDataMes);
-      seisAntes.setDate(seisAntes.getDate() - 6);
-      
-      if (diasRestantes >= 3 || currentTuesday < seisAntes) {
-        weeks.push(weekNumber);
-        weekNumber++;
-      }
+      weeks.push(weekNumber);
+      weekNumber++;
       currentTuesday.setDate(currentTuesday.getDate() + 7);
     }
     
