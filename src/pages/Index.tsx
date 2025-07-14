@@ -16,15 +16,15 @@ const Index = () => {
   return (
     <UserGuard user={user || currentUser} loading={loading}>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-ppgvet-gray-50 touch-pan-y select-none">
+        <div className="min-h-screen w-full bg-ppgvet-gray-50 touch-pan-y select-none relative overflow-x-hidden">
           <AppSidebar />
           
-          <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarInset className="ml-0 md:ml-64">
+            <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-background">
               <SidebarTrigger className="-ml-1" />
             </header>
 
-            <main className="flex-1 p-6 bg-slate-300">
+            <main className="flex-1 p-6 bg-slate-300 min-h-[calc(100vh-4rem)]">
               <MainContent />
             </main>
           </SidebarInset>
