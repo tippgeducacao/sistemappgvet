@@ -614,6 +614,10 @@ export type Database = {
           metadata: Json
         }[]
       }
+      recalculate_all_vendas: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       recalculate_venda_score: {
         Args: { venda_id: string }
         Returns: undefined
