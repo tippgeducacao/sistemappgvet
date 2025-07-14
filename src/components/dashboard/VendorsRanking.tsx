@@ -4,16 +4,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
-import { Filter, Trophy, Medal, Award, Tv } from 'lucide-react';
+import { Filter, Trophy, Medal, Award, Tv, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetas } from '@/hooks/useMetas';
 import { useNiveis } from '@/hooks/useNiveis';
+import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 interface VendorsRankingProps {
   selectedVendedor?: string;
@@ -33,6 +39,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  
+  // Hook para metas semanais
+  const currentMonth = propSelectedMonth || parseInt(internalSelectedMonth?.split('-')[1] || '1');
+  const currentYear = propSelectedYear || parseInt(internalSelectedMonth?.split('-')[0] || '2025');
+  const { metasSemanais, loading: metasSemanaisLoading } = useMetasSemanais();
 
   // Estado para modal de metas semanais
   const [selectedVendedorForGoals, setSelectedVendedorForGoals] = useState<{
@@ -260,17 +271,17 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     };
   });
 
-  // Ranking com nova lógica de ordenação - TODOS os vendedores
+  // Ranking ordenado por PONTOS - TODOS os vendedores
   const ranking = todosVendedoresStats
     .sort((a, b) => {
-      // Primeira regra: Mais vendas aprovadas
-      if (a.vendas !== b.vendas) {
-        return b.vendas - a.vendas; // Mais vendas aprovadas primeiro
-      }
-      
-      // Se têm o mesmo número de vendas aprovadas, ordenar por pontuação
+      // Primeira regra: Maior pontuação
       if (a.pontuacao !== b.pontuacao) {
         return b.pontuacao - a.pontuacao; // Mais pontos primeiro
+      }
+      
+      // Se têm a mesma pontuação, ordenar por número de vendas
+      if (a.vendas !== b.vendas) {
+        return b.vendas - a.vendas; // Mais vendas como critério de desempate
       }
       
       // Se tudo igual, ordenar por nome
@@ -288,6 +299,195 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   // Lista do ranking sem o top 3 (para não duplicar)
   const rankingSemTop3 = ranking.slice(3);
 
+  // Função para calcular as semanas do mês com datas
+  const getWeeksOfMonth = (year: number, month: number) => {
+    const weeks = [];
+    let weekNumber = 1;
+    
+    // Encontrar a primeira terça-feira do mês
+    const firstDay = new Date(year, month - 1, 1);
+    let firstTuesday = new Date(firstDay);
+    
+    while (firstTuesday.getDay() !== 2) { // 2 = terça-feira
+      firstTuesday.setDate(firstTuesday.getDate() + 1);
+    }
+    
+    // Se a primeira terça está muito tarde no mês, verificar semana anterior
+    if (firstTuesday.getDate() > 7) {
+      firstTuesday.setDate(firstTuesday.getDate() - 7);
+    }
+    
+    let currentTuesday = new Date(firstTuesday);
+    
+    // Adicionar todas as terças-feiras que estão no mês
+    while (currentTuesday.getMonth() === month - 1 && currentTuesday.getFullYear() === year) {
+      const startOfWeek = new Date(currentTuesday);
+      startOfWeek.setDate(startOfWeek.getDate() - 6); // Quarta anterior
+      
+      const endOfWeek = new Date(currentTuesday); // Terça atual
+      
+      weeks.push({
+        week: weekNumber,
+        startDate: startOfWeek,
+        endDate: endOfWeek,
+        label: `${startOfWeek.getDate().toString().padStart(2, '0')}/${(startOfWeek.getMonth() + 1).toString().padStart(2, '0')} - ${endOfWeek.getDate().toString().padStart(2, '0')}/${(endOfWeek.getMonth() + 1).toString().padStart(2, '0')}`
+      });
+      
+      weekNumber++;
+      currentTuesday.setDate(currentTuesday.getDate() + 7);
+    }
+    
+    return weeks;
+  };
+
+  // Função para calcular pontos por semana do vendedor
+  const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
+    return weeks.map(week => {
+      const weekPoints = vendasFiltradas
+        .filter(venda => {
+          if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
+          
+          const vendaDate = new Date(venda.enviado_em);
+          return vendaDate >= week.startDate && vendaDate <= week.endDate;
+        })
+        .reduce((sum, venda) => sum + (venda.pontuacao_esperada || 0), 0);
+      
+      return weekPoints;
+    });
+  };
+
+  // Função para calcular comissão baseada na tabela de critérios
+  const calculateCommission = (achievementPercentage: number, fixoMensal: number, variavelSemanal: number) => {
+    if (achievementPercentage <= 50) return 0;
+    if (achievementPercentage <= 69) return fixoMensal + (variavelSemanal * 0.3);
+    if (achievementPercentage <= 84) return fixoMensal + (variavelSemanal * 0.5);
+    if (achievementPercentage <= 99) return fixoMensal + (variavelSemanal * 0.7);
+    if (achievementPercentage <= 119) return fixoMensal + (variavelSemanal * 1);
+    if (achievementPercentage <= 150) return fixoMensal + (variavelSemanal * 1.2);
+    if (achievementPercentage <= 200) return fixoMensal + (variavelSemanal * 1.8);
+    return fixoMensal + (variavelSemanal * 2);
+  };
+
+  // Função para exportar PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4'); // landscape
+    const weeks = getWeeksOfMonth(currentYear, currentMonth);
+    
+    // Título
+    doc.setFontSize(16);
+    doc.text(`Ranking de Vendedores - ${mesAtualSelecionado}`, 20, 20);
+    
+    // Cabeçalhos da tabela
+    const headers = [
+      'Vendedor',
+      'Meta Semanal',
+      'Valor Base',
+      'Variável Semanal',
+      ...weeks.map(w => `Semana ${w.week}\n(${w.label})`),
+      'Total Pontos',
+      'Atingimento %',
+      'Comissão'
+    ];
+    
+    // Dados da tabela
+    const data = ranking.map(vendedor => {
+      const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+      const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
+      const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
+      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
+      const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
+      const commission = calculateCommission(
+        achievementPercentage,
+        nivelConfig?.fixo_mensal || 0,
+        nivelConfig?.variavel_semanal || 0
+      );
+      
+      return [
+        vendedor.nome,
+        nivelConfig?.meta_semanal_vendedor || 6,
+        `R$ ${(nivelConfig?.fixo_mensal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        `R$ ${(nivelConfig?.variavel_semanal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        ...weeklyPoints.map(points => {
+          const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+          return points >= metaSemanal 
+            ? points.toString() 
+            : `Não bateu a meta (${points})`;
+        }),
+        totalPoints,
+        `${achievementPercentage.toFixed(1)}%`,
+        `R$ ${commission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+      ];
+    });
+    
+    autoTable(doc, {
+      head: [headers],
+      body: data,
+      startY: 30,
+      styles: { fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 30 }, // Vendedor
+      },
+      didDrawCell: (data) => {
+        // Destacar células onde não bateu a meta
+        if (data.column.index >= 4 && data.column.index < 4 + weeks.length) {
+          const cellValue = data.cell.text[0];
+          if (cellValue && cellValue.includes('Não bateu a meta')) {
+            data.cell.styles.fillColor = [255, 200, 200]; // Vermelho claro
+          }
+        }
+      }
+    });
+    
+    doc.save(`ranking-vendedores-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+  };
+
+  // Função para exportar Excel
+  const exportToExcel = () => {
+    const weeks = getWeeksOfMonth(currentYear, currentMonth);
+    
+    const data = ranking.map(vendedor => {
+      const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+      const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
+      const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
+      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
+      const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
+      const commission = calculateCommission(
+        achievementPercentage,
+        nivelConfig?.fixo_mensal || 0,
+        nivelConfig?.variavel_semanal || 0
+      );
+      
+      const row: any = {
+        'Vendedor': vendedor.nome,
+        'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 6,
+        'Valor Base': nivelConfig?.fixo_mensal || 0,
+        'Variável Semanal': nivelConfig?.variavel_semanal || 0,
+        'Total Pontos': totalPoints,
+        'Atingimento %': parseFloat(achievementPercentage.toFixed(1)),
+        'Comissão': commission
+      };
+      
+      // Adicionar colunas das semanas
+      weeks.forEach((week, index) => {
+        const points = weeklyPoints[index];
+        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+        row[`Semana ${week.week} (${week.label})`] = points >= metaSemanal 
+          ? points 
+          : `Não bateu a meta (${points})`;
+      });
+      
+      return row;
+    });
+    
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Ranking');
+    
+    XLSX.writeFile(workbook, `ranking-vendedores-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.xlsx`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -304,27 +504,49 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
               </button>
             </CardTitle>
             <CardDescription>
-              Todos os {ranking.length} vendedores por vendas aprovadas - {mesAtualSelecionado}
+              Todos os {ranking.length} vendedores por pontos - {mesAtualSelecionado}
             </CardDescription>
           </div>
-          {/* Mostrar filtro de mês apenas se não houver filtros externos */}
-          {!propSelectedMonth && !propSelectedYear && (
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={internalSelectedMonth} onValueChange={setInternalSelectedMonth}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {mesesDisponiveis.map((mes) => (
-                    <SelectItem key={mes.value} value={mes.value}>
-                      {mes.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Botão de Exportar */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => exportToPDF()}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Exportar PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportToExcel()}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Exportar Planilha
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* Mostrar filtro de mês apenas se não houver filtros externos */}
+            {!propSelectedMonth && !propSelectedYear && (
+              <>
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={internalSelectedMonth} onValueChange={setInternalSelectedMonth}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mesesDisponiveis.map((mes) => (
+                      <SelectItem key={mes.value} value={mes.value}>
+                        {mes.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -381,11 +603,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                         </div>
                         
                         <div className="space-y-1 text-sm">
-                          <p className="font-semibold text-gray-700">
-                            {vendedor.vendas} {vendedor.vendas === 1 ? 'venda' : 'vendas'}
-                          </p>
-                          <p className="font-bold text-ppgvet-magenta">
+                          <p className="font-bold text-ppgvet-magenta text-lg">
                             {DataFormattingService.formatPoints(vendedor.pontuacao)} pts
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Posição #{index + 1}
                           </p>
                         </div>
                         
@@ -440,8 +662,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                   <div className="flex items-center justify-between flex-1">
                     <div>
                       <p className="font-medium">{vendedor.nome}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {vendedor.vendas} {vendedor.vendas === 1 ? 'venda aprovada' : 'vendas aprovadas'}
+                      <p className="text-sm text-ppgvet-magenta font-semibold">
+                        {DataFormattingService.formatPoints(vendedor.pontuacao)} pontos
                       </p>
                     </div>
                     
@@ -472,11 +694,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
-                    <p className="font-bold text-ppgvet-magenta">{DataFormattingService.formatPoints(vendedor.pontuacao)} pts</p>
+                    <p className="text-xs text-gray-500">#{index + 4}º lugar</p>
+                    <p className="font-bold text-ppgvet-magenta text-lg">{DataFormattingService.formatPoints(vendedor.pontuacao)} pts</p>
                   </div>
-                  <Badge variant={vendedor.vendas > 0 ? "default" : "secondary"}>
-                    {vendedor.vendas > 0 ? "Com Vendas" : "Sem Vendas"}
-                  </Badge>
                 </div>
               </div>
             ))}
