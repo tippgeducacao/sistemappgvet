@@ -356,16 +356,33 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     });
   };
 
-  // Função para calcular comissão baseada na tabela de critérios
-  const calculateCommission = (achievementPercentage: number, fixoMensal: number, variavelSemanal: number) => {
-    if (achievementPercentage <= 50) return 0;
-    if (achievementPercentage <= 69) return fixoMensal + (variavelSemanal * 0.3);
-    if (achievementPercentage <= 84) return fixoMensal + (variavelSemanal * 0.5);
-    if (achievementPercentage <= 99) return fixoMensal + (variavelSemanal * 0.7);
-    if (achievementPercentage <= 119) return fixoMensal + (variavelSemanal * 1);
-    if (achievementPercentage <= 150) return fixoMensal + (variavelSemanal * 1.2);
-    if (achievementPercentage <= 200) return fixoMensal + (variavelSemanal * 1.8);
-    return fixoMensal + (variavelSemanal * 2);
+  // Função para calcular comissão POR SEMANA baseada na tabela de critérios
+  const calculateWeeklyCommission = (points: number, metaSemanal: number, variavelSemanal: number) => {
+    if (points < metaSemanal) return 0; // Não bateu a meta da semana
+    
+    const achievementPercentage = (points / metaSemanal) * 100;
+    
+    if (achievementPercentage <= 69) return variavelSemanal * 0.3;
+    if (achievementPercentage <= 84) return variavelSemanal * 0.5;
+    if (achievementPercentage <= 99) return variavelSemanal * 0.7;
+    if (achievementPercentage <= 119) return variavelSemanal * 1;
+    if (achievementPercentage <= 150) return variavelSemanal * 1.2;
+    if (achievementPercentage <= 200) return variavelSemanal * 1.8;
+    return variavelSemanal * 2;
+  };
+
+  // Função para calcular comissão total (fixo mensal + soma das comissões semanais)
+  const calculateTotalCommission = (vendedorId: string, weeks: any[], nivelConfig: any) => {
+    const weeklyPoints = getVendedorWeeklyPoints(vendedorId, weeks);
+    const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+    const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+    const fixoMensal = nivelConfig?.fixo_mensal || 0;
+    
+    const totalWeeklyCommission = weeklyPoints.reduce((total, points) => {
+      return total + calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
+    }, 0);
+    
+    return fixoMensal + totalWeeklyCommission;
   };
 
   // Função para exportar PDF
@@ -397,11 +414,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
       const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
       const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
-      const commission = calculateCommission(
-        achievementPercentage,
-        nivelConfig?.fixo_mensal || 0,
-        nivelConfig?.variavel_semanal || 0
-      );
+      const commission = calculateTotalCommission(vendedor.id, weeks, nivelConfig);
       
       return [
         vendedor.nome,
@@ -453,11 +466,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
       const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
       const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
-      const commission = calculateCommission(
-        achievementPercentage,
-        nivelConfig?.fixo_mensal || 0,
-        nivelConfig?.variavel_semanal || 0
-      );
+      const commission = calculateTotalCommission(vendedor.id, weeks, nivelConfig);
       
       const row: any = {
         'Vendedor': vendedor.nome,
