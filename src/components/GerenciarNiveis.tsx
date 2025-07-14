@@ -17,7 +17,8 @@ const GerenciarNiveis: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const niveisVendedores = niveis.filter(n => n.tipo_usuario === 'vendedor');
-  const niveisSDR = niveis.filter(n => n.tipo_usuario === 'sdr');
+  const niveisSDRInbound = niveis.filter(n => n.tipo_usuario === 'sdr' && n.nivel.includes('inbound'));
+  const niveisSDROutbound = niveis.filter(n => n.tipo_usuario === 'sdr' && n.nivel.includes('outbound'));
 
   const handleEditNivel = (nivel: NivelVendedor) => {
     setEditingNivel(nivel);
@@ -99,8 +100,12 @@ const GerenciarNiveis: React.FC = () => {
             </Label>
             {nivel.tipo_usuario === 'sdr' ? (
               <div className="space-y-1">
-                <p className="text-sm font-medium">Inbound: {nivel.meta_semanal_inbound} reuniões</p>
-                <p className="text-sm font-medium">Outbound: {nivel.meta_semanal_outbound} reuniões</p>
+                {nivel.meta_semanal_inbound > 0 && (
+                  <p className="text-sm font-medium">Inbound: {nivel.meta_semanal_inbound} reuniões</p>
+                )}
+                {nivel.meta_semanal_outbound > 0 && (
+                  <p className="text-sm font-medium">Outbound: {nivel.meta_semanal_outbound} reuniões</p>
+                )}
               </div>
             ) : (
               <p className="text-lg font-semibold">{nivel.meta_semanal_vendedor} pontos</p>
@@ -123,14 +128,18 @@ const GerenciarNiveis: React.FC = () => {
       </div>
 
       <Tabs defaultValue="vendedores" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="vendedores" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Vendedores
           </TabsTrigger>
-          <TabsTrigger value="sdr" className="flex items-center gap-2">
+          <TabsTrigger value="sdr-inbound" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
-            SDRs
+            SDR Inbound
+          </TabsTrigger>
+          <TabsTrigger value="sdr-outbound" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            SDR Outbound
           </TabsTrigger>
         </TabsList>
 
@@ -152,17 +161,35 @@ const GerenciarNiveis: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="sdr" className="space-y-4">
+        <TabsContent value="sdr-inbound" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                Níveis de SDR
+                Níveis de SDR Inbound
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                {niveisSDR.map((nivel) => (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {niveisSDRInbound.map((nivel) => (
+                  <NivelCard key={nivel.id} nivel={nivel} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sdr-outbound" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Níveis de SDR Outbound
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {niveisSDROutbound.map((nivel) => (
                   <NivelCard key={nivel.id} nivel={nivel} />
                 ))}
               </div>
@@ -219,26 +246,30 @@ const GerenciarNiveis: React.FC = () => {
                 </div>
                 {editingNivel.tipo_usuario === 'sdr' ? (
                   <>
-                    <div>
-                      <Label htmlFor="meta_semanal_inbound">Meta Inbound (reuniões)</Label>
-                      <Input
-                        id="meta_semanal_inbound"
-                        name="meta_semanal_inbound"
-                        type="number"
-                        defaultValue={editingNivel.meta_semanal_inbound}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="meta_semanal_outbound">Meta Outbound (reuniões)</Label>
-                      <Input
-                        id="meta_semanal_outbound"
-                        name="meta_semanal_outbound"
-                        type="number"
-                        defaultValue={editingNivel.meta_semanal_outbound}
-                        required
-                      />
-                    </div>
+                    {editingNivel.nivel.includes('inbound') && (
+                      <div>
+                        <Label htmlFor="meta_semanal_inbound">Meta Inbound (reuniões)</Label>
+                        <Input
+                          id="meta_semanal_inbound"
+                          name="meta_semanal_inbound"
+                          type="number"
+                          defaultValue={editingNivel.meta_semanal_inbound}
+                          required
+                        />
+                      </div>
+                    )}
+                    {editingNivel.nivel.includes('outbound') && (
+                      <div>
+                        <Label htmlFor="meta_semanal_outbound">Meta Outbound (reuniões)</Label>
+                        <Input
+                          id="meta_semanal_outbound"
+                          name="meta_semanal_outbound"
+                          type="number"
+                          defaultValue={editingNivel.meta_semanal_outbound}
+                          required
+                        />
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div>
