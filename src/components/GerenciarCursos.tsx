@@ -5,18 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useCourses } from '@/hooks/useCourses';
 import { MODALIDADE_OPTIONS } from '@/constants/formOptions';
 
 const GerenciarCursos: React.FC = () => {
-  const { courses, loading, addCourse, updateCourse } = useCourses();
+  const { courses, loading, addCourse, updateCourse, removeCourse } = useCourses();
   const [novoCurso, setNovoCurso] = useState('');
   const [modalidadeSelecionada, setModalidadeSelecionada] = useState<'Curso' | 'Pós-Graduação'>('Curso');
   const [adicionando, setAdicionando] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEditando, setNomeEditando] = useState('');
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
 
   const handleAdicionarCurso = async () => {
     if (!novoCurso.trim()) return;
@@ -53,6 +54,19 @@ const GerenciarCursos: React.FC = () => {
       console.error('Erro ao salvar edição:', error);
     } finally {
       setSalvandoEdicao(false);
+    }
+  };
+
+  const handleExcluirCurso = async (curso: any) => {
+    if (!confirm(`Tem certeza que deseja excluir o curso "${curso.nome}"?`)) return;
+    
+    try {
+      setExcluindoId(curso.id);
+      await removeCourse(curso.id);
+    } catch (error) {
+      console.error('Erro ao excluir curso:', error);
+    } finally {
+      setExcluindoId(null);
     }
   };
 
@@ -138,7 +152,7 @@ const GerenciarCursos: React.FC = () => {
                     <TableHead className="w-[50px]">#</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead className="w-[120px]">Modalidade</TableHead>
-                    <TableHead className="w-[100px]">Ações</TableHead>
+                    <TableHead className="w-[160px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -191,15 +205,27 @@ const GerenciarCursos: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         {editandoId !== curso.id && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => iniciarEdicao(curso)}
-                            className="flex items-center gap-1"
-                          >
-                            <Edit className="h-3 w-3" />
-                            Editar
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => iniciarEdicao(curso)}
+                              className="flex items-center gap-1"
+                            >
+                              <Edit className="h-3 w-3" />
+                              Editar
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleExcluirCurso(curso)}
+                              disabled={excluindoId === curso.id}
+                              className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              {excluindoId === curso.id ? 'Excluindo...' : 'Excluir'}
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
