@@ -114,8 +114,10 @@ export const useMetasSemanais = () => {
       const tercaAnterior = new Date(primeiraTerca);
       tercaAnterior.setDate(tercaAnterior.getDate() - 7);
       
-      // Se a terça anterior está no mês anterior, ela conta para este mês
-      if (tercaAnterior.getMonth() !== currentMonth - 1) {
+      // Se a terça anterior não está no mês atual, usá-la
+      if (tercaAnterior.getMonth() !== currentMonth - 1 || tercaAnterior.getFullYear() !== currentYear) {
+        // Se não está no mês atual, mantém a primeira terça do mês
+      } else {
         primeiraTerca = tercaAnterior;
       }
     }
@@ -127,10 +129,13 @@ export const useMetasSemanais = () => {
     while (currentTuesday.getMonth() === currentMonth - 1 && currentTuesday.getFullYear() === currentYear) {
       const inicioSemana = new Date(currentTuesday);
       inicioSemana.setDate(inicioSemana.getDate() - 6); // Quarta-feira anterior
+      const fimSemana = new Date(currentTuesday);
+      fimSemana.setHours(23, 59, 59, 999); // Final do dia da terça-feira
       
-      const fimSemana = new Date(currentTuesday); // Terça-feira (fim da semana)
+      console.log(`🔍 Semana ${weekNumber}: ${inicioSemana.toLocaleDateString('pt-BR')} - ${currentTuesday.toLocaleDateString('pt-BR')}, Data atual: ${now.toLocaleDateString('pt-BR')}`);
       
       if (now >= inicioSemana && now <= fimSemana) {
+        console.log(`✅ Data atual está na semana ${weekNumber}`);
         return weekNumber;
       }
       
@@ -138,6 +143,24 @@ export const useMetasSemanais = () => {
       currentTuesday.setDate(currentTuesday.getDate() + 7);
     }
     
+    // Se chegou até aqui, verificar se estamos numa semana que vai para o próximo mês
+    // Mas a terça ainda termina no mês atual
+    const ultimoDiaMes = new Date(currentYear, currentMonth, 0);
+    if (now.getDate() > ultimoDiaMes.getDate() - 6) {
+      // Estamos possivelmente numa semana que termina no próximo mês
+      // Voltar uma semana e verificar
+      currentTuesday.setDate(currentTuesday.getDate() - 7);
+      const inicioSemana = new Date(currentTuesday);
+      inicioSemana.setDate(inicioSemana.getDate() - 6);
+      const fimSemana = new Date(currentTuesday);
+      fimSemana.setHours(23, 59, 59, 999);
+      
+      if (now >= inicioSemana && now <= fimSemana) {
+        return weekNumber - 1;
+      }
+    }
+    
+    console.log(`⚠️ Fallback para semana 1`);
     return 1; // fallback para primeira semana
   };
 
