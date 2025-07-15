@@ -2,16 +2,21 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { CoursesService, Course } from '@/services/coursesService';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 export const useCourses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { isDiretor } = useUserRoles();
 
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const data = await CoursesService.fetchActiveCourses();
+      // Diretores podem ver todos os cursos (ativos e inativos)
+      const data = isDiretor 
+        ? await CoursesService.fetchAllCourses()
+        : await CoursesService.fetchActiveCourses();
       setCourses(data);
     } catch (error) {
       console.error('Erro ao buscar cursos:', error);
@@ -85,13 +90,35 @@ export const useCourses = () => {
     }
   };
 
+  const toggleCourseStatus = async (id: string) => {
+    try {
+      const updatedCourse = await CoursesService.toggleCourseStatus(id);
+      setCourses(prev => prev.map(course => 
+        course.id === id ? updatedCourse : course
+      ));
+      toast({
+        title: "Sucesso",
+        description: `Curso ${updatedCourse.ativo ? 'ativado' : 'desativado'} com sucesso!`,
+      });
+      return updatedCourse;
+    } catch (error) {
+      console.error('Erro ao alterar status do curso:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao alterar status do curso",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const removeCourse = async (id: string) => {
     try {
       await CoursesService.removeCourse(id);
       setCourses(prev => prev.filter(course => course.id !== id));
       toast({
         title: "Sucesso",
-        description: "Curso removido com sucesso!",
+        description: "Curso excluído permanentemente!",
       });
     } catch (error) {
       console.error('Erro ao remover curso:', error);
@@ -106,7 +133,7 @@ export const useCourses = () => {
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [isDiretor]);
 
   return {
     courses,
@@ -115,6 +142,8 @@ export const useCourses = () => {
     fetchCoursesByModalidade,
     addCourse,
     updateCourse,
+    toggleCourseStatus,
     removeCourse,
+    isDiretor,
   };
 };

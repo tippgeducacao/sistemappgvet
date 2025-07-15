@@ -23,6 +23,16 @@ export class CoursesService {
     return (data || []) as Course[];
   }
 
+  static async fetchAllCourses(): Promise<Course[]> {
+    const { data, error } = await supabase
+      .from('cursos')
+      .select('*')
+      .order('nome');
+
+    if (error) throw error;
+    return (data || []) as Course[];
+  }
+
   static async addCourse(nome: string, modalidade: 'Curso' | 'Pós-Graduação' = 'Curso'): Promise<Course> {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -60,10 +70,32 @@ export class CoursesService {
     return data as Course;
   }
 
+  static async toggleCourseStatus(id: string): Promise<Course> {
+    // Primeiro buscar o status atual
+    const { data: currentCourse, error: fetchError } = await supabase
+      .from('cursos')
+      .select('ativo')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Atualizar para o status oposto
+    const { data, error } = await supabase
+      .from('cursos')
+      .update({ ativo: !currentCourse.ativo, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Course;
+  }
+
   static async removeCourse(id: string): Promise<void> {
     const { error } = await supabase
       .from('cursos')
-      .update({ ativo: false })
+      .delete()
       .eq('id', id);
 
     if (error) throw error;

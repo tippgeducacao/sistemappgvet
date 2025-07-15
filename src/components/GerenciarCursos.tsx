@@ -5,12 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Power, PowerOff } from 'lucide-react';
 import { useCourses } from '@/hooks/useCourses';
 import { MODALIDADE_OPTIONS } from '@/constants/formOptions';
 
 const GerenciarCursos: React.FC = () => {
-  const { courses, loading, addCourse, updateCourse, removeCourse } = useCourses();
+  const { courses, loading, addCourse, updateCourse, toggleCourseStatus, removeCourse, isDiretor } = useCourses();
   const [novoCurso, setNovoCurso] = useState('');
   const [modalidadeSelecionada, setModalidadeSelecionada] = useState<'Curso' | 'Pós-Graduação'>('Curso');
   const [adicionando, setAdicionando] = useState(false);
@@ -18,6 +18,7 @@ const GerenciarCursos: React.FC = () => {
   const [nomeEditando, setNomeEditando] = useState('');
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
   const [excluindoId, setExcluindoId] = useState<string | null>(null);
+  const [alterandoStatusId, setAlterandoStatusId] = useState<string | null>(null);
 
   const handleAdicionarCurso = async () => {
     if (!novoCurso.trim()) return;
@@ -57,8 +58,22 @@ const GerenciarCursos: React.FC = () => {
     }
   };
 
+  const handleAlterarStatus = async (curso: any) => {
+    const acao = curso.ativo ? 'desativar' : 'ativar';
+    if (!confirm(`Tem certeza que deseja ${acao} o curso "${curso.nome}"?`)) return;
+    
+    try {
+      setAlterandoStatusId(curso.id);
+      await toggleCourseStatus(curso.id);
+    } catch (error) {
+      console.error('Erro ao alterar status do curso:', error);
+    } finally {
+      setAlterandoStatusId(null);
+    }
+  };
+
   const handleExcluirCurso = async (curso: any) => {
-    if (!confirm(`Tem certeza que deseja excluir o curso "${curso.nome}"?`)) return;
+    if (!confirm(`Tem certeza que deseja EXCLUIR PERMANENTEMENTE o curso "${curso.nome}"? Esta ação não pode ser desfeita.`)) return;
     
     try {
       setExcluindoId(curso.id);
@@ -152,7 +167,8 @@ const GerenciarCursos: React.FC = () => {
                     <TableHead className="w-[50px]">#</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead className="w-[120px]">Modalidade</TableHead>
-                    <TableHead className="w-[160px]">Ações</TableHead>
+                    {isDiretor && <TableHead className="w-[100px]">Status</TableHead>}
+                    <TableHead className={isDiretor ? "w-[220px]" : "w-[100px]"}>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -203,9 +219,20 @@ const GerenciarCursos: React.FC = () => {
                           {curso.modalidade}
                         </span>
                       </TableCell>
+                      {isDiretor && (
+                        <TableCell>
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            curso.ativo 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {curso.ativo ? 'Ativo' : 'Inativo'}
+                          </span>
+                        </TableCell>
+                      )}
                       <TableCell>
                         {editandoId !== curso.id && (
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             <Button
                               variant="outline"
                               size="sm"
@@ -215,16 +242,37 @@ const GerenciarCursos: React.FC = () => {
                               <Edit className="h-3 w-3" />
                               Editar
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleExcluirCurso(curso)}
-                              disabled={excluindoId === curso.id}
-                              className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              {excluindoId === curso.id ? 'Excluindo...' : 'Excluir'}
-                            </Button>
+                            {isDiretor && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleAlterarStatus(curso)}
+                                  disabled={alterandoStatusId === curso.id}
+                                  className={`flex items-center gap-1 ${
+                                    curso.ativo 
+                                      ? 'text-orange-600 hover:text-orange-700 hover:border-orange-300' 
+                                      : 'text-green-600 hover:text-green-700 hover:border-green-300'
+                                  }`}
+                                >
+                                  {curso.ativo ? <PowerOff className="h-3 w-3" /> : <Power className="h-3 w-3" />}
+                                  {alterandoStatusId === curso.id 
+                                    ? 'Alterando...' 
+                                    : curso.ativo ? 'Desativar' : 'Ativar'
+                                  }
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleExcluirCurso(curso)}
+                                  disabled={excluindoId === curso.id}
+                                  className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                  {excluindoId === curso.id ? 'Excluindo...' : 'Excluir'}
+                                </Button>
+                              </>
+                            )}
                           </div>
                         )}
                       </TableCell>
