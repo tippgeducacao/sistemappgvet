@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings, KeyRound } from 'lucide-react';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useToast } from '@/hooks/use-toast';
@@ -165,75 +166,307 @@ const GerenciarVendedores: React.FC = () => {
         </TabsList>
 
         <TabsContent value="ativos" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {vendedores.map((vendedor) => (
-              <UserCard
-                key={vendedor.id}
-                vendedor={vendedor}
-                canEditPhotos={canEditPhotos}
-                uploadingPhoto={uploadingPhoto}
-                onPhotoUpload={handlePhotoUpload}
-                onRemovePhoto={handleRemovePhoto}
-                onToggleStatus={handleToggleUserStatus}
-                onViewProfile={setSelectedUserProfile}
-                onEditVendedor={setEditingVendedor}
-                onResetPassword={setResetPasswordVendedor}
-                getInitials={getInitials}
-              />
-            ))}
-            
-            {vendedores.length === 0 && (
-              <div className="col-span-full text-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Nenhum usuário ativo
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Comece cadastrando o primeiro usuário do sistema
-                </p>
-                <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Cadastrar Primeiro Usuário
-                </Button>
-              </div>
-            )}
-          </div>
+          {vendedores.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Nenhum usuário ativo
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Comece cadastrando o primeiro usuário do sistema
+              </p>
+              <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Cadastrar Primeiro Usuário
+              </Button>
+            </div>
+          ) : (
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Nível</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data Cadastro</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vendedores.map((vendedor) => (
+                    <TableRow key={vendedor.id} className={!vendedor.ativo ? 'opacity-60' : ''}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage 
+                                src={vendedor.photo_url || ''} 
+                                alt={vendedor.name}
+                              />
+                              <AvatarFallback className="bg-ppgvet-teal text-white text-sm">
+                                {getInitials(vendedor.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            {canEditPhotos && vendedor.ativo && (
+                              <label 
+                                htmlFor={`photo-${vendedor.id}`}
+                                className="absolute -bottom-1 -right-1 cursor-pointer bg-white rounded-full p-1 shadow-md hover:bg-gray-50 transition-colors"
+                              >
+                                <Camera className="h-3 w-3 text-gray-600" />
+                                <input
+                                  id={`photo-${vendedor.id}`}
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                   onChange={(e) => {
+                                     const file = e.target.files?.[0];
+                                     if (file) {
+                                       handlePhotoUpload(vendedor.id, file);
+                                     }
+                                   }}
+                                />
+                              </label>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium">{vendedor.name}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{vendedor.email}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={vendedor.user_type === 'admin' ? 'default' : 'secondary'}>
+                            {vendedor.user_type === 'vendedor' && 'Vendedor'}
+                            {vendedor.user_type === 'admin' && 'Admin'}
+                            {vendedor.user_type === 'secretaria' && 'Secretaria'}
+                            {vendedor.user_type === 'diretor' && 'Diretor'}
+                            {vendedor.user_type === 'sdr_inbound' && 'SDR Inbound'}
+                            {vendedor.user_type === 'sdr_outbound' && 'SDR Outbound'}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {vendedor.nivel || 'Não definido'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={vendedor.ativo ? 'default' : 'secondary'} className={vendedor.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                          {vendedor.ativo ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(vendedor.created_at).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedUserProfile({
+                              id: vendedor.id,
+                              name: vendedor.name,
+                              photo_url: vendedor.photo_url,
+                              user_type: vendedor.user_type,
+                              nivel: vendedor.nivel
+                            })}
+                          >
+                            <User className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingVendedor(vendedor)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setResetPasswordVendedor(vendedor)}
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant={vendedor.ativo ? "destructive" : "default"}
+                            size="sm"
+                            onClick={() => handleToggleUserStatus(vendedor.id, vendedor.ativo)}
+                          >
+                            {vendedor.ativo ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                          </Button>
+                          {vendedor.photo_url && canEditPhotos && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRemovePhoto(vendedor.id)}
+                              disabled={uploadingPhoto === vendedor.id}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="todos" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {allUsers.map((vendedor) => (
-              <UserCard
-                key={vendedor.id}
-                vendedor={vendedor}
-                canEditPhotos={canEditPhotos}
-                uploadingPhoto={uploadingPhoto}
-                onPhotoUpload={handlePhotoUpload}
-                onRemovePhoto={handleRemovePhoto}
-                onToggleStatus={handleToggleUserStatus}
-                onViewProfile={setSelectedUserProfile}
-                onEditVendedor={setEditingVendedor}
-                onResetPassword={setResetPasswordVendedor}
-                getInitials={getInitials}
-              />
-            ))}
-            
-            {allUsers.length === 0 && (
-              <div className="col-span-full text-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Nenhum usuário cadastrado
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Comece cadastrando o primeiro usuário do sistema
-                </p>
-                <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Cadastrar Primeiro Usuário
-                </Button>
-              </div>
-            )}
-          </div>
+          {allUsers.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Nenhum usuário cadastrado
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Comece cadastrando o primeiro usuário do sistema
+              </p>
+              <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Cadastrar Primeiro Usuário
+              </Button>
+            </div>
+          ) : (
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Nível</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data Cadastro</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allUsers.map((vendedor) => (
+                    <TableRow key={vendedor.id} className={!vendedor.ativo ? 'opacity-60' : ''}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage 
+                                src={vendedor.photo_url || ''} 
+                                alt={vendedor.name}
+                              />
+                              <AvatarFallback className="bg-ppgvet-teal text-white text-sm">
+                                {getInitials(vendedor.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            {canEditPhotos && vendedor.ativo && (
+                              <label 
+                                htmlFor={`photo-all-${vendedor.id}`}
+                                className="absolute -bottom-1 -right-1 cursor-pointer bg-white rounded-full p-1 shadow-md hover:bg-gray-50 transition-colors"
+                              >
+                                <Camera className="h-3 w-3 text-gray-600" />
+                                <input
+                                  id={`photo-all-${vendedor.id}`}
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                   onChange={(e) => {
+                                     const file = e.target.files?.[0];
+                                     if (file) {
+                                       handlePhotoUpload(vendedor.id, file);
+                                     }
+                                   }}
+                                />
+                              </label>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium">{vendedor.name}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{vendedor.email}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={vendedor.user_type === 'admin' ? 'default' : 'secondary'}>
+                            {vendedor.user_type === 'vendedor' && 'Vendedor'}
+                            {vendedor.user_type === 'admin' && 'Admin'}
+                            {vendedor.user_type === 'secretaria' && 'Secretaria'}
+                            {vendedor.user_type === 'diretor' && 'Diretor'}
+                            {vendedor.user_type === 'sdr_inbound' && 'SDR Inbound'}
+                            {vendedor.user_type === 'sdr_outbound' && 'SDR Outbound'}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {vendedor.nivel || 'Não definido'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={vendedor.ativo ? 'default' : 'secondary'} className={vendedor.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                          {vendedor.ativo ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(vendedor.created_at).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedUserProfile({
+                              id: vendedor.id,
+                              name: vendedor.name,
+                              photo_url: vendedor.photo_url,
+                              user_type: vendedor.user_type,
+                              nivel: vendedor.nivel
+                            })}
+                          >
+                            <User className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingVendedor(vendedor)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setResetPasswordVendedor(vendedor)}
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant={vendedor.ativo ? "destructive" : "default"}
+                            size="sm"
+                            onClick={() => handleToggleUserStatus(vendedor.id, vendedor.ativo)}
+                          >
+                            {vendedor.ativo ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                          </Button>
+                          {vendedor.photo_url && canEditPhotos && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRemovePhoto(vendedor.id)}
+                              disabled={uploadingPhoto === vendedor.id}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </TabsContent>
         <TabsContent value="estatisticas" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
