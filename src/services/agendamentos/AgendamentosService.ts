@@ -98,7 +98,7 @@ export class AgendamentosService {
         .from('cursos')
         .select('*')
         .eq('ativo', true)
-        .eq('modalidade', 'Pós-graduação')
+        .eq('modalidade', 'Pós-Graduação')
         .order('nome');
 
       if (error) throw error;
@@ -115,11 +115,18 @@ export class AgendamentosService {
         .from('profiles')
         .select('id, name, email, pos_graduacoes, horario_trabalho')
         .eq('user_type', 'vendedor')
-        .eq('ativo', true)
-        .contains('pos_graduacoes', [posGraduacao]);
+        .eq('ativo', true);
 
       if (error) throw error;
-      return data || [];
+      
+      // Filtrar vendedores que têm a pós-graduação no portfolio
+      const vendedoresFiltrados = (data || []).filter(vendedor => {
+        return vendedor.pos_graduacoes && 
+               vendedor.pos_graduacoes.includes(posGraduacao);
+      });
+
+      console.log('🔍 Vendedores encontrados para', posGraduacao, ':', vendedoresFiltrados);
+      return vendedoresFiltrados;
     } catch (error) {
       console.error('Erro ao buscar vendedores por pós-graduação:', error);
       return [];

@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AgendamentosService, type Agendamento, type PosGraduacao } from '@/services/agendamentos/AgendamentosService';
+import { verificarDisponibilidadeVendedor, formatarHorarioTrabalho, type HorarioTrabalho } from '@/utils/horarioUtils';
 
 export default function AgendamentosPage() {
   const { toast } = useToast();
@@ -73,8 +74,18 @@ export default function AgendamentosPage() {
     if (!selectedPosGraduacao) return;
 
     try {
+      console.log('🔍 Carregando vendedores para pós-graduação:', selectedPosGraduacao);
       const vendedoresData = await AgendamentosService.buscarVendedoresPorPosGraduacao(selectedPosGraduacao);
+      console.log('✅ Vendedores carregados:', vendedoresData);
       setVendedores(vendedoresData);
+      
+      if (vendedoresData.length === 0) {
+        toast({
+          title: "Aviso",
+          description: "Nenhum vendedor especializado encontrado para esta pós-graduação",
+          variant: "default"
+        });
+      }
     } catch (error) {
       toast({
         title: "Erro",
@@ -92,6 +103,28 @@ export default function AgendamentosPage() {
         variant: "destructive"
       });
       return;
+    }
+
+    // Verificar disponibilidade do vendedor
+    const vendedorSelecionado = vendedores.find(v => v.id === selectedVendedor);
+    if (vendedorSelecionado) {
+      const dataCompleta = new Date(dataAgendamento);
+      const [hora, minuto] = horarioAgendamento.split(':');
+      dataCompleta.setHours(parseInt(hora), parseInt(minuto));
+
+      const disponivel = verificarDisponibilidadeVendedor(
+        vendedorSelecionado.horario_trabalho as HorarioTrabalho,
+        dataCompleta
+      );
+
+      if (!disponivel) {
+        toast({
+          title: "Vendedor Indisponível",
+          description: `O vendedor ${vendedorSelecionado.name} não está disponível neste horário. Horário de trabalho: ${formatarHorarioTrabalho(vendedorSelecionado.horario_trabalho)}`,
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -244,10 +277,15 @@ export default function AgendamentosPage() {
                 <SelectContent>
                   {vendedores.map((vendedor) => (
                     <SelectItem key={vendedor.id} value={vendedor.id}>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span>{vendedor.name}</span>
-                        <span className="text-xs text-muted-foreground">({vendedor.email})</span>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <span>{vendedor.name}</span>
+                          <span className="text-xs text-muted-foreground">({vendedor.email})</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {formatarHorarioTrabalho(vendedor.horario_trabalho)}
+                        </div>
                       </div>
                     </SelectItem>
                   ))}
