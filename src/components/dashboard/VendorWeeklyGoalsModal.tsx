@@ -156,9 +156,24 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
         return isVendedor && isAprovada && isNaSemana;
       }).length;
       
+      // Calcular meta diária dinâmica para a semana atual
+      let metaDiaria = null;
+      if (index === currentWeekIndex && metaSemanalDoNivel > 0) {
+        const pontosFeitos = weekSales;
+        const pontosRestantes = Math.max(0, metaSemanalDoNivel - pontosFeitos);
+        
+        // Calcular dias restantes na semana (incluindo hoje)
+        const hoje = new Date();
+        const fimSemana = new Date(week.end);
+        const diasRestantes = Math.max(1, Math.ceil((fimSemana.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+        
+        metaDiaria = pontosRestantes / diasRestantes;
+      }
+      
       console.log(`📊 Semana ${index + 1}:`, {
         periodo: `${week.start.toLocaleDateString('pt-BR')} - ${week.end.toLocaleDateString('pt-BR')}`,
-        vendas: weekSales
+        vendas: weekSales,
+        metaDiaria: metaDiaria ? metaDiaria.toFixed(2) : null
       });
       
       return {
@@ -166,7 +181,8 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
         sales: weekSales,
         isCurrentWeek: index === currentWeekIndex,
         isPastWeek: index < currentWeekIndex,
-        period: `${week.start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - ${week.end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
+        period: `${week.start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - ${week.end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`,
+        metaDiaria: metaDiaria
       };
     });
   };
@@ -312,6 +328,19 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
                                 {week.sales}/{metaPorSemana}
                               </span>
                             </div>
+                            {week.isCurrentWeek && week.metaDiaria !== null && (
+                              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <div className="text-xs text-blue-700 dark:text-blue-300">
+                                  <span className="font-medium">Meta diária recomendada:</span> {week.metaDiaria.toFixed(2)} pontos/dia
+                                </div>
+                                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                  {week.sales >= metaPorSemana 
+                                    ? "🎉 Meta semanal já atingida!" 
+                                    : `Restam ${(metaPorSemana - week.sales).toFixed(0)} pontos para completar a meta`
+                                  }
+                                </div>
+                              </div>
+                            )}
                           </div>
                           {week.sales >= metaPorSemana && (
                             <TrendingUp className="h-4 w-4 text-green-500" />
