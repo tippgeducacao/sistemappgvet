@@ -34,6 +34,7 @@ export interface PosGraduacao {
   id: string;
   nome: string;
   ativo: boolean;
+  modalidade: string;
   created_at: string;
 }
 
@@ -94,9 +95,10 @@ export class AgendamentosService {
   static async buscarPosGraduacoes(): Promise<PosGraduacao[]> {
     try {
       const { data, error } = await supabase
-        .from('pos_graduacoes')
+        .from('cursos')
         .select('*')
         .eq('ativo', true)
+        .eq('modalidade', 'Pós-graduação')
         .order('nome');
 
       if (error) throw error;
