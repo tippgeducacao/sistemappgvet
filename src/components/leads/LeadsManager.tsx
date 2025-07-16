@@ -7,22 +7,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   Users, 
-  UserPlus, 
   Phone, 
-  Mail, 
-  MapPin, 
-  Calendar,
-  ExternalLink,
   Search,
   Filter,
   Eye,
   Briefcase,
   Globe,
-  Zap
+  Zap,
+  CheckCircle,
+  CircleDot,
+  Trophy
 } from 'lucide-react';
-import { useLeads, useAllLeads } from '@/hooks/useLeads';
+import { useAllLeads } from '@/hooks/useLeads';
+import { format } from 'date-fns';
 
-import { DataFormattingService } from '@/services/formatting/DataFormattingService';
+
 import LeadDetailsDialog from './LeadDetailsDialog';
 import LeadsDashboard from './LeadsDashboard';
 import SprintHubSyncButton from './SprintHubSyncButton';
@@ -167,79 +166,85 @@ const LeadsManager: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-ppgvet-teal">Gestão de Leads</h1>
-          <p className="text-muted-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight">Gestão de Leads</h1>
+          <p className="text-sm text-muted-foreground">
             Gerencie leads do GreatPages e SprintHub em um só lugar
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <Badge variant="outline" className="text-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          <Badge variant="outline" className="text-xs sm:text-sm whitespace-nowrap">
             {allLeads.length} leads totais
           </Badge>
           <SprintHubSyncButton />
         </div>
       </div>
 
-      {/* Filtros - Movidos para o topo */}
+      {/* Filtros */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle className="text-lg">Filtros</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm">
             Os filtros aplicados afetam tanto os gráficos quanto a tabela de leads
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome, email ou telefone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            
+        <CardContent className="space-y-4">
+          {/* Busca */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Buscar por nome, email ou telefone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          {/* Filtros em grade responsiva */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+            {/* Fonte */}
             <Select value={fonteFilter} onValueChange={setFonteFilter}>
-              <SelectTrigger className="w-[160px]">
-                <Zap className="h-4 w-4 mr-2" />
-                <SelectValue />
+              <SelectTrigger className="w-full text-xs">
+                <Zap className="h-3 w-3 mr-1" />
+                <SelectValue placeholder="Fontes" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todas Fontes</SelectItem>
                 <SelectItem value="GreatPages">GreatPages</SelectItem>
                 <SelectItem value="SprintHub">SprintHub</SelectItem>
+                <SelectItem value="Facebook">Facebook</SelectItem>
+                <SelectItem value="Google">Google</SelectItem>
+                <SelectItem value="Instagram">Instagram</SelectItem>
               </SelectContent>
             </Select>
-            
+
+            {/* Status */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[160px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue />
+              <SelectTrigger className="w-full text-xs">
+                <Filter className="h-3 w-3 mr-1" />
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos Status</SelectItem>
-                <SelectItem value="novo">Novos</SelectItem>
-                <SelectItem value="contatado">Contatados</SelectItem>
-                <SelectItem value="qualificado">Qualificados</SelectItem>
-                <SelectItem value="convertido">Convertidos</SelectItem>
-                <SelectItem value="perdido">Perdidos</SelectItem>
+                <SelectItem value="novo">Novo</SelectItem>
+                <SelectItem value="contatado">Contatado</SelectItem>
+                <SelectItem value="qualificado">Qualificado</SelectItem>
+                <SelectItem value="convertido">Convertido</SelectItem>
+                <SelectItem value="perdido">Perdido</SelectItem>
               </SelectContent>
             </Select>
-            
+
+            {/* Profissão */}
             <Select value={profissaoFilter} onValueChange={setProfissaoFilter}>
-              <SelectTrigger className="w-[160px]">
-                <Briefcase className="h-4 w-4 mr-2" />
-                <SelectValue />
+              <SelectTrigger className="w-full text-xs">
+                <Briefcase className="h-3 w-3 mr-1" />
+                <SelectValue placeholder="Profissões" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todas Profissões</SelectItem>
+                <SelectItem value="todos">Todas</SelectItem>
                 {profissoes.map(profissao => (
                   <SelectItem key={profissao} value={profissao}>
                     {profissao}
@@ -248,10 +253,11 @@ const LeadsManager: React.FC = () => {
               </SelectContent>
             </Select>
 
+            {/* Páginas */}
             <Select value={paginaFilter} onValueChange={setPaginaFilter}>
-              <SelectTrigger className="w-[160px]">
-                <Globe className="h-4 w-4 mr-2" />
-                <SelectValue />
+              <SelectTrigger className="w-full text-xs">
+                <Globe className="h-3 w-3 mr-1" />
+                <SelectValue placeholder="Páginas" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todas Páginas</SelectItem>
@@ -266,95 +272,73 @@ const LeadsManager: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Estatísticas baseadas nos filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-blue-600" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Filtrados</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
+      {/* Estatísticas */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <Card className="p-3">
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-blue-500" />
+            <div>
+              <p className="text-xs text-muted-foreground">Filtrados</p>
+              <p className="text-lg font-semibold">{filteredLeads.length}</p>
             </div>
-          </CardContent>
+          </div>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <UserPlus className="h-4 w-4 text-blue-600" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Novos</p>
-                <p className="text-2xl font-bold">{stats.novos}</p>
-              </div>
+        <Card className="p-3">
+          <div className="flex items-center space-x-2">
+            <CircleDot className="h-4 w-4 text-green-500" />
+            <div>
+              <p className="text-xs text-muted-foreground">Novos</p>
+              <p className="text-lg font-semibold">{stats.novos}</p>
             </div>
-          </CardContent>
+          </div>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Phone className="h-4 w-4 text-yellow-600" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Contatados</p>
-                <p className="text-2xl font-bold">{stats.contatados}</p>
-              </div>
+        <Card className="p-3">
+          <div className="flex items-center space-x-2">
+            <Phone className="h-4 w-4 text-orange-500" />
+            <div>
+              <p className="text-xs text-muted-foreground">Contatados</p>
+              <p className="text-lg font-semibold">{stats.contatados}</p>
             </div>
-          </CardContent>
+          </div>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-green-600" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Qualificados</p>
-                <p className="text-2xl font-bold">{stats.qualificados}</p>
-              </div>
+        <Card className="p-3">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="h-4 w-4 text-blue-600" />
+            <div>
+              <p className="text-xs text-muted-foreground">Qualificados</p>
+              <p className="text-lg font-semibold">{stats.qualificados}</p>
             </div>
-          </CardContent>
+          </div>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <ExternalLink className="h-4 w-4 text-purple-600" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Convertidos</p>
-                <p className="text-2xl font-bold">{stats.convertidos}</p>
-              </div>
+        <Card className="p-3">
+          <div className="flex items-center space-x-2">
+            <Trophy className="h-4 w-4 text-green-600" />
+            <div>
+              <p className="text-xs text-muted-foreground">Convertidos</p>
+              <p className="text-lg font-semibold">{stats.convertidos}</p>
             </div>
-          </CardContent>
+          </div>
         </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Zap className="h-4 w-4 text-orange-600" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">SprintHub</p>
-                <p className="text-2xl font-bold">{stats.sprinthub}</p>
-              </div>
+
+        <Card className="p-3">
+          <div className="flex items-center space-x-2">
+            <Zap className="h-4 w-4 text-yellow-500" />
+            <div>
+              <p className="text-xs text-muted-foreground">SprintHub</p>
+              <p className="text-lg font-semibold">{stats.sprinthub}</p>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Globe className="h-4 w-4 text-blue-600" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">GreatPages</p>
-                <p className="text-2xl font-bold">{stats.greatpages}</p>
-              </div>
-            </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
 
-      {/* Dashboard com Gráficos - Agora recebe leads filtrados */}
-      <LeadsDashboard leads={filteredLeads} />
+        {/* Dashboard com gráficos */}
+        <div className="w-full">
+          <LeadsDashboard leads={filteredLeads} />
+        </div>
 
         {/* Tabela de Leads */}
         <Card>
@@ -365,140 +349,88 @@ const LeadsManager: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="w-full overflow-x-auto">
-              <div className="max-h-[500px] overflow-y-auto">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b">
-                    <TableRow>
-                      <TableHead className="w-[140px] py-2 text-xs font-medium">Nome</TableHead>
-                      <TableHead className="w-[160px] py-2 text-xs font-medium hidden sm:table-cell">Email</TableHead>
-                      <TableHead className="w-[120px] py-2 text-xs font-medium">WhatsApp</TableHead>
-                      <TableHead className="w-[100px] py-2 text-xs font-medium">Status</TableHead>
-                      <TableHead className="w-[100px] py-2 text-xs font-medium hidden md:table-cell">Fonte</TableHead>
-                      <TableHead className="w-[120px] py-2 text-xs font-medium hidden lg:table-cell">Profissão</TableHead>
-                      <TableHead className="w-[120px] py-2 text-xs font-medium hidden xl:table-cell">Página</TableHead>
-                      <TableHead className="w-[100px] py-2 text-xs font-medium hidden xl:table-cell">Localização</TableHead>
-                      <TableHead className="w-[100px] py-2 text-xs font-medium hidden lg:table-cell">Data</TableHead>
-                      <TableHead className="w-[80px] py-2 text-xs font-medium text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                  {filteredLeads.map((lead) => (
-                    <TableRow key={lead.id} className="hover:bg-muted/50 h-12">
-                      <TableCell className="font-medium py-2">
-                        <div className="flex flex-col">
-                          <span>{lead.nome}</span>
-                          {lead.convertido_em_venda && (
-                            <Badge variant="outline" className="w-fit mt-1 text-xs bg-green-50 text-green-700">
-                              Convertido
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <div className="flex items-center space-x-1">
-                          {lead.email ? (
-                            <>
-                              <Mail className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{lead.email}</span>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">Não informado</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <div className="flex items-center space-x-1">
-                          {lead.whatsapp ? (
-                            <>
-                              <Phone className="h-3 w-3 text-muted-foreground" />
-                              <a 
-                                href={formatWhatsAppLink(lead.whatsapp)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                              >
-                                {lead.whatsapp}
-                              </a>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">Não informado</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <Badge className={getStatusColor(lead.status)}>
-                          {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <div className="flex items-center space-x-2">
+            <div className="max-h-[500px] overflow-y-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b">
+                   <TableRow>
+                     <TableHead className="w-[130px] py-2 text-xs font-medium">Nome</TableHead>
+                     <TableHead className="w-[100px] py-2 text-xs font-medium hidden md:table-cell">WhatsApp</TableHead>
+                     <TableHead className="w-[80px] py-2 text-xs font-medium">Status</TableHead>
+                     <TableHead className="w-[80px] py-2 text-xs font-medium hidden lg:table-cell">Fonte</TableHead>
+                     <TableHead className="w-[90px] py-2 text-xs font-medium hidden xl:table-cell">Profissão</TableHead>
+                     <TableHead className="w-[70px] py-2 text-xs font-medium hidden 2xl:table-cell">Data</TableHead>
+                     <TableHead className="w-[50px] py-2 text-xs font-medium text-right">Ações</TableHead>
+                   </TableRow>
+                </TableHeader>
+                <TableBody>
+                   {filteredLeads.map((lead) => (
+                     <TableRow key={lead.id} className="hover:bg-muted/50">
+                       <TableCell className="py-2">
+                         <div className="space-y-1">
+                           <div className="font-medium text-xs truncate max-w-[120px]" title={lead.nome}>
+                             {lead.nome}
+                           </div>
+                           <div className="text-xs text-muted-foreground truncate max-w-[120px] md:hidden" title={lead.email}>
+                             {lead.email || '-'}
+                           </div>
+                         </div>
+                       </TableCell>
+                       <TableCell className="py-2 hidden md:table-cell">
+                         {lead.whatsapp ? (
+                           <a
+                             href={formatWhatsAppLink(lead.whatsapp)}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="text-green-600 hover:text-green-800 text-xs truncate block max-w-[90px]"
+                             title={lead.whatsapp}
+                           >
+                             {lead.whatsapp}
+                           </a>
+                         ) : (
+                           <span className="text-xs text-muted-foreground">-</span>
+                         )}
+                       </TableCell>
+                       <TableCell className="py-2">
+                         <Badge variant="outline" className={`text-xs ${getStatusColor(lead.status)} px-1 py-0`}>
+                           {lead.status === 'novo' ? 'Novo' : 
+                            lead.status === 'contatado' ? 'Cont.' :
+                            lead.status === 'qualificado' ? 'Qual.' :
+                            lead.status === 'convertido' ? 'Conv.' : lead.status}
+                         </Badge>
+                       </TableCell>
+                       <TableCell className="py-2 hidden lg:table-cell">
+                         <div className="flex items-center gap-1">
                            {getFonteIcon(lead.utm_source)}
-                           <Badge className={`text-xs ${getFonteBadgeColor(lead.utm_source)}`}>
-                             {lead.utm_source || 'GreatPages'}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <div className="flex items-center space-x-1">
-                          {extractProfissao(lead.observacoes) ? (
-                            <>
-                              <Briefcase className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{extractProfissao(lead.observacoes)}</span>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">Não informado</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <div className="flex items-center space-x-1">
-                          {extractPaginaSubdominio(lead.pagina_nome) ? (
-                            <>
-                              <Globe className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{extractPaginaSubdominio(lead.pagina_nome)}</span>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <div className="flex items-center space-x-1">
-                          {lead.regiao ? (
-                            <>
-                              <MapPin className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{lead.regiao}</span>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm">
-                            {DataFormattingService.formatDateTime(lead.data_captura)}
+                           <Badge variant="outline" className={`text-xs ${getFonteBadgeColor(lead.utm_source)} px-1 py-0`}>
+                             {(lead.utm_source || lead.fonte_referencia || 'N/A').substring(0, 4)}
+                           </Badge>
+                         </div>
+                       </TableCell>
+                       <TableCell className="py-2 hidden xl:table-cell">
+                         <span className="text-xs truncate block max-w-[80px]" title={extractProfissao(lead.observacoes)}>
+                           {(extractProfissao(lead.observacoes) || '-').substring(0, 10)}
+                         </span>
+                       </TableCell>
+                        <TableCell className="py-2 hidden 2xl:table-cell">
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(lead.created_at), 'dd/MM')}
                           </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right py-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setSelectedLead(lead.id)}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Ver
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                       <TableCell className="py-2 text-right">
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => setSelectedLead(lead.id)}
+                           className="h-6 w-6 p-0"
+                         >
+                           <Eye className="h-3 w-3" />
+                         </Button>
+                       </TableCell>
+                     </TableRow>
+                   ))}
                   </TableBody>
                 </Table>
               </div>
-            </div>
             
             {filteredLeads.length === 0 && allLeads.length > 0 && (
               <div className="text-center py-6">

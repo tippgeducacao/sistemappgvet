@@ -18,7 +18,7 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
   if (!leads || leads.length === 0) {
     console.log('⚠️ Nenhum lead disponível para dashboard');
     return (
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3 mb-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -161,7 +161,7 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
   console.log('📈 Dados finais para gráfico de estados:', estadosChartData);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+    <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3 mb-4">
       {/* Gráfico de Profissões - Pizza */}
       <Card>
         <CardHeader>
