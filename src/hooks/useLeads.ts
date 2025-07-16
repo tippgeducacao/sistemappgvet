@@ -88,6 +88,33 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 10) => {
   });
 };
 
+export const useAllLeads = () => {
+  return useQuery({
+    queryKey: ['all-leads'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          *,
+          vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Map to ensure all required fields are present
+      const leads = (data || []).map(item => ({
+        ...item,
+        data_captura: item.created_at || new Date().toISOString(),
+        convertido_em_venda: false,
+        vendedor_atribuido_profile: item.vendedor_atribuido_profile || undefined
+      })) as Lead[];
+
+      return leads;
+    },
+  });
+};
+
 export const useLeadById = (leadId: string) => {
   return useQuery({
     queryKey: ['lead', leadId],

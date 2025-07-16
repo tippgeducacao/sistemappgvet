@@ -20,7 +20,7 @@ import {
   Globe,
   Zap
 } from 'lucide-react';
-import { useLeads } from '@/hooks/useLeads';
+import { useLeads, useAllLeads } from '@/hooks/useLeads';
 import VendasPagination from '@/components/vendas/VendasPagination';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import LeadDetailsDialog from './LeadDetailsDialog';
@@ -32,6 +32,7 @@ const LeadsManager: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const { data: leadsData, isLoading } = useLeads(currentPage, itemsPerPage);
+  const { data: allLeads = [] } = useAllLeads();
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -93,8 +94,27 @@ const LeadsManager: React.FC = () => {
     return `https://wa.me/${formattedNumber}`;
   };
 
-  // Filtrar leads
+  // Filtrar leads (página atual)
   const filteredLeads = leads.filter(lead => {
+    const matchesSearch = lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         lead.whatsapp?.includes(searchTerm);
+    
+    const matchesStatus = statusFilter === 'todos' || lead.status === statusFilter;
+    
+    const profissao = extractProfissao(lead.observacoes);
+    const matchesProfissao = profissaoFilter === 'todos' || profissao === profissaoFilter;
+    
+    const paginaSubdominio = extractPaginaSubdominio(lead.pagina_nome);
+    const matchesPagina = paginaFilter === 'todos' || paginaSubdominio === paginaFilter;
+    
+    const matchesFonte = fonteFilter === 'todos' || lead.utm_source === fonteFilter;
+    
+    return matchesSearch && matchesStatus && matchesProfissao && matchesPagina && matchesFonte;
+  });
+
+  // Filtrar todos os leads (para gráficos)
+  const allFilteredLeads = allLeads.filter(lead => {
     const matchesSearch = lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.whatsapp?.includes(searchTerm);
@@ -371,7 +391,7 @@ const LeadsManager: React.FC = () => {
       </div>
 
       {/* Dashboard com Gráficos - Agora recebe leads filtrados */}
-      <LeadsDashboard leads={filteredLeads} />
+      <LeadsDashboard leads={allFilteredLeads} />
 
       {/* Tabela de Leads */}
       <Card>
