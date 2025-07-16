@@ -153,6 +153,22 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
         const vendaDate = new Date(venda.enviado_em);
         const isNaSemana = vendaDate >= week.start && vendaDate <= week.end;
         
+        // Debug: log detalhado para vendas do vendedor
+        if (isVendedor && isAprovada) {
+          console.log(`🔍 Semana ${index + 1} (${week.start.toLocaleDateString()} - ${week.end.toLocaleDateString()}):`, {
+            vendaId: venda.id,
+            aluno: venda.aluno?.nome,
+            enviado_em: venda.enviado_em,
+            vendaDate: vendaDate.toLocaleDateString(),
+            weekStart: week.start.toLocaleDateString(),
+            weekEnd: week.end.toLocaleDateString(),
+            isNaSemana,
+            vendaDateTime: vendaDate.getTime(),
+            weekStartTime: week.start.getTime(),
+            weekEndTime: week.end.getTime()
+          });
+        }
+        
         return isVendedor && isAprovada && isNaSemana;
       }).length;
       
