@@ -429,7 +429,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       'Meta Semanal',
       'Salário Base',
       'Variável Semanal',
-      ...weeks.map(w => `Semana ${w.week}\n% Meta (x Mult.)`),
+      ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
       'Total Pontos',
       'Atingimento %',
       'Comissão Total'
@@ -450,7 +450,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         const variavelSemanal = nivelConfig?.variavel_semanal || 0;
         const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
         const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
-        return `${percentage}% (x${commission.multiplicador})`;
+        const valorFormatado = DataFormattingService.formatCurrency(commission.valor);
+        return `${points.toFixed(1)}pts ${percentage}% (x${commission.multiplicador}) = ${valorFormatado}`;
       }));
       
       return [
@@ -512,17 +513,16 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         'Comissão Total': parseFloat(commissionData.total.toFixed(2))
       };
       
-      // Adicionar colunas das semanas com porcentagem e multiplicadores
+      // Adicionar colunas das semanas com pontos, porcentagem, multiplicadores e valores
       for (let i = 0; i < weeklyPoints.length; i++) {
         const points = weeklyPoints[i];
         const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
         const variavelSemanal = nivelConfig?.variavel_semanal || 0;
         const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
         const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
+        const valorFormatado = DataFormattingService.formatCurrency(commission.valor);
         
-        row[`Semana ${weeks[i].week} % Meta`] = parseFloat(percentage);
-        row[`Semana ${weeks[i].week} Multiplicador`] = commission.multiplicador;
-        row[`Semana ${weeks[i].week} Comissão`] = commission.valor.toFixed(2);
+        row[`Semana ${weeks[i].week} (${weeks[i].label})`] = `${points.toFixed(1)}pts ${percentage}% (x${commission.multiplicador}) = ${valorFormatado}`;
       }
       
       return row;
