@@ -4,14 +4,14 @@ export interface HorarioTrabalho {
   segunda_sexta: {
     periodo1_inicio: string;
     periodo1_fim: string;
-    periodo2_inicio: string;
-    periodo2_fim: string;
+    periodo2_inicio?: string; // Opcional
+    periodo2_fim?: string; // Opcional
   };
   sabado: {
     periodo1_inicio: string;
     periodo1_fim: string;
-    periodo2_inicio: string;
-    periodo2_fim: string;
+    periodo2_inicio?: string; // Opcional
+    periodo2_fim?: string; // Opcional
   };
 }
 
@@ -50,12 +50,17 @@ export const verificarDisponibilidadeVendedor = (
   // Converter horários para decimal
   const periodo1Inicio = converterHorarioParaDecimal(horarios.periodo1_inicio);
   const periodo1Fim = converterHorarioParaDecimal(horarios.periodo1_fim);
-  const periodo2Inicio = converterHorarioParaDecimal(horarios.periodo2_inicio);
-  const periodo2Fim = converterHorarioParaDecimal(horarios.periodo2_fim);
-
-  // Verificar se está em algum dos períodos
+  
+  // Verificar se está no primeiro período
   const noPeriodo1 = horaCompleta >= periodo1Inicio && horaCompleta <= periodo1Fim;
-  const noPeriodo2 = horaCompleta >= periodo2Inicio && horaCompleta <= periodo2Fim;
+  
+  // Verificar segundo período apenas se definido
+  let noPeriodo2 = false;
+  if (horarios.periodo2_inicio && horarios.periodo2_fim) {
+    const periodo2Inicio = converterHorarioParaDecimal(horarios.periodo2_inicio);
+    const periodo2Fim = converterHorarioParaDecimal(horarios.periodo2_fim);
+    noPeriodo2 = horaCompleta >= periodo2Inicio && horaCompleta <= periodo2Fim;
+  }
 
   return noPeriodo1 || noPeriodo2;
 };
@@ -92,8 +97,13 @@ export const formatarHorarioTrabalho = (horarioTrabalho: HorarioTrabalho | null)
     diasTexto = horarioTrabalho.dias_personalizados.map(dia => diasAbrev[dia as keyof typeof diasAbrev]).join(', ');
   }
 
-  const segSex = `${horarioTrabalho.segunda_sexta.periodo1_inicio}-${horarioTrabalho.segunda_sexta.periodo1_fim}, ${horarioTrabalho.segunda_sexta.periodo2_inicio}-${horarioTrabalho.segunda_sexta.periodo2_fim}`;
-  const sabado = `${horarioTrabalho.sabado.periodo1_inicio}-${horarioTrabalho.sabado.periodo1_fim}, ${horarioTrabalho.sabado.periodo2_inicio}-${horarioTrabalho.sabado.periodo2_fim}`;
+  const segSex = horarioTrabalho.segunda_sexta.periodo2_inicio && horarioTrabalho.segunda_sexta.periodo2_fim
+    ? `${horarioTrabalho.segunda_sexta.periodo1_inicio}-${horarioTrabalho.segunda_sexta.periodo1_fim}, ${horarioTrabalho.segunda_sexta.periodo2_inicio}-${horarioTrabalho.segunda_sexta.periodo2_fim}`
+    : `${horarioTrabalho.segunda_sexta.periodo1_inicio}-${horarioTrabalho.segunda_sexta.periodo1_fim}`;
+    
+  const sabado = horarioTrabalho.sabado.periodo2_inicio && horarioTrabalho.sabado.periodo2_fim
+    ? `${horarioTrabalho.sabado.periodo1_inicio}-${horarioTrabalho.sabado.periodo1_fim}, ${horarioTrabalho.sabado.periodo2_inicio}-${horarioTrabalho.sabado.periodo2_fim}`
+    : `${horarioTrabalho.sabado.periodo1_inicio}-${horarioTrabalho.sabado.periodo1_fim}`;
   
   return `${diasTexto} | Seg-Sex: ${segSex} | Sáb: ${sabado}`;
 };

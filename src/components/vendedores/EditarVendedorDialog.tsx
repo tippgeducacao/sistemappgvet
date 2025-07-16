@@ -44,8 +44,8 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
     sabado: {
       periodo1_inicio: '09:00',
       periodo1_fim: '12:00',
-      periodo2_inicio: '13:00',
-      periodo2_fim: '17:00'
+      periodo2_inicio: '',
+      periodo2_fim: ''
     }
   });
   const [saving, setSaving] = useState(false);
@@ -93,8 +93,8 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
             sabado: {
               periodo1_inicio: '09:00',
               periodo1_fim: '12:00',
-              periodo2_inicio: '13:00',
-              periodo2_fim: '17:00'
+              periodo2_inicio: '',
+              periodo2_fim: ''
             }
           });
         } else {
