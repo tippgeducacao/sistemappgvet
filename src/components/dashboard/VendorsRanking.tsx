@@ -507,10 +507,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         'Nível': vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
         'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 6,
         'Salário Base': nivelConfig?.fixo_mensal || 0,
-        'Variável Semanal': nivelConfig?.variavel_semanal || 0,
-        'Total Pontos': totalPoints,
-        'Atingimento %': parseFloat(achievementPercentage.toFixed(1)),
-        'Comissão Total': parseFloat(commissionData.total.toFixed(2))
+        'Variável Semanal': nivelConfig?.variavel_semanal || 0
       };
       
       // Adicionar colunas das semanas com pontos, porcentagem, multiplicadores e valores
@@ -524,6 +521,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         
         row[`Semana ${weeks[i].week} (${weeks[i].label})`] = `${points.toFixed(1)}pts ${percentage}% (x${commission.multiplicador}) = ${valorFormatado}`;
       }
+      
+      // Adicionar colunas finais na ordem correta
+      row['Total Pontos'] = totalPoints;
+      row['Atingimento %'] = parseFloat(achievementPercentage.toFixed(1));
+      row['Comissão Total'] = parseFloat(commissionData.total.toFixed(2));
       
       return row;
     }));
