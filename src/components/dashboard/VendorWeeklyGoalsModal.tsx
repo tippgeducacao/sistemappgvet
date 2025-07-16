@@ -151,7 +151,13 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
         const isVendedor = venda.vendedor_id === vendedorId;
         const isAprovada = venda.status === 'matriculado';
         const vendaDate = new Date(venda.enviado_em);
-        const isNaSemana = vendaDate >= week.start && vendaDate <= week.end;
+        
+        // Normalizar datas para comparação (apenas a data, sem horário)
+        const vendaDateOnly = new Date(vendaDate.getFullYear(), vendaDate.getMonth(), vendaDate.getDate());
+        const weekStartOnly = new Date(week.start.getFullYear(), week.start.getMonth(), week.start.getDate());
+        const weekEndOnly = new Date(week.end.getFullYear(), week.end.getMonth(), week.end.getDate());
+        
+        const isNaSemana = vendaDateOnly >= weekStartOnly && vendaDateOnly <= weekEndOnly;
         
         // Debug: log detalhado para vendas do vendedor
         if (isVendedor && isAprovada) {
@@ -160,12 +166,10 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
             aluno: venda.aluno?.nome,
             enviado_em: venda.enviado_em,
             vendaDate: vendaDate.toLocaleDateString(),
-            weekStart: week.start.toLocaleDateString(),
-            weekEnd: week.end.toLocaleDateString(),
-            isNaSemana,
-            vendaDateTime: vendaDate.getTime(),
-            weekStartTime: week.start.getTime(),
-            weekEndTime: week.end.getTime()
+            vendaDateOnly: vendaDateOnly.toLocaleDateString(),
+            weekStartOnly: weekStartOnly.toLocaleDateString(),
+            weekEndOnly: weekEndOnly.toLocaleDateString(),
+            isNaSemana
           });
         }
         
