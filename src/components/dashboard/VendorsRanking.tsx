@@ -188,56 +188,75 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     return acc;
   }, {} as Record<string, { id: string; nome: string; photo_url?: string; vendas: number; pontuacao: number }>);
 
-  // Função para calcular vendas semanais (segunda a sábado)
-  const getWeeklyProgress = (vendedorId: string, year: number, month: number) => {
+  // Função para calcular vendas semanais atuais (quarta a terça)
+  const getCurrentWeekProgress = (vendedorId: string) => {
     const now = new Date();
     
-    // Calcular início da semana (segunda-feira anterior ou atual)
+    // Calcular início da semana atual (quarta-feira anterior ou atual)
     const startOfWeek = new Date(now);
     const dayOfWeek = now.getDay(); // 0=domingo, 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado
-    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Quantos dias até a segunda
-    startOfWeek.setDate(now.getDate() - daysToMonday);
+    
+    // Ajustar para quarta-feira (dia 3)
+    let daysToWednesday;
+    if (dayOfWeek >= 3) { // Quinta, sexta, sábado ou quarta
+      daysToWednesday = dayOfWeek - 3;
+    } else { // Domingo, segunda, terça
+      daysToWednesday = dayOfWeek + 4; // Volta para quarta anterior
+    }
+    
+    startOfWeek.setDate(now.getDate() - daysToWednesday);
     startOfWeek.setHours(0, 0, 0, 0);
     
+    // Final da semana é terça-feira
     const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 5); // Final da semana (sábado)
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // 6 dias depois (quarta + 6 = terça)
     endOfWeek.setHours(23, 59, 59, 999);
 
-    return vendasFiltradas.filter(venda => {
+    const vendasSemanaAtual = vendas.filter(venda => {
       if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
       
       const vendaDate = new Date(venda.enviado_em);
       return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
-    }).length;
+    });
+
+    return {
+      vendas: vendasSemanaAtual.length,
+      pontos: vendasSemanaAtual.reduce((sum, venda) => sum + (venda.pontuacao_esperada || 0), 0)
+    };
   };
 
-  // Função para calcular qual dia da semana estamos (1=segunda, 6=sábado)
-  const getCurrentWeekDay = () => {
+  // Função para calcular qual dia da semana estamos na semana de trabalho (1=quarta, 7=terça)
+  const getCurrentWorkDay = () => {
     const now = new Date();
     const dayOfWeek = now.getDay(); // 0=domingo, 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado
     
-    // Mapear para nosso sistema (segunda=1, sábado=6)
-    // Domingo = dia 0, não conta como dia de trabalho
-    if (dayOfWeek === 0) return 6; // Domingo considera como final da semana
-    return dayOfWeek; // 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado
+    // Mapear para nosso sistema de trabalho (quarta=1, terça=7)
+    if (dayOfWeek === 3) return 1; // Quarta
+    if (dayOfWeek === 4) return 2; // Quinta  
+    if (dayOfWeek === 5) return 3; // Sexta
+    if (dayOfWeek === 6) return 4; // Sábado
+    if (dayOfWeek === 0) return 5; // Domingo
+    if (dayOfWeek === 1) return 6; // Segunda
+    if (dayOfWeek === 2) return 7; // Terça
+    return 1; // Fallback
   };
 
   // Função para calcular meta diária dinâmica
-  const calculateDynamicDailyGoal = (metaSemanal: number, pontuacaoAtual: number, diaAtual: number) => {
-    const pontosRestantes = Math.max(0, metaSemanal - pontuacaoAtual);
-    const diasRestantes = Math.max(1, 6 - diaAtual + 1); // Quantos dias restam (incluindo hoje)
-    
+  const calculateDynamicDailyGoal = (metaSemanal: number, pontosAtual: number) => {
     // Se já bateu a meta, meta diária = 0
-    if (pontuacaoAtual >= metaSemanal) {
+    if (pontosAtual >= metaSemanal) {
       return 0;
     }
+    
+    const pontosRestantes = Math.max(0, metaSemanal - pontosAtual);
+    const diaAtual = getCurrentWorkDay(); // 1=quarta, 7=terça
+    const diasRestantes = Math.max(1, 7 - diaAtual + 1); // Quantos dias restam (incluindo hoje)
     
     return pontosRestantes / diasRestantes;
   };
 
   // Incluir TODOS os vendedores filtrados, mesmo os que não fizeram vendas
   const todosVendedoresStats = vendedoresFiltrados.map(vendedor => {
-    const statsExistentes = vendedoresStats[vendedor.id];
     const [year, monthStr] = selectedMonth.split('-');
     const currentYear = parseInt(year);
     const currentMonth = parseInt(monthStr);
@@ -246,15 +265,17 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
     const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
     
-    const vendasAprovadas = statsExistentes?.vendas || 0;
-    const pontuacaoAtual = statsExistentes?.pontuacao || 0;
-    const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6; // Usar meta do banco ou 6 como fallback
+    // Obter progresso da semana atual
+    const progressoSemanaAtual = getCurrentWeekProgress(vendedor.id);
+    const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
     
-    // Calcular meta diária dinâmica
-    const diaAtualNaSemana = getCurrentWeekDay(); // 1=segunda, 6=sábado
-    const metaDiariaRestante = calculateDynamicDailyGoal(metaSemanal, pontuacaoAtual, diaAtualNaSemana);
+    // Calcular meta diária dinâmica baseada no progresso da semana atual
+    const metaDiariaRestante = calculateDynamicDailyGoal(metaSemanal, progressoSemanaAtual.pontos);
     
-    const vendasSemanais = getWeeklyProgress(vendedor.id, currentYear, currentMonth);
+    // Usar dados da semana atual para o ranking
+    const vendasAprovadas = progressoSemanaAtual.vendas;
+    const pontuacaoAtual = progressoSemanaAtual.pontos;
+    const diaAtualNaSemana = getCurrentWorkDay();
     
     return {
       id: vendedor.id,
@@ -265,7 +286,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       metaSemanal,
       metaDiariaRestante,
       diaAtualNaSemana,
-      vendasSemanais,
+      vendasSemanais: vendasAprovadas, // Usar vendas da semana atual
       progressoSemanal: metaSemanal > 0 ? (pontuacaoAtual / metaSemanal) * 100 : 0,
       progressoDiario: metaDiariaRestante > 0 ? Math.min((pontuacaoAtual / (metaSemanal - metaDiariaRestante)) * 100, 100) : 100
     };
