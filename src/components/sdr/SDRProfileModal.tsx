@@ -48,31 +48,39 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({
     ? nivelConfig?.meta_semanal_inbound || 0
     : nivelConfig?.meta_semanal_outbound || 0;
 
-  // Função para calcular o número de semanas no mês
+  // Função para calcular as semanas que terminam no mês (quarta a terça)
   const getWeeksInMonth = (year: number, month: number) => {
-    const firstDay = new Date(year, month - 1, 1);
-    const lastDay = new Date(year, month, 0);
+    const weeks = [];
     
-    // Encontrar a primeira quarta-feira
-    let firstWednesday = new Date(firstDay);
-    while (firstWednesday.getDay() !== 3) { // 3 = Wednesday
-      firstWednesday.setDate(firstWednesday.getDate() + 1);
+    // Encontrar a primeira terça-feira do mês
+    const firstDayOfMonth = new Date(year, month - 1, 1);
+    let firstTuesday = new Date(firstDayOfMonth);
+    
+    // Ajustar para a primeira terça-feira
+    while (firstTuesday.getDay() !== 2) { // 2 = Tuesday
+      firstTuesday.setDate(firstTuesday.getDate() + 1);
     }
     
-    // Contar semanas completas
-    const weeks = [];
-    let currentWednesday = new Date(firstWednesday);
+    // Se a primeira terça-feira é muito tarde no mês (depois do dia 7),
+    // verificar se existe uma semana anterior que termina neste mês
+    if (firstTuesday.getDate() > 7) {
+      firstTuesday.setDate(firstTuesday.getDate() - 7);
+    }
     
-    while (currentWednesday <= lastDay) {
-      const weekEnd = new Date(currentWednesday);
-      weekEnd.setDate(weekEnd.getDate() + 6); // Próxima terça-feira
+    const lastDayOfMonth = new Date(year, month, 0);
+    let currentTuesday = new Date(firstTuesday);
+    
+    // Contar todas as terças-feiras que estão no mês especificado
+    while (currentTuesday.getMonth() === month - 1 && currentTuesday.getFullYear() === year) {
+      const weekStart = new Date(currentTuesday);
+      weekStart.setDate(weekStart.getDate() - 6); // Quarta-feira anterior (início da semana)
       
       weeks.push({
-        start: new Date(currentWednesday),
-        end: weekEnd > lastDay ? lastDay : weekEnd
+        start: weekStart,
+        end: new Date(currentTuesday)
       });
       
-      currentWednesday.setDate(currentWednesday.getDate() + 7);
+      currentTuesday.setDate(currentTuesday.getDate() + 7);
     }
     
     return weeks;
