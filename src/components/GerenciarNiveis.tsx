@@ -8,8 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNiveis } from '@/hooks/useNiveis';
 import { NiveisService, type NivelVendedor } from '@/services/niveisService';
-import { Pencil, Trophy, Users, Target } from 'lucide-react';
+import { Pencil, Trophy, Users, Target, Calculator } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { GerenciarComissionamento } from './comissionamento/GerenciarComissionamento';
 
 const GerenciarNiveis: React.FC = () => {
   const { niveis, loading, updateNivel } = useNiveis();
@@ -128,7 +129,7 @@ const GerenciarNiveis: React.FC = () => {
       </div>
 
       <Tabs defaultValue="vendedores" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="vendedores" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Vendedores
@@ -140,6 +141,10 @@ const GerenciarNiveis: React.FC = () => {
           <TabsTrigger value="sdr-outbound" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
             SDR Outbound
+          </TabsTrigger>
+          <TabsTrigger value="comissionamento" className="flex items-center gap-2">
+            <Calculator className="h-4 w-4" />
+            Comissionamento
           </TabsTrigger>
         </TabsList>
 
@@ -195,6 +200,10 @@ const GerenciarNiveis: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="comissionamento" className="space-y-4">
+          <GerenciarComissionamento />
         </TabsContent>
       </Tabs>
 

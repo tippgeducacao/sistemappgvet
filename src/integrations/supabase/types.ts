@@ -482,6 +482,39 @@ export type Database = {
         }
         Relationships: []
       }
+      regras_comissionamento: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          multiplicador: number
+          percentual_maximo: number
+          percentual_minimo: number
+          tipo_usuario: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          multiplicador: number
+          percentual_maximo: number
+          percentual_minimo: number
+          tipo_usuario?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          multiplicador?: number
+          percentual_maximo?: number
+          percentual_minimo?: number
+          tipo_usuario?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       regras_pontuacao: {
         Row: {
           campo_nome: string
