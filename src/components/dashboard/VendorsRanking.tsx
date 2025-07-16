@@ -429,7 +429,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       'Meta Semanal',
       'Salário Base',
       'Variável Semanal',
-      ...weeks.map(w => `Semana ${w.week}\nPontos (x Mult.)`),
+      ...weeks.map(w => `Semana ${w.week}\n% Meta (x Mult.)`),
       'Total Pontos',
       'Atingimento %',
       'Comissão Total'
@@ -449,7 +449,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
         const variavelSemanal = nivelConfig?.variavel_semanal || 0;
         const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
-        return `${points} (x${commission.multiplicador})`;
+        const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
+        return `${percentage}% (x${commission.multiplicador})`;
       }));
       
       return [
@@ -511,14 +512,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         'Comissão Total': parseFloat(commissionData.total.toFixed(2))
       };
       
-      // Adicionar colunas das semanas com pontos e multiplicadores
+      // Adicionar colunas das semanas com porcentagem e multiplicadores
       for (let i = 0; i < weeklyPoints.length; i++) {
         const points = weeklyPoints[i];
         const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
         const variavelSemanal = nivelConfig?.variavel_semanal || 0;
         const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
+        const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
         
-        row[`Semana ${weeks[i].week} Pontos`] = points;
+        row[`Semana ${weeks[i].week} % Meta`] = parseFloat(percentage);
         row[`Semana ${weeks[i].week} Multiplicador`] = commission.multiplicador;
         row[`Semana ${weeks[i].week} Comissão`] = commission.valor.toFixed(2);
       }
