@@ -102,6 +102,7 @@ const LeadsManager: React.FC = () => {
     novos: filteredLeads.filter(l => l.status === 'novo').length,
     contatados: filteredLeads.filter(l => l.status === 'contatado').length,
     qualificados: filteredLeads.filter(l => l.status === 'qualificado').length,
+    reunioesMarcadas: filteredLeads.filter(l => l.status === 'reuniao_marcada').length,
     convertidos: filteredLeads.filter(l => l.convertido_em_venda).length,
     sprinthub: filteredLeads.filter(l => l.utm_source === 'SprintHub').length,
     greatpages: filteredLeads.filter(l => l.utm_source === 'GreatPages').length,
@@ -149,6 +150,7 @@ const LeadsManager: React.FC = () => {
       case 'contatado': return 'bg-yellow-100 text-yellow-800';
       case 'qualificado': return 'bg-green-100 text-green-800';
       case 'convertido': return 'bg-purple-100 text-purple-800';
+      case 'reuniao_marcada': return 'bg-orange-100 text-orange-800';
       case 'perdido': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -233,6 +235,7 @@ const LeadsManager: React.FC = () => {
                 <SelectItem value="contatado">Contatado</SelectItem>
                 <SelectItem value="qualificado">Qualificado</SelectItem>
                 <SelectItem value="convertido">Convertido</SelectItem>
+                <SelectItem value="reuniao_marcada">Reunião Marcada</SelectItem>
                 <SelectItem value="perdido">Perdido</SelectItem>
               </SelectContent>
             </Select>
@@ -273,7 +276,7 @@ const LeadsManager: React.FC = () => {
       </Card>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
         <Card className="p-3">
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-blue-500" />
@@ -310,6 +313,16 @@ const LeadsManager: React.FC = () => {
             <div>
               <p className="text-xs text-muted-foreground">Qualificados</p>
               <p className="text-lg font-semibold">{stats.qualificados}</p>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="p-3">
+          <div className="flex items-center space-x-2">
+            <Users className="h-4 w-4 text-orange-600" />
+            <div>
+              <p className="text-xs text-muted-foreground">Reuniões</p>
+              <p className="text-lg font-semibold">{stats.reunioesMarcadas}</p>
             </div>
           </div>
         </Card>
@@ -392,12 +405,14 @@ const LeadsManager: React.FC = () => {
                          )}
                        </TableCell>
                        <TableCell className="py-2">
-                         <Badge variant="outline" className={`text-xs ${getStatusColor(lead.status)} px-1 py-0`}>
-                           {lead.status === 'novo' ? 'Novo' : 
-                            lead.status === 'contatado' ? 'Cont.' :
-                            lead.status === 'qualificado' ? 'Qual.' :
-                            lead.status === 'convertido' ? 'Conv.' : lead.status}
-                         </Badge>
+                          <Badge variant="outline" className={`text-xs ${getStatusColor(lead.status)} px-1 py-0`}>
+                            {lead.status === 'novo' ? 'Novo' : 
+                             lead.status === 'contatado' ? 'Cont.' :
+                             lead.status === 'qualificado' ? 'Qual.' :
+                             lead.status === 'convertido' ? 'Conv.' : 
+                             lead.status === 'reuniao_marcada' ? 'Reunião' :
+                             lead.status === 'perdido' ? 'Perdido' : lead.status}
+                          </Badge>
                        </TableCell>
                        <TableCell className="py-2 hidden lg:table-cell">
                          <div className="flex items-center gap-1">

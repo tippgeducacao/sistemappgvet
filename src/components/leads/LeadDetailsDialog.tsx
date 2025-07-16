@@ -141,23 +141,6 @@ const LeadDetailsDialog: React.FC<LeadDetailsDialogProps> = ({
 
             <div className="flex-1 overflow-auto">
               <TabsContent value="detalhes" className="space-y-4 h-full overflow-auto p-1">
-                <div className="flex justify-end space-x-2">
-                  {editMode ? (
-                    <>
-                      <Button variant="outline" onClick={() => setEditMode(false)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleSave}>
-                        <Save className="h-4 w-4 mr-2" />
-                        Salvar
-                      </Button>
-                    </>
-                  ) : (
-                    <Button onClick={() => setEditMode(true)}>
-                      Editar
-                    </Button>
-                  )}
-                </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                   {/* Informações Básicas */}
@@ -168,14 +151,7 @@ const LeadDetailsDialog: React.FC<LeadDetailsDialogProps> = ({
                     <CardContent className="space-y-4">
                       <div>
                         <Label>Nome</Label>
-                        {editMode ? (
-                          <Input
-                            value={editData.nome || lead.nome}
-                            onChange={(e) => setEditData({...editData, nome: e.target.value})}
-                          />
-                        ) : (
-                          <p className="font-medium break-words">{lead.nome}</p>
-                        )}
+                        <p className="font-medium break-words">{lead.nome}</p>
                       </div>
 
                       <div>

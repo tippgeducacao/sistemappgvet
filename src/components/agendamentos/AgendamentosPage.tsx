@@ -158,6 +158,9 @@ export default function AgendamentosPage() {
       });
 
       if (agendamento) {
+        // Atualizar status do lead para "reuniao_marcada"
+        await AgendamentosService.atualizarStatusLead(selectedLead, 'reuniao_marcada');
+        
         toast({
           title: "Sucesso",
           description: "Agendamento criado com sucesso!"
@@ -243,7 +246,7 @@ export default function AgendamentosPage() {
                   <SelectValue placeholder="Selecione um lead" />
                 </SelectTrigger>
                 <SelectContent>
-                  {leads.map((lead) => (
+                  {leads.filter(lead => lead.status !== 'reuniao_marcada').map((lead) => (
                     <SelectItem key={lead.id} value={lead.id}>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />

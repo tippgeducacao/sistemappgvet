@@ -172,12 +172,26 @@ export class AgendamentosService {
     }
   }
 
+  static async atualizarStatusLead(leadId: string, novoStatus: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ status: novoStatus })
+        .eq('id', leadId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Erro ao atualizar status do lead:', error);
+      throw error;
+    }
+  }
+
   static async buscarLeads(): Promise<any[]> {
     try {
       const { data, error } = await supabase
         .from('leads')
         .select('id, nome, email, whatsapp, status')
-        .in('status', ['novo', 'em_andamento'])
+        .in('status', ['novo', 'em_andamento', 'contatado', 'qualificado'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
