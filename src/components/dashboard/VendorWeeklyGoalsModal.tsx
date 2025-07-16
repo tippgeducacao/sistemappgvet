@@ -275,27 +275,8 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
               />
             </div>
 
-            {metaMensal > 0 ? (
+            {metaPorSemana > 0 ? (
               <>
-                {/* Progresso geral */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Target className="h-5 w-5" />
-                      Progresso Mensal
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Meta: {metaMensal} vendas</span>
-                        <span>{approvedSales} / {metaMensal} ({Math.round(progressPercentage)}%)</span>
-                      </div>
-                      <Progress value={progressPercentage} className="h-3" />
-                    </div>
-                  </CardContent>
-                </Card>
-                
                 {/* Progresso semanal */}
                 <Card>
                   <CardHeader>
