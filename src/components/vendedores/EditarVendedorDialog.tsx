@@ -194,7 +194,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                 <Label className="text-sm font-medium text-gray-700">
                   Novo Nível
                 </Label>
-                <Select value={selectedNivel} onValueChange={setSelectedNivel}>
+                <Select value={selectedNivel || undefined} onValueChange={setSelectedNivel}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o nível" />
                   </SelectTrigger>
