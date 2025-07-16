@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Target, Calendar, TrendingUp, BarChart3, User } from 'lucide-react';
 import { useMetas } from '@/hooks/useMetas';
 import { useAllVendas } from '@/hooks/useVendas';
+import { useNiveis } from '@/hooks/useNiveis';
+import { useVendedores } from '@/hooks/useVendedores';
 import VendasFilter from '@/components/vendas/VendasFilter';
 
 interface VendorWeeklyGoalsModalProps {
@@ -32,6 +34,8 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
 }) => {
   const { metas } = useMetas();
   const { vendas: todasVendas } = useAllVendas();
+  const { niveis } = useNiveis();
+  const { vendedores } = useVendedores();
   const [filtroMes, setFiltroMes] = useState(selectedMonth);
   const [filtroAno, setFiltroAno] = useState(selectedYear);
 
@@ -167,16 +171,28 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
     });
   };
 
+  // Buscar informações do vendedor
+  const vendedor = vendedores.find(v => v.id === vendedorId);
+  
+  // Buscar configuração do nível do vendedor
+  const nivelConfig = vendedor?.nivel ? niveis.find(n => n.nivel === vendedor.nivel && n.tipo_usuario === 'vendedor') : null;
+  
+  // Meta semanal baseada no nível do vendedor
+  const metaSemanalDoNivel = nivelConfig?.meta_semanal_vendedor || 0;
+  
+  // Meta mensal baseada na tabela de metas (se existir) ou calculada baseada no nível
   const meta = metas.find(m => 
     m.vendedor_id === vendedorId && 
     m.mes === filtroMes && 
     m.ano === filtroAno
   );
+  
+  const weeks = getWeeksInMonth(filtroAno, filtroMes);
+  const metaMensal = meta?.meta_vendas || (metaSemanalDoNivel * weeks.length);
+  const metaPorSemana = metaSemanalDoNivel > 0 ? metaSemanalDoNivel : (metaMensal > 0 ? Math.ceil(metaMensal / weeks.length) : 0);
 
   const approvedSales = getApprovedSales(vendedorId, filtroAno, filtroMes);
-  const progressPercentage = meta?.meta_vendas && meta.meta_vendas > 0 ? (approvedSales / meta.meta_vendas) * 100 : 0;
-  const weeks = getWeeksInMonth(filtroAno, filtroMes);
-  const metaPorSemana = meta?.meta_vendas ? Math.ceil(meta.meta_vendas / weeks.length) : 0;
+  const progressPercentage = metaMensal > 0 ? (approvedSales / metaMensal) * 100 : 0;
   const weeklyProgress = getWeeklyProgress(vendedorId, filtroAno, filtroMes);
 
   const mesNome = new Date(filtroAno, filtroMes - 1).toLocaleDateString('pt-BR', { 
@@ -259,7 +275,7 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
               />
             </div>
 
-            {meta ? (
+            {metaMensal > 0 ? (
               <>
                 {/* Progresso geral */}
                 <Card>
@@ -272,8 +288,8 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
                   <CardContent>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span>Meta: {meta.meta_vendas} vendas</span>
-                        <span>{approvedSales} / {meta.meta_vendas} ({Math.round(progressPercentage)}%)</span>
+                        <span>Meta: {metaMensal} vendas</span>
+                        <span>{approvedSales} / {metaMensal} ({Math.round(progressPercentage)}%)</span>
                       </div>
                       <Progress value={progressPercentage} className="h-3" />
                     </div>
