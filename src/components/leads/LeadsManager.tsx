@@ -17,7 +17,6 @@ import {
   Filter,
   Eye,
   Briefcase,
-  Trash,
   Globe,
   Zap
 } from 'lucide-react';
@@ -25,7 +24,6 @@ import { useLeads } from '@/hooks/useLeads';
 import VendasPagination from '@/components/vendas/VendasPagination';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import LeadDetailsDialog from './LeadDetailsDialog';
-import DeleteLeadDialog from './DeleteLeadDialog';
 import LeadsDashboard from './LeadsDashboard';
 import SprintHubSyncButton from './SprintHubSyncButton';
 import type { Lead } from '@/hooks/useLeads';
@@ -35,7 +33,6 @@ const LeadsManager: React.FC = () => {
   const itemsPerPage = 10;
   const { data: leadsData, isLoading } = useLeads(currentPage, itemsPerPage);
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
-  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [profissaoFilter, setProfissaoFilter] = useState('todos');
@@ -45,6 +42,16 @@ const LeadsManager: React.FC = () => {
   const leads = leadsData?.leads || [];
   const totalCount = leadsData?.totalCount || 0;
   const totalPages = leadsData?.totalPages || 0;
+
+  // Função para mudança de página sem scroll
+  const handlePageChange = (newPage: number) => {
+    const currentScrollPosition = window.scrollY;
+    setCurrentPage(newPage);
+    // Mantém a posição do scroll após a mudança de página
+    setTimeout(() => {
+      window.scrollTo(0, currentScrollPosition);
+    }, 0);
+  };
 
   // Extrair profissão das observações
   const extractProfissao = (observacoes?: string) => {
@@ -389,22 +396,22 @@ const LeadsManager: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[200px]">Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>WhatsApp</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Fonte</TableHead>
-                    <TableHead>Eu sou</TableHead>
-                    <TableHead>Página Captura</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Data Captura</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="w-[180px] py-2">Nome</TableHead>
+                    <TableHead className="py-2">Email</TableHead>
+                    <TableHead className="py-2">WhatsApp</TableHead>
+                    <TableHead className="py-2">Status</TableHead>
+                    <TableHead className="py-2">Fonte</TableHead>
+                    <TableHead className="py-2">Eu sou</TableHead>
+                    <TableHead className="py-2">Página Captura</TableHead>
+                    <TableHead className="py-2">Localização</TableHead>
+                    <TableHead className="py-2">Data Captura</TableHead>
+                    <TableHead className="text-right py-2">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredLeads.map((lead) => (
-                    <TableRow key={lead.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">
+                    <TableRow key={lead.id} className="hover:bg-muted/50 h-12">
+                      <TableCell className="font-medium py-2">
                         <div className="flex flex-col">
                           <span>{lead.nome}</span>
                           {lead.convertido_em_venda && (
@@ -414,7 +421,7 @@ const LeadsManager: React.FC = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div className="flex items-center space-x-1">
                           {lead.email ? (
                             <>
@@ -426,7 +433,7 @@ const LeadsManager: React.FC = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div className="flex items-center space-x-1">
                           {lead.whatsapp ? (
                             <>
@@ -445,12 +452,12 @@ const LeadsManager: React.FC = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <Badge className={getStatusColor(lead.status)}>
                           {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div className="flex items-center space-x-2">
                            {getFonteIcon(lead.utm_source)}
                            <Badge className={`text-xs ${getFonteBadgeColor(lead.utm_source)}`}>
@@ -458,7 +465,7 @@ const LeadsManager: React.FC = () => {
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div className="flex items-center space-x-1">
                           {extractProfissao(lead.observacoes) ? (
                             <>
@@ -470,7 +477,7 @@ const LeadsManager: React.FC = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div className="flex items-center space-x-1">
                           {extractPaginaSubdominio(lead.pagina_nome) ? (
                             <>
@@ -482,7 +489,7 @@ const LeadsManager: React.FC = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div className="flex items-center space-x-1">
                           {lead.regiao ? (
                             <>
@@ -494,7 +501,7 @@ const LeadsManager: React.FC = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
                           <span className="text-sm">
@@ -502,26 +509,15 @@ const LeadsManager: React.FC = () => {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setSelectedLead(lead.id)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setLeadToDelete(lead)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash className="h-4 w-4 mr-1" />
-                            Excluir
-                          </Button>
-                        </div>
+                      <TableCell className="text-right py-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedLead(lead.id)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -535,7 +531,7 @@ const LeadsManager: React.FC = () => {
               <VendasPagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                onPageChange={setCurrentPage}
+                onPageChange={handlePageChange}
               />
             </div>
           )}
@@ -550,13 +546,6 @@ const LeadsManager: React.FC = () => {
           onOpenChange={(open) => !open && setSelectedLead(null)}
         />
       )}
-
-      {/* Dialog de Exclusão */}
-      <DeleteLeadDialog
-        lead={leadToDelete}
-        open={!!leadToDelete}
-        onOpenChange={(open) => !open && setLeadToDelete(null)}
-      />
     </div>
   );
 };
