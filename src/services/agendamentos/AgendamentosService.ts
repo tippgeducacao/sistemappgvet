@@ -149,6 +149,29 @@ export class AgendamentosService {
     }
   }
 
+  static async verificarConflitosAgenda(vendedorId: string, dataAgendamento: string): Promise<boolean> {
+    try {
+      const dataInicio = new Date(dataAgendamento);
+      const dataFim = new Date(dataAgendamento);
+      dataFim.setHours(dataFim.getHours() + 1); // Assumindo reuniões de 1 hora
+
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select('id, data_agendamento')
+        .eq('vendedor_id', vendedorId)
+        .eq('status', 'agendado')
+        .gte('data_agendamento', dataInicio.toISOString())
+        .lt('data_agendamento', dataFim.toISOString());
+
+      if (error) throw error;
+      
+      return (data || []).length > 0; // Retorna true se há conflitos
+    } catch (error) {
+      console.error('Erro ao verificar conflitos de agenda:', error);
+      return false;
+    }
+  }
+
   static async buscarLeads(): Promise<any[]> {
     try {
       const { data, error } = await supabase

@@ -112,6 +112,7 @@ export default function AgendamentosPage() {
       const [hora, minuto] = horarioAgendamento.split(':');
       dataCompleta.setHours(parseInt(hora), parseInt(minuto));
 
+      // Verificar horário de trabalho
       const disponivel = verificarDisponibilidadeVendedor(
         vendedorSelecionado.horario_trabalho as HorarioTrabalho,
         dataCompleta
@@ -121,6 +122,21 @@ export default function AgendamentosPage() {
         toast({
           title: "Vendedor Indisponível",
           description: `O vendedor ${vendedorSelecionado.name} não está disponível neste horário. Horário de trabalho: ${formatarHorarioTrabalho(vendedorSelecionado.horario_trabalho)}`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verificar conflitos de agenda
+      const temConflito = await AgendamentosService.verificarConflitosAgenda(
+        selectedVendedor,
+        dataCompleta.toISOString()
+      );
+
+      if (temConflito) {
+        toast({
+          title: "Conflito de Agenda",
+          description: `O vendedor ${vendedorSelecionado.name} já possui uma reunião agendada neste horário. Escolha outro horário.`,
           variant: "destructive"
         });
         return;
