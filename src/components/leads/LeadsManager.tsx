@@ -351,14 +351,15 @@ const LeadsManager: React.FC = () => {
           <CardContent className="p-0">
             <div className="max-h-[500px] overflow-y-auto">
               <Table>
-                <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b">
+                 <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b">
                    <TableRow>
                      <TableHead className="w-[130px] py-2 text-xs font-medium">Nome</TableHead>
+                     <TableHead className="w-[120px] py-2 text-xs font-medium hidden sm:table-cell">Email</TableHead>
                      <TableHead className="w-[100px] py-2 text-xs font-medium hidden md:table-cell">WhatsApp</TableHead>
                      <TableHead className="w-[80px] py-2 text-xs font-medium">Status</TableHead>
                      <TableHead className="w-[80px] py-2 text-xs font-medium hidden lg:table-cell">Fonte</TableHead>
                      <TableHead className="w-[90px] py-2 text-xs font-medium hidden xl:table-cell">Profissão</TableHead>
-                     <TableHead className="w-[70px] py-2 text-xs font-medium hidden 2xl:table-cell">Data</TableHead>
+                     <TableHead className="w-[90px] py-2 text-xs font-medium hidden 2xl:table-cell">Data</TableHead>
                      <TableHead className="w-[50px] py-2 text-xs font-medium text-right">Ações</TableHead>
                    </TableRow>
                 </TableHeader>
@@ -366,13 +367,13 @@ const LeadsManager: React.FC = () => {
                    {filteredLeads.map((lead) => (
                      <TableRow key={lead.id} className="hover:bg-muted/50">
                        <TableCell className="py-2">
-                         <div className="space-y-1">
-                           <div className="font-medium text-xs truncate max-w-[120px]" title={lead.nome}>
-                             {lead.nome}
-                           </div>
-                           <div className="text-xs text-muted-foreground truncate max-w-[120px] md:hidden" title={lead.email}>
-                             {lead.email || '-'}
-                           </div>
+                         <div className="font-medium text-xs truncate max-w-[120px]" title={lead.nome}>
+                           {lead.nome}
+                         </div>
+                       </TableCell>
+                       <TableCell className="py-2 hidden sm:table-cell">
+                         <div className="text-xs truncate max-w-[110px]" title={lead.email}>
+                           {lead.email || '-'}
                          </div>
                        </TableCell>
                        <TableCell className="py-2 hidden md:table-cell">
@@ -413,7 +414,7 @@ const LeadsManager: React.FC = () => {
                        </TableCell>
                         <TableCell className="py-2 hidden 2xl:table-cell">
                           <span className="text-xs text-muted-foreground">
-                            {format(new Date(lead.created_at), 'dd/MM')}
+                            {format(new Date(lead.created_at), 'dd/MM/yyyy')}
                           </span>
                         </TableCell>
                        <TableCell className="py-2 text-right">
