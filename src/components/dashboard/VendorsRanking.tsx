@@ -396,12 +396,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     }
   };
 
-  // Função para calcular comissão total (fixo mensal + soma das comissões semanais)
+  // Função para calcular comissão total (apenas soma das comissões semanais variáveis)
   const calculateTotalCommission = async (vendedorId: string, weeks: any[], nivelConfig: any) => {
     const weeklyPoints = getVendedorWeeklyPoints(vendedorId, weeks);
     const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
     const variavelSemanal = nivelConfig?.variavel_semanal || 0;
-    const fixoMensal = nivelConfig?.fixo_mensal || 0;
     
     const weeklyCommissions = await Promise.all(
       weeklyPoints.map(points => calculateWeeklyCommission(points, metaSemanal, variavelSemanal))
@@ -411,7 +410,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       return total + commission.valor;
     }, 0);
     
-    return { total: fixoMensal + totalWeeklyCommission, weeklyCommissions };
+    return { total: totalWeeklyCommission, weeklyCommissions };
   };
 
   // Função para exportar PDF
@@ -428,6 +427,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       'Vendedor',
       'Nível',
       'Meta Semanal',
+      'Salário Base',
       'Variável Semanal',
       ...weeks.map(w => `Semana ${w.week}\nPontos (x Mult.)`),
       'Total Pontos',
@@ -456,6 +456,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         vendedor.nome,
         vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
         nivelConfig?.meta_semanal_vendedor || 6,
+        `R$ ${(nivelConfig?.fixo_mensal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
         `R$ ${(nivelConfig?.variavel_semanal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
         ...weeklyCommissionStrings,
         totalPoints,
@@ -503,6 +504,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         'Vendedor': vendedor.nome,
         'Nível': vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
         'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 6,
+        'Salário Base': nivelConfig?.fixo_mensal || 0,
         'Variável Semanal': nivelConfig?.variavel_semanal || 0,
         'Total Pontos': totalPoints,
         'Atingimento %': parseFloat(achievementPercentage.toFixed(1)),
