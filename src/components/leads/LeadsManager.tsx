@@ -21,7 +21,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useLeads, useAllLeads } from '@/hooks/useLeads';
-import VendasPagination from '@/components/vendas/VendasPagination';
+
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import LeadDetailsDialog from './LeadDetailsDialog';
 import LeadsDashboard from './LeadsDashboard';
@@ -29,10 +29,6 @@ import SprintHubSyncButton from './SprintHubSyncButton';
 import type { Lead } from '@/hooks/useLeads';
 
 const LeadsManager: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const { data: leadsData, isLoading } = useLeads(currentPage, itemsPerPage);
-  const { data: allLeads = [] } = useAllLeads();
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -40,19 +36,7 @@ const LeadsManager: React.FC = () => {
   const [paginaFilter, setPaginaFilter] = useState('todos');
   const [fonteFilter, setFonteFilter] = useState('todos');
 
-  const leads = leadsData?.leads || [];
-  const totalCount = leadsData?.totalCount || 0;
-  const totalPages = leadsData?.totalPages || 0;
-
-  // Função para mudança de página sem scroll
-  const handlePageChange = (newPage: number) => {
-    const currentScrollPosition = window.scrollY;
-    setCurrentPage(newPage);
-    // Mantém a posição do scroll após a mudança de página
-    setTimeout(() => {
-      window.scrollTo(0, currentScrollPosition);
-    }, 0);
-  };
+  const { data: allLeads = [] } = useAllLeads();
 
   // Extrair profissão das observações
   const extractProfissao = (observacoes?: string) => {
@@ -94,27 +78,8 @@ const LeadsManager: React.FC = () => {
     return `https://wa.me/${formattedNumber}`;
   };
 
-  // Filtrar leads (página atual)
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.whatsapp?.includes(searchTerm);
-    
-    const matchesStatus = statusFilter === 'todos' || lead.status === statusFilter;
-    
-    const profissao = extractProfissao(lead.observacoes);
-    const matchesProfissao = profissaoFilter === 'todos' || profissao === profissaoFilter;
-    
-    const paginaSubdominio = extractPaginaSubdominio(lead.pagina_nome);
-    const matchesPagina = paginaFilter === 'todos' || paginaSubdominio === paginaFilter;
-    
-    const matchesFonte = fonteFilter === 'todos' || lead.utm_source === fonteFilter;
-    
-    return matchesSearch && matchesStatus && matchesProfissao && matchesPagina && matchesFonte;
-  });
-
-  // Filtrar todos os leads (para gráficos)
-  const allFilteredLeads = allLeads.filter(lead => {
+  // Filtrar todos os leads 
+  const filteredLeads = allLeads.filter(lead => {
     const matchesSearch = lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.whatsapp?.includes(searchTerm);
@@ -145,13 +110,13 @@ const LeadsManager: React.FC = () => {
 
   // Obter profissões únicas
   const profissoes = [...new Set(
-    leads.map(l => extractProfissao(l.observacoes))
+    allLeads.map(l => extractProfissao(l.observacoes))
       .filter(Boolean)
   )];
 
   // Obter páginas de captura únicas (subdomínios)
   const paginasCaptura = [...new Set(
-    leads.map(l => extractPaginaSubdominio(l.pagina_nome))
+    allLeads.map(l => extractPaginaSubdominio(l.pagina_nome))
       .filter(Boolean)
   )];
 
@@ -190,14 +155,12 @@ const LeadsManager: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (allLeads.length === 0) {
     return (
-      <div className="space-y-6">
-        <div className="h-8 bg-gray-200 animate-pulse rounded"></div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-gray-200 animate-pulse rounded"></div>
-          ))}
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando leads...</p>
         </div>
       </div>
     );
@@ -215,7 +178,7 @@ const LeadsManager: React.FC = () => {
         </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-sm">
-            {totalCount} leads totais
+            {allLeads.length} leads totais
           </Badge>
           <SprintHubSyncButton />
         </div>
@@ -391,44 +354,35 @@ const LeadsManager: React.FC = () => {
       </div>
 
       {/* Dashboard com Gráficos - Agora recebe leads filtrados */}
-      <LeadsDashboard leads={allFilteredLeads} />
+      <LeadsDashboard leads={filteredLeads} />
 
-      {/* Tabela de Leads */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Leads ({filteredLeads.length})
-          </CardTitle>
-          <CardDescription>
-            Página {currentPage} de {totalPages} - {totalCount} leads totais
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {filteredLeads.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                {totalCount === 0 ? 'Nenhum lead encontrado' : 'Nenhum lead corresponde aos filtros'}
-              </p>
-            </div>
-          ) : (
+        {/* Tabela de Leads */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Leads</CardTitle>
+            <CardDescription>
+              {filteredLeads.length} leads encontrados
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[180px] py-2">Nome</TableHead>
-                    <TableHead className="py-2">Email</TableHead>
-                    <TableHead className="py-2">WhatsApp</TableHead>
-                    <TableHead className="py-2">Status</TableHead>
-                    <TableHead className="py-2">Fonte</TableHead>
-                    <TableHead className="py-2">Eu sou</TableHead>
-                    <TableHead className="py-2">Página Captura</TableHead>
-                    <TableHead className="py-2">Localização</TableHead>
-                    <TableHead className="py-2">Data Captura</TableHead>
-                    <TableHead className="text-right py-2">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <div className="max-h-[600px] overflow-y-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background z-10">
+                    <TableRow>
+                      <TableHead className="w-[180px] py-2">Nome</TableHead>
+                      <TableHead className="py-2">Email</TableHead>
+                      <TableHead className="py-2">WhatsApp</TableHead>
+                      <TableHead className="py-2">Status</TableHead>
+                      <TableHead className="py-2">Fonte</TableHead>
+                      <TableHead className="py-2">Eu sou</TableHead>
+                      <TableHead className="py-2">Página Captura</TableHead>
+                      <TableHead className="py-2">Localização</TableHead>
+                      <TableHead className="py-2">Data Captura</TableHead>
+                      <TableHead className="text-right py-2">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                   {filteredLeads.map((lead) => (
                     <TableRow key={lead.id} className="hover:bg-muted/50 h-12">
                       <TableCell className="font-medium py-2">
@@ -541,22 +495,21 @@ const LeadsManager: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                </TableBody>
-              </Table>
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          )}
-          
-          {totalPages > 1 && (
-            <div className="mt-4">
-              <VendasPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            
+            {filteredLeads.length === 0 && allLeads.length > 0 && (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  Nenhum lead corresponde aos filtros aplicados
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
       {/* Dialog de Detalhes */}
       {selectedLead && (
