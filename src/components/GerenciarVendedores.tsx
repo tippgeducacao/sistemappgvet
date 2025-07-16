@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import NovoVendedorDialog from '@/components/vendedores/NovoVendedorDialog';
 import VendorWeeklyGoalsModal from '@/components/dashboard/VendorWeeklyGoalsModal';
+import SDRProfileModal from '@/components/sdr/SDRProfileModal';
 import EditarVendedorDialog from '@/components/vendedores/EditarVendedorDialog';
 import ResetPasswordDialog from '@/components/vendedores/ResetPasswordDialog';
 import ConfigurarNiveisDialog from '@/components/niveis/ConfigurarNiveisDialog';
@@ -28,6 +29,8 @@ const GerenciarVendedores: React.FC = () => {
     id: string;
     name: string;
     photo_url?: string;
+    user_type?: string;
+    nivel?: string;
   } | null>(null);
   const [editingVendedor, setEditingVendedor] = useState<Vendedor | null>(null);
   const [resetPasswordVendedor, setResetPasswordVendedor] = useState<Vendedor | null>(null);
@@ -346,15 +349,33 @@ const GerenciarVendedores: React.FC = () => {
         }}
       />
       
-      <VendorWeeklyGoalsModal
-        vendedorId={selectedUserProfile?.id}
-        vendedorNome={selectedUserProfile?.name}
-        vendedorPhoto={selectedUserProfile?.photo_url}
-        selectedMonth={new Date().getMonth() + 1}
-        selectedYear={new Date().getFullYear()}
-        isOpen={!!selectedUserProfile}
-        onClose={() => setSelectedUserProfile(null)}
-      />
+      {/* Modal para Vendedores */}
+      {selectedUserProfile && (selectedUserProfile.user_type === 'vendedor' || selectedUserProfile.user_type === 'admin') && (
+        <VendorWeeklyGoalsModal
+          vendedorId={selectedUserProfile?.id}
+          vendedorNome={selectedUserProfile?.name}
+          vendedorPhoto={selectedUserProfile?.photo_url}
+          selectedMonth={new Date().getMonth() + 1}
+          selectedYear={new Date().getFullYear()}
+          isOpen={!!selectedUserProfile}
+          onClose={() => setSelectedUserProfile(null)}
+        />
+      )}
+
+      {/* Modal para SDRs */}
+      {selectedUserProfile && (selectedUserProfile.user_type === 'sdr_inbound' || selectedUserProfile.user_type === 'sdr_outbound') && (
+        <SDRProfileModal
+          sdrId={selectedUserProfile?.id}
+          sdrNome={selectedUserProfile?.name}
+          sdrPhoto={selectedUserProfile?.photo_url}
+          sdrNivel={selectedUserProfile?.nivel}
+          sdrUserType={selectedUserProfile?.user_type}
+          selectedMonth={new Date().getMonth() + 1}
+          selectedYear={new Date().getFullYear()}
+          isOpen={!!selectedUserProfile}
+          onClose={() => setSelectedUserProfile(null)}
+        />
+      )}
       
       <EditarVendedorDialog
         vendedor={editingVendedor}
@@ -392,7 +413,7 @@ interface UserCardProps {
   onPhotoUpload: (vendedorId: string, file: File) => void;
   onRemovePhoto: (vendedorId: string) => void;
   onToggleStatus: (userId: string, currentStatus: boolean) => void;
-  onViewProfile: (user: { id: string; name: string; photo_url?: string }) => void;
+  onViewProfile: (user: { id: string; name: string; photo_url?: string; user_type?: string; nivel?: string }) => void;
   onEditVendedor: (vendedor: Vendedor) => void;
   onResetPassword: (vendedor: Vendedor) => void;
   getInitials: (name: string) => string;
@@ -514,15 +535,17 @@ const UserCard: React.FC<UserCardProps> = ({
                   </Button>
                 )}
                 
-                {/* Botão para visualizar perfil - destacado e primeiro */}
-                {vendedor.user_type === 'vendedor' && (
+                {/* Botão para visualizar perfil - para vendedores e SDRs */}
+                {(vendedor.user_type === 'vendedor' || vendedor.user_type === 'sdr_inbound' || vendedor.user_type === 'sdr_outbound') && (
                   <Button
                     variant="default"
                     size="sm"
                     onClick={() => onViewProfile({
                       id: vendedor.id,
                       name: vendedor.name,
-                      photo_url: vendedor.photo_url
+                      photo_url: vendedor.photo_url,
+                      user_type: vendedor.user_type,
+                      nivel: vendedor.nivel
                     })}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
