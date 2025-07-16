@@ -111,6 +111,22 @@ export class AgendamentosService {
 
   static async buscarVendedoresPorPosGraduacao(posGraduacao: string): Promise<any[]> {
     try {
+      // Primeiro, buscar o ID do curso pela nome da pós-graduação
+      const { data: cursoData, error: cursoError } = await supabase
+        .from('cursos')
+        .select('id')
+        .eq('nome', posGraduacao)
+        .eq('ativo', true)
+        .single();
+
+      if (cursoError || !cursoData) {
+        console.log('🔍 Curso não encontrado:', posGraduacao);
+        return [];
+      }
+
+      const cursoId = cursoData.id;
+
+      // Buscar vendedores que têm essa pós-graduação
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, email, pos_graduacoes, horario_trabalho')
@@ -122,10 +138,10 @@ export class AgendamentosService {
       // Filtrar vendedores que têm a pós-graduação no portfolio
       const vendedoresFiltrados = (data || []).filter(vendedor => {
         return vendedor.pos_graduacoes && 
-               vendedor.pos_graduacoes.includes(posGraduacao);
+               vendedor.pos_graduacoes.includes(cursoId);
       });
 
-      console.log('🔍 Vendedores encontrados para', posGraduacao, ':', vendedoresFiltrados);
+      console.log('🔍 Vendedores encontrados para', posGraduacao, '(ID:', cursoId, '):', vendedoresFiltrados);
       return vendedoresFiltrados;
     } catch (error) {
       console.error('Erro ao buscar vendedores por pós-graduação:', error);
