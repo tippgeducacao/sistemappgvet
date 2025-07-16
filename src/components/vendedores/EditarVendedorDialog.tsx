@@ -243,7 +243,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4" />
                 <Label className="text-sm font-medium text-gray-700">
-                  Pós-graduações ({selectedPosGraduacoes.length}/5)
+                  Pós que pode vender ({selectedPosGraduacoes.length}/5)
                 </Label>
               </div>
               <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -353,7 +353,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
             </Button>
             <Button
               onClick={handleSave}
-              disabled={saving || selectedNivel === vendedor.nivel}
+              disabled={saving}
               className="flex-1 bg-blue-600 hover:bg-blue-700"
             >
               {saving ? (
