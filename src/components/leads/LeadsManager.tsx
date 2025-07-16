@@ -358,28 +358,28 @@ const LeadsManager: React.FC = () => {
 
         {/* Tabela de Leads */}
         <Card>
-          <CardHeader>
-            <CardTitle>Lista de Leads</CardTitle>
-            <CardDescription>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Lista de Leads</CardTitle>
+            <CardDescription className="text-sm">
               {filteredLeads.length} leads encontrados
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <div className="max-h-[600px] overflow-y-auto">
+          <CardContent className="p-0">
+            <div className="w-full overflow-x-auto">
+              <div className="max-h-[500px] overflow-y-auto">
                 <Table>
-                  <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b">
                     <TableRow>
-                      <TableHead className="w-[180px] py-2">Nome</TableHead>
-                      <TableHead className="py-2">Email</TableHead>
-                      <TableHead className="py-2">WhatsApp</TableHead>
-                      <TableHead className="py-2">Status</TableHead>
-                      <TableHead className="py-2">Fonte</TableHead>
-                      <TableHead className="py-2">Eu sou</TableHead>
-                      <TableHead className="py-2">Página Captura</TableHead>
-                      <TableHead className="py-2">Localização</TableHead>
-                      <TableHead className="py-2">Data Captura</TableHead>
-                      <TableHead className="text-right py-2">Ações</TableHead>
+                      <TableHead className="w-[140px] py-2 text-xs font-medium">Nome</TableHead>
+                      <TableHead className="w-[160px] py-2 text-xs font-medium hidden sm:table-cell">Email</TableHead>
+                      <TableHead className="w-[120px] py-2 text-xs font-medium">WhatsApp</TableHead>
+                      <TableHead className="w-[100px] py-2 text-xs font-medium">Status</TableHead>
+                      <TableHead className="w-[100px] py-2 text-xs font-medium hidden md:table-cell">Fonte</TableHead>
+                      <TableHead className="w-[120px] py-2 text-xs font-medium hidden lg:table-cell">Profissão</TableHead>
+                      <TableHead className="w-[120px] py-2 text-xs font-medium hidden xl:table-cell">Página</TableHead>
+                      <TableHead className="w-[100px] py-2 text-xs font-medium hidden xl:table-cell">Localização</TableHead>
+                      <TableHead className="w-[100px] py-2 text-xs font-medium hidden lg:table-cell">Data</TableHead>
+                      <TableHead className="w-[80px] py-2 text-xs font-medium text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -501,9 +501,9 @@ const LeadsManager: React.FC = () => {
             </div>
             
             {filteredLeads.length === 0 && allLeads.length > 0 && (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
+              <div className="text-center py-6">
+                <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
                   Nenhum lead corresponde aos filtros aplicados
                 </p>
               </div>

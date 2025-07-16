@@ -18,7 +18,7 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
   if (!leads || leads.length === 0) {
     console.log('⚠️ Nenhum lead disponível para dashboard');
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -30,7 +30,7 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[200px] sm:h-[300px] flex items-center justify-center text-muted-foreground text-sm">
               Nenhum lead encontrado para exibir gráficos
             </div>
           </CardContent>
@@ -47,7 +47,7 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[200px] sm:h-[300px] flex items-center justify-center text-muted-foreground text-sm">
               Nenhum lead encontrado para exibir gráficos
             </div>
           </CardContent>
@@ -161,7 +161,7 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
   console.log('📈 Dados finais para gráfico de estados:', estadosChartData);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
       {/* Gráfico de Profissões - Pizza */}
       <Card>
         <CardHeader>
@@ -176,18 +176,17 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
         <CardContent>
           {profissoesChartData.length > 0 ? (
             <>
-              <ChartContainer config={chartConfig} className="h-[400px]">
+              <ChartContainer config={chartConfig} className="h-[300px] sm:h-[350px] lg:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={profissoesChartData}
                       cx="50%"
                       cy="50%"
-                      outerRadius={120}
+                      outerRadius="70%"
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percentage }) => `${name}: ${percentage}%`}
-                      labelLine={false}
+                      label={false}
                     >
                       {profissoesChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -204,32 +203,32 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
                 </ResponsiveContainer>
               </ChartContainer>
 
-              {/* Lista das profissões */}
-              <div className="mt-4 space-y-2">
+              {/* Lista das profissões - mais compacta */}
+              <div className="mt-3 space-y-1 max-h-32 overflow-y-auto">
                 {profissoesChartData.slice(0, 5).map((item, index) => (
-                  <div key={item.fullName} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-2">
+                  <div key={item.fullName} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2 min-w-0 flex-1">
                       <div 
-                        className="w-3 h-3 rounded-full" 
+                        className="w-2 h-2 rounded-full flex-shrink-0" 
                         style={{ backgroundColor: COLORS[index % COLORS.length] }}
                       />
-                      <span className="truncate max-w-[200px]" title={item.fullName}>
+                      <span className="truncate" title={item.fullName}>
                         {item.fullName}
                       </span>
                     </div>
-                    <span className="font-medium">{item.value} ({item.percentage}%)</span>
+                    <span className="font-medium text-xs ml-2 flex-shrink-0">{item.value}</span>
                   </div>
                 ))}
                 {profissoesChartData.length > 5 && (
-                  <div className="text-sm text-muted-foreground">
-                    +{profissoesChartData.length - 5} outras profissões
+                  <div className="text-xs text-muted-foreground pt-1">
+                    +{profissoesChartData.length - 5} outras
                   </div>
                 )}
               </div>
             </>
           ) : (
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              Nenhuma profissão identificada nos leads
+            <div className="h-[200px] sm:h-[300px] flex items-center justify-center text-muted-foreground text-sm">
+              Nenhuma profissão identificada
             </div>
           )}
         </CardContent>
@@ -249,17 +248,18 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
         <CardContent>
           {estadosChartData.length > 0 ? (
             <>
-              <ChartContainer config={chartConfig} className="h-[400px]">
+              <ChartContainer config={chartConfig} className="h-[300px] sm:h-[350px] lg:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={estadosChartData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                  <BarChart data={estadosChartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                     <XAxis 
                       dataKey="name" 
                       angle={-45}
                       textAnchor="end"
-                      height={80}
-                      fontSize={11}
+                      height={60}
+                      fontSize={10}
+                      interval={0}
                     />
-                    <YAxis />
+                    <YAxis fontSize={10} />
                     <ChartTooltip 
                       content={<ChartTooltipContent />}
                       formatter={(value, name, props) => [
@@ -267,29 +267,34 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
                         'Quantidade'
                       ]}
                     />
-                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill="#10b981" radius={[2, 2, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>
 
-              {/* Lista dos estados */}
-              <div className="mt-4 space-y-2">
+              {/* Lista dos estados - mais compacta */}
+              <div className="mt-3 space-y-1 max-h-32 overflow-y-auto">
                 {estadosChartData.slice(0, 5).map((item) => (
-                  <div key={item.name} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="w-3 h-3 text-green-600" />
-                      <span className="truncate max-w-[200px]" title={item.name}>
+                  <div key={item.name} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2 min-w-0 flex-1">
+                      <MapPin className="w-2 h-2 text-green-600 flex-shrink-0" />
+                      <span className="truncate" title={item.name}>
                         {item.name}
                       </span>
                     </div>
-                    <span className="font-medium">{item.value} ({item.percentage}%)</span>
+                    <span className="font-medium text-xs ml-2 flex-shrink-0">{item.value}</span>
                   </div>
                 ))}
+                {estadosChartData.length > 5 && (
+                  <div className="text-xs text-muted-foreground pt-1">
+                    +{estadosChartData.length - 5} outros
+                  </div>
+                )}
               </div>
             </>
           ) : (
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              Nenhuma localização identificada nos leads
+            <div className="h-[200px] sm:h-[300px] flex items-center justify-center text-muted-foreground text-sm">
+              Nenhuma localização identificada
             </div>
           )}
         </CardContent>
