@@ -56,7 +56,10 @@ const VendasPagination: React.FC<VendasPaginationProps> = ({
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious 
-            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(Math.max(1, currentPage - 1));
+            }}
             className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
           />
         </PaginationItem>
@@ -67,7 +70,10 @@ const VendasPagination: React.FC<VendasPaginationProps> = ({
               <PaginationEllipsis />
             ) : (
               <PaginationLink
-                onClick={() => onPageChange(page as number)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onPageChange(page as number);
+                }}
                 isActive={currentPage === page}
                 className="cursor-pointer"
               >
@@ -79,7 +85,10 @@ const VendasPagination: React.FC<VendasPaginationProps> = ({
 
         <PaginationItem>
           <PaginationNext 
-            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(Math.min(totalPages, currentPage + 1));
+            }}
             className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
           />
         </PaginationItem>
