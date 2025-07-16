@@ -353,9 +353,9 @@ const LeadsManager: React.FC = () => {
               <Table>
                  <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b">
                    <TableRow>
-                     <TableHead className="w-[130px] py-2 text-xs font-medium">Nome</TableHead>
-                     <TableHead className="w-[120px] py-2 text-xs font-medium hidden sm:table-cell">Email</TableHead>
-                     <TableHead className="w-[100px] py-2 text-xs font-medium hidden md:table-cell">WhatsApp</TableHead>
+                     <TableHead className="w-[140px] py-2 text-xs font-medium">Nome</TableHead>
+                     <TableHead className="w-[180px] py-2 text-xs font-medium hidden sm:table-cell">Email</TableHead>
+                     <TableHead className="w-[130px] py-2 text-xs font-medium hidden md:table-cell">WhatsApp</TableHead>
                      <TableHead className="w-[80px] py-2 text-xs font-medium">Status</TableHead>
                      <TableHead className="w-[80px] py-2 text-xs font-medium hidden lg:table-cell">Fonte</TableHead>
                      <TableHead className="w-[90px] py-2 text-xs font-medium hidden xl:table-cell">Profissão</TableHead>
@@ -367,12 +367,12 @@ const LeadsManager: React.FC = () => {
                    {filteredLeads.map((lead) => (
                      <TableRow key={lead.id} className="hover:bg-muted/50">
                        <TableCell className="py-2">
-                         <div className="font-medium text-xs truncate max-w-[120px]" title={lead.nome}>
+                         <div className="font-medium text-xs max-w-[130px]" title={lead.nome}>
                            {lead.nome}
                          </div>
                        </TableCell>
                        <TableCell className="py-2 hidden sm:table-cell">
-                         <div className="text-xs truncate max-w-[110px]" title={lead.email}>
+                         <div className="text-xs max-w-[170px]" title={lead.email}>
                            {lead.email || '-'}
                          </div>
                        </TableCell>
@@ -382,7 +382,7 @@ const LeadsManager: React.FC = () => {
                              href={formatWhatsAppLink(lead.whatsapp)}
                              target="_blank"
                              rel="noopener noreferrer"
-                             className="text-green-600 hover:text-green-800 text-xs truncate block max-w-[90px]"
+                             className="text-green-600 hover:text-green-800 text-xs block max-w-[120px]"
                              title={lead.whatsapp}
                            >
                              {lead.whatsapp}
