@@ -14,6 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      agendamentos: {
+        Row: {
+          created_at: string
+          data_agendamento: string
+          id: string
+          lead_id: string
+          observacoes: string | null
+          pos_graduacao_interesse: string
+          sdr_id: string
+          status: string
+          updated_at: string
+          vendedor_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_agendamento: string
+          id?: string
+          lead_id: string
+          observacoes?: string | null
+          pos_graduacao_interesse: string
+          sdr_id: string
+          status?: string
+          updated_at?: string
+          vendedor_id: string
+        }
+        Update: {
+          created_at?: string
+          data_agendamento?: string
+          id?: string
+          lead_id?: string
+          observacoes?: string | null
+          pos_graduacao_interesse?: string
+          sdr_id?: string
+          status?: string
+          updated_at?: string
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agendamentos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agendamentos_sdr_id_fkey"
+            columns: ["sdr_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agendamentos_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alunos: {
         Row: {
           created_at: string | null
@@ -437,6 +498,27 @@ export type Database = {
           updated_at?: string
           vale?: number
           variavel_semanal?: number
+        }
+        Relationships: []
+      }
+      pos_graduacoes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
         }
         Relationships: []
       }

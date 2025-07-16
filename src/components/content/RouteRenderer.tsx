@@ -12,10 +12,11 @@ import GerenciarPontuacoes from '@/components/GerenciarPontuacoes';
 import MinhasVendas from '@/components/MinhasVendas';
 import LeadsManager from '@/components/leads/LeadsManager';
 import GerenciarNiveis from '@/components/GerenciarNiveis';
+import AgendamentosPage from '@/components/agendamentos/AgendamentosPage';
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
-  const { isDiretor, isAdmin, isSecretaria, isVendedor } = useUserRoles();
+  const { isDiretor, isAdmin, isSecretaria, isVendedor, isSDRInbound, isSDROutbound } = useUserRoles();
 
   console.log('🔄 RouteRenderer: Estado atual:', { 
     activeSection, 
@@ -96,6 +97,18 @@ const RouteRenderer: React.FC = () => {
 
     case 'gestao-leads':
       return <LeadsManager />;
+
+    case 'agendamentos':
+      // Apenas SDRs (inbound e outbound) podem acessar agendamentos
+      if (isSDRInbound || isSDROutbound) {
+        return <AgendamentosPage />;
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Apenas SDRs podem acessar agendamentos.</p>
+        </div>
+      );
 
     case 'gerenciar-niveis':
       // Apenas admin e diretor podem gerenciar níveis

@@ -115,6 +115,11 @@ export const SDR_MENU_ITEMS: MenuItem[] = [
     icon: 'Users'
   },
   {
+    title: 'Agendamentos',
+    section: 'agendamentos',
+    icon: 'Calendar'
+  },
+  {
     title: 'Vendas',
     section: 'vendas',
     icon: 'ShoppingCart'
