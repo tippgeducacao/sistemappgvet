@@ -1,38 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, Clock, User, Phone, Mail, Plus } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { AgendamentosService, type Agendamento, type PosGraduacao } from '@/services/agendamentos/AgendamentosService';
-import { verificarDisponibilidadeVendedor, formatarHorarioTrabalho, type HorarioTrabalho } from '@/utils/horarioUtils';
+import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail } from 'lucide-react';
+import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
+import { useCreateLead } from '@/hooks/useCreateLead';
+import { toast } from 'sonner';
 
-export default function AgendamentosPage() {
-  const { toast } = useToast();
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-  const [posGraduacoes, setPosGraduacoes] = useState<PosGraduacao[]>([]);
+const AgendamentosPage: React.FC = () => {
+  const [agendamentos, setAgendamentos] = useState<any[]>([]);
+  const [posGraduacoes, setPosGraduacoes] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
   const [vendedores, setVendedores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-
-  // Form state
-  const [selectedLead, setSelectedLead] = useState<string>('');
-  const [selectedPosGraduacao, setSelectedPosGraduacao] = useState<string>('');
-  const [selectedVendedor, setSelectedVendedor] = useState<string>('');
-  const [dataAgendamento, setDataAgendamento] = useState<Date>();
-  const [horarioAgendamento, setHorarioAgendamento] = useState<string>('');
-  const [observacoes, setObservacoes] = useState<string>('');
-  const [submitting, setSubmitting] = useState(false);
+  const [showSprintHubForm, setShowSprintHubForm] = useState(false);
+  
+  // Form fields
+  const [searchType, setSearchType] = useState<'nome' | 'email' | 'whatsapp'>('nome');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLead, setSelectedLead] = useState('');
+  const [selectedPosGraduacao, setSelectedPosGraduacao] = useState('');
+  const [selectedVendedor, setSelectedVendedor] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [observacoes, setObservacoes] = useState('');
+  
+  // SprintHub form fields
+  const [sprintHubLead, setSprintHubLead] = useState({
+    nome: '',
+    email: '',
+    whatsapp: '',
+    profissao: ''
+  });
 
   useEffect(() => {
     carregarDados();
@@ -47,7 +51,7 @@ export default function AgendamentosPage() {
     }
   }, [selectedPosGraduacao]);
 
-  const carregarDados = async () => {
+  const carregarDados = async (): Promise<void> => {
     setLoading(true);
     try {
       const [agendamentosData, posGraduacoesData, leadsData] = await Promise.all([
@@ -60,17 +64,14 @@ export default function AgendamentosPage() {
       setPosGraduacoes(posGraduacoesData);
       setLeads(leadsData);
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar dados",
-        variant: "destructive"
-      });
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
   };
 
-  const carregarVendedoresPorPosGraduacao = async () => {
+  const carregarVendedoresPorPosGraduacao = async (): Promise<void> => {
     if (!selectedPosGraduacao) return;
 
     try {
@@ -80,80 +81,41 @@ export default function AgendamentosPage() {
       setVendedores(vendedoresData);
       
       if (vendedoresData.length === 0) {
-        toast({
-          title: "Aviso",
-          description: "Nenhum vendedor especializado encontrado para esta pós-graduação",
-          variant: "default"
-        });
+        toast.error('Nenhum vendedor especializado encontrado para esta pós-graduação');
       }
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar vendedores",
-        variant: "destructive"
-      });
+      console.error('Erro ao carregar vendedores:', error);
+      toast.error('Erro ao carregar vendedores');
     }
   };
 
-  const handleSubmit = async () => {
-    if (!selectedLead || !selectedPosGraduacao || !selectedVendedor || !dataAgendamento || !horarioAgendamento) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
-        variant: "destructive"
-      });
+  const handleSubmit = async (): Promise<void> => {
+    if (!selectedLead || !selectedPosGraduacao || !selectedVendedor || !selectedDate || !selectedTime) {
+      toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
     // Verificar disponibilidade do vendedor
     const vendedorSelecionado = vendedores.find(v => v.id === selectedVendedor);
     if (vendedorSelecionado) {
-      const dataCompleta = new Date(dataAgendamento);
-      const [hora, minuto] = horarioAgendamento.split(':');
-      dataCompleta.setHours(parseInt(hora), parseInt(minuto));
-
-      // Verificar horário de trabalho
-      const disponivel = verificarDisponibilidadeVendedor(
-        vendedorSelecionado.horario_trabalho as HorarioTrabalho,
-        dataCompleta
-      );
-
-      if (!disponivel) {
-        toast({
-          title: "Vendedor Indisponível",
-          description: `O vendedor ${vendedorSelecionado.name} não está disponível neste horário. Horário de trabalho: ${formatarHorarioTrabalho(vendedorSelecionado.horario_trabalho)}`,
-          variant: "destructive"
-        });
-        return;
-      }
-
       // Verificar conflitos de agenda
       const temConflito = await AgendamentosService.verificarConflitosAgenda(
         selectedVendedor,
-        dataCompleta.toISOString()
+        `${selectedDate}T${selectedTime}:00`
       );
 
       if (temConflito) {
-        toast({
-          title: "Conflito de Agenda",
-          description: `O vendedor ${vendedorSelecionado.name} já possui uma reunião agendada neste horário. Escolha outro horário.`,
-          variant: "destructive"
-        });
+        toast.error(`O vendedor ${vendedorSelecionado.name} já possui uma reunião agendada neste horário. Escolha outro horário.`);
         return;
       }
     }
 
-    setSubmitting(true);
     try {
-      const dataCompleta = new Date(dataAgendamento);
-      const [hora, minuto] = horarioAgendamento.split(':');
-      dataCompleta.setHours(parseInt(hora), parseInt(minuto));
-
       const agendamento = await AgendamentosService.criarAgendamento({
         lead_id: selectedLead,
         vendedor_id: selectedVendedor,
         pos_graduacao_interesse: selectedPosGraduacao,
-        data_agendamento: dataCompleta.toISOString(),
+        data_agendamento: `${selectedDate}T${selectedTime}:00`,
         observacoes
       });
 
@@ -161,10 +123,7 @@ export default function AgendamentosPage() {
         // Atualizar status do lead para "reuniao_marcada"
         await AgendamentosService.atualizarStatusLead(selectedLead, 'reuniao_marcada');
         
-        toast({
-          title: "Sucesso",
-          description: "Agendamento criado com sucesso!"
-        });
+        toast.success('Agendamento criado com sucesso!');
         resetForm();
         setShowForm(false);
         carregarDados();
@@ -172,26 +131,97 @@ export default function AgendamentosPage() {
         throw new Error('Erro ao criar agendamento');
       }
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao criar agendamento",
-        variant: "destructive"
-      });
-    } finally {
-      setSubmitting(false);
+      console.error('Erro ao criar agendamento:', error);
+      toast.error('Erro ao criar agendamento');
     }
   };
 
   const resetForm = () => {
+    setSearchType('nome');
+    setSearchTerm('');
     setSelectedLead('');
     setSelectedPosGraduacao('');
     setSelectedVendedor('');
-    setDataAgendamento(undefined);
-    setHorarioAgendamento('');
+    setSelectedDate('');
+    setSelectedTime('');
     setObservacoes('');
+    setShowForm(false);
   };
 
-  const getStatusBadge = (status: string) => {
+  const resetSprintHubForm = () => {
+    setSprintHubLead({
+      nome: '',
+      email: '',
+      whatsapp: '',
+      profissao: ''
+    });
+    setShowSprintHubForm(false);
+  };
+
+  // Extrair profissões únicas dos leads existentes
+  const extractProfissao = (observacoes?: string) => {
+    if (!observacoes) return null;
+    const match = observacoes.match(/Profissão\/Área:\s*([^\n]+)/);
+    return match ? match[1].trim() : null;
+  };
+
+  const profissoesUnicas = [...new Set(
+    leads.map(l => extractProfissao(l.observacoes))
+      .filter(Boolean)
+  )];
+
+  // Filtrar leads baseado na busca
+  const filteredLeads = leads.filter(lead => {
+    if (!searchTerm) return false;
+    if (lead.status === 'reuniao_marcada') return false;
+    
+    switch (searchType) {
+      case 'nome':
+        return lead.nome?.toLowerCase().includes(searchTerm.toLowerCase());
+      case 'email':
+        return lead.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      case 'whatsapp':
+        return lead.whatsapp?.includes(searchTerm);
+      default:
+        return false;
+    }
+  });
+
+  const createLeadMutation = useCreateLead();
+
+  const handleCreateSprintHubLead = async () => {
+    try {
+      if (!sprintHubLead.nome || !sprintHubLead.email || !sprintHubLead.whatsapp || !sprintHubLead.profissao) {
+        toast.error('Todos os campos são obrigatórios');
+        return;
+      }
+
+      const observacoesFormatadas = `Profissão/Área: ${sprintHubLead.profissao}`;
+      
+      const novoLead = {
+        nome: sprintHubLead.nome,
+        email: sprintHubLead.email,
+        whatsapp: sprintHubLead.whatsapp,
+        observacoes: observacoesFormatadas,
+        fonte_referencia: 'SprintHub',
+        status: 'novo'
+      };
+
+      const leadCriado = await createLeadMutation.mutateAsync(novoLead);
+      
+      // Atualizar lista de leads
+      await carregarDados();
+      
+      // Selecionar o lead criado automaticamente
+      setSelectedLead(leadCriado.id);
+      
+      resetSprintHubForm();
+    } catch (error) {
+      console.error('Erro ao criar lead:', error);
+    }
+  };
+
+  const getStatusBadge = (status: string): JSX.Element => {
     const statusConfig = {
       agendado: { label: 'Agendado', variant: 'default' as const },
       realizado: { label: 'Realizado', variant: 'secondary' as const },
@@ -238,25 +268,60 @@ export default function AgendamentosPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Lead Selection */}
+            {/* Lead Search */}
             <div className="space-y-2">
-              <Label htmlFor="lead">Lead *</Label>
-              <Select value={selectedLead} onValueChange={setSelectedLead}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um lead" />
-                </SelectTrigger>
-                <SelectContent>
-                  {leads.filter(lead => lead.status !== 'reuniao_marcada').map((lead) => (
-                    <SelectItem key={lead.id} value={lead.id}>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span>{lead.nome}</span>
-                        {lead.email && <span className="text-xs text-muted-foreground">({lead.email})</span>}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="lead">Buscar Lead *</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowSprintHubForm(true)}
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-3 w-3" />
+                  SprintHub
+                </Button>
+              </div>
+              
+              <div className="flex gap-2">
+                <Select value={searchType} onValueChange={(value: 'nome' | 'email' | 'whatsapp') => setSearchType(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nome">Nome</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Input
+                  placeholder={`Buscar por ${searchType}...`}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+
+              {searchTerm && (
+                <Select value={selectedLead} onValueChange={setSelectedLead}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um lead dos resultados" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredLeads.map((lead) => (
+                      <SelectItem key={lead.id} value={lead.id}>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <span>{lead.nome}</span>
+                          {lead.email && <span className="text-xs text-muted-foreground">({lead.email})</span>}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Pós-graduação Selection */}
@@ -296,15 +361,10 @@ export default function AgendamentosPage() {
                 <SelectContent>
                   {vendedores.map((vendedor) => (
                     <SelectItem key={vendedor.id} value={vendedor.id}>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          <span>{vendedor.name}</span>
-                          <span className="text-xs text-muted-foreground">({vendedor.email})</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {formatarHorarioTrabalho(vendedor.horario_trabalho)}
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span>{vendedor.name}</span>
+                        <span className="text-xs text-muted-foreground">({vendedor.email})</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -316,30 +376,12 @@ export default function AgendamentosPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Data *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dataAgendamento && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dataAgendamento ? format(dataAgendamento, "dd/MM/yyyy", { locale: ptBR }) : "Selecione uma data"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={dataAgendamento}
-                      onSelect={setDataAgendamento}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                      disabled={(date) => date < new Date()}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
               </div>
 
               <div className="space-y-2">
@@ -349,8 +391,8 @@ export default function AgendamentosPage() {
                   <Input
                     id="horario"
                     type="time"
-                    value={horarioAgendamento}
-                    onChange={(e) => setHorarioAgendamento(e.target.value)}
+                    value={selectedTime}
+                    onChange={(e) => setSelectedTime(e.target.value)}
                     className="pl-10"
                   />
                 </div>
@@ -374,11 +416,82 @@ export default function AgendamentosPage() {
               <Button variant="outline" onClick={() => { setShowForm(false); resetForm(); }}>
                 Cancelar
               </Button>
-              <Button onClick={handleSubmit} disabled={submitting}>
-                {submitting ? 'Criando...' : 'Criar Agendamento'}
+              <Button onClick={handleSubmit}>
+                Criar Agendamento
               </Button>
             </div>
           </CardContent>
+        </Card>
+      )}
+
+      {/* SprintHub Lead Form Modal */}
+      {showSprintHubForm && (
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle>Novo Lead - SprintHub</CardTitle>
+            <CardDescription>
+              Cadastre um novo lead rapidamente
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome *</Label>
+              <Input
+                id="nome"
+                value={sprintHubLead.nome}
+                onChange={(e) => setSprintHubLead(prev => ({ ...prev, nome: e.target.value }))}
+                placeholder="Nome completo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={sprintHubLead.email}
+                onChange={(e) => setSprintHubLead(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="email@exemplo.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp">WhatsApp *</Label>
+              <Input
+                id="whatsapp"
+                value={sprintHubLead.whatsapp}
+                onChange={(e) => setSprintHubLead(prev => ({ ...prev, whatsapp: e.target.value }))}
+                placeholder="(11) 99999-9999"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profissao">Profissão *</Label>
+              <Select 
+                value={sprintHubLead.profissao} 
+                onValueChange={(value) => setSprintHubLead(prev => ({ ...prev, profissao: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a profissão" />
+                </SelectTrigger>
+                <SelectContent>
+                  {profissoesUnicas.map((profissao) => (
+                    <SelectItem key={profissao} value={profissao}>
+                      {profissao}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={resetSprintHubForm}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateSprintHubLead}>
+              Criar Lead
+            </Button>
+          </CardFooter>
         </Card>
       )}
 
@@ -388,7 +501,7 @@ export default function AgendamentosPage() {
           <Card>
             <CardContent className="flex items-center justify-center py-8">
               <div className="text-center">
-                <CalendarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Nenhum agendamento encontrado</h3>
                 <p className="text-muted-foreground">Crie seu primeiro agendamento para começar</p>
               </div>
@@ -433,7 +546,7 @@ export default function AgendamentosPage() {
                       <div>
                         <p className="text-muted-foreground">Data/Horário</p>
                         <p className="font-medium">
-                          {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          {new Date(agendamento.data_agendamento).toLocaleString('pt-BR')}
                         </p>
                       </div>
                     </div>
@@ -457,4 +570,6 @@ export default function AgendamentosPage() {
       </div>
     </div>
   );
-}
+};
+
+export default AgendamentosPage;
