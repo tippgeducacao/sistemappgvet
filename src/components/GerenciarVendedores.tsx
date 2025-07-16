@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings, KeyRound } from 'lucide-react';
+import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings, KeyRound, Clock } from 'lucide-react';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -22,6 +22,7 @@ import ConfigurarNiveisDialog from '@/components/niveis/ConfigurarNiveisDialog';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { NiveisService } from '@/services/niveisService';
 import type { Vendedor } from '@/services/vendedoresService';
+import { formatarHorarioTrabalho, type HorarioTrabalho } from '@/utils/horarioUtils';
 
 const GerenciarVendedores: React.FC = () => {
   const { vendedores, allUsers, loading, fetchVendedores, fetchAllUsers, uploadPhoto, removePhoto, toggleUserStatus, resetPassword } = useVendedores();
@@ -191,6 +192,7 @@ const GerenciarVendedores: React.FC = () => {
                     <TableHead>Email</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Nível</TableHead>
+                    <TableHead>Horário de Trabalho</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data Cadastro</TableHead>
                     <TableHead>Ações</TableHead>
@@ -254,6 +256,14 @@ const GerenciarVendedores: React.FC = () => {
                         <Badge variant="outline" className="capitalize">
                           {vendedor.nivel || 'Não definido'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Clock className="h-3 w-3 text-gray-500" />
+                          <span className="text-gray-600">
+                            {formatarHorarioTrabalho(vendedor.horario_trabalho as HorarioTrabalho)}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={vendedor.ativo ? 'default' : 'secondary'} className={vendedor.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
@@ -382,6 +392,7 @@ const GerenciarVendedores: React.FC = () => {
                     <TableHead>Email</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Nível</TableHead>
+                    <TableHead>Horário de Trabalho</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data Cadastro</TableHead>
                     <TableHead>Ações</TableHead>
@@ -445,6 +456,14 @@ const GerenciarVendedores: React.FC = () => {
                         <Badge variant="outline" className="capitalize">
                           {vendedor.nivel || 'Não definido'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Clock className="h-3 w-3 text-gray-500" />
+                          <span className="text-gray-600">
+                            {formatarHorarioTrabalho(vendedor.horario_trabalho as HorarioTrabalho)}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={vendedor.ativo ? 'default' : 'secondary'} className={vendedor.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>

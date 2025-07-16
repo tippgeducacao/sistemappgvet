@@ -235,7 +235,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
             </div>
           </div>
 
-          {/* Pós-graduações (apenas para vendedores) */}
+          {/* Pós-graduações (apenas para vendedores e SDRs) */}
           {(vendedor.user_type === 'vendedor' || 
             vendedor.user_type === 'sdr_inbound' || 
             vendedor.user_type === 'sdr_outbound') && (
@@ -277,68 +277,64 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
             </div>
           )}
 
-          {/* Horário de trabalho */}
-          {(vendedor.user_type === 'vendedor' || 
-            vendedor.user_type === 'sdr_inbound' || 
-            vendedor.user_type === 'sdr_outbound') && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <Label className="text-sm font-medium text-gray-700">
-                  Horário de Trabalho
-                </Label>
+          {/* Horário de trabalho (para todos os tipos de usuário) */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <Label className="text-sm font-medium text-gray-700">
+                Horário de Trabalho
+              </Label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Manhã - Início</Label>
+                <Input
+                  type="time"
+                  value={horarioTrabalho.manha_inicio}
+                  onChange={(e) => setHorarioTrabalho(prev => ({
+                    ...prev,
+                    manha_inicio: e.target.value
+                  }))}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label className="text-xs text-gray-600">Manhã - Início</Label>
-                  <Input
-                    type="time"
-                    value={horarioTrabalho.manha_inicio}
-                    onChange={(e) => setHorarioTrabalho(prev => ({
-                      ...prev,
-                      manha_inicio: e.target.value
-                    }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-gray-600">Manhã - Fim</Label>
-                  <Input
-                    type="time"
-                    value={horarioTrabalho.manha_fim}
-                    onChange={(e) => setHorarioTrabalho(prev => ({
-                      ...prev,
-                      manha_fim: e.target.value
-                    }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-gray-600">Tarde - Início</Label>
-                  <Input
-                    type="time"
-                    value={horarioTrabalho.tarde_inicio}
-                    onChange={(e) => setHorarioTrabalho(prev => ({
-                      ...prev,
-                      tarde_inicio: e.target.value
-                    }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-gray-600">Tarde - Fim</Label>
-                  <Input
-                    type="time"
-                    value={horarioTrabalho.tarde_fim}
-                    onChange={(e) => setHorarioTrabalho(prev => ({
-                      ...prev,
-                      tarde_fim: e.target.value
-                    }))}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Manhã - Fim</Label>
+                <Input
+                  type="time"
+                  value={horarioTrabalho.manha_fim}
+                  onChange={(e) => setHorarioTrabalho(prev => ({
+                    ...prev,
+                    manha_fim: e.target.value
+                  }))}
+                />
               </div>
-              <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                <span className="font-medium">Horário atual:</span> {horarioTrabalho.manha_inicio} às {horarioTrabalho.manha_fim} | {horarioTrabalho.tarde_inicio} às {horarioTrabalho.tarde_fim}
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Tarde - Início</Label>
+                <Input
+                  type="time"
+                  value={horarioTrabalho.tarde_inicio}
+                  onChange={(e) => setHorarioTrabalho(prev => ({
+                    ...prev,
+                    tarde_inicio: e.target.value
+                  }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Tarde - Fim</Label>
+                <Input
+                  type="time"
+                  value={horarioTrabalho.tarde_fim}
+                  onChange={(e) => setHorarioTrabalho(prev => ({
+                    ...prev,
+                    tarde_fim: e.target.value
+                  }))}
+                />
               </div>
             </div>
-          )}
+            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+              <span className="font-medium">Horário atual:</span> {horarioTrabalho.manha_inicio} às {horarioTrabalho.manha_fim} | {horarioTrabalho.tarde_inicio} às {horarioTrabalho.tarde_fim}
+            </div>
+          </div>
 
           {/* Botões */}
           <div className="flex gap-3">
