@@ -53,27 +53,37 @@ export interface LeadInteraction {
   };
 }
 
-export const useLeads = () => {
+export const useLeads = (page: number = 1, itemsPerPage: number = 10) => {
   return useQuery({
-    queryKey: ['leads'],
+    queryKey: ['leads', page, itemsPerPage],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const from = (page - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
+      const { data, error, count } = await supabase
         .from('leads')
         .select(`
           *,
           vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
       
       // Map to ensure all required fields are present
-      return (data || []).map(item => ({
+      const leads = (data || []).map(item => ({
         ...item,
         data_captura: item.created_at || new Date().toISOString(),
         convertido_em_venda: false,
         vendedor_atribuido_profile: item.vendedor_atribuido_profile || undefined
       })) as Lead[];
+
+      return {
+        leads,
+        totalCount: count || 0,
+        totalPages: Math.ceil((count || 0) / itemsPerPage)
+      };
     },
   });
 };

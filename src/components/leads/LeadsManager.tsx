@@ -22,6 +22,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useLeads } from '@/hooks/useLeads';
+import VendasPagination from '@/components/vendas/VendasPagination';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import LeadDetailsDialog from './LeadDetailsDialog';
 import DeleteLeadDialog from './DeleteLeadDialog';
@@ -30,7 +31,9 @@ import SprintHubSyncButton from './SprintHubSyncButton';
 import type { Lead } from '@/hooks/useLeads';
 
 const LeadsManager: React.FC = () => {
-  const { data: leads = [], isLoading } = useLeads();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const { data: leadsData, isLoading } = useLeads(currentPage, itemsPerPage);
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,6 +41,10 @@ const LeadsManager: React.FC = () => {
   const [profissaoFilter, setProfissaoFilter] = useState('todos');
   const [paginaFilter, setPaginaFilter] = useState('todos');
   const [fonteFilter, setFonteFilter] = useState('todos');
+
+  const leads = leadsData?.leads || [];
+  const totalCount = leadsData?.totalCount || 0;
+  const totalPages = leadsData?.totalPages || 0;
 
   // Extrair profissão das observações
   const extractProfissao = (observacoes?: string) => {
@@ -181,7 +188,7 @@ const LeadsManager: React.FC = () => {
         </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-sm">
-            {leads.length} leads totais
+            {totalCount} leads totais
           </Badge>
           <SprintHubSyncButton />
         </div>
@@ -365,18 +372,16 @@ const LeadsManager: React.FC = () => {
           <CardTitle>
             Leads ({filteredLeads.length})
           </CardTitle>
-          {filteredLeads.length !== leads.length && (
-            <CardDescription>
-              Mostrando {filteredLeads.length} de {leads.length} leads
-            </CardDescription>
-          )}
+          <CardDescription>
+            Página {currentPage} de {totalPages} - {totalCount} leads totais
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {filteredLeads.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                {leads.length === 0 ? 'Nenhum lead encontrado' : 'Nenhum lead corresponde aos filtros'}
+                {totalCount === 0 ? 'Nenhum lead encontrado' : 'Nenhum lead corresponde aos filtros'}
               </p>
             </div>
           ) : (
@@ -522,6 +527,16 @@ const LeadsManager: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          
+          {totalPages > 1 && (
+            <div className="mt-4">
+              <VendasPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
           )}
         </CardContent>
