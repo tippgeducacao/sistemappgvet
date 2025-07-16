@@ -11,6 +11,7 @@ import { Filter, Trophy, Medal, Award, Tv, Download, FileText, FileSpreadsheet }
 import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useAuthStore } from '@/stores/AuthStore';
+import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useMetas } from '@/hooks/useMetas';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
@@ -377,37 +378,44 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     });
   };
 
-  // Função para calcular comissão POR SEMANA baseada na tabela de critérios
-  const calculateWeeklyCommission = (points: number, metaSemanal: number, variavelSemanal: number) => {
-    if (points < metaSemanal) return 0; // Não bateu a meta da semana
-    
+  // Função para calcular comissão POR SEMANA usando as regras de comissionamento
+  const calculateWeeklyCommission = async (points: number, metaSemanal: number, variavelSemanal: number) => {
     const achievementPercentage = (points / metaSemanal) * 100;
     
-    if (achievementPercentage <= 69) return variavelSemanal * 0.3;
-    if (achievementPercentage <= 84) return variavelSemanal * 0.5;
-    if (achievementPercentage <= 99) return variavelSemanal * 0.7;
-    if (achievementPercentage <= 119) return variavelSemanal * 1;
-    if (achievementPercentage <= 150) return variavelSemanal * 1.2;
-    if (achievementPercentage <= 200) return variavelSemanal * 1.8;
-    return variavelSemanal * 2;
+    try {
+      const { valor, multiplicador } = await ComissionamentoService.calcularComissao(
+        points, 
+        metaSemanal, 
+        variavelSemanal, 
+        'vendedor'
+      );
+      return { valor, multiplicador, percentual: achievementPercentage };
+    } catch (error) {
+      console.error('Erro ao calcular comissão:', error);
+      return { valor: 0, multiplicador: 0, percentual: achievementPercentage };
+    }
   };
 
   // Função para calcular comissão total (fixo mensal + soma das comissões semanais)
-  const calculateTotalCommission = (vendedorId: string, weeks: any[], nivelConfig: any) => {
+  const calculateTotalCommission = async (vendedorId: string, weeks: any[], nivelConfig: any) => {
     const weeklyPoints = getVendedorWeeklyPoints(vendedorId, weeks);
     const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
     const variavelSemanal = nivelConfig?.variavel_semanal || 0;
     const fixoMensal = nivelConfig?.fixo_mensal || 0;
     
-    const totalWeeklyCommission = weeklyPoints.reduce((total, points) => {
-      return total + calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
+    const weeklyCommissions = await Promise.all(
+      weeklyPoints.map(points => calculateWeeklyCommission(points, metaSemanal, variavelSemanal))
+    );
+    
+    const totalWeeklyCommission = weeklyCommissions.reduce((total, commission) => {
+      return total + commission.valor;
     }, 0);
     
-    return fixoMensal + totalWeeklyCommission;
+    return { total: fixoMensal + totalWeeklyCommission, weeklyCommissions };
   };
 
   // Função para exportar PDF
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     const doc = new jsPDF('l', 'mm', 'a4'); // landscape
     const weeks = getWeeksOfMonth(currentYear, currentMonth);
     
@@ -418,41 +426,43 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     // Cabeçalhos da tabela
     const headers = [
       'Vendedor',
+      'Nível',
       'Meta Semanal',
-      'Valor Base',
       'Variável Semanal',
-      ...weeks.map(w => `Semana ${w.week}\n(${w.label})`),
+      ...weeks.map(w => `Semana ${w.week}\nPontos (x Mult.)`),
       'Total Pontos',
       'Atingimento %',
-      'Comissão'
+      'Comissão Total'
     ];
     
     // Dados da tabela
-    const data = ranking.map(vendedor => {
+    const data = await Promise.all(ranking.map(async vendedor => {
       const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
       const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
       const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
       const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
       const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
       const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
-      const commission = calculateTotalCommission(vendedor.id, weeks, nivelConfig);
+      const commissionData = await calculateTotalCommission(vendedor.id, weeks, nivelConfig);
+      
+      const weeklyCommissionStrings = await Promise.all(weeklyPoints.map(async (points, index) => {
+        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+        const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+        const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
+        return `${points} (x${commission.multiplicador})`;
+      }));
       
       return [
         vendedor.nome,
+        vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
         nivelConfig?.meta_semanal_vendedor || 6,
-        `R$ ${(nivelConfig?.fixo_mensal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
         `R$ ${(nivelConfig?.variavel_semanal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-        ...weeklyPoints.map(points => {
-          const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
-          return points >= metaSemanal 
-            ? points.toString() 
-            : `Não bateu a meta (${points})`;
-        }),
+        ...weeklyCommissionStrings,
         totalPoints,
         `${achievementPercentage.toFixed(1)}%`,
-        `R$ ${commission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        `R$ ${commissionData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
       ];
-    });
+    }));
     
     autoTable(doc, {
       head: [headers],
@@ -477,39 +487,42 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   };
 
   // Função para exportar Excel
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     const weeks = getWeeksOfMonth(currentYear, currentMonth);
     
-    const data = ranking.map(vendedor => {
+    const data = await Promise.all(ranking.map(async vendedor => {
       const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
       const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
       const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
       const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
       const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
       const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
-      const commission = calculateTotalCommission(vendedor.id, weeks, nivelConfig);
+      const commissionData = await calculateTotalCommission(vendedor.id, weeks, nivelConfig);
       
       const row: any = {
         'Vendedor': vendedor.nome,
+        'Nível': vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
         'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 6,
-        'Valor Base': nivelConfig?.fixo_mensal || 0,
         'Variável Semanal': nivelConfig?.variavel_semanal || 0,
         'Total Pontos': totalPoints,
         'Atingimento %': parseFloat(achievementPercentage.toFixed(1)),
-        'Comissão': commission
+        'Comissão Total': parseFloat(commissionData.total.toFixed(2))
       };
       
-      // Adicionar colunas das semanas
-      weeks.forEach((week, index) => {
-        const points = weeklyPoints[index];
+      // Adicionar colunas das semanas com pontos e multiplicadores
+      for (let i = 0; i < weeklyPoints.length; i++) {
+        const points = weeklyPoints[i];
         const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
-        row[`Semana ${week.week} (${week.label})`] = points >= metaSemanal 
-          ? points 
-          : `Não bateu a meta (${points})`;
-      });
+        const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+        const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
+        
+        row[`Semana ${weeks[i].week} Pontos`] = points;
+        row[`Semana ${weeks[i].week} Multiplicador`] = commission.multiplicador;
+        row[`Semana ${weeks[i].week} Comissão`] = commission.valor.toFixed(2);
+      }
       
       return row;
-    });
+    }));
     
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
