@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings, KeyRound } from 'lucide-react';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useToast } from '@/hooks/use-toast';
@@ -126,7 +127,8 @@ const GerenciarVendedores: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <TooltipProvider>
+      <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Gerenciar Usuários</h2>
@@ -263,49 +265,88 @@ const GerenciarVendedores: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedUserProfile({
-                              id: vendedor.id,
-                              name: vendedor.name,
-                              photo_url: vendedor.photo_url,
-                              user_type: vendedor.user_type,
-                              nivel: vendedor.nivel
-                            })}
-                          >
-                            <User className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingVendedor(vendedor)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setResetPasswordVendedor(vendedor)}
-                          >
-                            <KeyRound className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant={vendedor.ativo ? "destructive" : "default"}
-                            size="sm"
-                            onClick={() => handleToggleUserStatus(vendedor.id, vendedor.ativo)}
-                          >
-                            {vendedor.ativo ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedUserProfile({
+                                  id: vendedor.id,
+                                  name: vendedor.name,
+                                  photo_url: vendedor.photo_url,
+                                  user_type: vendedor.user_type,
+                                  nivel: vendedor.nivel
+                                })}
+                              >
+                                <User className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Ver Perfil</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditingVendedor(vendedor)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Editar Usuário</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setResetPasswordVendedor(vendedor)}
+                              >
+                                <KeyRound className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Resetar Senha</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant={vendedor.ativo ? "destructive" : "default"}
+                                size="sm"
+                                onClick={() => handleToggleUserStatus(vendedor.id, vendedor.ativo)}
+                              >
+                                {vendedor.ativo ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{vendedor.ativo ? 'Desativar Usuário' : 'Ativar Usuário'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
                           {vendedor.photo_url && canEditPhotos && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRemovePhoto(vendedor.id)}
-                              disabled={uploadingPhoto === vendedor.id}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRemovePhoto(vendedor.id)}
+                                  disabled={uploadingPhoto === vendedor.id}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remover Foto</p>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       </TableCell>
@@ -415,49 +456,88 @@ const GerenciarVendedores: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedUserProfile({
-                              id: vendedor.id,
-                              name: vendedor.name,
-                              photo_url: vendedor.photo_url,
-                              user_type: vendedor.user_type,
-                              nivel: vendedor.nivel
-                            })}
-                          >
-                            <User className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingVendedor(vendedor)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setResetPasswordVendedor(vendedor)}
-                          >
-                            <KeyRound className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant={vendedor.ativo ? "destructive" : "default"}
-                            size="sm"
-                            onClick={() => handleToggleUserStatus(vendedor.id, vendedor.ativo)}
-                          >
-                            {vendedor.ativo ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedUserProfile({
+                                  id: vendedor.id,
+                                  name: vendedor.name,
+                                  photo_url: vendedor.photo_url,
+                                  user_type: vendedor.user_type,
+                                  nivel: vendedor.nivel
+                                })}
+                              >
+                                <User className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Ver Perfil</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditingVendedor(vendedor)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Editar Usuário</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setResetPasswordVendedor(vendedor)}
+                              >
+                                <KeyRound className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Resetar Senha</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant={vendedor.ativo ? "destructive" : "default"}
+                                size="sm"
+                                onClick={() => handleToggleUserStatus(vendedor.id, vendedor.ativo)}
+                              >
+                                {vendedor.ativo ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{vendedor.ativo ? 'Desativar Usuário' : 'Ativar Usuário'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
                           {vendedor.photo_url && canEditPhotos && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRemovePhoto(vendedor.id)}
-                              disabled={uploadingPhoto === vendedor.id}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRemovePhoto(vendedor.id)}
+                                  disabled={uploadingPhoto === vendedor.id}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remover Foto</p>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       </TableCell>
@@ -634,7 +714,8 @@ const GerenciarVendedores: React.FC = () => {
           setResetPasswordVendedor(null);
         }}
       />
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 
