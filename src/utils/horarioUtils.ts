@@ -69,6 +69,18 @@ const converterHorarioParaDecimal = (horario: string): number => {
 export const formatarHorarioTrabalho = (horarioTrabalho: HorarioTrabalho | null): string => {
   if (!horarioTrabalho) return 'Horário não definido';
   
+  // Verificar se é formato antigo
+  const horarioAny = horarioTrabalho as any;
+  if (horarioAny.manha_inicio) {
+    // Formato antigo
+    return `Manhã: ${horarioAny.manha_inicio} - ${horarioAny.manha_fim} | Tarde: ${horarioAny.tarde_inicio} - ${horarioAny.tarde_fim}`;
+  }
+  
+  // Formato novo
+  if (!horarioTrabalho.segunda_sexta || !horarioTrabalho.sabado) {
+    return 'Horário não definido corretamente';
+  }
+  
   let diasTexto = '';
   if (horarioTrabalho.dias_trabalho === 'segunda_sabado') {
     diasTexto = 'Seg-Sáb';
