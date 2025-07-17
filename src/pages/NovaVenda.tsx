@@ -11,7 +11,7 @@ const NovaVenda: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentUser } = useAuthStore();
-  const { isAdmin, isVendedor } = useUserRoles();
+  const { isAdmin, isVendedor, isSDR } = useUserRoles();
   const editId = searchParams.get('edit');
 
   console.log('🔍 NovaVenda: Estado atual:', {
@@ -19,6 +19,7 @@ const NovaVenda: React.FC = () => {
     editId,
     isAdmin,
     isVendedor,
+    isSDR,
     userType: currentUser?.user_type
   });
 
@@ -46,8 +47,8 @@ const NovaVenda: React.FC = () => {
       return;
     }
 
-    // Se não é vendedor nem admin, não pode acessar
-    if (!isVendedor && !isAdmin) {
+    // Se não é vendedor, admin nem SDR, não pode acessar
+    if (!isVendedor && !isAdmin && !isSDR) {
       console.log('❌ NovaVenda: Usuário sem permissão');
       toast({
         variant: "destructive",
@@ -69,8 +70,8 @@ const NovaVenda: React.FC = () => {
     return null;
   }
 
-  // Permitir acesso se for vendedor ou se for admin editando
-  if (!isVendedor && !(isAdmin && editId)) {
+  // Permitir acesso se for vendedor, SDR ou se for admin editando
+  if (!isVendedor && !isSDR && !(isAdmin && editId)) {
     console.log('❌ NovaVenda: Bloqueando renderização do componente');
     return null;
   }

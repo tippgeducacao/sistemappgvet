@@ -6,10 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useFormStore } from '@/store/FormStore';
 import { useScoringPoints, getPointsForFieldValue } from '@/hooks/useScoringPoints';
+import CourseInfoSection from './sections/CourseInfoSection';
+import CourseInfoSectionSDR from './sections/CourseInfoSectionSDR';
+import CourseInfoSectionVendedor from './sections/CourseInfoSectionVendedor';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 const ScoringRulesSection: React.FC = () => {
   const { formData, updateField } = useFormStore();
   const { data: scoringRules = [], isLoading } = useScoringPoints();
+  const { isSDR, isVendedor, isAdmin } = useUserRoles();
 
   console.log('🔧 ScoringRulesSection renderizando...');
   console.log('📊 Regras carregadas:', scoringRules.length);
@@ -63,14 +68,36 @@ const ScoringRulesSection: React.FC = () => {
     );
   }
 
+  // Renderizar seção de curso baseada no tipo de usuário
+  const renderCourseSection = () => {
+    if (isSDR) {
+      return <CourseInfoSectionSDR formData={formData} updateField={updateField} />;
+    } else if (isVendedor) {
+      return <CourseInfoSectionVendedor formData={formData} updateField={updateField} />;
+    } else if (isAdmin) {
+      return <CourseInfoSection formData={formData} updateField={updateField} />;
+    }
+    return <CourseInfoSection formData={formData} updateField={updateField} />;
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Regras de Pontuação</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações do Curso</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {renderCourseSection()}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Regras de Pontuação</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="lotePos">
               Lote da Pós-Graduação
@@ -328,8 +355,9 @@ const ScoringRulesSection: React.FC = () => {
           </div>
         </div>
 
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </>
   );
 };
 
