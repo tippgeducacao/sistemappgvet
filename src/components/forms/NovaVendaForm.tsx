@@ -9,10 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Save } from 'lucide-react';
 import { useAppStateStore } from '@/stores/AppStateStore';
 import { useToast } from '@/hooks/use-toast';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import CourseInfoSection from './sections/CourseInfoSection';
+import CourseInfoSectionVendedor from './sections/CourseInfoSectionVendedor';
+import CourseInfoSectionSDR from './sections/CourseInfoSectionSDR';
 
 const NovaVendaForm: React.FC = () => {
   const { hideNovaVendaForm } = useAppStateStore();
   const { toast } = useToast();
+  const { isSDR, isVendedor, isAdmin } = useUserRoles();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Estados do formulário
@@ -46,6 +51,18 @@ const NovaVendaForm: React.FC = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  // Renderizar seção de curso baseada no tipo de usuário
+  const renderCourseSection = () => {
+    if (isSDR) {
+      return <CourseInfoSectionSDR formData={formData} updateField={handleInputChange} />;
+    } else if (isVendedor) {
+      return <CourseInfoSectionVendedor formData={formData} updateField={handleInputChange} />;
+    } else if (isAdmin) {
+      return <CourseInfoSection formData={formData} updateField={handleInputChange} />;
+    }
+    return <CourseInfoSection formData={formData} updateField={handleInputChange} />;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -187,31 +204,7 @@ const NovaVendaForm: React.FC = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Dados do Curso</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Curso</Label>
-                  <Select value={formData.cursoId} onValueChange={(value) => handleInputChange('cursoId', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o curso" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="curso1">Curso de Exemplo 1</SelectItem>
-                      <SelectItem value="curso2">Curso de Exemplo 2</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Modalidade</Label>
-                  <Select value={formData.modalidade} onValueChange={(value) => handleInputChange('modalidade', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a modalidade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="presencial">Presencial</SelectItem>
-                      <SelectItem value="online">Online</SelectItem>
-                      <SelectItem value="hibrido">Híbrido</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {renderCourseSection()}
               </div>
             </div>
 
