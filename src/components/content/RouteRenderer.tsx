@@ -84,14 +84,14 @@ const RouteRenderer: React.FC = () => {
       return <MinhasVendas />;
 
     case 'nova-venda':
-      // Apenas vendedores podem acessar - diretores, admins e secretarias não podem
-      if (isVendedor && !isDiretor && !isAdmin && !isSecretaria) {
+      // Vendedores e SDRs podem acessar - diretores, admins e secretarias não podem
+      if ((isVendedor || isSDRInbound || isSDROutbound) && !isDiretor && !isAdmin && !isSecretaria) {
         return <NovaVendaForm onCancel={() => {}} />;
       }
       return (
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
-          <p className="text-gray-600 mt-2">Apenas vendedores podem criar vendas.</p>
+          <p className="text-gray-600 mt-2">Apenas vendedores e SDRs podem criar vendas.</p>
         </div>
       );
 
