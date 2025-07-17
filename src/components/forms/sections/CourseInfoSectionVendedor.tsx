@@ -81,21 +81,9 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
         placeholder="Selecione a instituição"
       />
 
-      <div className="bg-gray-50 p-4 rounded-lg border">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Modalidade *
-        </label>
-        <div className="text-gray-600">
-          <span className="font-medium">Pós-Graduação</span>
-          <p className="text-xs text-gray-500 mt-1">
-            Vendedores podem vender apenas pós-graduações em que são especialistas
-          </p>
-        </div>
-      </div>
-
       <FormSelectField
         id="cursoId"
-        label="Pós-Graduação *"
+        label="Pós *"
         value={formData.cursoId || ''}
         onChange={(value) => updateField('cursoId', value)}
         options={courseOptions}
@@ -105,7 +93,7 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
       />
 
       {availableCourses.length === 0 && !coursesLoading && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 col-span-2">
           <p className="text-orange-700 text-sm">
             Você não possui especialização em nenhuma pós-graduação. Entre em contato com a administração para definir suas especializações.
           </p>
