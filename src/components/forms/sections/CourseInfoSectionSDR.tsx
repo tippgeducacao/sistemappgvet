@@ -72,17 +72,6 @@ const CourseInfoSectionSDR: React.FC<CourseInfoSectionSDRProps> = ({ formData, u
         placeholder="Selecione a instituição"
       />
 
-      <div className="bg-gray-50 p-4 rounded-lg border">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Modalidade *
-        </label>
-        <div className="text-gray-600">
-          <span className="font-medium">Curso</span>
-          <p className="text-xs text-gray-500 mt-1">
-            SDRs podem vender apenas cursos (não pós-graduações)
-          </p>
-        </div>
-      </div>
 
       <FormSelectField
         id="cursoId"
