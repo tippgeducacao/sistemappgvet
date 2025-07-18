@@ -159,22 +159,8 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
         
         const isNaSemana = vendaDateOnly >= weekStartOnly && vendaDateOnly <= weekEndOnly;
         
-        // Debug: log detalhado para vendas do vendedor
-        if (isVendedor && isAprovada) {
-          console.log(`🔍 Semana ${index + 1} (${week.start.toLocaleDateString()} - ${week.end.toLocaleDateString()}):`, {
-            vendaId: venda.id,
-            aluno: venda.aluno?.nome,
-            enviado_em: venda.enviado_em,
-            vendaDate: vendaDate.toLocaleDateString(),
-            vendaDateOnly: vendaDateOnly.toLocaleDateString(),
-            weekStartOnly: weekStartOnly.toLocaleDateString(),
-            weekEndOnly: weekEndOnly.toLocaleDateString(),
-            isNaSemana
-          });
-        }
-        
         return isVendedor && isAprovada && isNaSemana;
-      }).length;
+      }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       
       // Calcular meta diária dinâmica para a semana atual
       let metaDiaria = null;
@@ -345,7 +331,7 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
                                 className="flex-1 h-2" 
                               />
                               <span className="text-xs font-medium min-w-fit">
-                                {week.sales}/{metaPorSemana}
+                                {week.sales.toFixed(1)}/{metaPorSemana} pts
                               </span>
                             </div>
                             {week.isCurrentWeek && week.metaDiaria !== null && (
