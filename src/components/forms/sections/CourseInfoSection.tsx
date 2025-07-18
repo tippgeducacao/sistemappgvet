@@ -71,25 +71,29 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
   };
 
   return (
-    <>
-      <FormSelectField
-        id="ies"
-        label="IES *"
-        value={formData.ies || ''}
-        onChange={(value) => updateField('ies', value)}
-        options={IES_OPTIONS}
-        placeholder="Selecione a instituição"
-      />
+    <div className="space-y-4">
+      {/* IES e Modalidade lado a lado */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormSelectField
+          id="ies"
+          label="IES *"
+          value={formData.ies || ''}
+          onChange={(value) => updateField('ies', value)}
+          options={IES_OPTIONS}
+          placeholder="Selecione a instituição"
+        />
 
-      <FormSelectField
-        id="modalidadeCurso"
-        label="Modalidade *"
-        value={formData.modalidadeCurso || ''}
-        onChange={handleModalidadeChange}
-        options={MODALIDADE_OPTIONS}
-        placeholder="Selecione a modalidade"
-      />
+        <FormSelectField
+          id="modalidadeCurso"
+          label="Modalidade *"
+          value={formData.modalidadeCurso || ''}
+          onChange={handleModalidadeChange}
+          options={MODALIDADE_OPTIONS}
+          placeholder="Selecione a modalidade"
+        />
+      </div>
 
+      {/* Curso - campo longo, linha inteira */}
       <FormSelectField
         id="cursoId"
         label={selectedModalidade ? `${selectedModalidade} *` : "Selecione primeiro a modalidade"}
@@ -101,15 +105,20 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
         disabled={!selectedModalidade}
       />
 
-      <FormInputField
-        id="valorContrato"
-        label="Valor do Contrato"
-        value={formData.valorContrato || ''}
-        onChange={handleValorContratoChange}
-        placeholder="R$ 0,00"
-        className="text-right"
-      />
-    </>
+      {/* Valor do contrato - campo menor à direita */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div></div>
+        <div></div>
+        <FormInputField
+          id="valorContrato"
+          label="Valor do Contrato"
+          value={formData.valorContrato || ''}
+          onChange={handleValorContratoChange}
+          placeholder="R$ 0,00"
+          className="text-right"
+        />
+      </div>
+    </div>
   );
 };
 
