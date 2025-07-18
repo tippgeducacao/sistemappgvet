@@ -109,18 +109,43 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
   const pontosSemanaAtual = vendas.filter(venda => {
     if (venda.vendedor_id !== profile.id) return false;
     if (venda.status !== 'matriculado') return false;
+    if (!venda.enviado_em) return false;
+    
     const vendaDate = new Date(venda.enviado_em);
-    return vendaDate >= targetWednesday && vendaDate <= endDate;
+    const vendaSemHora = new Date(vendaDate.getFullYear(), vendaDate.getMonth(), vendaDate.getDate());
+    
+    // Verificar se a venda está dentro do período da semana atual (quarta a terça)
+    return vendaSemHora >= targetWednesday && vendaSemHora <= endDate;
   }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
 
-  // Calcular dias restantes na semana (incluindo hoje)
-  const diasRestantesIncluindoHoje = Math.max(1, Math.ceil((endDate.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  console.log('🔍 DEBUG Meta Diária:');
+  console.log('  📅 Target Wednesday:', targetWednesday.toISOString().split('T')[0]);
+  console.log('  📅 End Date:', endDate.toISOString().split('T')[0]);
+  console.log('  📅 Hoje:', hojeSemHora.toISOString().split('T')[0]);
+  console.log('  📊 Meta semanal:', metaSemanaAtual?.meta_vendas || 0);
+  console.log('  📊 Pontos semana atual:', pontosSemanaAtual);
+  console.log('  📊 Total de vendas:', vendas.length);
+  console.log('  📊 Vendas filtradas semana:', vendas.filter(venda => {
+    if (venda.vendedor_id !== profile.id) return false;
+    if (venda.status !== 'matriculado') return false;
+    if (!venda.enviado_em) return false;
+    const vendaDate = new Date(venda.enviado_em);
+    const vendaSemHora = new Date(vendaDate.getFullYear(), vendaDate.getMonth(), vendaDate.getDate());
+    return vendaSemHora >= targetWednesday && vendaSemHora <= endDate;
+  }).length);
+
+  // Calcular dias restantes na semana atual (de hoje até terça da semana)
+  const diasRestantesNaSemana = Math.max(1, Math.floor((endDate.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
   // Calcular pontos restantes para a meta semanal
   const pontosRestantes = Math.max(0, (metaSemanaAtual?.meta_vendas || 0) - pontosSemanaAtual);
   
   // Meta diária = pontos restantes / dias restantes (incluindo hoje)
-  const metaDiaria = diasRestantesIncluindoHoje > 0 ? Number((pontosRestantes / diasRestantesIncluindoHoje).toFixed(1)) : 0;
+  const metaDiaria = diasRestantesNaSemana > 0 ? Number((pontosRestantes / diasRestantesNaSemana).toFixed(1)) : 0;
+
+  console.log('  📊 Pontos restantes:', pontosRestantes);
+  console.log('  📊 Dias restantes na semana:', diasRestantesNaSemana);
+  console.log('  📊 Meta diária calculada:', metaDiaria);
 
   // Calcular progresso do dia
   const progressoDiario = metaDiaria > 0 ? (pontosHoje / metaDiaria) * 100 : 0;
