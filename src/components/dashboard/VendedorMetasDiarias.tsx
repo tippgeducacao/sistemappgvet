@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -16,7 +17,7 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
   selectedMonth,
   selectedYear
 }) => {
-  const { metasSemanais, getSemanaAtual, loading: metasLoading } = useMetasSemanais();
+  const { metasSemanais, getSemanaAtual, getDataInicioSemana, getDataFimSemana, loading: metasLoading } = useMetasSemanais();
   const { vendas, isLoading: vendasLoading } = useVendas();
   const { profile } = useAuthStore();
 
@@ -64,23 +65,22 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
     meta.semana === semanaAtual
   );
 
+  console.log('🔍 DEBUG Metas Diárias:');
+  console.log('  👤 Vendedor ID:', profile.id);
+  console.log('  📅 Semana atual:', semanaAtual);
+  console.log('  📊 Meta semanal encontrada:', metaSemanaAtual);
+  console.log('  📊 Total vendas carregadas:', vendas.length);
+  console.log('  📊 Vendas do vendedor:', vendas.filter(v => v.vendedor_id === profile.id).length);
+
   // Calcular pontos de hoje
   const hoje = new Date();
-  
-  // Criar data apenas com ano, mês e dia (sem horário)
   const hojeSemHora = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
 
   const vendasHoje = vendas.filter(venda => {
-    // Filtrar apenas vendas do vendedor logado
     if (venda.vendedor_id !== profile.id) return false;
-    
-    // Filtrar apenas vendas matriculadas
     if (venda.status !== 'matriculado') return false;
-    
-    // Verificar se tem data de envio
     if (!venda.enviado_em) return false;
     
-    // Verificar se a venda foi feita hoje
     const vendaDate = new Date(venda.enviado_em);
     const vendaSemHora = new Date(vendaDate.getFullYear(), vendaDate.getMonth(), vendaDate.getDate());
     
@@ -89,23 +89,14 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
 
   const pontosHoje = vendasHoje.reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
 
-  // Calcular período da semana atual
-  const inicioSemana = new Date(selectedYear, selectedMonth - 1, 1);
-  let firstWednesday = new Date(inicioSemana);
-  while (firstWednesday.getDay() !== 3) {
-    firstWednesday.setDate(firstWednesday.getDate() + 1);
-  }
+  // Usar as funções do hook para calcular o período da semana
+  const inicioSemana = getDataInicioSemana(selectedYear, selectedMonth, semanaAtual);
+  const fimSemana = getDataFimSemana(selectedYear, selectedMonth, semanaAtual);
 
-  const targetWednesday = new Date(firstWednesday);
-  targetWednesday.setDate(targetWednesday.getDate() + (semanaAtual - 1) * 7);
+  console.log('  📅 Início da semana (quarta):', inicioSemana.toLocaleDateString('pt-BR'));
+  console.log('  📅 Fim da semana (terça):', fimSemana.toLocaleDateString('pt-BR'));
 
-  const fimSemana = new Date(targetWednesday);
-  fimSemana.setDate(fimSemana.getDate() + 6);
-
-  const lastDay = new Date(selectedYear, selectedMonth, 0);
-  const endDate = fimSemana > lastDay ? lastDay : fimSemana;
-
-  // Calcular pontos da semana atual (semana 4: 16/07 - 22/07)
+  // Calcular pontos da semana atual usando as datas corretas do hook
   const pontosSemanaAtual = vendas.filter(venda => {
     if (venda.vendedor_id !== profile.id) return false;
     if (venda.status !== 'matriculado') return false;
@@ -114,12 +105,19 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
     const vendaDate = new Date(venda.enviado_em);
     const vendaSemHora = new Date(vendaDate.getFullYear(), vendaDate.getMonth(), vendaDate.getDate());
     
-    // Verificar se a venda está dentro do período da semana atual (quarta a terça)
-    return vendaSemHora >= targetWednesday && vendaSemHora <= endDate;
+    const isInRange = vendaSemHora >= inicioSemana && vendaSemHora <= fimSemana;
+    
+    if (isInRange) {
+      console.log(`    ✅ Venda incluída: ${venda.aluno?.nome}, Data: ${vendaDate.toLocaleDateString('pt-BR')}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
+    }
+    
+    return isInRange;
   }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
 
-  // Calcular dias restantes da semana (de hoje sexta-feira até terça-feira = 5 dias: sex, sab, dom, seg, ter)
-  const diasRestantesNaSemana = Math.max(1, Math.floor((endDate.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  console.log('  📊 Pontos da semana atual:', pontosSemanaAtual);
+
+  // Calcular dias restantes da semana
+  const diasRestantesNaSemana = Math.max(1, Math.floor((fimSemana.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
   // Calcular pontos restantes para a meta semanal
   const pontosRestantes = Math.max(0, (metaSemanaAtual?.meta_vendas || 0) - pontosSemanaAtual);
@@ -127,11 +125,15 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
   // Meta diária = pontos restantes / dias restantes
   const metaDiaria = diasRestantesNaSemana > 0 ? Number((pontosRestantes / diasRestantesNaSemana).toFixed(1)) : 0;
 
+  console.log('  📊 Pontos restantes:', pontosRestantes);
+  console.log('  📊 Dias restantes na semana:', diasRestantesNaSemana);
+  console.log('  📊 Meta diária calculada:', metaDiaria);
+
   // Calcular progresso do dia
   const progressoDiario = metaDiaria > 0 ? (pontosHoje / metaDiaria) * 100 : 0;
 
   // Calcular dias restantes na semana (para mostrar na interface)
-  const diasRestantes = Math.max(0, Math.ceil((endDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)));
+  const diasRestantes = Math.max(0, Math.ceil((fimSemana.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)));
 
   // Calcular progresso semanal
   const progressoSemanal = (metaSemanaAtual?.meta_vendas || 0) > 0 
