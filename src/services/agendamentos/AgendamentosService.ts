@@ -50,6 +50,14 @@ export class AgendamentosService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
+      // Validar se a data/hora é no futuro
+      const dataAgendamento = new Date(dados.data_agendamento);
+      const agora = new Date();
+      
+      if (dataAgendamento <= agora) {
+        throw new Error('Não é possível agendar para uma data/hora que já passou');
+      }
+
       const { data, error } = await supabase
         .from('agendamentos')
         .insert({
