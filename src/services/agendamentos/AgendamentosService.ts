@@ -232,4 +232,58 @@ export class AgendamentosService {
       return false;
     }
   }
+
+  static async atualizarAgendamentoSDR(
+    id: string,
+    dados: {
+      data_agendamento?: string;
+      pos_graduacao_interesse?: string;
+      observacoes?: string;
+    }
+  ): Promise<boolean> {
+    try {
+      // Validar se a nova data/hora é no futuro (se fornecida)
+      if (dados.data_agendamento) {
+        const dataAgendamento = new Date(dados.data_agendamento);
+        const agora = new Date();
+        
+        if (dataAgendamento <= agora) {
+          throw new Error('Não é possível agendar para uma data/hora que já passou');
+        }
+      }
+
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({ 
+          ...dados,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar agendamento (SDR):', error);
+      return false;
+    }
+  }
+
+  static async cancelarAgendamento(id: string, motivo?: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({ 
+          status: 'cancelado',
+          observacoes: motivo ? `Cancelado: ${motivo}` : 'Cancelado',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Erro ao cancelar agendamento:', error);
+      return false;
+    }
+  }
 }
