@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye } from 'lucide-react';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List } from 'lucide-react';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
 import { useCreateLead } from '@/hooks/useCreateLead';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const AgendamentosPage: React.FC = () => {
@@ -24,6 +26,8 @@ const AgendamentosPage: React.FC = () => {
   const [showSprintHubForm, setShowSprintHubForm] = useState(false);
   const [selectedVendedorAgenda, setSelectedVendedorAgenda] = useState<any>(null);
   const [agendamentosVendedor, setAgendamentosVendedor] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   // Form fields
   const [searchType, setSearchType] = useState<'nome' | 'email' | 'whatsapp'>('nome');
@@ -31,7 +35,7 @@ const AgendamentosPage: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState('');
   const [selectedPosGraduacao, setSelectedPosGraduacao] = useState('');
   const [selectedVendedor, setSelectedVendedor] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDateForm, setSelectedDateForm] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [observacoes, setObservacoes] = useState('');
   
@@ -137,7 +141,7 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const handleSubmit = async (): Promise<void> => {
-    if (!selectedLead || !selectedPosGraduacao || !selectedDate || !selectedTime) {
+    if (!selectedLead || !selectedPosGraduacao || !selectedDateForm || !selectedTime) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -147,7 +151,7 @@ const AgendamentosPage: React.FC = () => {
       return;
     }
 
-    const dataHoraAgendamento = `${selectedDate}T${selectedTime}:00`;
+    const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00`;
     
     try {
       // Selecionar vendedor automaticamente
@@ -189,7 +193,7 @@ const AgendamentosPage: React.FC = () => {
     setSelectedLead('');
     setSelectedPosGraduacao('');
     setSelectedVendedor('');
-    setSelectedDate('');
+    setSelectedDateForm('');
     setSelectedTime('');
     setObservacoes('');
     setShowForm(false);
@@ -271,6 +275,8 @@ const AgendamentosPage: React.FC = () => {
   const verAgendaVendedor = async (vendedor: any) => {
     try {
       setSelectedVendedorAgenda(vendedor);
+      setViewMode('list');
+      setSelectedDate(new Date());
       // Filtrar agendamentos do vendedor específico
       const agendamentosDoVendedor = agendamentos.filter(agendamento => 
         agendamento.vendedor_id === vendedor.id
@@ -280,6 +286,18 @@ const AgendamentosPage: React.FC = () => {
       console.error('Erro ao carregar agenda do vendedor:', error);
       toast.error('Erro ao carregar agenda do vendedor');
     }
+  };
+
+  // Filtrar agendamentos por data selecionada no calendário
+  const agendamentosDoCalendario = agendamentosVendedor.filter(agendamento => 
+    selectedDate && isSameDay(parseISO(agendamento.data_agendamento), selectedDate)
+  );
+
+  // Verificar se uma data tem agendamentos
+  const dateHasAppointments = (date: Date) => {
+    return agendamentosVendedor.some(agendamento => 
+      isSameDay(parseISO(agendamento.data_agendamento), date)
+    );
   };
 
   const getStatusBadge = (status: string): JSX.Element => {
@@ -425,44 +443,125 @@ const AgendamentosPage: React.FC = () => {
                                 Ver Agenda
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
+                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
                               <DialogHeader>
-                                <DialogTitle>Agenda de {vendedor.name}</DialogTitle>
+                                <DialogTitle className="flex items-center gap-2">
+                                  <User className="h-5 w-5" />
+                                  Agenda de {vendedor.name}
+                                </DialogTitle>
                               </DialogHeader>
-                              <div className="space-y-4">
-                                {agendamentosVendedor.length === 0 ? (
-                                  <p className="text-center text-muted-foreground py-8">
-                                    Nenhum agendamento encontrado
-                                  </p>
-                                ) : (
-                                  <div className="space-y-3">
-                                    {agendamentosVendedor.map((agendamento) => (
-                                      <div key={agendamento.id} className="border rounded-lg p-4">
-                                        <div className="flex items-center justify-between mb-2">
-                                          <div className="flex items-center gap-2">
-                                            <Calendar className="h-4 w-4" />
-                                            <span className="font-medium">
-                                              {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })}
-                                            </span>
-                                            <Clock className="h-4 w-4 ml-2" />
-                                            <span>
-                                              {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
-                                            </span>
+                              
+                              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'calendar')}>
+                                <TabsList className="grid w-full grid-cols-2">
+                                  <TabsTrigger value="list" className="flex items-center gap-2">
+                                    <List className="h-4 w-4" />
+                                    Lista
+                                  </TabsTrigger>
+                                  <TabsTrigger value="calendar" className="flex items-center gap-2">
+                                    <Grid className="h-4 w-4" />
+                                    Calendário
+                                  </TabsTrigger>
+                                </TabsList>
+                                
+                                <TabsContent value="list" className="overflow-y-auto max-h-[60vh]">
+                                  <div className="space-y-4">
+                                    {agendamentosVendedor.length === 0 ? (
+                                      <p className="text-center text-muted-foreground py-8">
+                                        Nenhum agendamento encontrado
+                                      </p>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        {agendamentosVendedor.map((agendamento) => (
+                                          <div key={agendamento.id} className="border rounded-lg p-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                              <div className="flex items-center gap-2">
+                                                <Calendar className="h-4 w-4" />
+                                                <span className="font-medium">
+                                                  {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })}
+                                                </span>
+                                                <Clock className="h-4 w-4 ml-2" />
+                                                <span>
+                                                  {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
+                                                </span>
+                                              </div>
+                                              {getStatusBadge(agendamento.status)}
+                                            </div>
+                                            <div className="text-sm text-muted-foreground">
+                                              <p><strong>Lead:</strong> {agendamento.lead?.nome}</p>
+                                              <p><strong>Pós-graduação:</strong> {agendamento.pos_graduacao_interesse}</p>
+                                              {agendamento.observacoes && (
+                                                <p><strong>Observações:</strong> {agendamento.observacoes}</p>
+                                              )}
+                                            </div>
                                           </div>
-                                          {getStatusBadge(agendamento.status)}
-                                        </div>
-                                        <div className="text-sm text-muted-foreground">
-                                          <p><strong>Lead:</strong> {agendamento.lead?.nome}</p>
-                                          <p><strong>Pós-graduação:</strong> {agendamento.pos_graduacao_interesse}</p>
-                                          {agendamento.observacoes && (
-                                            <p><strong>Observações:</strong> {agendamento.observacoes}</p>
-                                          )}
-                                        </div>
+                                        ))}
                                       </div>
-                                    ))}
+                                    )}
                                   </div>
-                                )}
-                              </div>
+                                </TabsContent>
+                                
+                                <TabsContent value="calendar" className="overflow-y-auto max-h-[60vh]">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <CalendarComponent
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={setSelectedDate}
+                                        className="rounded-md border pointer-events-auto"
+                                        modifiers={{
+                                          hasAppointments: (date) => dateHasAppointments(date)
+                                        }}
+                                        modifiersStyles={{
+                                          hasAppointments: {
+                                            backgroundColor: 'hsl(var(--primary))',
+                                            color: 'white',
+                                            fontWeight: 'bold'
+                                          }
+                                        }}
+                                      />
+                                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                                        Datas com agendamentos estão destacadas
+                                      </p>
+                                    </div>
+                                    
+                                    <div>
+                                      <h3 className="font-medium mb-3">
+                                        {selectedDate ? 
+                                          `Agendamentos - ${format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}` : 
+                                          'Selecione uma data'
+                                        }
+                                      </h3>
+                                      <div className="space-y-2 max-h-80 overflow-y-auto">
+                                        {agendamentosDoCalendario.length === 0 ? (
+                                          <p className="text-muted-foreground text-sm">
+                                            {selectedDate ? 'Nenhum agendamento nesta data' : 'Selecione uma data para ver os agendamentos'}
+                                          </p>
+                                        ) : (
+                                          agendamentosDoCalendario.map((agendamento) => (
+                                            <div key={agendamento.id} className="border rounded-lg p-3">
+                                              <div className="flex items-center justify-between mb-1">
+                                                <div className="flex items-center gap-1">
+                                                  <Clock className="h-3 w-3" />
+                                                  <span className="text-sm font-medium">
+                                                    {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
+                                                  </span>
+                                                </div>
+                                                {getStatusBadge(agendamento.status)}
+                                              </div>
+                                              <p className="text-xs text-muted-foreground">
+                                                <strong>Lead:</strong> {agendamento.lead?.nome}
+                                              </p>
+                                              <p className="text-xs text-muted-foreground">
+                                                <strong>Pós-graduação:</strong> {agendamento.pos_graduacao_interesse}
+                                              </p>
+                                            </div>
+                                          ))
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TabsContent>
+                              </Tabs>
                             </DialogContent>
                           </Dialog>
                         </div>
@@ -482,8 +581,8 @@ const AgendamentosPage: React.FC = () => {
                 <Label>Data *</Label>
                 <Input
                   type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  value={selectedDateForm}
+                  onChange={(e) => setSelectedDateForm(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
                 />
               </div>
