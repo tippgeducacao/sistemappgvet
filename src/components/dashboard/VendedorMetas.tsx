@@ -244,9 +244,10 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         <CardContent>
           <div className="space-y-2">
             {/* Cabeçalho da tabela */}
-            <div className="grid grid-cols-8 gap-2 p-2 bg-muted/50 rounded text-xs font-medium text-muted-foreground border-b">
+            <div className="grid grid-cols-9 gap-2 p-2 bg-muted/50 rounded text-xs font-medium text-muted-foreground border-b">
               <div>Semana</div>
               <div>Período</div>
+              <div>Base</div>
               <div>Meta</div>
               <div>Pontos</div>
               <div>%</div>
@@ -291,7 +292,16 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 if (venda.status !== 'matriculado') return false;
                 
                 const vendaDate = new Date(venda.enviado_em);
-                const isInRange = vendaDate >= startSemana && vendaDate <= endSemana;
+                // Ajustar para considerar a zona de tempo corretamente
+                vendaDate.setHours(0, 0, 0, 0);
+                
+                const startSemanaUTC = new Date(startSemana);
+                startSemanaUTC.setHours(0, 0, 0, 0);
+                
+                const endSemanaUTC = new Date(endSemana);
+                endSemanaUTC.setHours(23, 59, 59, 999);
+                
+                const isInRange = vendaDate >= startSemanaUTC && vendaDate <= endSemanaUTC;
                 
                 // Debug para entender melhor
                 console.log(`📅 Semana ${numeroSemana}: ${formatDate(startSemana)} - ${formatDate(endSemana)}, Venda: ${venda.aluno?.nome}, Data: ${vendaDate.toLocaleDateString('pt-BR')}, InRange: ${isInRange}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
@@ -300,6 +310,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
               
               console.log(`📊 Semana ${numeroSemana} - Total de pontos: ${pontosDaSemana}`);
+
+              // Buscar valor da variável semanal do nível do vendedor
+              const vendedorInfo = vendedores.find(v => v.id === profile.id);
+              const vendedorNivel = vendedorInfo?.nivel || 'junior';
+              const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
+              const variavelSemanal = nivelConfig?.variavel_semanal || 0;
 
               const progressoSemanal = metaSemanal?.meta_vendas && metaSemanal.meta_vendas > 0 
                 ? (pontosDaSemana / metaSemanal.meta_vendas) * 100 
@@ -316,7 +332,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               return (
                 <div 
                   key={numeroSemana} 
-                  className={`grid grid-cols-8 gap-2 p-2 text-xs border rounded hover:bg-muted/30 transition-colors ${
+                  className={`grid grid-cols-9 gap-2 p-2 text-xs border rounded hover:bg-muted/30 transition-colors ${
                     isAtual ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20' : 'bg-card'
                   }`}
                 >
@@ -333,6 +349,11 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   {/* Período */}
                   <div className="text-muted-foreground text-[10px] flex items-center">
                     {periodoSemana}
+                  </div>
+                  
+                  {/* Base (Variável Semanal) */}
+                  <div className="font-medium text-muted-foreground text-[10px] flex items-center">
+                    R$ {variavelSemanal.toLocaleString('pt-BR')}
                   </div>
                   
                   {/* Meta */}
@@ -387,8 +408,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             
             {/* Linha de Total */}
             {semanasDoMes.length > 0 && (
-              <div className="grid grid-cols-8 gap-2 p-2 text-xs font-medium bg-muted/70 rounded border-t-2 border-primary/20">
+              <div className="grid grid-cols-9 gap-2 p-2 text-xs font-medium bg-muted/70 rounded border-t-2 border-primary/20">
                 <div>TOTAL</div>
+                <div className="text-muted-foreground">-</div>
                 <div className="text-muted-foreground">-</div>
                 <div className="font-bold">
                   {semanasDoMes.reduce((total, numeroSemana) => {
