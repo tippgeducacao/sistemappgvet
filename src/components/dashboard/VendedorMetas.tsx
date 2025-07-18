@@ -242,7 +242,20 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3">
+          <div className="space-y-2">
+            {/* Cabeçalho da tabela */}
+            <div className="grid grid-cols-8 gap-2 p-2 bg-muted/50 rounded text-xs font-medium text-muted-foreground border-b">
+              <div>Semana</div>
+              <div>Período</div>
+              <div>Meta</div>
+              <div>Pontos</div>
+              <div>%</div>
+              <div>Mult.</div>
+              <div>Comissão</div>
+              <div>Status</div>
+            </div>
+            
+            {/* Linhas das semanas */}
             {semanasDoMes.map((numeroSemana) => {
               // Buscar meta semanal para o mês e semana específicos
               const metaSemanal = metasSemanais.find(meta => 
@@ -250,11 +263,6 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 meta.ano === selectedYear && 
                 meta.semana === numeroSemana
               );
-              
-              // Buscar nível do vendedor
-              const vendedorInfo = vendedores.find(v => v.id === profile.id);
-              const vendedorNivel = vendedorInfo?.nivel || 'junior';
-              const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
               
               // Só considerar como atual se estivermos no mês e ano corretos
               const dataAtual = new Date();
@@ -301,92 +309,140 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               return (
                 <div 
                   key={numeroSemana} 
-                  className={`flex items-center gap-3 p-4 rounded-lg border ${
-                    isAtual ? 'bg-primary/5 border-primary/20 ring-1 ring-primary/10' : 'bg-card hover:bg-muted/50'
+                  className={`grid grid-cols-8 gap-2 p-2 text-xs border rounded hover:bg-muted/30 transition-colors ${
+                    isAtual ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20' : 'bg-card'
                   }`}
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
-                          Semana {numeroSemana}
-                        </span>
-                        {isAtual && (
-                          <Badge variant="default" className="text-xs">
-                            Atual
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={metaSemanal ? "default" : "outline"} className="text-xs">
-                          Meta: {metaSemanal?.meta_vendas || 0} pts
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {pontosDaSemana.toFixed(1)}/{metaSemanal?.meta_vendas || 0} pts
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Período da semana */}
-                    <div className="mb-2">
-                      <span className="text-xs text-muted-foreground font-medium">
-                        {periodoSemana}
-                      </span>
-                    </div>
-                    
-                    {/* Progresso da semana */}
-                    {metaSemanal && metaSemanal.meta_vendas > 0 && (
-                      <div className="flex items-center gap-2 mb-2">
-                        <Progress 
-                          value={Math.min(progressoSemanal, 100)} 
-                          className="flex-1 h-2" 
-                        />
-                        <span className="text-xs font-medium min-w-fit">
-                          {Math.round(progressoSemanal)}%
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Informações de comissionamento */}
-                    {metaSemanal && metaSemanal.meta_vendas > 0 && (
-                      <div className="grid grid-cols-3 gap-2 mt-2 p-2 bg-muted/30 rounded">
-                        <div className="text-center">
-                          <div className="text-xs text-muted-foreground">Percentual</div>
-                          <div className="text-xs font-medium">{comissaoData.percentual.toFixed(1)}%</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs text-muted-foreground">Multiplicador</div>
-                          <div className="text-xs font-medium">{comissaoData.multiplicador}x</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs text-muted-foreground">Comissão</div>
-                          <div className="text-xs font-medium text-green-600">
-                            R$ {comissaoData.valor.toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {!metaSemanal && (
-                      <p className="text-xs text-muted-foreground">
-                        Meta não definida para esta semana
-                      </p>
+                  {/* Semana */}
+                  <div className="flex items-center gap-1 font-medium">
+                    <span>{numeroSemana}</span>
+                    {isAtual && (
+                      <Badge variant="default" className="text-[10px] h-4 px-1">
+                        Atual
+                      </Badge>
                     )}
                   </div>
                   
-                  <div className="flex flex-col items-center gap-1">
+                  {/* Período */}
+                  <div className="text-muted-foreground text-[10px] flex items-center">
+                    {periodoSemana}
+                  </div>
+                  
+                  {/* Meta */}
+                  <div className="flex items-center">
+                    <Badge variant={metaSemanal ? "default" : "outline"} className="text-[10px] h-4 px-1">
+                      {metaSemanal?.meta_vendas || 0}
+                    </Badge>
+                  </div>
+                  
+                  {/* Pontos */}
+                  <div className="flex items-center font-medium">
+                    {pontosDaSemana.toFixed(1)}
+                  </div>
+                  
+                  {/* Percentual */}
+                  <div className="flex items-center">
+                    <span className={`font-medium ${
+                      comissaoData.percentual >= 100 ? 'text-green-600' : 
+                      comissaoData.percentual >= 80 ? 'text-yellow-600' : 'text-muted-foreground'
+                    }`}>
+                      {comissaoData.percentual.toFixed(0)}%
+                    </span>
+                  </div>
+                  
+                  {/* Multiplicador */}
+                  <div className="flex items-center">
+                    <Badge variant={comissaoData.multiplicador > 0 ? "default" : "secondary"} className="text-[10px] h-4 px-1">
+                      {comissaoData.multiplicador}x
+                    </Badge>
+                  </div>
+                  
+                  {/* Comissão */}
+                  <div className="flex items-center font-medium text-green-600">
+                    R$ {comissaoData.valor.toFixed(0)}
+                  </div>
+                  
+                  {/* Status */}
+                  <div className="flex items-center justify-center gap-1">
                     {metaSemanal && pontosDaSemana >= metaSemanal.meta_vendas && (
-                      <Trophy className="h-4 w-4 text-green-500" />
+                      <Trophy className="h-3 w-3 text-green-500" />
                     )}
                     {comissaoData.valor > 0 && (
-                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <DollarSign className="h-3 w-3 text-green-600" />
+                    )}
+                    {!metaSemanal && (
+                      <span className="text-muted-foreground text-[10px]">N/D</span>
                     )}
                   </div>
                 </div>
               );
             })}
+            
+            {/* Linha de Total */}
+            {semanasDoMes.length > 0 && (
+              <div className="grid grid-cols-8 gap-2 p-2 text-xs font-medium bg-muted/70 rounded border-t-2 border-primary/20">
+                <div>TOTAL</div>
+                <div className="text-muted-foreground">-</div>
+                <div className="font-bold">
+                  {semanasDoMes.reduce((total, numeroSemana) => {
+                    const metaSemanal = metasSemanais.find(meta => 
+                      meta.vendedor_id === profile.id && 
+                      meta.ano === selectedYear && 
+                      meta.semana === numeroSemana
+                    );
+                    return total + (metaSemanal?.meta_vendas || 0);
+                  }, 0)}
+                </div>
+                <div className="font-bold text-primary">
+                  {semanasDoMes.reduce((total, numeroSemana) => {
+                    const startSemana = getDataInicioSemana(selectedYear, selectedMonth, numeroSemana);
+                    const endSemana = getDataFimSemana(selectedYear, selectedMonth, numeroSemana);
+                    const pontosDaSemana = vendas.filter(venda => {
+                      if (venda.vendedor_id !== profile.id) return false;
+                      if (venda.status !== 'matriculado') return false;
+                      const vendaDate = new Date(venda.enviado_em);
+                      return vendaDate >= startSemana && vendaDate <= endSemana;
+                    }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                    return total + pontosDaSemana;
+                  }, 0).toFixed(1)}
+                </div>
+                <div className="font-bold">
+                  {(() => {
+                    const totalMeta = semanasDoMes.reduce((total, numeroSemana) => {
+                      const metaSemanal = metasSemanais.find(meta => 
+                        meta.vendedor_id === profile.id && 
+                        meta.ano === selectedYear && 
+                        meta.semana === numeroSemana
+                      );
+                      return total + (metaSemanal?.meta_vendas || 0);
+                    }, 0);
+                    const totalPontos = semanasDoMes.reduce((total, numeroSemana) => {
+                      const startSemana = getDataInicioSemana(selectedYear, selectedMonth, numeroSemana);
+                      const endSemana = getDataFimSemana(selectedYear, selectedMonth, numeroSemana);
+                      const pontosDaSemana = vendas.filter(venda => {
+                        if (venda.vendedor_id !== profile.id) return false;
+                        if (venda.status !== 'matriculado') return false;
+                        const vendaDate = new Date(venda.enviado_em);
+                        return vendaDate >= startSemana && vendaDate <= endSemana;
+                      }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                      return total + pontosDaSemana;
+                    }, 0);
+                    const percentualTotal = totalMeta > 0 ? (totalPontos / totalMeta) * 100 : 0;
+                    return `${percentualTotal.toFixed(0)}%`;
+                  })()}
+                </div>
+                <div>-</div>
+                <div className="font-bold text-green-600">
+                  R$ {Object.values(comissoesPorSemana).reduce((total, comissao) => total + comissao.valor, 0).toFixed(0)}
+                </div>
+                <div className="flex justify-center">
+                  {Object.values(comissoesPorSemana).some(c => c.valor > 0) && (
+                    <DollarSign className="h-3 w-3 text-green-600" />
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-          
           {semanasDoMes.length === 0 && (
             <div className="text-center py-6 text-muted-foreground">
               <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
