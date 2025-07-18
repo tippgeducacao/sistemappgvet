@@ -116,17 +116,14 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
 
   console.log('  📊 Pontos da semana atual:', pontosSemanaAtual);
 
-  // Calcular dias restantes da semana
-  const diasRestantesNaSemana = Math.max(1, Math.floor((fimSemana.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-
-  // Calcular pontos restantes para a meta semanal
-  const pontosRestantes = Math.max(0, (metaSemanaAtual?.meta_vendas || 0) - pontosSemanaAtual);
+  // Calcular total de dias na semana (quarta a terça = 7 dias)
+  const totalDiasSemana = 7;
   
-  // Meta diária = pontos restantes / dias restantes
-  const metaDiaria = diasRestantesNaSemana > 0 ? Number((pontosRestantes / diasRestantesNaSemana).toFixed(1)) : 0;
+  // Meta diária = meta semanal / total de dias (fixo, não muda com o progresso)
+  const metaDiaria = metaSemanaAtual?.meta_vendas 
+    ? Number((metaSemanaAtual.meta_vendas / totalDiasSemana).toFixed(1)) 
+    : 0;
 
-  console.log('  📊 Pontos restantes:', pontosRestantes);
-  console.log('  📊 Dias restantes na semana:', diasRestantesNaSemana);
   console.log('  📊 Meta diária calculada:', metaDiaria);
 
   // Calcular progresso do dia
