@@ -291,8 +291,15 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 if (venda.status !== 'matriculado') return false;
                 
                 const vendaDate = new Date(venda.enviado_em);
-                return vendaDate >= startSemana && vendaDate <= endSemana;
+                const isInRange = vendaDate >= startSemana && vendaDate <= endSemana;
+                
+                // Debug para entender melhor
+                console.log(`📅 Semana ${numeroSemana}: ${formatDate(startSemana)} - ${formatDate(endSemana)}, Venda: ${venda.aluno?.nome}, Data: ${vendaDate.toLocaleDateString('pt-BR')}, InRange: ${isInRange}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
+                
+                return isInRange;
               }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+              
+              console.log(`📊 Semana ${numeroSemana} - Total de pontos: ${pontosDaSemana}`);
 
               const progressoSemanal = metaSemanal?.meta_vendas && metaSemanal.meta_vendas > 0 
                 ? (pontosDaSemana / metaSemanal.meta_vendas) * 100 
