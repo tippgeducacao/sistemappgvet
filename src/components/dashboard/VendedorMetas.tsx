@@ -139,7 +139,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                            return vendaDate >= targetWednesday && vendaDate <= endDate;
                          }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
                          
-                         return `${pontosSemanaAtual.toFixed(1)}/${metaSemanaAtual.meta_vendas}`;
+                         return `${pontosSemanaAtual.toFixed(1)}/${metaSemanaAtual.meta_vendas} pts`;
                       })()}
                     </span>
                   </div>
@@ -229,24 +229,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 if (venda.status !== 'matriculado') return false;
                 
                 const vendaDate = new Date(venda.enviado_em);
-                const isInWeek = vendaDate >= startSemana && vendaDate <= endSemana;
-                
-                if (numeroSemana === 3) {
-                  console.log(`🔍 DEBUG SEMANA 3 - Venda ${venda.id?.slice(0, 8)}:`, {
-                    vendaDate: vendaDate.toLocaleDateString('pt-BR'),
-                    startSemana: startSemana.toLocaleDateString('pt-BR'),
-                    endSemana: endSemana.toLocaleDateString('pt-BR'),
-                    isInWeek,
-                    pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0
-                  });
-                }
-                
-                return isInWeek;
+                return vendaDate >= startSemana && vendaDate <= endSemana;
               }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-
-              if (numeroSemana === 3) {
-                console.log(`🎯 TOTAL PONTOS SEMANA 3: ${pontosDaSemana}`);
-              }
 
               const progressoSemanal = metaSemanal?.meta_vendas && metaSemanal.meta_vendas > 0 
                 ? (pontosDaSemana / metaSemanal.meta_vendas) * 100 
@@ -273,10 +257,10 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={metaSemanal ? "default" : "outline"} className="text-xs">
-                          Meta: {metaSemanal?.meta_vendas || 0}
+                          Meta: {metaSemanal?.meta_vendas || 0} pts
                         </Badge>
                          <span className="text-xs text-muted-foreground">
-                           Pontos: {pontosDaSemana.toFixed(1)}
+                           {pontosDaSemana.toFixed(1)}/{metaSemanal?.meta_vendas || 0} pts
                          </span>
                       </div>
                     </div>
