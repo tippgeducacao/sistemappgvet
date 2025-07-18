@@ -204,7 +204,7 @@ const GerenciarMetas = () => {
                   {vendedorInfo.nivel.replace('_', ' ')}
                 </div>
                 <div className="font-medium">
-                  {vendedorInfo.metaSemanalAtual} vendas/semana
+                  {vendedorInfo.metaSemanalAtual} pontos/semana
                 </div>
               </div>
             ))}

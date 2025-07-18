@@ -156,7 +156,7 @@ const VendorGoalsProgress: React.FC<VendorGoalsProgressProps> = ({
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Calendar className="h-4 w-4" />
-                  Progresso Semanal (Meta: {metaPorSemana} vendas/semana)
+                  Progresso Semanal (Meta: {metaPorSemana} pontos/semana)
                 </div>
                 
                 <div className="grid gap-2">

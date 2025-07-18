@@ -72,27 +72,18 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
   const inicioDoHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
   const fimDoHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59);
 
-  console.log('🗓️ DEBUG META DIÁRIA:');
-  console.log('  📅 Hoje:', hoje.toLocaleDateString('pt-BR'));
-  console.log('  ⏰ Início do dia:', inicioDoHoje.toLocaleString('pt-BR'));
-  console.log('  ⏰ Fim do dia:', fimDoHoje.toLocaleString('pt-BR'));
-
   const vendasHoje = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
     if (!venda.enviado_em) return false;
     
     const vendaDate = new Date(venda.enviado_em);
-    const isToday = vendaDate >= inicioDoHoje && vendaDate <= fimDoHoje;
+    const vendaDay = new Date(vendaDate.getFullYear(), vendaDate.getMonth(), vendaDate.getDate());
+    const todayDay = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
     
-    console.log(`  📝 Venda ${venda.id?.slice(0, 8)}: ${vendaDate.toLocaleString('pt-BR')} - Hoje? ${isToday} - Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
-    
-    return isToday;
+    return vendaDay.getTime() === todayDay.getTime();
   });
 
   const pontosHoje = vendasHoje.reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-  
-  console.log(`  📊 TOTAL DE VENDAS HOJE: ${vendasHoje.length}`);
-  console.log(`  🎯 TOTAL DE PONTOS HOJE: ${pontosHoje}`);
 
   // Calcular progresso do dia
   const progressoDiario = metaDiaria > 0 ? (pontosHoje / metaDiaria) * 100 : 0;

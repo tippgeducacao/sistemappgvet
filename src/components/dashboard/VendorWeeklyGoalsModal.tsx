@@ -318,7 +318,7 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
-                      Progresso Semanal (Meta: {metaPorSemana} vendas/semana)
+                      Progresso Semanal (Meta: {metaPorSemana} pontos/semana)
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
