@@ -6,10 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye } from 'lucide-react';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
 import { useCreateLead } from '@/hooks/useCreateLead';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const AgendamentosPage: React.FC = () => {
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
@@ -19,6 +22,8 @@ const AgendamentosPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showSprintHubForm, setShowSprintHubForm] = useState(false);
+  const [selectedVendedorAgenda, setSelectedVendedorAgenda] = useState<any>(null);
+  const [agendamentosVendedor, setAgendamentosVendedor] = useState<any[]>([]);
   
   // Form fields
   const [searchType, setSearchType] = useState<'nome' | 'email' | 'whatsapp'>('nome');
@@ -263,6 +268,20 @@ const AgendamentosPage: React.FC = () => {
     }
   };
 
+  const verAgendaVendedor = async (vendedor: any) => {
+    try {
+      setSelectedVendedorAgenda(vendedor);
+      // Filtrar agendamentos do vendedor específico
+      const agendamentosDoVendedor = agendamentos.filter(agendamento => 
+        agendamento.vendedor_id === vendedor.id
+      );
+      setAgendamentosVendedor(agendamentosDoVendedor);
+    } catch (error) {
+      console.error('Erro ao carregar agenda do vendedor:', error);
+      toast.error('Erro ao carregar agenda do vendedor');
+    }
+  };
+
   const getStatusBadge = (status: string): JSX.Element => {
     const statusConfig = {
       agendado: { label: 'Agendado', variant: 'default' as const },
@@ -387,12 +406,65 @@ const AgendamentosPage: React.FC = () => {
                 ) : (
                   <div>
                     <p className="text-sm font-medium mb-2">Vendedores especializados disponíveis:</p>
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {vendedores.map((vendedor) => (
-                        <div key={vendedor.id} className="flex items-center gap-2 text-sm">
-                          <User className="h-3 w-3" />
-                          <span>{vendedor.name}</span>
-                          <span className="text-xs text-muted-foreground">({vendedor.email})</span>
+                        <div key={vendedor.id} className="flex items-center justify-between p-2 border rounded-lg">
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-3 w-3" />
+                            <span>{vendedor.name}</span>
+                            <span className="text-xs text-muted-foreground">({vendedor.email})</span>
+                          </div>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => verAgendaVendedor(vendedor)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Ver Agenda
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Agenda de {vendedor.name}</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                {agendamentosVendedor.length === 0 ? (
+                                  <p className="text-center text-muted-foreground py-8">
+                                    Nenhum agendamento encontrado
+                                  </p>
+                                ) : (
+                                  <div className="space-y-3">
+                                    {agendamentosVendedor.map((agendamento) => (
+                                      <div key={agendamento.id} className="border rounded-lg p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="flex items-center gap-2">
+                                            <Calendar className="h-4 w-4" />
+                                            <span className="font-medium">
+                                              {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })}
+                                            </span>
+                                            <Clock className="h-4 w-4 ml-2" />
+                                            <span>
+                                              {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
+                                            </span>
+                                          </div>
+                                          {getStatusBadge(agendamento.status)}
+                                        </div>
+                                        <div className="text-sm text-muted-foreground">
+                                          <p><strong>Lead:</strong> {agendamento.lead?.nome}</p>
+                                          <p><strong>Pós-graduação:</strong> {agendamento.pos_graduacao_interesse}</p>
+                                          {agendamento.observacoes && (
+                                            <p><strong>Observações:</strong> {agendamento.observacoes}</p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       ))}
                     </div>
