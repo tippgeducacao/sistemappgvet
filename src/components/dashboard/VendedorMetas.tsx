@@ -2,10 +2,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Trophy } from 'lucide-react';
+import { Calendar, Trophy, DollarSign } from 'lucide-react';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useAuthStore } from '@/stores/AuthStore';
+import { useNiveis } from '@/hooks/useNiveis';
+import { useVendedores } from '@/hooks/useVendedores';
+import { ComissionamentoService } from '@/services/comissionamentoService';
 
 interface VendedorMetasProps {
   selectedMonth: number;
@@ -16,20 +19,13 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   selectedMonth,
   selectedYear
 }) => {
-  console.log('🎯 VendedorMetas - COMPONENTE INICIADO', { selectedMonth, selectedYear });
   const { metasSemanais, getSemanaAtual, getSemanasDoMes, getDataInicioSemana, getDataFimSemana, loading: metasSemanaisLoading } = useMetasSemanais();
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { profile } = useAuthStore();
-
-  console.log('🔍 VendedorMetas - Estado dos hooks:', {
-    vendasLoading,
-    metasSemanaisLoading,
-    vendasLength: vendas?.length || 0,
-    profile: profile ? { id: profile.id, name: profile.name } : 'null'
-  });
+  const { niveis } = useNiveis();
+  const { vendedores } = useVendedores();
 
   if (vendasLoading || metasSemanaisLoading) {
-    console.log('⏳ VendedorMetas - Ainda carregando dados...');
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -62,16 +58,6 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
       )
     : null;
 
-  console.log('🎯 VendedorMetas DEBUG:', {
-    semanaAtual,
-    selectedYear,
-    selectedMonth,
-    semanasDoMes,
-    metaSemanaAtual,
-    todasMetasSemanais: metasSemanais,
-    metasDoVendedor: metasSemanais.filter(m => m.vendedor_id === profile.id),
-    profileId: profile.id
-  });
 
   return (
     <div className="space-y-4">
@@ -202,13 +188,18 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 meta.ano === selectedYear && 
                 meta.semana === numeroSemana
               );
+              
+              // Buscar nível do vendedor
+              const vendedorInfo = vendedores.find(v => v.id === profile.id);
+              const vendedorNivel = vendedorInfo?.nivel || 'junior';
+              const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
+              
               // Só considerar como atual se estivermos no mês e ano corretos
               const dataAtual = new Date();
               const mesAtual = dataAtual.getMonth() + 1;
               const anoAtual = dataAtual.getFullYear();
               const semanaAtual = getSemanaAtual();
               const isAtual = numeroSemana === semanaAtual && selectedMonth === mesAtual && selectedYear === anoAtual;
-              
               
               // Usar as funções auxiliares do hook para obter as datas corretas
               const startSemana = getDataInicioSemana(selectedYear, selectedMonth, numeroSemana);
@@ -224,6 +215,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
               const periodoSemana = `${formatDate(startSemana)} - ${formatDate(endSemana)}`;
 
+              // Calcular pontos da semana
               const pontosDaSemana = vendas.filter(venda => {
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
@@ -235,6 +227,22 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               const progressoSemanal = metaSemanal?.meta_vendas && metaSemanal.meta_vendas > 0 
                 ? (pontosDaSemana / metaSemanal.meta_vendas) * 100 
                 : 0;
+
+              // Calcular comissionamento
+              const metaSemanalisConfig = nivelConfig?.meta_semanal_vendedor || metaSemanal?.meta_vendas || 0;
+              const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+              const percentualObtido = metaSemanalisConfig > 0 ? (pontosDaSemana / metaSemanalisConfig) * 100 : 0;
+              
+              // Simular o cálculo de comissão (sem async por ser em map)
+              const calcularMultiplicador = (percentual: number) => {
+                if (percentual >= 120) return 3;
+                if (percentual >= 100) return 2;
+                if (percentual >= 80) return 1;
+                return 0;
+              };
+              
+              const multiplicador = calcularMultiplicador(percentualObtido);
+              const valorComissao = variavelSemanal * multiplicador;
               
               return (
                 <div 
@@ -259,9 +267,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                         <Badge variant={metaSemanal ? "default" : "outline"} className="text-xs">
                           Meta: {metaSemanal?.meta_vendas || 0} pts
                         </Badge>
-                         <span className="text-xs text-muted-foreground">
-                           {pontosDaSemana.toFixed(1)}/{metaSemanal?.meta_vendas || 0} pts
-                         </span>
+                        <span className="text-xs text-muted-foreground">
+                          {pontosDaSemana.toFixed(1)}/{metaSemanal?.meta_vendas || 0} pts
+                        </span>
                       </div>
                     </div>
 
@@ -272,8 +280,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                       </span>
                     </div>
                     
+                    {/* Progresso da semana */}
                     {metaSemanal && metaSemanal.meta_vendas > 0 && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mb-2">
                         <Progress 
                           value={Math.min(progressoSemanal, 100)} 
                           className="flex-1 h-2" 
@@ -281,6 +290,26 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                         <span className="text-xs font-medium min-w-fit">
                           {Math.round(progressoSemanal)}%
                         </span>
+                      </div>
+                    )}
+
+                    {/* Informações de comissionamento */}
+                    {metaSemanal && metaSemanal.meta_vendas > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mt-2 p-2 bg-muted/30 rounded">
+                        <div className="text-center">
+                          <div className="text-xs text-muted-foreground">Percentual</div>
+                          <div className="text-xs font-medium">{Math.round(percentualObtido)}%</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-muted-foreground">Multiplicador</div>
+                          <div className="text-xs font-medium">{multiplicador}x</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-muted-foreground">Comissão</div>
+                          <div className="text-xs font-medium text-green-600">
+                            R$ {valorComissao.toFixed(2)}
+                          </div>
+                        </div>
                       </div>
                     )}
                     
@@ -291,9 +320,14 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                     )}
                   </div>
                   
-                  {metaSemanal && pontosDaSemana >= metaSemanal.meta_vendas && (
-                    <Trophy className="h-4 w-4 text-green-500" />
-                  )}
+                  <div className="flex flex-col items-center gap-1">
+                    {metaSemanal && pontosDaSemana >= metaSemanal.meta_vendas && (
+                      <Trophy className="h-4 w-4 text-green-500" />
+                    )}
+                    {valorComissao > 0 && (
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
                 </div>
               );
             })}
