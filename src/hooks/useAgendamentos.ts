@@ -1,5 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/stores/AuthStore';
+import { toast } from 'sonner';
 
 export interface Agendamento {
   id: string;
@@ -10,6 +12,9 @@ export interface Agendamento {
   pos_graduacao_interesse: string;
   observacoes?: string;
   status: string;
+  resultado_reuniao?: 'nao_compareceu' | 'compareceu_nao_comprou' | 'comprou' | null;
+  data_resultado?: string;
+  observacoes_resultado?: string;
   created_at: string;
   updated_at: string;
   lead?: {
@@ -28,21 +33,87 @@ export interface Agendamento {
 }
 
 export const useAgendamentos = () => {
-  return useQuery({
-    queryKey: ['agendamentos'],
-    queryFn: async () => {
+  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { profile } = useAuthStore();
+
+  const fetchAgendamentos = async () => {
+    if (!profile?.id) return;
+
+    try {
+      setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
           *,
-          lead:leads(nome, email, whatsapp),
-          sdr:profiles!agendamentos_sdr_id_fkey(name, email),
-          vendedor:profiles!agendamentos_vendedor_id_fkey(name, email)
+          lead:leads!agendamentos_lead_id_fkey (
+            nome,
+            email,
+            whatsapp
+          ),
+          sdr:profiles!agendamentos_sdr_id_fkey (
+            name,
+            email
+          )
         `)
+        .eq('vendedor_id', profile.id)
         .order('data_agendamento', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as Agendamento[];
-    },
-  });
+      if (error) {
+        console.error('Erro ao buscar agendamentos:', error);
+        toast.error('Erro ao carregar agendamentos');
+        return;
+      }
+
+      setAgendamentos((data || []) as Agendamento[]);
+    } catch (error) {
+      console.error('Erro ao buscar agendamentos:', error);
+      toast.error('Erro ao carregar agendamentos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const atualizarResultadoReuniao = async (
+    agendamentoId: string, 
+    resultado: 'nao_compareceu' | 'compareceu_nao_comprou' | 'comprou',
+    observacoes?: string
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({
+          resultado_reuniao: resultado,
+          data_resultado: new Date().toISOString(),
+          observacoes_resultado: observacoes || null
+        })
+        .eq('id', agendamentoId);
+
+      if (error) {
+        console.error('Erro ao atualizar resultado:', error);
+        toast.error('Erro ao atualizar resultado da reunião');
+        return false;
+      }
+
+      toast.success('Resultado da reunião atualizado com sucesso!');
+      await fetchAgendamentos(); // Recarregar lista
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar resultado:', error);
+      toast.error('Erro ao atualizar resultado da reunião');
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    fetchAgendamentos();
+  }, [profile?.id]);
+
+  return {
+    agendamentos,
+    isLoading,
+    fetchAgendamentos,
+    atualizarResultadoReuniao
+  };
 };

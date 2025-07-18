@@ -14,6 +14,7 @@ import MinhasVendas from '@/components/MinhasVendas';
 import LeadsManager from '@/components/leads/LeadsManager';
 import GerenciarNiveis from '@/components/GerenciarNiveis';
 import AgendamentosPage from '@/components/agendamentos/AgendamentosPage';
+import VendedorReunioes from '@/components/vendedor/VendedorReunioes';
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
@@ -126,6 +127,17 @@ const RouteRenderer: React.FC = () => {
         </div>
       );
 
+    case 'reunioes':
+      // Apenas vendedores podem acessar reuniões
+      if (isVendedor) {
+        return <VendedorReunioes />;
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Apenas vendedores podem acessar reuniões.</p>
+        </div>
+      );
 
     default:
       return (

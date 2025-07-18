@@ -18,10 +18,13 @@ export type Database = {
         Row: {
           created_at: string
           data_agendamento: string
+          data_resultado: string | null
           id: string
           lead_id: string
           observacoes: string | null
+          observacoes_resultado: string | null
           pos_graduacao_interesse: string
+          resultado_reuniao: string | null
           sdr_id: string
           status: string
           updated_at: string
@@ -30,10 +33,13 @@ export type Database = {
         Insert: {
           created_at?: string
           data_agendamento: string
+          data_resultado?: string | null
           id?: string
           lead_id: string
           observacoes?: string | null
+          observacoes_resultado?: string | null
           pos_graduacao_interesse: string
+          resultado_reuniao?: string | null
           sdr_id: string
           status?: string
           updated_at?: string
@@ -42,10 +48,13 @@ export type Database = {
         Update: {
           created_at?: string
           data_agendamento?: string
+          data_resultado?: string | null
           id?: string
           lead_id?: string
           observacoes?: string | null
+          observacoes_resultado?: string | null
           pos_graduacao_interesse?: string
+          resultado_reuniao?: string | null
           sdr_id?: string
           status?: string
           updated_at?: string

@@ -11,10 +11,9 @@ const SDRDashboard: React.FC = () => {
   const { profile } = useAuthStore();
   const { vendas } = useVendas();
   const leadsQuery = useAllLeads();
-  const agendamentosQuery = useAgendamentos();
+  const { agendamentos } = useAgendamentos();
 
   const leads = leadsQuery.data || [];
-  const agendamentos = agendamentosQuery.data || [];
 
   // Estado para filtros de período
   const currentDate = new Date();

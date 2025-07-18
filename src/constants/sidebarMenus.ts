@@ -100,6 +100,11 @@ export const VENDOR_MENU_ITEMS: MenuItem[] = [
     title: 'Minhas Vendas',
     section: 'minhas-vendas',
     icon: 'ShoppingCart'
+  },
+  {
+    title: 'Reuniões',
+    section: 'reunioes',
+    icon: 'Calendar'
   }
 ];
 
