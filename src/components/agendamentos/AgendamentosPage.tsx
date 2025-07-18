@@ -89,33 +89,75 @@ const AgendamentosPage: React.FC = () => {
     }
   };
 
+  // Função para selecionar vendedor automaticamente
+  const selecionarVendedorAutomatico = async (vendedoresList: any[], dataHora: string) => {
+    // Buscar agendamentos existentes para contar distribuição
+    const agendamentosVendedores = new Map();
+    
+    // Inicializar contadores para todos os vendedores
+    vendedoresList.forEach(vendedor => {
+      agendamentosVendedores.set(vendedor.id, 0);
+    });
+    
+    // Contar agendamentos existentes
+    agendamentos.forEach(agendamento => {
+      if (agendamentosVendedores.has(agendamento.vendedor_id)) {
+        agendamentosVendedores.set(
+          agendamento.vendedor_id, 
+          agendamentosVendedores.get(agendamento.vendedor_id) + 1
+        );
+      }
+    });
+    
+    // Encontrar vendedor com menor número de agendamentos e sem conflito de horário
+    let vendedorSelecionado = null;
+    let menorNumeroAgendamentos = Infinity;
+    
+    for (const vendedor of vendedoresList) {
+      const numAgendamentos = agendamentosVendedores.get(vendedor.id);
+      
+      // Verificar conflito de agenda
+      const temConflito = await AgendamentosService.verificarConflitosAgenda(
+        vendedor.id,
+        dataHora
+      );
+      
+      if (!temConflito && numAgendamentos < menorNumeroAgendamentos) {
+        menorNumeroAgendamentos = numAgendamentos;
+        vendedorSelecionado = vendedor;
+      }
+    }
+    
+    return vendedorSelecionado;
+  };
+
   const handleSubmit = async (): Promise<void> => {
-    if (!selectedLead || !selectedPosGraduacao || !selectedVendedor || !selectedDate || !selectedTime) {
+    if (!selectedLead || !selectedPosGraduacao || !selectedDate || !selectedTime) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
-    // Verificar disponibilidade do vendedor
-    const vendedorSelecionado = vendedores.find(v => v.id === selectedVendedor);
-    if (vendedorSelecionado) {
-      // Verificar conflitos de agenda
-      const temConflito = await AgendamentosService.verificarConflitosAgenda(
-        selectedVendedor,
-        `${selectedDate}T${selectedTime}:00`
-      );
-
-      if (temConflito) {
-        toast.error(`O vendedor ${vendedorSelecionado.name} já possui uma reunião agendada neste horário. Escolha outro horário.`);
-        return;
-      }
+    if (vendedores.length === 0) {
+      toast.error('Nenhum vendedor especializado disponível para esta pós-graduação');
+      return;
     }
 
+    const dataHoraAgendamento = `${selectedDate}T${selectedTime}:00`;
+    
     try {
+      // Selecionar vendedor automaticamente
+      const vendedorSelecionado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento);
+      
+      if (!vendedorSelecionado) {
+        toast.error('Nenhum vendedor disponível neste horário. Tente outro horário.');
+        return;
+      }
+
       const agendamento = await AgendamentosService.criarAgendamento({
         lead_id: selectedLead,
-        vendedor_id: selectedVendedor,
+        vendedor_id: vendedorSelecionado.id,
         pos_graduacao_interesse: selectedPosGraduacao,
-        data_agendamento: `${selectedDate}T${selectedTime}:00`,
+        data_agendamento: dataHoraAgendamento,
         observacoes
       });
 
@@ -123,7 +165,7 @@ const AgendamentosPage: React.FC = () => {
         // Atualizar status do lead para "reuniao_marcada"
         await AgendamentosService.atualizarStatusLead(selectedLead, 'reuniao_marcada');
         
-        toast.success('Agendamento criado com sucesso!');
+        toast.success(`Agendamento criado com ${vendedorSelecionado.name}!`);
         resetForm();
         setShowForm(false);
         carregarDados();
@@ -270,19 +312,7 @@ const AgendamentosPage: React.FC = () => {
           <CardContent className="space-y-4">
             {/* Lead Search */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="lead">Buscar Lead *</Label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowSprintHubForm(true)}
-                  className="flex items-center gap-1"
-                >
-                  <Plus className="h-3 w-3" />
-                  SprintHub
-                </Button>
-              </div>
+              <Label htmlFor="lead">Buscar Lead *</Label>
               
               <div className="flex gap-2">
                 <Select value={searchType} onValueChange={(value: 'nome' | 'email' | 'whatsapp') => setSearchType(value)}>
@@ -304,23 +334,28 @@ const AgendamentosPage: React.FC = () => {
                 />
               </div>
 
-              {searchTerm && (
-                <Select value={selectedLead} onValueChange={setSelectedLead}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um lead dos resultados" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredLeads.map((lead) => (
-                      <SelectItem key={lead.id} value={lead.id}>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          <span>{lead.nome}</span>
-                          {lead.email && <span className="text-xs text-muted-foreground">({lead.email})</span>}
+              {/* Lista de leads com scroll */}
+              {searchTerm && filteredLeads.length > 0 && (
+                <div className="border rounded-lg max-h-40 overflow-y-auto">
+                  {filteredLeads.slice(0, 5).map((lead) => (
+                    <div
+                      key={lead.id}
+                      className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${
+                        selectedLead === lead.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
+                      }`}
+                      onClick={() => setSelectedLead(lead.id)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{lead.nome}</p>
+                          {lead.email && <p className="text-xs text-muted-foreground">{lead.email}</p>}
+                          {lead.whatsapp && <p className="text-xs text-muted-foreground">{lead.whatsapp}</p>}
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -341,35 +376,32 @@ const AgendamentosPage: React.FC = () => {
               </Select>
             </div>
 
-            {/* Vendedor Selection */}
+            {/* Vendedor Selection - Sistema distribui automaticamente */}
             <div className="space-y-2">
-              <Label htmlFor="vendedor">Vendedor Especializado *</Label>
-              <Select 
-                value={selectedVendedor} 
-                onValueChange={setSelectedVendedor}
-                disabled={!selectedPosGraduacao}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={
-                    !selectedPosGraduacao 
-                      ? "Selecione primeiro a pós-graduação" 
-                      : vendedores.length === 0 
-                        ? "Nenhum vendedor disponível para esta pós-graduação" 
-                        : "Selecione um vendedor"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {vendedores.map((vendedor) => (
-                    <SelectItem key={vendedor.id} value={vendedor.id}>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span>{vendedor.name}</span>
-                        <span className="text-xs text-muted-foreground">({vendedor.email})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Vendedor Especializado</Label>
+              <div className="p-3 bg-muted/50 rounded-lg border">
+                {!selectedPosGraduacao ? (
+                  <p className="text-sm text-muted-foreground">Selecione primeiro a pós-graduação</p>
+                ) : vendedores.length === 0 ? (
+                  <p className="text-sm text-destructive">Nenhum vendedor disponível para esta pós-graduação</p>
+                ) : (
+                  <div>
+                    <p className="text-sm font-medium mb-2">Vendedores especializados disponíveis:</p>
+                    <div className="space-y-1">
+                      {vendedores.map((vendedor) => (
+                        <div key={vendedor.id} className="flex items-center gap-2 text-sm">
+                          <User className="h-3 w-3" />
+                          <span>{vendedor.name}</span>
+                          <span className="text-xs text-muted-foreground">({vendedor.email})</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      O sistema selecionará automaticamente o vendedor com menor número de agendamentos
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Data e Horário */}
