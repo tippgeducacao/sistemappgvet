@@ -141,86 +141,38 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
     : 0;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {/* Meta Diária */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Meta de Hoje</CardTitle>
-          <Target className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{metaDiaria}</div>
-          <p className="text-xs text-muted-foreground">
-            pontos para hoje
-          </p>
-          <div className="mt-3 space-y-2">
-            <div className="flex justify-between text-xs">
-              <span>Progresso</span>
-              <span>{pontosHoje.toFixed(1)}/{metaDiaria}</span>
-            </div>
-            {metaDiaria > 0 && (
-              <Progress 
-                value={Math.min(progressoDiario, 100)} 
-                className="h-2" 
-              />
-            )}
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Meta de Hoje</CardTitle>
+        <Target className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{metaDiaria}</div>
+        <p className="text-xs text-muted-foreground">
+          pontos para hoje
+        </p>
+        <div className="mt-3 space-y-2">
+          <div className="flex justify-between text-xs">
+            <span>Progresso</span>
+            <span>{pontosHoje.toFixed(1)}/{metaDiaria}</span>
           </div>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant={pontosHoje >= metaDiaria ? "default" : "secondary"}>
-              {pontosHoje >= metaDiaria ? "Meta Atingida" : `${Math.round(progressoDiario)}%`}
-            </Badge>
-            {pontosHoje >= metaDiaria && (
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Meta Semanal */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Meta da Semana Atual</CardTitle>
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{metaSemanaAtual?.meta_vendas || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            Semana {semanaAtual} de {selectedYear}
-          </p>
-          <div className="mt-3 space-y-2">
-            <div className="flex justify-between text-xs">
-              <span>Progresso</span>
-              <span>{pontosSemanaAtual.toFixed(1)}/{metaSemanaAtual?.meta_vendas || 0}</span>
-            </div>
-            {(metaSemanaAtual?.meta_vendas || 0) > 0 && (
-              <Progress 
-                value={Math.min(progressoSemanal, 100)} 
-                className="h-2" 
-              />
-            )}
-          </div>
-          <div className="mt-3 space-y-1">
-            <div className="text-xs text-muted-foreground">
-              • {pontosSemanaAtual.toFixed(1)} pontos conquistados
-            </div>
-            <div className="text-xs text-muted-foreground">
-              • {Math.max(0, (metaSemanaAtual?.meta_vendas || 0) - pontosSemanaAtual).toFixed(1)} pontos restantes
-            </div>
-            <div className="text-xs text-muted-foreground">
-              • {diasRestantes} dias restantes
-            </div>
-          </div>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant={pontosSemanaAtual >= (metaSemanaAtual?.meta_vendas || 0) ? "default" : "secondary"}>
-              {pontosSemanaAtual >= (metaSemanaAtual?.meta_vendas || 0) ? "Meta Atingida" : `${Math.round(progressoSemanal)}%`}
-            </Badge>
-            {pontosSemanaAtual >= (metaSemanaAtual?.meta_vendas || 0) && (
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          {metaDiaria > 0 && (
+            <Progress 
+              value={Math.min(progressoDiario, 100)} 
+              className="h-2" 
+            />
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-2">
+          <Badge variant={pontosHoje >= metaDiaria ? "default" : "secondary"}>
+            {pontosHoje >= metaDiaria ? "Meta Atingida" : `${Math.round(progressoDiario)}%`}
+          </Badge>
+          {pontosHoje >= metaDiaria && (
+            <TrendingUp className="h-4 w-4 text-green-500" />
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
