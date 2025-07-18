@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,68 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   const { profile } = useAuthStore();
   const { niveis } = useNiveis();
   const { vendedores } = useVendedores();
+  
+  // Estado para armazenar os cálculos de comissão de cada semana
+  const [comissoesPorSemana, setComissoesPorSemana] = useState<{[key: string]: {valor: number, multiplicador: number, percentual: number}}>({});
+
+  // Calcular comissões quando os dados mudarem
+  useEffect(() => {
+    const calcularComissoes = async () => {
+      if (!profile?.id || vendasLoading || metasSemanaisLoading) return;
+      
+      const vendedorInfo = vendedores.find(v => v.id === profile.id);
+      const vendedorNivel = vendedorInfo?.nivel || 'junior';
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
+      
+      if (!nivelConfig) return;
+      
+      const semanasDoMes = getSemanasDoMes(selectedYear, selectedMonth);
+      const novasComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
+      
+      for (const numeroSemana of semanasDoMes) {
+        const metaSemanal = metasSemanais.find(meta => 
+          meta.vendedor_id === profile.id && 
+          meta.ano === selectedYear && 
+          meta.semana === numeroSemana
+        );
+        
+        if (metaSemanal && metaSemanal.meta_vendas > 0) {
+          const startSemana = getDataInicioSemana(selectedYear, selectedMonth, numeroSemana);
+          const endSemana = getDataFimSemana(selectedYear, selectedMonth, numeroSemana);
+          
+          const pontosDaSemana = vendas.filter(venda => {
+            if (venda.vendedor_id !== profile.id) return false;
+            if (venda.status !== 'matriculado') return false;
+            
+            const vendaDate = new Date(venda.enviado_em);
+            return vendaDate >= startSemana && vendaDate <= endSemana;
+          }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+          
+          try {
+            const comissaoData = await ComissionamentoService.calcularComissao(
+              pontosDaSemana,
+              metaSemanal.meta_vendas,
+              nivelConfig.variavel_semanal,
+              'vendedor'
+            );
+            
+            novasComissoes[`${selectedYear}-${selectedMonth}-${numeroSemana}`] = comissaoData;
+          } catch (error) {
+            console.error('Erro ao calcular comissão:', error);
+            novasComissoes[`${selectedYear}-${selectedMonth}-${numeroSemana}`] = {
+              valor: 0,
+              multiplicador: 0,
+              percentual: 0
+            };
+          }
+        }
+      }
+      
+      setComissoesPorSemana(novasComissoes);
+    };
+    
+    calcularComissoes();
+  }, [profile?.id, vendas, metasSemanais, niveis, vendedores, selectedMonth, selectedYear, vendasLoading, metasSemanaisLoading]);
 
   if (vendasLoading || metasSemanaisLoading) {
     return (
@@ -228,21 +290,13 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 ? (pontosDaSemana / metaSemanal.meta_vendas) * 100 
                 : 0;
 
-              // Calcular comissionamento
-              const metaSemanalisConfig = nivelConfig?.meta_semanal_vendedor || metaSemanal?.meta_vendas || 0;
-              const variavelSemanal = nivelConfig?.variavel_semanal || 0;
-              const percentualObtido = metaSemanalisConfig > 0 ? (pontosDaSemana / metaSemanalisConfig) * 100 : 0;
-              
-              // Simular o cálculo de comissão (sem async por ser em map)
-              const calcularMultiplicador = (percentual: number) => {
-                if (percentual >= 120) return 3;
-                if (percentual >= 100) return 2;
-                if (percentual >= 80) return 1;
-                return 0;
+              // Buscar dados de comissão calculados
+              const chaveComissao = `${selectedYear}-${selectedMonth}-${numeroSemana}`;
+              const comissaoData = comissoesPorSemana[chaveComissao] || {
+                valor: 0,
+                multiplicador: 0,
+                percentual: 0
               };
-              
-              const multiplicador = calcularMultiplicador(percentualObtido);
-              const valorComissao = variavelSemanal * multiplicador;
               
               return (
                 <div 
@@ -298,16 +352,16 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                       <div className="grid grid-cols-3 gap-2 mt-2 p-2 bg-muted/30 rounded">
                         <div className="text-center">
                           <div className="text-xs text-muted-foreground">Percentual</div>
-                          <div className="text-xs font-medium">{Math.round(percentualObtido)}%</div>
+                          <div className="text-xs font-medium">{comissaoData.percentual.toFixed(1)}%</div>
                         </div>
                         <div className="text-center">
                           <div className="text-xs text-muted-foreground">Multiplicador</div>
-                          <div className="text-xs font-medium">{multiplicador}x</div>
+                          <div className="text-xs font-medium">{comissaoData.multiplicador}x</div>
                         </div>
                         <div className="text-center">
                           <div className="text-xs text-muted-foreground">Comissão</div>
                           <div className="text-xs font-medium text-green-600">
-                            R$ {valorComissao.toFixed(2)}
+                            R$ {comissaoData.valor.toFixed(2)}
                           </div>
                         </div>
                       </div>
@@ -324,7 +378,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                     {metaSemanal && pontosDaSemana >= metaSemanal.meta_vendas && (
                       <Trophy className="h-4 w-4 text-green-500" />
                     )}
-                    {valorComissao > 0 && (
+                    {comissaoData.valor > 0 && (
                       <DollarSign className="h-4 w-4 text-green-600" />
                     )}
                   </div>
