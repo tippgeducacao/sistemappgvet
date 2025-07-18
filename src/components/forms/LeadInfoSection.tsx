@@ -25,7 +25,7 @@ const LeadInfoSection: React.FC = () => {
       <CardHeader>
         <CardTitle>Informações do Lead</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         <BasicInfoSection formData={formData} updateField={updateField} />
         <CourseInfoSection formData={formData} updateField={updateField} />
         <PaymentConditionsSection formData={formData} updateField={updateField} />

@@ -10,7 +10,7 @@ interface BasicInfoSectionProps {
 
 const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ formData, updateField }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Primeira linha - Data de chegada e Data de matrícula */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormInputField

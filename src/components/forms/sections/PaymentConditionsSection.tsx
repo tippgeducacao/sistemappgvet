@@ -17,7 +17,7 @@ interface PaymentConditionsSectionProps {
 
 const PaymentConditionsSection: React.FC<PaymentConditionsSectionProps> = ({ formData, updateField }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Percentual de desconto e Data de primeiro pagamento lado a lado */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormSelectField

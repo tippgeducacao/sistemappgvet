@@ -71,7 +71,7 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* IES e Modalidade lado a lado */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormSelectField

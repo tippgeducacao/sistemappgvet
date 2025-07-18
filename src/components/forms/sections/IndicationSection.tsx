@@ -16,16 +16,30 @@ const IndicationSection: React.FC<IndicationSectionProps> = ({ formData, updateF
   };
 
   return (
-    <>
-      <FormSelectField
-        id="indicacao"
-        label="Indicação *"
-        value={formData.indicacao || ''}
-        onChange={handleIndicacaoChange}
-        options={INDICACAO_OPTIONS}
-        placeholder="Selecione uma opção"
-      />
+    <div className="space-y-3">
+      {/* Indicação e Vendedor lado a lado */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormSelectField
+          id="indicacao"
+          label="Indicação *"
+          value={formData.indicacao || ''}
+          onChange={handleIndicacaoChange}
+          options={INDICACAO_OPTIONS}
+          placeholder="Selecione uma opção"
+        />
 
+        <FormInputField
+          id="vendedor"
+          label="Vendedor"
+          value={formData.vendedor || ''}
+          onChange={(value) => updateField('vendedor', value)}
+          disabled={true}
+          placeholder="Será preenchido automaticamente"
+          className="bg-gray-50"
+        />
+      </div>
+
+      {/* Nome do indicador - linha inteira quando visível */}
       {FormDataService.shouldShowIndicadorField(formData.indicacao) && (
         <FormInputField
           id="nomeIndicador"
@@ -35,17 +49,7 @@ const IndicationSection: React.FC<IndicationSectionProps> = ({ formData, updateF
           placeholder="Nome completo de quem indicou"
         />
       )}
-
-      <FormInputField
-        id="vendedor"
-        label="Vendedor"
-        value={formData.vendedor || ''}
-        onChange={(value) => updateField('vendedor', value)}
-        disabled={true}
-        placeholder="Será preenchido automaticamente"
-        className="bg-gray-50"
-      />
-    </>
+    </div>
   );
 };
 
