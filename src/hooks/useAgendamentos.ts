@@ -58,6 +58,7 @@ export const useAgendamentos = () => {
           )
         `)
         .eq('vendedor_id', profile.id)
+        .eq('status', 'agendado') // Apenas agendamentos ativos
         .order('data_agendamento', { ascending: false });
 
       if (error) {
