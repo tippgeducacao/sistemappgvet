@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List } from 'lucide-react';
+import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List, Edit, X } from 'lucide-react';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
 import { useCreateLead } from '@/hooks/useCreateLead';
 import { toast } from 'sonner';
@@ -38,6 +38,15 @@ const AgendamentosPage: React.FC = () => {
   const [selectedDateForm, setSelectedDateForm] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [observacoes, setObservacoes] = useState('');
+  
+  // Edit form state
+  const [editingAgendamento, setEditingAgendamento] = useState<any>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    data_agendamento: '',
+    pos_graduacao_interesse: '',
+    observacoes: ''
+  });
   
   // SprintHub form fields
   const [sprintHubLead, setSprintHubLead] = useState({
@@ -298,6 +307,62 @@ const AgendamentosPage: React.FC = () => {
     return agendamentosVendedor.some(agendamento => 
       isSameDay(parseISO(agendamento.data_agendamento), date)
     );
+  };
+
+  const handleEditAgendamento = (agendamento: any) => {
+    setEditingAgendamento(agendamento);
+    setEditFormData({
+      data_agendamento: agendamento.data_agendamento.split('T')[0] + 'T' + agendamento.data_agendamento.split('T')[1].split('.')[0],
+      pos_graduacao_interesse: agendamento.pos_graduacao_interesse,
+      observacoes: agendamento.observacoes || ''
+    });
+    setShowEditForm(true);
+  };
+
+  const handleUpdateAgendamento = async () => {
+    if (!editingAgendamento || !editFormData.data_agendamento || !editFormData.pos_graduacao_interesse) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    try {
+      const success = await AgendamentosService.atualizarAgendamentoSDR(
+        editingAgendamento.id,
+        editFormData
+      );
+
+      if (success) {
+        toast.success('Agendamento atualizado com sucesso!');
+        setShowEditForm(false);
+        setEditingAgendamento(null);
+        carregarDados();
+      } else {
+        toast.error('Erro ao atualizar agendamento');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar agendamento:', error);
+      toast.error('Erro ao atualizar agendamento');
+    }
+  };
+
+  const handleCancelAgendamento = async (agendamentoId: string) => {
+    if (!confirm('Tem certeza que deseja cancelar este agendamento?')) {
+      return;
+    }
+
+    try {
+      const success = await AgendamentosService.cancelarAgendamento(agendamentoId);
+
+      if (success) {
+        toast.success('Agendamento cancelado com sucesso!');
+        carregarDados();
+      } else {
+        toast.error('Erro ao cancelar agendamento');
+      }
+    } catch (error) {
+      console.error('Erro ao cancelar agendamento:', error);
+      toast.error('Erro ao cancelar agendamento');
+    }
   };
 
   const getStatusBadge = (status: string): JSX.Element => {
@@ -627,6 +692,77 @@ const AgendamentosPage: React.FC = () => {
         </Card>
       )}
 
+      {/* Edit Agendamento Modal */}
+      {showEditForm && editingAgendamento && (
+        <Card className="w-full max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle>Editar Agendamento</CardTitle>
+            <CardDescription>
+              Atualize as informações do agendamento com {editingAgendamento.lead?.nome}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Data e Horário */}
+            <div className="space-y-2">
+              <Label>Data e Horário *</Label>
+              <Input
+                type="datetime-local"
+                value={editFormData.data_agendamento}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, data_agendamento: e.target.value }))}
+                min={new Date().toISOString().slice(0, 16)}
+              />
+            </div>
+
+            {/* Pós-graduação Selection */}
+            <div className="space-y-2">
+              <Label>Pós-graduação de Interesse *</Label>
+              <Select 
+                value={editFormData.pos_graduacao_interesse} 
+                onValueChange={(value) => setEditFormData(prev => ({ ...prev, pos_graduacao_interesse: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a pós-graduação" />
+                </SelectTrigger>
+                <SelectContent>
+                  {posGraduacoes.map((pos) => (
+                    <SelectItem key={pos.id} value={pos.nome}>
+                      {pos.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Observações */}
+            <div className="space-y-2">
+              <Label>Observações</Label>
+              <Textarea
+                placeholder="Adicione observações sobre o agendamento..."
+                value={editFormData.observacoes}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                rows={3}
+              />
+            </div>
+
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>Nota:</strong> O vendedor não pode ser alterado após o agendamento ser criado.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowEditForm(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleUpdateAgendamento}>
+                Atualizar Agendamento
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* SprintHub Lead Form Modal */}
       {showSprintHubForm && (
         <Card className="w-full max-w-md mx-auto">
@@ -762,8 +898,29 @@ const AgendamentosPage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="ml-4">
+                  <div className="ml-4 flex flex-col items-end gap-2">
                     {getStatusBadge(agendamento.status)}
+                    
+                    {agendamento.status === 'agendado' && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditAgendamento(agendamento)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCancelAgendamento(agendamento.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
