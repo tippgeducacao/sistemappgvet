@@ -48,6 +48,9 @@ const AgendamentosPage: React.FC = () => {
     observacoes: ''
   });
   
+  // Calendar state for main page
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
+  
   // SprintHub form fields
   const [sprintHubLead, setSprintHubLead] = useState({
     nome: '',
@@ -834,100 +837,207 @@ const AgendamentosPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Agendamentos List */}
-      <div className="grid gap-4">
-        {agendamentos.length === 0 ? (
-          <Card>
-            <CardContent className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Nenhum agendamento encontrado</h3>
-                <p className="text-muted-foreground">Crie seu primeiro agendamento para começar</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          agendamentos.map((agendamento) => (
-            <Card key={agendamento.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-3 flex-1">
-                    <div className="flex items-center gap-3">
-                      <User className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-semibold">{agendamento.lead?.nome}</p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          {agendamento.lead?.email && (
-                            <span className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {agendamento.lead.email}
-                            </span>
-                          )}
-                          {agendamento.lead?.whatsapp && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {agendamento.lead.whatsapp}
-                            </span>
-                          )}
+      {/* Visualizations Tabs */}
+      <Tabs defaultValue="lista" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="lista" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            Lista
+          </TabsTrigger>
+          <TabsTrigger value="calendario" className="flex items-center gap-2">
+            <Grid className="h-4 w-4" />
+            Calendário
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="lista">
+          <div className="grid gap-4">
+            {agendamentos.length === 0 ? (
+              <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Nenhum agendamento encontrado</h3>
+                    <p className="text-muted-foreground">Crie seu primeiro agendamento para começar</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              agendamentos.map((agendamento) => (
+                <Card key={agendamento.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-3 flex-1">
+                        <div className="flex items-center gap-3">
+                          <User className="h-5 w-5 text-primary" />
+                          <div>
+                            <p className="font-semibold">{agendamento.lead?.nome}</p>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              {agendamento.lead?.email && (
+                                <span className="flex items-center gap-1">
+                                  <Mail className="h-3 w-3" />
+                                  {agendamento.lead.email}
+                                </span>
+                              )}
+                              {agendamento.lead?.whatsapp && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {agendamento.lead.whatsapp}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Pós-graduação</p>
+                            <p className="font-medium">{agendamento.pos_graduacao_interesse}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Vendedor</p>
+                            <p className="font-medium">{agendamento.vendedor?.name}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Data/Horário</p>
+                            <p className="font-medium">
+                              {new Date(agendamento.data_agendamento).toLocaleString('pt-BR')}
+                            </p>
+                          </div>
+                        </div>
+
+                        {agendamento.observacoes && (
+                          <div>
+                            <p className="text-muted-foreground text-sm">Observações</p>
+                            <p className="text-sm">{agendamento.observacoes}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="ml-4 flex flex-col items-end gap-2">
+                        {getStatusBadge(agendamento.status)}
+                        
+                        {agendamento.status === 'agendado' && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditAgendamento(agendamento)}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCancelAgendamento(agendamento.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="calendario">
+          <div className="space-y-4">
+            <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium mb-4">
+              <div>Dom</div>
+              <div>Seg</div>
+              <div>Ter</div>
+              <div>Qua</div>
+              <div>Qui</div>
+              <div>Sex</div>
+              <div>Sáb</div>
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: 42 }, (_, i) => {
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const startOfCalendar = new Date(startOfMonth);
+                startOfCalendar.setDate(startOfCalendar.getDate() - startOfMonth.getDay());
+                
+                const currentDate = new Date(startOfCalendar);
+                currentDate.setDate(currentDate.getDate() + i);
+                
+                const isCurrentMonth = currentDate.getMonth() === now.getMonth();
+                const isToday = currentDate.toDateString() === new Date().toDateString();
+                const dayAgendamentos = agendamentos.filter(ag => 
+                  new Date(ag.data_agendamento).toDateString() === currentDate.toDateString()
+                );
+                
+                return (
+                  <div
+                    key={i}
+                    className={`
+                      min-h-[80px] p-1 border rounded cursor-pointer transition-colors
+                      ${isCurrentMonth ? 'bg-background' : 'bg-muted/30'}
+                      ${isToday ? 'bg-primary/10 border-primary' : 'border-border'}
+                      ${dayAgendamentos.length > 0 ? 'bg-blue-50 dark:bg-blue-950/20' : ''}
+                      hover:bg-muted/50
+                    `}
+                    onClick={() => {
+                      if (dayAgendamentos.length > 0) {
+                        setSelectedCalendarDate(currentDate);
+                      }
+                    }}
+                  >
+                    <div className={`text-sm ${isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {currentDate.getDate()}
+                    </div>
+                    {dayAgendamentos.length > 0 && (
+                      <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                        {dayAgendamentos.length} reuniã{dayAgendamentos.length === 1 ? 'o' : 'ões'}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            
+            {selectedCalendarDate && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    Agendamentos para {selectedCalendarDate.toLocaleDateString('pt-BR')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {agendamentos
+                    .filter(ag => new Date(ag.data_agendamento).toDateString() === selectedCalendarDate.toDateString())
+                    .map((agendamento) => (
+                      <div key={agendamento.id} className="p-3 border rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <h4 className="font-medium">{agendamento.lead?.nome}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(agendamento.data_agendamento).toLocaleTimeString('pt-BR', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                            <p className="text-sm">{agendamento.pos_graduacao_interesse}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Vendedor: {agendamento.vendedor?.name}
+                            </p>
+                          </div>
+                          {getStatusBadge(agendamento.status)}
                         </div>
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Pós-graduação</p>
-                        <p className="font-medium">{agendamento.pos_graduacao_interesse}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Vendedor</p>
-                        <p className="font-medium">{agendamento.vendedor?.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Data/Horário</p>
-                        <p className="font-medium">
-                          {new Date(agendamento.data_agendamento).toLocaleString('pt-BR')}
-                        </p>
-                      </div>
-                    </div>
-
-                    {agendamento.observacoes && (
-                      <div>
-                        <p className="text-muted-foreground text-sm">Observações</p>
-                        <p className="text-sm">{agendamento.observacoes}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="ml-4 flex flex-col items-end gap-2">
-                    {getStatusBadge(agendamento.status)}
-                    
-                    {agendamento.status === 'agendado' && (
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditAgendamento(agendamento)}
-                          className="text-blue-600 hover:text-blue-700"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCancelAgendamento(agendamento.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+                    ))}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
