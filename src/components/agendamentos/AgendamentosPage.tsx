@@ -234,25 +234,28 @@ const AgendamentosPage: React.FC = () => {
   )];
 
   // Filtrar leads baseado na busca ou mostrar os 5 últimos por padrão
-  const filteredLeads = leads.filter(lead => {
-    if (lead.status === 'reuniao_marcada') return false;
-    
-    if (!searchTerm) {
-      // Se não há termo de busca, retornar todos os leads disponíveis
-      return true;
-    }
-    
-    switch (searchType) {
-      case 'nome':
-        return lead.nome?.toLowerCase().includes(searchTerm.toLowerCase());
-      case 'email':
-        return lead.email?.toLowerCase().includes(searchTerm.toLowerCase());
-      case 'whatsapp':
-        return lead.whatsapp?.includes(searchTerm);
-      default:
-        return false;
-    }
-  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+  const filteredLeads = leads
+    .filter(lead => lead.status !== 'reuniao_marcada') // Excluir leads com reunião já marcada
+    .filter(lead => {
+      if (!searchTerm) {
+        // Se não há termo de busca, mostrar todos os leads disponíveis
+        return true;
+      }
+      
+      // Se há termo de busca, filtrar conforme o tipo
+      switch (searchType) {
+        case 'nome':
+          return lead.nome?.toLowerCase().includes(searchTerm.toLowerCase());
+        case 'email':
+          return lead.email?.toLowerCase().includes(searchTerm.toLowerCase());
+        case 'whatsapp':
+          return lead.whatsapp?.includes(searchTerm);
+        default:
+          return false;
+      }
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5); // Limitar a 5 leads
 
   const createLeadMutation = useCreateLead();
 
@@ -446,7 +449,7 @@ const AgendamentosPage: React.FC = () => {
               {/* Lista de leads com scroll - sempre visível se há leads */}
               {filteredLeads.length > 0 && (
                 <div className="border rounded-lg max-h-40 overflow-y-auto">
-                  {filteredLeads.slice(0, 5).map((lead) => (
+                  {filteredLeads.map((lead) => (
                     <div
                       key={lead.id}
                       className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${
