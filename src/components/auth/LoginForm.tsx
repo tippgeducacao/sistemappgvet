@@ -23,7 +23,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-white/90 font-medium">E-mail</Label>
+        <Label htmlFor="email" className="text-white font-medium">E-mail</Label>
         <Input
           id="email"
           type="email"
@@ -31,13 +31,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="h-12 backdrop-blur-sm bg-white/20 border-white/30 text-white placeholder:text-white/50 focus:bg-white/30 focus:border-white/50"
+          className="h-12 bg-white/90 border-white/50 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-ppgvet-teal-500"
           autoComplete="email"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-white/90 font-medium">Senha</Label>
+        <Label htmlFor="password" className="text-white font-medium">Senha</Label>
         <div className="relative">
           <Input
             id="password"
@@ -46,14 +46,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="h-12 pr-10 backdrop-blur-sm bg-white/20 border-white/30 text-white placeholder:text-white/50 focus:bg-white/30 focus:border-white/50"
+            className="h-12 pr-10 bg-white/90 border-white/50 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-ppgvet-teal-500"
             autoComplete="current-password"
           />
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-white/10 text-white/70 hover:text-white"
+            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-gray-100/20 text-gray-600 hover:text-gray-800"
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? (

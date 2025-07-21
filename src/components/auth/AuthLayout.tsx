@@ -33,10 +33,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
         </div>
 
         {/* Main card with liquid glass effect */}
-        <Card className="backdrop-blur-lg bg-white/10 border border-white/20 shadow-2xl">
+        <Card className="backdrop-blur-lg bg-white/95 border border-white/30 shadow-2xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl text-white drop-shadow-lg">Acesso ao Sistema</CardTitle>
-            <CardDescription className="text-white/80 drop-shadow-md">
+            <CardTitle className="text-xl text-gray-900">Acesso ao Sistema</CardTitle>
+            <CardDescription className="text-gray-600">
               Entre ou crie sua conta para continuar
             </CardDescription>
           </CardHeader>
