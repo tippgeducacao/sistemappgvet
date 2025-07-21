@@ -111,28 +111,31 @@
   overflow: hidden;
   border-right: 2px solid #000000;
   white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+  font-weight: bold;
   animation: typeAndErase 4s infinite, blinkCursor 1s infinite;
+  width: 0;
 }
 
 @keyframes typeAndErase {
   /* Fase 1: Digitando "Ponto" (0% a 37.5% = 1.5s) */
   0% { width: 0; }
-  9.375% { width: 0.6ch; } /* P */
-  18.75% { width: 1.2ch; } /* Po */
-  28.125% { width: 1.8ch; } /* Pon */
-  37.5% { width: 2.4ch; } /* Pont */
-  46.875% { width: 3ch; } /* Ponto */
+  10% { width: 0.7em; }  /* P */
+  20% { width: 1.4em; }  /* Po */
+  30% { width: 2.1em; }  /* Pon */
+  40% { width: 2.8em; }  /* Pont */
+  50% { width: 3.5em; }  /* Ponto */
   
-  /* Fase 2: Pausa com palavra completa (46.875% a 71.875% = 1s) */
-  71.875% { width: 3ch; }
+  /* Fase 2: Pausa com palavra completa (50% a 75% = 1s) */
+  75% { width: 3.5em; }
   
-  /* Fase 3: Apagando "Ponto" (71.875% a 96.875% = 1s) */
-  78.125% { width: 2.4ch; } /* Pont */
-  84.375% { width: 1.8ch; } /* Pon */
-  90.625% { width: 1.2ch; } /* Po */
-  96.875% { width: 0.6ch; } /* P */
+  /* Fase 3: Apagando "Ponto" (75% a 95% = 0.8s) */
+  80% { width: 2.8em; }  /* Pont */
+  85% { width: 2.1em; }  /* Pon */
+  90% { width: 1.4em; }  /* Po */
+  95% { width: 0.7em; }  /* P */
   
-  /* Fase 4: Pausa vazia (96.875% a 100% = 0.125s) */
+  /* Fase 4: Pausa vazia (95% a 100% = 0.2s) */
   100% { width: 0; }
 }
 
