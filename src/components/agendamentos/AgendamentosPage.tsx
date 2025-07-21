@@ -233,10 +233,14 @@ const AgendamentosPage: React.FC = () => {
       .filter(Boolean)
   )];
 
-  // Filtrar leads baseado na busca
+  // Filtrar leads baseado na busca ou mostrar os 5 últimos por padrão
   const filteredLeads = leads.filter(lead => {
-    if (!searchTerm) return false;
     if (lead.status === 'reuniao_marcada') return false;
+    
+    if (!searchTerm) {
+      // Se não há termo de busca, retornar todos os leads disponíveis
+      return true;
+    }
     
     switch (searchType) {
       case 'nome':
@@ -248,7 +252,7 @@ const AgendamentosPage: React.FC = () => {
       default:
         return false;
     }
-  });
+  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
 
   const createLeadMutation = useCreateLead();
 
@@ -440,7 +444,7 @@ const AgendamentosPage: React.FC = () => {
               </div>
 
               {/* Lista de leads com scroll */}
-              {searchTerm && filteredLeads.length > 0 && (
+              {filteredLeads.length > 0 && (
                 <div className="border rounded-lg max-h-40 overflow-y-auto">
                   {filteredLeads.slice(0, 5).map((lead) => (
                     <div
