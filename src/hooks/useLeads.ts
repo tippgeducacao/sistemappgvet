@@ -65,6 +65,7 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
   return useQuery({
     queryKey: ['leads', page, itemsPerPage, filters],
     queryFn: async () => {
+      console.log('🔍 INICIANDO BUSCA DE LEADS...');
       // Buscar TODOS os leads usando paginação em lotes
       let allData: any[] = [];
       let startIndex = 0;
@@ -85,6 +86,8 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
 
         if (batchError) throw batchError;
         
+        console.log(`📦 Lote ${Math.floor(startIndex/batchSize) + 1}: ${batchData?.length || 0} leads`);
+        
         if (batchData && batchData.length > 0) {
           allData = [...allData, ...batchData];
           startIndex += batchSize;
@@ -93,6 +96,8 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
           hasMore = false;
         }
       }
+      
+      console.log(`📊 TOTAL DE LEADS BUSCADOS: ${allData.length}`);
       
       // Map to ensure all required fields are present
       let allFilteredLeads = allData.map(item => ({
