@@ -18,14 +18,18 @@ import {
   CircleDot,
   Trophy,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { useLeads, useLeadsCount, useLeadsFilterData, useAllLeads } from '@/hooks/useLeads';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 import LeadDetailsDialog from './LeadDetailsDialog';
 import LeadsDashboard from './LeadsDashboard';
 import SprintHubSyncButton from './SprintHubSyncButton';
+import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import type { Lead, LeadFilters } from '@/hooks/useLeads';
 
 const LeadsManager: React.FC = () => {
@@ -55,6 +59,7 @@ const LeadsManager: React.FC = () => {
   const { data: totalLeadsCount = 0 } = useLeadsCount();
   const { data: filterData } = useLeadsFilterData();
   const { data: allLeadsForStats = [] } = useAllLeads(); // Para estatísticas e dashboard
+  const { data: agendamentosData = [] } = useAgendamentosLeads(); // Dados de agendamentos
 
   // Extrair profissão das observações
   const extractProfissao = (observacoes?: string) => {
@@ -169,6 +174,11 @@ const LeadsManager: React.FC = () => {
       case 'perdido': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Função para buscar agendamento de um lead específico
+  const getAgendamentoByLead = (leadId: string) => {
+    return agendamentosData.find(agendamento => agendamento.lead_id === leadId);
   };
 
   if (isLoading) {
@@ -417,79 +427,107 @@ const LeadsManager: React.FC = () => {
                      <TableHead className="w-[80px] py-2 text-xs font-medium">Status</TableHead>
                      <TableHead className="w-[80px] py-2 text-xs font-medium hidden lg:table-cell">Fonte</TableHead>
                      <TableHead className="w-[90px] py-2 text-xs font-medium hidden xl:table-cell">Profissão</TableHead>
+                     <TableHead className="w-[200px] py-2 text-xs font-medium hidden xl:table-cell">Agendamento</TableHead>
                      <TableHead className="w-[90px] py-2 text-xs font-medium hidden 2xl:table-cell">Data</TableHead>
                      <TableHead className="w-[50px] py-2 text-xs font-medium text-right">Ações</TableHead>
                    </TableRow>
                 </TableHeader>
-                <TableBody>
-                   {leads.map((lead) => (
-                     <TableRow key={lead.id} className="hover:bg-muted/50">
-                       <TableCell className="py-2">
-                         <div className="font-medium text-xs max-w-[130px]" title={lead.nome}>
-                           {lead.nome}
-                         </div>
-                       </TableCell>
-                       <TableCell className="py-2 hidden sm:table-cell">
-                         <div className="text-xs max-w-[170px]" title={lead.email}>
-                           {lead.email || '-'}
-                         </div>
-                       </TableCell>
-                       <TableCell className="py-2 hidden md:table-cell">
-                         {lead.whatsapp ? (
-                           <a
-                             href={formatWhatsAppLink(lead.whatsapp)}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                             className="text-green-600 hover:text-green-800 text-xs block max-w-[120px]"
-                             title={lead.whatsapp}
-                           >
-                             {lead.whatsapp}
-                           </a>
-                         ) : (
-                           <span className="text-xs text-muted-foreground">-</span>
-                         )}
-                       </TableCell>
-                       <TableCell className="py-2">
-                          <Badge variant="outline" className={`text-xs ${getStatusColor(lead.status)} px-1 py-0`}>
-                            {lead.status === 'novo' ? 'Novo' : 
-                             lead.status === 'contatado' ? 'Cont.' :
-                             lead.status === 'qualificado' ? 'Qual.' :
-                             lead.status === 'convertido' ? 'Conv.' : 
-                             lead.status === 'reuniao_marcada' ? 'Reunião' :
-                             lead.status === 'perdido' ? 'Perdido' : lead.status}
-                          </Badge>
-                       </TableCell>
-                       <TableCell className="py-2 hidden lg:table-cell">
-                         <div className="flex items-center gap-1">
-                           {getFonteIcon(lead.utm_source)}
-                           <Badge variant="outline" className={`text-xs ${getFonteBadgeColor(lead.utm_source)} px-1 py-0`}>
-                             {(lead.utm_source || lead.fonte_referencia || 'N/A').substring(0, 4)}
-                           </Badge>
-                         </div>
-                       </TableCell>
-                       <TableCell className="py-2 hidden xl:table-cell">
-                         <span className="text-xs truncate block max-w-[80px]" title={extractProfissao(lead.observacoes)}>
-                           {(extractProfissao(lead.observacoes) || '-').substring(0, 10)}
-                         </span>
-                       </TableCell>
-                        <TableCell className="py-2 hidden 2xl:table-cell">
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(lead.created_at), 'dd/MM/yyyy')}
-                          </span>
-                        </TableCell>
-                       <TableCell className="py-2 text-right">
-                         <Button
-                           variant="ghost"
-                           size="sm"
-                           onClick={() => setSelectedLead(lead.id)}
-                           className="h-6 w-6 p-0"
-                         >
-                           <Eye className="h-3 w-3" />
-                         </Button>
-                       </TableCell>
-                     </TableRow>
-                   ))}
-                  </TableBody>
+                 <TableBody>
+                    {leads.map((lead) => {
+                      const agendamento = getAgendamentoByLead(lead.id);
+                      const temReuniao = lead.status === 'reuniao_marcada' && agendamento;
+                      
+                      return (
+                        <TableRow 
+                          key={lead.id} 
+                          className={`hover:bg-muted/50 ${temReuniao ? 'bg-red-50 dark:bg-red-950/20 border-l-4 border-l-red-500' : ''}`}
+                        >
+                          <TableCell className="py-2">
+                            <div className="font-medium text-xs max-w-[130px]" title={lead.nome}>
+                              {lead.nome}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2 hidden sm:table-cell">
+                            <div className="text-xs max-w-[170px]" title={lead.email}>
+                              {lead.email || '-'}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2 hidden md:table-cell">
+                            {lead.whatsapp ? (
+                              <a
+                                href={formatWhatsAppLink(lead.whatsapp)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-green-600 hover:text-green-800 text-xs block max-w-[120px]"
+                                title={lead.whatsapp}
+                              >
+                                {lead.whatsapp}
+                              </a>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="py-2">
+                             <Badge variant="outline" className={`text-xs ${getStatusColor(lead.status)} px-1 py-0`}>
+                               {lead.status === 'novo' ? 'Novo' : 
+                                lead.status === 'contatado' ? 'Cont.' :
+                                lead.status === 'qualificado' ? 'Qual.' :
+                                lead.status === 'convertido' ? 'Conv.' : 
+                                lead.status === 'reuniao_marcada' ? 'Reunião' :
+                                lead.status === 'perdido' ? 'Perdido' : lead.status}
+                             </Badge>
+                          </TableCell>
+                          <TableCell className="py-2 hidden lg:table-cell">
+                            <div className="flex items-center gap-1">
+                              {getFonteIcon(lead.utm_source)}
+                              <Badge variant="outline" className={`text-xs ${getFonteBadgeColor(lead.utm_source)} px-1 py-0`}>
+                                {(lead.utm_source || lead.fonte_referencia || 'N/A').substring(0, 4)}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2 hidden xl:table-cell">
+                            <span className="text-xs truncate block max-w-[80px]" title={extractProfissao(lead.observacoes)}>
+                              {(extractProfissao(lead.observacoes) || '-').substring(0, 10)}
+                            </span>
+                          </TableCell>
+                          {/* Nova coluna de Agendamento */}
+                          <TableCell className="py-2 hidden xl:table-cell">
+                            {agendamento ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1 text-xs">
+                                  <Calendar className="h-3 w-3 text-orange-600" />
+                                  <span className="font-medium text-orange-700">
+                                    {format(new Date(agendamento.data_agendamento), 'dd/MM HH:mm')}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  <div>SDR: {agendamento.sdr_nome || 'N/A'}</div>
+                                  <div>Vendedor: {agendamento.vendedor_nome || 'N/A'}</div>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                           <TableCell className="py-2 hidden 2xl:table-cell">
+                             <span className="text-xs text-muted-foreground">
+                               {format(new Date(lead.created_at), 'dd/MM/yyyy')}
+                             </span>
+                           </TableCell>
+                          <TableCell className="py-2 text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedLead(lead.id)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                   </TableBody>
                 </Table>
               </div>
             

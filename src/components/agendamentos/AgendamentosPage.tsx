@@ -443,7 +443,7 @@ const AgendamentosPage: React.FC = () => {
                 />
               </div>
 
-              {/* Lista de leads com scroll */}
+              {/* Lista de leads com scroll - sempre visível se há leads */}
               {filteredLeads.length > 0 && (
                 <div className="border rounded-lg max-h-40 overflow-y-auto">
                   {filteredLeads.slice(0, 5).map((lead) => (
