@@ -53,37 +53,132 @@ export interface LeadInteraction {
   };
 }
 
-export const useLeads = (page: number = 1, itemsPerPage: number = 10) => {
+export interface LeadFilters {
+  searchTerm?: string;
+  statusFilter?: string;
+  profissaoFilter?: string;
+  paginaFilter?: string;
+  fonteFilter?: string;
+}
+
+export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: LeadFilters = {}) => {
   return useQuery({
-    queryKey: ['leads', page, itemsPerPage],
+    queryKey: ['leads', page, itemsPerPage, filters],
     queryFn: async () => {
       const from = (page - 1) * itemsPerPage;
       const to = from + itemsPerPage - 1;
 
-      const { data, error, count } = await supabase
+      let query = supabase
         .from('leads')
         .select(`
           *,
           vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
-        `, { count: 'exact' })
+        `, { count: 'exact' });
+
+      // Aplicar filtros
+      if (filters.searchTerm) {
+        query = query.or(`nome.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,whatsapp.ilike.%${filters.searchTerm}%`);
+      }
+
+      if (filters.statusFilter && filters.statusFilter !== 'todos') {
+        query = query.eq('status', filters.statusFilter);
+      }
+
+      if (filters.fonteFilter && filters.fonteFilter !== 'todos') {
+        query = query.eq('utm_source', filters.fonteFilter);
+      }
+
+      // Para filtros de profissão e página, precisamos aplicar no lado cliente
+      // porque envolvem parsing das observações e pagina_nome
+      const { data, error, count } = await query
         .order('created_at', { ascending: false })
         .range(from, to);
 
       if (error) throw error;
       
       // Map to ensure all required fields are present
-      const leads = (data || []).map(item => ({
+      let leads = (data || []).map(item => ({
         ...item,
         data_captura: item.created_at || new Date().toISOString(),
         convertido_em_venda: false,
         vendedor_atribuido_profile: item.vendedor_atribuido_profile || undefined
       })) as Lead[];
 
+      // Aplicar filtros de profissão e página no lado cliente
+      if (filters.profissaoFilter && filters.profissaoFilter !== 'todos') {
+        leads = leads.filter(lead => {
+          const match = lead.observacoes?.match(/Profissão\/Área:\s*([^\n]+)/);
+          const profissao = match ? match[1].trim() : null;
+          return profissao === filters.profissaoFilter;
+        });
+      }
+
+      if (filters.paginaFilter && filters.paginaFilter !== 'todos') {
+        leads = leads.filter(lead => {
+          const match = lead.pagina_nome?.match(/\.com\.br\/([^?&#]+)/);
+          const pagina = match ? match[1].trim() : null;
+          return pagina === filters.paginaFilter;
+        });
+      }
+
       return {
         leads,
         totalCount: count || 0,
         totalPages: Math.ceil((count || 0) / itemsPerPage)
       };
+    },
+  });
+};
+
+// Hook para obter apenas o total de leads (para estatísticas)
+export const useLeadsCount = () => {
+  return useQuery({
+    queryKey: ['leads-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+};
+
+// Hook para obter dados únicos para filtros
+export const useLeadsFilterData = () => {
+  return useQuery({
+    queryKey: ['leads-filter-data'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('observacoes, pagina_nome, utm_source')
+        .limit(10000);
+
+      if (error) throw error;
+      
+      // Extrair profissões únicas
+      const profissoes = [...new Set(
+        (data || []).map(item => {
+          const match = item.observacoes?.match(/Profissão\/Área:\s*([^\n]+)/);
+          return match ? match[1].trim() : null;
+        }).filter(Boolean)
+      )];
+
+      // Extrair páginas únicas
+      const paginasCaptura = [...new Set(
+        (data || []).map(item => {
+          const match = item.pagina_nome?.match(/\.com\.br\/([^?&#]+)/);
+          return match ? match[1].trim() : null;
+        }).filter(Boolean)
+      )];
+
+      // Extrair fontes únicas
+      const fontes = [...new Set(
+        (data || []).map(item => item.utm_source).filter(Boolean)
+      )];
+
+      return { profissoes, paginasCaptura, fontes };
     },
   });
 };

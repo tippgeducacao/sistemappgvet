@@ -16,16 +16,17 @@ import {
   Zap,
   CheckCircle,
   CircleDot,
-  Trophy
+  Trophy,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
-import { useAllLeads } from '@/hooks/useLeads';
+import { useLeads, useLeadsCount, useLeadsFilterData, useAllLeads } from '@/hooks/useLeads';
 import { format } from 'date-fns';
-
 
 import LeadDetailsDialog from './LeadDetailsDialog';
 import LeadsDashboard from './LeadsDashboard';
 import SprintHubSyncButton from './SprintHubSyncButton';
-import type { Lead } from '@/hooks/useLeads';
+import type { Lead, LeadFilters } from '@/hooks/useLeads';
 
 const LeadsManager: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
@@ -34,8 +35,21 @@ const LeadsManager: React.FC = () => {
   const [profissaoFilter, setProfissaoFilter] = useState('todos');
   const [paginaFilter, setPaginaFilter] = useState('todos');
   const [fonteFilter, setFonteFilter] = useState('todos');
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: allLeads = [] } = useAllLeads();
+  // Construir filtros
+  const filters: LeadFilters = {
+    searchTerm: searchTerm || undefined,
+    statusFilter: statusFilter !== 'todos' ? statusFilter : undefined,
+    profissaoFilter: profissaoFilter !== 'todos' ? profissaoFilter : undefined,
+    paginaFilter: paginaFilter !== 'todos' ? paginaFilter : undefined,
+    fonteFilter: fonteFilter !== 'todos' ? fonteFilter : undefined,
+  };
+
+  const { data: leadsData, isLoading } = useLeads(currentPage, 100, filters);
+  const { data: totalLeadsCount = 0 } = useLeadsCount();
+  const { data: filterData } = useLeadsFilterData();
+  const { data: allLeadsForStats = [] } = useAllLeads(); // Para estatísticas e dashboard
 
   // Extrair profissão das observações
   const extractProfissao = (observacoes?: string) => {
@@ -77,8 +91,16 @@ const LeadsManager: React.FC = () => {
     return `https://wa.me/${formattedNumber}`;
   };
 
-  // Filtrar todos os leads 
-  const filteredLeads = allLeads.filter(lead => {
+  // Dados para filtros e estatísticas
+  const leads = leadsData?.leads || [];
+  const totalCount = leadsData?.totalCount || 0;
+  const totalPages = leadsData?.totalPages || 0;
+  const profissoes = filterData?.profissoes || [];
+  const paginasCaptura = filterData?.paginasCaptura || [];
+  const fontes = filterData?.fontes || [];
+
+  // Filtrar leads para estatísticas (usar allLeadsForStats)
+  const filteredLeadsForStats = allLeadsForStats.filter(lead => {
     const matchesSearch = lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.whatsapp?.includes(searchTerm);
@@ -98,27 +120,15 @@ const LeadsManager: React.FC = () => {
 
   // Estatísticas baseadas nos leads filtrados
   const stats = {
-    total: filteredLeads.length,
-    novos: filteredLeads.filter(l => l.status === 'novo').length,
-    contatados: filteredLeads.filter(l => l.status === 'contatado').length,
-    qualificados: filteredLeads.filter(l => l.status === 'qualificado').length,
-    reunioesMarcadas: filteredLeads.filter(l => l.status === 'reuniao_marcada').length,
-    convertidos: filteredLeads.filter(l => l.convertido_em_venda).length,
-    sprinthub: filteredLeads.filter(l => l.utm_source === 'SprintHub').length,
-    greatpages: filteredLeads.filter(l => l.utm_source === 'GreatPages').length,
+    total: filteredLeadsForStats.length,
+    novos: filteredLeadsForStats.filter(l => l.status === 'novo').length,
+    contatados: filteredLeadsForStats.filter(l => l.status === 'contatado').length,
+    qualificados: filteredLeadsForStats.filter(l => l.status === 'qualificado').length,
+    reunioesMarcadas: filteredLeadsForStats.filter(l => l.status === 'reuniao_marcada').length,
+    convertidos: filteredLeadsForStats.filter(l => l.convertido_em_venda).length,
+    sprinthub: filteredLeadsForStats.filter(l => l.utm_source === 'SprintHub').length,
+    greatpages: filteredLeadsForStats.filter(l => l.utm_source === 'GreatPages').length,
   };
-
-  // Obter profissões únicas
-  const profissoes = [...new Set(
-    allLeads.map(l => extractProfissao(l.observacoes))
-      .filter(Boolean)
-  )];
-
-  // Obter páginas de captura únicas (subdomínios)
-  const paginasCaptura = [...new Set(
-    allLeads.map(l => extractPaginaSubdominio(l.pagina_nome))
-      .filter(Boolean)
-  )];
 
   // Função para obter o ícone da fonte
   const getFonteIcon = (fonte?: string) => {
@@ -156,7 +166,7 @@ const LeadsManager: React.FC = () => {
     }
   };
 
-  if (allLeads.length === 0) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -179,7 +189,7 @@ const LeadsManager: React.FC = () => {
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
           <Badge variant="outline" className="text-xs sm:text-sm whitespace-nowrap">
-            {allLeads.length} leads totais
+            {totalLeadsCount} leads totais
           </Badge>
           <SprintHubSyncButton />
         </div>
@@ -282,7 +292,7 @@ const LeadsManager: React.FC = () => {
             <Filter className="h-4 w-4 text-blue-500" />
             <div>
               <p className="text-xs text-muted-foreground">Filtrados</p>
-              <p className="text-lg font-semibold">{filteredLeads.length}</p>
+              <p className="text-lg font-semibold">{stats.total}</p>
             </div>
           </div>
         </Card>
@@ -350,16 +360,42 @@ const LeadsManager: React.FC = () => {
 
         {/* Dashboard com gráficos */}
         <div className="w-full">
-          <LeadsDashboard leads={filteredLeads} />
+          <LeadsDashboard leads={filteredLeadsForStats} />
         </div>
 
         {/* Tabela de Leads */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Lista de Leads</CardTitle>
-            <CardDescription className="text-sm">
-              {filteredLeads.length} leads encontrados
-            </CardDescription>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="text-lg">Lista de Leads</CardTitle>
+                <CardDescription className="text-sm">
+                  Página {currentPage} de {totalPages} - {leads.length} leads nesta página
+                </CardDescription>
+              </div>
+              {/* Controles de paginação */}
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="max-h-[500px] overflow-y-auto">
@@ -377,7 +413,7 @@ const LeadsManager: React.FC = () => {
                    </TableRow>
                 </TableHeader>
                 <TableBody>
-                   {filteredLeads.map((lead) => (
+                   {leads.map((lead) => (
                      <TableRow key={lead.id} className="hover:bg-muted/50">
                        <TableCell className="py-2">
                          <div className="font-medium text-xs max-w-[130px]" title={lead.nome}>
@@ -448,7 +484,7 @@ const LeadsManager: React.FC = () => {
                 </Table>
               </div>
             
-            {filteredLeads.length === 0 && allLeads.length > 0 && (
+            {leads.length === 0 && totalLeadsCount > 0 && (
               <div className="text-center py-6">
                 <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
