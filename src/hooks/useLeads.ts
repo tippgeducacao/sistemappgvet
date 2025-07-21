@@ -65,17 +65,15 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
   return useQuery({
     queryKey: ['leads', page, itemsPerPage, filters],
     queryFn: async () => {
-      const from = (page - 1) * itemsPerPage;
-      const to = from + itemsPerPage - 1;
-
+      // Primeiro, vamos buscar TODOS os leads com os filtros básicos aplicados
       let query = supabase
         .from('leads')
         .select(`
           *,
           vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
-        `, { count: 'exact' });
+        `);
 
-      // Aplicar filtros
+      // Aplicar filtros básicos no servidor
       if (filters.searchTerm) {
         query = query.or(`nome.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,whatsapp.ilike.%${filters.searchTerm}%`);
       }
@@ -88,25 +86,21 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
         query = query.eq('utm_source', filters.fonteFilter);
       }
 
-      // Para filtros de profissão e página, precisamos aplicar no lado cliente
-      // porque envolvem parsing das observações e pagina_nome
-      const { data, error, count } = await query
-        .order('created_at', { ascending: false })
-        .range(from, to);
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       
       // Map to ensure all required fields are present
-      let leads = (data || []).map(item => ({
+      let allFilteredLeads = (data || []).map(item => ({
         ...item,
         data_captura: item.created_at || new Date().toISOString(),
         convertido_em_venda: false,
         vendedor_atribuido_profile: item.vendedor_atribuido_profile || undefined
       })) as Lead[];
 
-      // Aplicar filtros de profissão e página no lado cliente
+      // Aplicar filtros complexos no lado cliente (que precisam de parsing)
       if (filters.profissaoFilter && filters.profissaoFilter !== 'todos') {
-        leads = leads.filter(lead => {
+        allFilteredLeads = allFilteredLeads.filter(lead => {
           const match = lead.observacoes?.match(/Profissão\/Área:\s*([^\n]+)/);
           const profissao = match ? match[1].trim() : null;
           return profissao === filters.profissaoFilter;
@@ -114,17 +108,25 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
       }
 
       if (filters.paginaFilter && filters.paginaFilter !== 'todos') {
-        leads = leads.filter(lead => {
+        allFilteredLeads = allFilteredLeads.filter(lead => {
           const match = lead.pagina_nome?.match(/\.com\.br\/([^?&#]+)/);
           const pagina = match ? match[1].trim() : null;
           return pagina === filters.paginaFilter;
         });
       }
 
+      // Agora aplicar a paginação nos leads já filtrados
+      const totalCount = allFilteredLeads.length;
+      const totalPages = Math.ceil(totalCount / itemsPerPage);
+      const from = (page - 1) * itemsPerPage;
+      const to = from + itemsPerPage;
+      const paginatedLeads = allFilteredLeads.slice(from, to);
+
       return {
-        leads,
-        totalCount: count || 0,
-        totalPages: Math.ceil((count || 0) / itemsPerPage)
+        leads: paginatedLeads,
+        totalCount,
+        totalPages,
+        filteredCount: totalCount // Total de leads após aplicar filtros
       };
     },
   });

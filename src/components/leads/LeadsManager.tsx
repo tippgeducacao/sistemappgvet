@@ -37,6 +37,11 @@ const LeadsManager: React.FC = () => {
   const [fonteFilter, setFonteFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Resetar página quando filtros mudarem
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, profissaoFilter, paginaFilter, fonteFilter]);
+
   // Construir filtros
   const filters: LeadFilters = {
     searchTerm: searchTerm || undefined,
@@ -370,7 +375,11 @@ const LeadsManager: React.FC = () => {
               <div>
                 <CardTitle className="text-lg">Lista de Leads</CardTitle>
                 <CardDescription className="text-sm">
-                  Página {currentPage} de {totalPages} - {leads.length} leads nesta página
+                  {totalCount > 0 ? (
+                    <>Página {currentPage} de {totalPages} - {totalCount} leads filtrados ({leads.length} nesta página)</>
+                  ) : (
+                    'Nenhum lead encontrado'
+                  )}
                 </CardDescription>
               </div>
               {/* Controles de paginação */}
