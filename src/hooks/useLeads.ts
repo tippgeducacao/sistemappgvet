@@ -215,19 +215,40 @@ export const useAllLeads = () => {
   return useQuery({
     queryKey: ['all-leads'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('leads')
-        .select(`
-          *,
-          vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50000); // Garantir que todos os leads sejam retornados
+      console.log('🔍 BUSCANDO TODOS OS LEADS PARA DASHBOARD...');
+      // Buscar TODOS os leads usando paginação em lotes
+      let allData: any[] = [];
+      let startIndex = 0;
+      const batchSize = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
+      while (hasMore) {
+        const { data: batchData, error: batchError } = await supabase
+          .from('leads')
+          .select(`
+            *,
+            vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
+          `)
+          .order('created_at', { ascending: false })
+          .range(startIndex, startIndex + batchSize - 1);
+
+        if (batchError) throw batchError;
+        
+        console.log(`📦 Lote ALL LEADS ${Math.floor(startIndex/batchSize) + 1}: ${batchData?.length || 0} leads`);
+        
+        if (batchData && batchData.length > 0) {
+          allData = [...allData, ...batchData];
+          startIndex += batchSize;
+          hasMore = batchData.length === batchSize;
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      console.log(`📊 TOTAL DE ALL LEADS BUSCADOS: ${allData.length}`);
       
       // Map to ensure all required fields are present
-      const leads = (data || []).map(item => ({
+      const leads = allData.map(item => ({
         ...item,
         data_captura: item.created_at || new Date().toISOString(),
         convertido_em_venda: false,
