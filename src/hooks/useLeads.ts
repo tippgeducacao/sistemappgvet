@@ -81,19 +81,6 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
           .order('created_at', { ascending: false })
           .range(startIndex, startIndex + batchSize - 1);
 
-        // Aplicar filtros básicos no servidor
-        if (filters.searchTerm) {
-          query = query.or(`nome.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,whatsapp.ilike.%${filters.searchTerm}%`);
-        }
-
-        if (filters.statusFilter && filters.statusFilter !== 'todos') {
-          query = query.eq('status', filters.statusFilter);
-        }
-
-        if (filters.fonteFilter && filters.fonteFilter !== 'todos') {
-          query = query.eq('utm_source', filters.fonteFilter);
-        }
-
         const { data: batchData, error: batchError } = await query;
 
         if (batchError) throw batchError;
@@ -115,7 +102,24 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
         vendedor_atribuido_profile: item.vendedor_atribuido_profile || undefined
       })) as Lead[];
 
-      // Aplicar filtros complexos no lado cliente (que precisam de parsing)
+      // Aplicar TODOS os filtros no lado cliente
+      if (filters.searchTerm) {
+        const searchTerm = filters.searchTerm.toLowerCase();
+        allFilteredLeads = allFilteredLeads.filter(lead => 
+          lead.nome?.toLowerCase().includes(searchTerm) ||
+          lead.email?.toLowerCase().includes(searchTerm) ||
+          lead.whatsapp?.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      if (filters.statusFilter && filters.statusFilter !== 'todos') {
+        allFilteredLeads = allFilteredLeads.filter(lead => lead.status === filters.statusFilter);
+      }
+
+      if (filters.fonteFilter && filters.fonteFilter !== 'todos') {
+        allFilteredLeads = allFilteredLeads.filter(lead => lead.utm_source === filters.fonteFilter);
+      }
+
       if (filters.profissaoFilter && filters.profissaoFilter !== 'todos') {
         allFilteredLeads = allFilteredLeads.filter(lead => {
           const match = lead.observacoes?.match(/Profissão\/Área:\s*([^\n]+)/);
