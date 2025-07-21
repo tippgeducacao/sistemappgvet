@@ -1,16 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
-
 interface AuthLayoutProps {
   children: React.ReactNode;
 }
-
 const AuthLayout: React.FC<AuthLayoutProps> = ({
   children
 }) => {
-  return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
+  return <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
       {/* Background with gradient and animated elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-ppgvet-teal-500/20 via-ppgvet-magenta-500/10 to-ppgvet-teal-600/30">
         {/* Animated background blobs */}
@@ -22,12 +19,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
       {/* Glassmorphism container */}
       <div className="relative z-10 w-full max-w-md">
         {/* Logo section with glass effect */}
-        <div className="text-center mb-8 backdrop-blur-md bg-white/80 rounded-2xl p-6 border border-white/40 shadow-xl">
-          <img 
-            src="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" 
-            alt="Logo" 
-            className="h-20 w-auto mx-auto mb-4 drop-shadow-lg" 
-          />
+        <div className="text-center mb-8 backdrop-blur-md rounded-2xl p-6 border border-white/40 shadow-xl bg-[#c4c4c4]">
+          <img src="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" alt="Logo" className="h-20 w-auto mx-auto mb-4 drop-shadow-lg" />
           <div className="text-gray-800 drop-shadow-sm">
             <span className="text-xl font-light">Seja o </span>
             <span className="text-xl font-bold text-blue-600 typing-effect">Ponto</span>
@@ -48,7 +41,6 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
 export default AuthLayout;
