@@ -251,7 +251,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     
     const pontosRestantes = Math.max(0, metaSemanal - pontosAtual);
     const diaAtual = getCurrentWorkDay(); // 1=quarta, 7=terça
-    const diasRestantes = Math.max(1, 7 - diaAtual + 1); // Quantos dias restam (incluindo hoje)
+    const diasRestantes = Math.max(1, 8 - diaAtual); // Quantos dias restam (não incluindo hoje)
     
     return pontosRestantes / diasRestantes;
   };
