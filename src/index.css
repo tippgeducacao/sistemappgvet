@@ -104,39 +104,39 @@
   }
 }
 
-/* Typing effect for the word "Ponto" */
+/* Animação de digitação e apagamento para a palavra "Ponto" */
 .typing-effect {
   position: relative;
+  display: inline-block;
   overflow: hidden;
-}
-
-.typing-effect::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background-color: #3b82f6;
-  animation: blink 1s infinite;
-}
-
-.typing-effect {
-  animation: typing 3s steps(5, end) infinite, blink-caret 0.75s step-end infinite;
+  border-right: 2px solid #000000;
   white-space: nowrap;
-  border-right: 2px solid #3b82f6;
-  overflow: hidden;
-  width: 0;
-  animation: typing 3s steps(5, end) infinite alternate, blink 1s infinite;
+  animation: typeAndErase 4s infinite, blinkCursor 1s infinite;
 }
 
-@keyframes typing {
+@keyframes typeAndErase {
+  /* Fase 1: Digitando "Ponto" (0% a 37.5% = 1.5s) */
   0% { width: 0; }
-  50% { width: 100%; }
+  9.375% { width: 0.6ch; } /* P */
+  18.75% { width: 1.2ch; } /* Po */
+  28.125% { width: 1.8ch; } /* Pon */
+  37.5% { width: 2.4ch; } /* Pont */
+  46.875% { width: 3ch; } /* Ponto */
+  
+  /* Fase 2: Pausa com palavra completa (46.875% a 71.875% = 1s) */
+  71.875% { width: 3ch; }
+  
+  /* Fase 3: Apagando "Ponto" (71.875% a 96.875% = 1s) */
+  78.125% { width: 2.4ch; } /* Pont */
+  84.375% { width: 1.8ch; } /* Pon */
+  90.625% { width: 1.2ch; } /* Po */
+  96.875% { width: 0.6ch; } /* P */
+  
+  /* Fase 4: Pausa vazia (96.875% a 100% = 0.125s) */
   100% { width: 0; }
 }
 
-@keyframes blink {
-  0%, 50% { border-color: transparent; }
-  51%, 100% { border-color: #3b82f6; }
+@keyframes blinkCursor {
+  0%, 50% { border-color: #000000; }
+  51%, 100% { border-color: transparent; }
 }
