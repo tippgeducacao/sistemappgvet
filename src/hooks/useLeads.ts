@@ -65,34 +65,50 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
   return useQuery({
     queryKey: ['leads', page, itemsPerPage, filters],
     queryFn: async () => {
-      // Primeiro, vamos buscar TODOS os leads com os filtros básicos aplicados
-      let query = supabase
-        .from('leads')
-        .select(`
-          *,
-          vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
-        `)
-        .limit(50000); // Garantir que pegue todos os leads
+      // Buscar TODOS os leads usando paginação em lotes
+      let allData: any[] = [];
+      let startIndex = 0;
+      const batchSize = 1000;
+      let hasMore = true;
 
-      // Aplicar filtros básicos no servidor
-      if (filters.searchTerm) {
-        query = query.or(`nome.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,whatsapp.ilike.%${filters.searchTerm}%`);
+      while (hasMore) {
+        let query = supabase
+          .from('leads')
+          .select(`
+            *,
+            vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
+          `)
+          .order('created_at', { ascending: false })
+          .range(startIndex, startIndex + batchSize - 1);
+
+        // Aplicar filtros básicos no servidor
+        if (filters.searchTerm) {
+          query = query.or(`nome.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,whatsapp.ilike.%${filters.searchTerm}%`);
+        }
+
+        if (filters.statusFilter && filters.statusFilter !== 'todos') {
+          query = query.eq('status', filters.statusFilter);
+        }
+
+        if (filters.fonteFilter && filters.fonteFilter !== 'todos') {
+          query = query.eq('utm_source', filters.fonteFilter);
+        }
+
+        const { data: batchData, error: batchError } = await query;
+
+        if (batchError) throw batchError;
+        
+        if (batchData && batchData.length > 0) {
+          allData = [...allData, ...batchData];
+          startIndex += batchSize;
+          hasMore = batchData.length === batchSize;
+        } else {
+          hasMore = false;
+        }
       }
-
-      if (filters.statusFilter && filters.statusFilter !== 'todos') {
-        query = query.eq('status', filters.statusFilter);
-      }
-
-      if (filters.fonteFilter && filters.fonteFilter !== 'todos') {
-        query = query.eq('utm_source', filters.fonteFilter);
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false});
-
-      if (error) throw error;
       
       // Map to ensure all required fields are present
-      let allFilteredLeads = (data || []).map(item => ({
+      let allFilteredLeads = allData.map(item => ({
         ...item,
         data_captura: item.created_at || new Date().toISOString(),
         convertido_em_venda: false,
@@ -119,9 +135,9 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
       // Agora aplicar a paginação nos leads já filtrados
       const totalCount = allFilteredLeads.length;
       const totalPages = Math.ceil(totalCount / itemsPerPage);
-      const from = (page - 1) * itemsPerPage;
-      const to = from + itemsPerPage;
-      const paginatedLeads = allFilteredLeads.slice(from, to);
+      const paginationStart = (page - 1) * itemsPerPage;
+      const paginationEnd = paginationStart + itemsPerPage;
+      const paginatedLeads = allFilteredLeads.slice(paginationStart, paginationEnd);
 
       return {
         leads: paginatedLeads,
