@@ -23,7 +23,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-white font-medium">E-mail</Label>
+        <Label htmlFor="email" className="text-gray-700 font-medium">E-mail</Label>
         <Input
           id="email"
           type="email"
@@ -31,13 +31,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="h-12 bg-white/90 border-white/50 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-ppgvet-teal-500"
+          className="h-12 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-ppgvet-teal-500 focus:ring-2 focus:ring-ppgvet-teal-500/20"
           autoComplete="email"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-white font-medium">Senha</Label>
+        <Label htmlFor="password" className="text-gray-700 font-medium">Senha</Label>
         <div className="relative">
           <Input
             id="password"
@@ -46,7 +46,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="h-12 pr-10 bg-white/90 border-white/50 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-ppgvet-teal-500"
+            className="h-12 pr-10 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-ppgvet-teal-500 focus:ring-2 focus:ring-ppgvet-teal-500/20"
             autoComplete="current-password"
           />
           <Button
