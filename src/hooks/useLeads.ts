@@ -98,7 +98,8 @@ export const useAllLeads = () => {
           *,
           vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(10000); // Garantir que todos os leads sejam retornados
 
       if (error) throw error;
       
