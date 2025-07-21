@@ -106,7 +106,7 @@
 
 /* Animação de digitação e apagamento para a palavra "Ponto" */
 .typing-effect {
-  display: inline;
+  display: inline-block;
   overflow: hidden;
   border-right: 2px solid #000000;
   white-space: nowrap;
