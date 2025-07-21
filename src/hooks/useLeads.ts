@@ -71,7 +71,8 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
         .select(`
           *,
           vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
-        `);
+        `)
+        .limit(50000); // Garantir que pegue todos os leads
 
       // Aplicar filtros básicos no servidor
       if (filters.searchTerm) {
@@ -86,7 +87,7 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
         query = query.eq('utm_source', filters.fonteFilter);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query.order('created_at', { ascending: false});
 
       if (error) throw error;
       
@@ -155,7 +156,7 @@ export const useLeadsFilterData = () => {
       const { data, error } = await supabase
         .from('leads')
         .select('observacoes, pagina_nome, utm_source')
-        .limit(10000);
+        .limit(50000);
 
       if (error) throw error;
       
@@ -196,7 +197,7 @@ export const useAllLeads = () => {
           vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
         `)
         .order('created_at', { ascending: false })
-        .limit(10000); // Garantir que todos os leads sejam retornados
+        .limit(50000); // Garantir que todos os leads sejam retornados
 
       if (error) throw error;
       
