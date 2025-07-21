@@ -24,12 +24,15 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
         {/* Logo section with glass effect */}
         <div className="text-center mb-8 backdrop-blur-sm bg-white/10 rounded-2xl p-6 border border-white/20 shadow-lg">
           <img 
-            src="/lovable-uploads/d8ea7bf6-cd20-48c9-bf0d-3a132ba840a9.png" 
-            alt="PPGVET Logo" 
+            src="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" 
+            alt="Logo" 
             className="h-20 w-auto mx-auto mb-4 drop-shadow-lg" 
           />
-          <h1 className="text-2xl font-bold text-white drop-shadow-lg">Sistema PPGVET</h1>
-          <p className="text-white/80 drop-shadow-md">Gestão de Matrículas</p>
+          <div className="text-white drop-shadow-lg">
+            <span className="text-xl font-light">Seja o </span>
+            <span className="text-xl font-bold text-blue-500 typing-effect">Ponto</span>
+            <span className="text-xl font-light"> Fora da caixa</span>
+          </div>
         </div>
 
         {/* Main card with liquid glass effect */}
