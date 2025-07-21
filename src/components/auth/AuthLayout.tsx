@@ -22,15 +22,15 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
       {/* Glassmorphism container */}
       <div className="relative z-10 w-full max-w-md">
         {/* Logo section with glass effect */}
-        <div className="text-center mb-8 backdrop-blur-sm bg-white/10 rounded-2xl p-6 border border-white/20 shadow-lg">
+        <div className="text-center mb-8 backdrop-blur-md bg-white/80 rounded-2xl p-6 border border-white/40 shadow-xl">
           <img 
             src="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" 
             alt="Logo" 
             className="h-20 w-auto mx-auto mb-4 drop-shadow-lg" 
           />
-          <div className="text-white drop-shadow-lg">
+          <div className="text-gray-800 drop-shadow-sm">
             <span className="text-xl font-light">Seja o </span>
-            <span className="text-xl font-bold text-blue-500 typing-effect">Ponto</span>
+            <span className="text-xl font-bold text-blue-600 typing-effect">Ponto</span>
             <span className="text-xl font-light"> Fora da caixa</span>
           </div>
         </div>
