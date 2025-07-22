@@ -52,11 +52,12 @@ export class AgendamentosService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Validar se a data/hora é no futuro
+      // Validar se a data/hora é no futuro (com margem de 5 minutos)
       const dataAgendamento = new Date(dados.data_agendamento);
       const agora = new Date();
+      const cincoMinutosAtras = new Date(agora.getTime() - 5 * 60 * 1000);
       
-      if (dataAgendamento <= agora) {
+      if (dataAgendamento <= cincoMinutosAtras) {
         throw new Error('Não é possível agendar para uma data/hora que já passou');
       }
 
@@ -367,12 +368,13 @@ export class AgendamentosService {
     }
   ): Promise<boolean> {
     try {
-      // Validar se a nova data/hora é no futuro (se fornecida)
+      // Validar se a nova data/hora é no futuro (se fornecida) - com margem de 5 minutos
       if (dados.data_agendamento) {
         const dataAgendamento = new Date(dados.data_agendamento);
         const agora = new Date();
+        const cincoMinutosAtras = new Date(agora.getTime() - 5 * 60 * 1000);
         
-        if (dataAgendamento <= agora) {
+        if (dataAgendamento <= cincoMinutosAtras) {
           throw new Error('Não é possível agendar para uma data/hora que já passou');
         }
 
