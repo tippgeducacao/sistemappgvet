@@ -44,8 +44,9 @@ const AgendamentosPage: React.FC = () => {
   const [editingAgendamento, setEditingAgendamento] = useState<any>(null);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editFormData, setEditFormData] = useState({
-    data_agendamento: '',
-    data_fim_agendamento: '',
+    data: '',
+    horario_inicio: '',
+    horario_fim: '',
     pos_graduacao_interesse: '',
     observacoes: ''
   });
@@ -345,9 +346,13 @@ const AgendamentosPage: React.FC = () => {
 
   const handleEditAgendamento = (agendamento: any) => {
     setEditingAgendamento(agendamento);
+    const dataInicio = new Date(agendamento.data_agendamento);
+    const dataFim = agendamento.data_fim_agendamento ? new Date(agendamento.data_fim_agendamento) : null;
+    
     setEditFormData({
-      data_agendamento: agendamento.data_agendamento.split('T')[0] + 'T' + agendamento.data_agendamento.split('T')[1].split('.')[0],
-      data_fim_agendamento: agendamento.data_fim_agendamento ? agendamento.data_fim_agendamento.split('T')[0] + 'T' + agendamento.data_fim_agendamento.split('T')[1].split('.')[0] : '',
+      data: dataInicio.toISOString().split('T')[0],
+      horario_inicio: dataInicio.toTimeString().slice(0, 5),
+      horario_fim: dataFim ? dataFim.toTimeString().slice(0, 5) : '',
       pos_graduacao_interesse: agendamento.pos_graduacao_interesse,
       observacoes: agendamento.observacoes || ''
     });
@@ -355,23 +360,26 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const handleUpdateAgendamento = async () => {
-    if (!editingAgendamento || !editFormData.data_agendamento) {
+    if (!editingAgendamento || !editFormData.data || !editFormData.horario_inicio) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
     // Validar se horário final é posterior ao inicial
-    if (editFormData.data_fim_agendamento && editFormData.data_fim_agendamento <= editFormData.data_agendamento) {
+    if (editFormData.horario_fim && editFormData.horario_fim <= editFormData.horario_inicio) {
       toast.error('O horário final deve ser posterior ao horário inicial');
       return;
     }
 
     try {
+      const dataAgendamento = `${editFormData.data}T${editFormData.horario_inicio}:00`;
+      const dataFimAgendamento = editFormData.horario_fim ? `${editFormData.data}T${editFormData.horario_fim}:00` : undefined;
+
       const success = await AgendamentosService.atualizarAgendamentoSDR(
         editingAgendamento.id,
         {
-          data_agendamento: editFormData.data_agendamento,
-          data_fim_agendamento: editFormData.data_fim_agendamento || undefined,
+          data_agendamento: dataAgendamento,
+          data_fim_agendamento: dataFimAgendamento,
           observacoes: editFormData.observacoes
         }
       );
@@ -900,25 +908,34 @@ const AgendamentosPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Data e Horário Início */}
+            {/* Data */}
             <div className="space-y-2">
-              <Label>Data e Horário de Início *</Label>
+              <Label>Data *</Label>
               <Input
-                type="datetime-local"
-                value={editFormData.data_agendamento}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, data_agendamento: e.target.value }))}
-                min={new Date().toISOString().slice(0, 16)}
+                type="date"
+                value={editFormData.data}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, data: e.target.value }))}
+                min={new Date().toISOString().split('T')[0]}
               />
             </div>
 
-            {/* Data e Horário Final */}
+            {/* Horário Início */}
             <div className="space-y-2">
-              <Label>Data e Horário Final</Label>
+              <Label>Horário de Início *</Label>
               <Input
-                type="datetime-local"
-                value={editFormData.data_fim_agendamento}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, data_fim_agendamento: e.target.value }))}
-                min={editFormData.data_agendamento || new Date().toISOString().slice(0, 16)}
+                type="time"
+                value={editFormData.horario_inicio}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, horario_inicio: e.target.value }))}
+              />
+            </div>
+
+            {/* Horário Final */}
+            <div className="space-y-2">
+              <Label>Horário Final</Label>
+              <Input
+                type="time"
+                value={editFormData.horario_fim}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, horario_fim: e.target.value }))}
               />
             </div>
 
