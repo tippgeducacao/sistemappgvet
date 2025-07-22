@@ -60,6 +60,23 @@ export class AgendamentosService {
         throw new Error('Não é possível agendar para uma data/hora que já passou');
       }
 
+      // Verificar horário de trabalho do vendedor
+      const verificacaoHorario = await this.verificarHorarioTrabalho(
+        dados.vendedor_id, 
+        dados.data_agendamento, 
+        dados.data_fim_agendamento
+      );
+      
+      if (!verificacaoHorario.valido) {
+        throw new Error(verificacaoHorario.motivo || 'Horário inválido');
+      }
+
+      // Verificar conflitos de agenda
+      const temConflito = await this.verificarConflitosAgenda(dados.vendedor_id, dados.data_agendamento);
+      if (temConflito) {
+        throw new Error('Vendedor já possui agendamento neste horário');
+      }
+
       const { data, error } = await supabase
         .from('agendamentos')
         .insert({
@@ -182,6 +199,107 @@ export class AgendamentosService {
     }
   }
 
+  static async verificarHorarioTrabalho(vendedorId: string, dataAgendamento: string, dataFimAgendamento?: string): Promise<{ valido: boolean; motivo?: string }> {
+    try {
+      // Buscar horário de trabalho do vendedor
+      const { data: vendedor, error } = await supabase
+        .from('profiles')
+        .select('horario_trabalho')
+        .eq('id', vendedorId)
+        .single();
+
+      if (error || !vendedor) {
+        return { valido: false, motivo: 'Vendedor não encontrado' };
+      }
+
+      const horarioTrabalho = vendedor.horario_trabalho as any;
+      if (!horarioTrabalho) {
+        return { valido: false, motivo: 'Horário de trabalho não definido para este vendedor' };
+      }
+
+      const dataInicio = new Date(dataAgendamento);
+      const dataFim = dataFimAgendamento ? new Date(dataFimAgendamento) : new Date(dataInicio.getTime() + 60 * 60 * 1000);
+      
+      const diaSemana = dataInicio.getDay(); // 0 = domingo, 1 = segunda, ..., 6 = sábado
+      const horarioInicioReuniao = dataInicio.toTimeString().slice(0, 5);
+      const horarioFimReuniao = dataFim.toTimeString().slice(0, 5);
+
+      // Verificar se é formato antigo ou novo
+      let periodosTrabalho: any[] = [];
+      
+      if (horarioTrabalho.manha_inicio) {
+        // Formato antigo
+        periodosTrabalho = [
+          {
+            inicio: horarioTrabalho.manha_inicio,
+            fim: horarioTrabalho.manha_fim
+          },
+          {
+            inicio: horarioTrabalho.tarde_inicio,
+            fim: horarioTrabalho.tarde_fim
+          }
+        ];
+      } else {
+        // Formato novo
+        const diasValidos = horarioTrabalho.dias_trabalho === 'segunda_sabado' ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5];
+        
+        if (!diasValidos.includes(diaSemana)) {
+          return { valido: false, motivo: 'Vendedor não trabalha neste dia da semana' };
+        }
+
+        if (diaSemana >= 1 && diaSemana <= 5 && horarioTrabalho.segunda_sexta) {
+          // Segunda a sexta
+          periodosTrabalho = [
+            {
+              inicio: horarioTrabalho.segunda_sexta.periodo1_inicio,
+              fim: horarioTrabalho.segunda_sexta.periodo1_fim
+            },
+            {
+              inicio: horarioTrabalho.segunda_sexta.periodo2_inicio,
+              fim: horarioTrabalho.segunda_sexta.periodo2_fim
+            }
+          ];
+        } else if (diaSemana === 6 && horarioTrabalho.sabado) {
+          // Sábado
+          periodosTrabalho = [
+            {
+              inicio: horarioTrabalho.sabado.periodo1_inicio,
+              fim: horarioTrabalho.sabado.periodo1_fim
+            }
+          ];
+          if (horarioTrabalho.sabado.periodo2_inicio && horarioTrabalho.sabado.periodo2_fim) {
+            periodosTrabalho.push({
+              inicio: horarioTrabalho.sabado.periodo2_inicio,
+              fim: horarioTrabalho.sabado.periodo2_fim
+            });
+          }
+        }
+      }
+
+      // Verificar se a reunião se encaixa em algum período de trabalho
+      const reuniaoCabeNoPeriodo = periodosTrabalho.some(periodo => {
+        return horarioInicioReuniao >= periodo.inicio && 
+               horarioFimReuniao <= periodo.fim;
+      });
+
+      if (!reuniaoCabeNoPeriodo) {
+        const periodosFormatados = periodosTrabalho
+          .filter(p => p.inicio && p.fim)
+          .map(p => `${p.inicio} às ${p.fim}`)
+          .join(' e ');
+        return { 
+          valido: false, 
+          motivo: `Reunião fora do horário de trabalho do vendedor. Horários disponíveis: ${periodosFormatados}` 
+        };
+      }
+
+      return { valido: true };
+    } catch (error) {
+      console.error('Erro ao verificar horário de trabalho:', error);
+      return { valido: false, motivo: 'Erro ao verificar horário de trabalho' };
+    }
+  }
+
   static async atualizarStatusLead(leadId: string, novoStatus: string): Promise<void> {
     try {
       const { error } = await supabase
@@ -252,6 +370,28 @@ export class AgendamentosService {
         
         if (dataAgendamento <= agora) {
           throw new Error('Não é possível agendar para uma data/hora que já passou');
+        }
+
+        // Buscar o vendedor do agendamento para verificar horário de trabalho
+        const { data: agendamento, error: agendamentoError } = await supabase
+          .from('agendamentos')
+          .select('vendedor_id')
+          .eq('id', id)
+          .single();
+
+        if (agendamentoError || !agendamento) {
+          throw new Error('Agendamento não encontrado');
+        }
+
+        // Verificar horário de trabalho do vendedor
+        const verificacaoHorario = await this.verificarHorarioTrabalho(
+          agendamento.vendedor_id, 
+          dados.data_agendamento, 
+          dados.data_fim_agendamento
+        );
+        
+        if (!verificacaoHorario.valido) {
+          throw new Error(verificacaoHorario.motivo || 'Horário inválido');
         }
       }
 
