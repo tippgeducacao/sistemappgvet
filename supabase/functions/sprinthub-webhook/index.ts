@@ -88,40 +88,32 @@ serve(async (req) => {
     const leadData = {
       nome: webhookData.nome || webhookData.name || '',
       email: webhookData.email || '',
-      whatsapp: webhookData.telefone || webhookData.whatsapp || webhookData.phone || '',
-      fonte_referencia: webhookData.fonte || webhookData.source || 'SprintHub',
-      fonte_captura: 'SprintHub',
-      sprinthub_id: webhookData.id?.toString(),
-      produto_interesse: webhookData.produto || webhookData.product || '',
+      whatsapp: webhookData.whatsapp || webhookData.telefone || webhookData.phone || '',
+      fonte_referencia: 'SprintHub',
+      dispositivo: webhookData.dispositivo || '',
+      regiao: webhookData.regiao || '',
+      pagina_id: webhookData.pagina_id || '',
+      pagina_nome: webhookData.pagina_nome || '',
       utm_source: webhookData.utm_source || '',
       utm_medium: webhookData.utm_medium || '',
       utm_campaign: webhookData.utm_campaign || '',
       utm_content: webhookData.utm_content || '',
       utm_term: webhookData.utm_term || '',
-      status: 'Novo',
-      created_at: webhookData.created_at || webhookData.data_criacao || new Date().toISOString()
+      ip_address: webhookData.ip_address || '',
+      status: 'novo'
     };
 
     console.log('🔄 Dados formatados para inserção:', JSON.stringify(leadData, null, 2));
 
-    // Verificar se já existe um lead com mesmo sprinthub_id ou email
+    // Verificar se já existe um lead com mesmo email
     let existingLead = null;
     
-    if (leadData.sprinthub_id) {
-      const { data: leadBySprint } = await supabase
-        .from('leads')
-        .select('id')
-        .eq('sprinthub_id', leadData.sprinthub_id)
-        .single();
-      existingLead = leadBySprint;
-    }
-    
-    if (!existingLead && leadData.email) {
+    if (leadData.email) {
       const { data: leadByEmail } = await supabase
         .from('leads')
         .select('id')
         .eq('email', leadData.email)
-        .single();
+        .maybeSingle();
       existingLead = leadByEmail;
     }
 
