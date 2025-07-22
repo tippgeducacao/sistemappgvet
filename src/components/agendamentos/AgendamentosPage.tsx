@@ -185,8 +185,8 @@ const AgendamentosPage: React.FC = () => {
       return;
     }
 
-    const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00`;
-    const dataHoraFim = `${selectedDateForm}T${selectedEndTime}:00`;
+    const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00.000-03:00`; // Fuso horário brasileiro
+    const dataHoraFim = `${selectedDateForm}T${selectedEndTime}:00.000-03:00`; // Fuso horário brasileiro
     
     try {
       // Selecionar vendedor automaticamente
@@ -372,8 +372,8 @@ const AgendamentosPage: React.FC = () => {
     }
 
     try {
-      const dataAgendamento = `${editFormData.data}T${editFormData.horario_inicio}:00`;
-      const dataFimAgendamento = editFormData.horario_fim ? `${editFormData.data}T${editFormData.horario_fim}:00` : undefined;
+      const dataAgendamento = `${editFormData.data}T${editFormData.horario_inicio}:00.000-03:00`;
+      const dataFimAgendamento = editFormData.horario_fim ? `${editFormData.data}T${editFormData.horario_fim}:00.000-03:00` : undefined;
 
       const success = await AgendamentosService.atualizarAgendamentoSDR(
         editingAgendamento.id,
@@ -1138,16 +1138,16 @@ const AgendamentosPage: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-muted-foreground">Data/Horário</p>
-                            <p className="font-medium">
-                              {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })} {' '}
-                              {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
-                              {agendamento.data_fim_agendamento && (
-                                <>
-                                  {' - '}
-                                  {format(new Date(agendamento.data_fim_agendamento), 'HH:mm', { locale: ptBR })}
-                                </>
-                              )}
-                            </p>
+                             <p className="font-medium">
+                               {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })} {' '}
+                               {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
+                               {agendamento.data_fim_agendamento && (
+                                 <>
+                                   {' - '}
+                                   {format(new Date(agendamento.data_fim_agendamento), 'HH:mm', { locale: ptBR })}
+                                 </>
+                               )}
+                             </p>
                           </div>
                         </div>
 
