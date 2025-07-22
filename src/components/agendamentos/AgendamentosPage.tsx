@@ -485,48 +485,139 @@ const AgendamentosPage: React.FC = () => {
                 </Button>
               </div>
               
-              <div className="flex gap-2">
-                <Select value={searchType} onValueChange={(value: 'nome' | 'email' | 'whatsapp') => setSearchType(value)}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nome">Nome</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Input
-                  placeholder={`Buscar por ${searchType}...`}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-
-              {/* Lista de leads com scroll - sempre visível se há leads */}
-              {filteredLeads.length > 0 && (
-                <div className="border rounded-lg max-h-40 overflow-y-auto">
-                  {filteredLeads.map((lead) => (
-                    <div
-                      key={lead.id}
-                      className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${
-                        selectedLead === lead.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
-                      }`}
-                      onClick={() => setSelectedLead(lead.id)}
+              {/* Formulário de novo lead */}
+              {showNewLeadForm && (
+                <div className="border rounded-lg p-4 bg-muted/20">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-medium">Criar Novo Lead</h4>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setShowNewLeadForm(false)}
                     >
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{lead.nome}</p>
-                          {lead.email && <p className="text-xs text-muted-foreground">{lead.email}</p>}
-                          {lead.whatsapp && <p className="text-xs text-muted-foreground">{lead.whatsapp}</p>}
-                        </div>
-                      </div>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="newLeadNome">Nome *</Label>
+                      <Input
+                        id="newLeadNome"
+                        value={newLeadData.nome}
+                        onChange={(e) => setNewLeadData(prev => ({ ...prev, nome: e.target.value }))}
+                        placeholder="Nome completo"
+                      />
                     </div>
-                  ))}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="newLeadEmail">Email *</Label>
+                      <Input
+                        id="newLeadEmail"
+                        type="email"
+                        value={newLeadData.email}
+                        onChange={(e) => setNewLeadData(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="email@exemplo.com"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="newLeadWhatsapp">WhatsApp *</Label>
+                      <Input
+                        id="newLeadWhatsapp"
+                        value={newLeadData.whatsapp}
+                        onChange={(e) => setNewLeadData(prev => ({ ...prev, whatsapp: e.target.value }))}
+                        placeholder="(11) 99999-9999"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="newLeadObservacoes">Observações</Label>
+                      <Textarea
+                        id="newLeadObservacoes"
+                        value={newLeadData.observacoes}
+                        onChange={(e) => setNewLeadData(prev => ({ ...prev, observacoes: e.target.value }))}
+                        placeholder="Informações adicionais..."
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 mt-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setShowNewLeadForm(false);
+                        setNewLeadData({
+                          nome: '',
+                          email: '',
+                          whatsapp: '',
+                          observacoes: '',
+                          fonte_referencia: 'Agendamentos',
+                          status: 'novo'
+                        });
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={handleCreateNewLead}
+                      disabled={isCreatingLead}
+                    >
+                      {isCreatingLead ? 'Criando...' : 'Criar Lead'}
+                    </Button>
+                  </div>
                 </div>
+              )}
+              
+              {!showNewLeadForm && (
+                <>
+                  <div className="flex gap-2">
+                    <Select value={searchType} onValueChange={(value: 'nome' | 'email' | 'whatsapp') => setSearchType(value)}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nome">Nome</SelectItem>
+                        <SelectItem value="email">Email</SelectItem>
+                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Input
+                      placeholder={`Buscar por ${searchType}...`}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
+
+                  {/* Lista de leads com scroll - sempre visível se há leads */}
+                  {filteredLeads.length > 0 && (
+                    <div className="border rounded-lg max-h-40 overflow-y-auto">
+                      {filteredLeads.map((lead) => (
+                        <div
+                          key={lead.id}
+                          className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${
+                            selectedLead === lead.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
+                          }`}
+                          onClick={() => setSelectedLead(lead.id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{lead.nome}</p>
+                              {lead.email && <p className="text-xs text-muted-foreground">{lead.email}</p>}
+                              {lead.whatsapp && <p className="text-xs text-muted-foreground">{lead.whatsapp}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -898,85 +989,6 @@ const AgendamentosPage: React.FC = () => {
             </Button>
             <Button onClick={handleCreateSprintHubLead}>
               Criar Lead
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
-
-      {/* New Lead Form Modal */}
-      {showNewLeadForm && (
-        <Card className="w-full max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle>Novo Lead</CardTitle>
-            <CardDescription>
-              Cadastre um novo lead no sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="newLeadNome">Nome *</Label>
-              <Input
-                id="newLeadNome"
-                value={newLeadData.nome}
-                onChange={(e) => setNewLeadData(prev => ({ ...prev, nome: e.target.value }))}
-                placeholder="Nome completo"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="newLeadEmail">Email *</Label>
-              <Input
-                id="newLeadEmail"
-                type="email"
-                value={newLeadData.email}
-                onChange={(e) => setNewLeadData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="email@exemplo.com"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="newLeadWhatsapp">WhatsApp *</Label>
-              <Input
-                id="newLeadWhatsapp"
-                value={newLeadData.whatsapp}
-                onChange={(e) => setNewLeadData(prev => ({ ...prev, whatsapp: e.target.value }))}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="newLeadObservacoes">Observações</Label>
-              <Textarea
-                id="newLeadObservacoes"
-                value={newLeadData.observacoes}
-                onChange={(e) => setNewLeadData(prev => ({ ...prev, observacoes: e.target.value }))}
-                placeholder="Informações adicionais sobre o lead..."
-                rows={3}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowNewLeadForm(false);
-                setNewLeadData({
-                  nome: '',
-                  email: '',
-                  whatsapp: '',
-                  observacoes: '',
-                  fonte_referencia: 'Agendamentos',
-                  status: 'novo'
-                });
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleCreateNewLead}
-              disabled={isCreatingLead}
-            >
-              {isCreatingLead ? 'Criando...' : 'Criar Lead'}
             </Button>
           </CardFooter>
         </Card>
