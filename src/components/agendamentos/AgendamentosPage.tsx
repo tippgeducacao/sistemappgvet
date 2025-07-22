@@ -407,6 +407,9 @@ const AgendamentosPage: React.FC = () => {
             status: 'novo'
           });
           setShowNewLeadForm(false);
+          // Selecionar automaticamente o lead criado
+          setSelectedLead(leadCriado.id);
+          // Atualizar a lista de leads
           carregarDados();
         },
         onError: (error) => {
@@ -451,20 +454,10 @@ const AgendamentosPage: React.FC = () => {
           <h1 className="text-3xl font-bold">Agendamentos</h1>
           <p className="text-muted-foreground">Gerencie reuniões entre SDRs, leads e vendedores</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => setShowNewLeadForm(true)} 
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Novo Lead
-          </Button>
-          <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Agendamento
-          </Button>
-        </div>
+        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Novo Agendamento
+        </Button>
       </div>
 
       {/* Form Modal */}
@@ -479,7 +472,18 @@ const AgendamentosPage: React.FC = () => {
           <CardContent className="space-y-4">
             {/* Lead Search */}
             <div className="space-y-2">
-              <Label htmlFor="lead">Buscar Lead *</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="lead">Buscar Lead *</Label>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowNewLeadForm(true)}
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-3 w-3" />
+                  Novo Lead
+                </Button>
+              </div>
               
               <div className="flex gap-2">
                 <Select value={searchType} onValueChange={(value: 'nome' | 'email' | 'whatsapp') => setSearchType(value)}>
