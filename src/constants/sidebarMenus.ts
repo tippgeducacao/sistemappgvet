@@ -134,10 +134,5 @@ export const SDR_MENU_ITEMS: MenuItem[] = [
     section: 'minhas-vendas',
     icon: 'ShoppingCart'
   },
-  {
-    title: 'Alunos',
-    section: 'matriculas',
-    icon: 'GraduationCap'
-  }
 ];
 
