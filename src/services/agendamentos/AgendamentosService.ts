@@ -239,6 +239,7 @@ export class AgendamentosService {
     id: string,
     dados: {
       data_agendamento?: string;
+      data_fim_agendamento?: string;
       pos_graduacao_interesse?: string;
       observacoes?: string;
     }

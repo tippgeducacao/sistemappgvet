@@ -45,6 +45,7 @@ const AgendamentosPage: React.FC = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [editFormData, setEditFormData] = useState({
     data_agendamento: '',
+    data_fim_agendamento: '',
     pos_graduacao_interesse: '',
     observacoes: ''
   });
@@ -346,6 +347,7 @@ const AgendamentosPage: React.FC = () => {
     setEditingAgendamento(agendamento);
     setEditFormData({
       data_agendamento: agendamento.data_agendamento.split('T')[0] + 'T' + agendamento.data_agendamento.split('T')[1].split('.')[0],
+      data_fim_agendamento: agendamento.data_fim_agendamento ? agendamento.data_fim_agendamento.split('T')[0] + 'T' + agendamento.data_fim_agendamento.split('T')[1].split('.')[0] : '',
       pos_graduacao_interesse: agendamento.pos_graduacao_interesse,
       observacoes: agendamento.observacoes || ''
     });
@@ -353,15 +355,25 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const handleUpdateAgendamento = async () => {
-    if (!editingAgendamento || !editFormData.data_agendamento || !editFormData.pos_graduacao_interesse) {
+    if (!editingAgendamento || !editFormData.data_agendamento) {
       toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    // Validar se horário final é posterior ao inicial
+    if (editFormData.data_fim_agendamento && editFormData.data_fim_agendamento <= editFormData.data_agendamento) {
+      toast.error('O horário final deve ser posterior ao horário inicial');
       return;
     }
 
     try {
       const success = await AgendamentosService.atualizarAgendamentoSDR(
         editingAgendamento.id,
-        editFormData
+        {
+          data_agendamento: editFormData.data_agendamento,
+          data_fim_agendamento: editFormData.data_fim_agendamento || undefined,
+          observacoes: editFormData.observacoes
+        }
       );
 
       if (success) {
@@ -888,9 +900,9 @@ const AgendamentosPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Data e Horário */}
+            {/* Data e Horário Início */}
             <div className="space-y-2">
-              <Label>Data e Horário *</Label>
+              <Label>Data e Horário de Início *</Label>
               <Input
                 type="datetime-local"
                 value={editFormData.data_agendamento}
@@ -899,24 +911,28 @@ const AgendamentosPage: React.FC = () => {
               />
             </div>
 
-            {/* Pós-graduação Selection */}
+            {/* Data e Horário Final */}
             <div className="space-y-2">
-              <Label>Pós-graduação de Interesse *</Label>
-              <Select 
-                value={editFormData.pos_graduacao_interesse} 
-                onValueChange={(value) => setEditFormData(prev => ({ ...prev, pos_graduacao_interesse: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a pós-graduação" />
-                </SelectTrigger>
-                <SelectContent>
-                  {posGraduacoes.map((pos) => (
-                    <SelectItem key={pos.id} value={pos.nome}>
-                      {pos.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Data e Horário Final</Label>
+              <Input
+                type="datetime-local"
+                value={editFormData.data_fim_agendamento}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, data_fim_agendamento: e.target.value }))}
+                min={editFormData.data_agendamento || new Date().toISOString().slice(0, 16)}
+              />
+            </div>
+
+            {/* Pós-graduação Selection - DESABILITADA */}
+            <div className="space-y-2">
+              <Label>Pós-graduação de Interesse</Label>
+              <Input
+                value={editFormData.pos_graduacao_interesse}
+                disabled
+                className="bg-muted text-muted-foreground"
+              />
+              <p className="text-xs text-muted-foreground">
+                A pós-graduação de interesse não pode ser alterada após o agendamento ser criado.
+              </p>
             </div>
 
             {/* Observações */}
