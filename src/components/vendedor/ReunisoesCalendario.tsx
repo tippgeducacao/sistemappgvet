@@ -197,7 +197,10 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
                 <div className="flex items-center gap-2 text-sm">
                   <ExternalLink className="h-4 w-4" />
                   <a 
-                    href={agendamentoSelecionado.link_reuniao} 
+                    href={agendamentoSelecionado.link_reuniao.startsWith('http') 
+                      ? agendamentoSelecionado.link_reuniao 
+                      : `https://${agendamentoSelecionado.link_reuniao}`
+                    } 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
