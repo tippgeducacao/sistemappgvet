@@ -424,11 +424,11 @@ const LeadsManager: React.FC = () => {
                      <TableHead className="w-[140px] py-2 text-xs font-medium">Nome</TableHead>
                      <TableHead className="w-[180px] py-2 text-xs font-medium hidden sm:table-cell">Email</TableHead>
                      <TableHead className="w-[130px] py-2 text-xs font-medium hidden md:table-cell">WhatsApp</TableHead>
+                     <TableHead className="w-[90px] py-2 text-xs font-medium">Data Chegada</TableHead>
                      <TableHead className="w-[80px] py-2 text-xs font-medium">Status</TableHead>
                      <TableHead className="w-[80px] py-2 text-xs font-medium hidden lg:table-cell">Fonte</TableHead>
                      <TableHead className="w-[90px] py-2 text-xs font-medium hidden xl:table-cell">Profissão</TableHead>
                      <TableHead className="w-[200px] py-2 text-xs font-medium hidden xl:table-cell">Agendamento</TableHead>
-                     <TableHead className="w-[90px] py-2 text-xs font-medium hidden 2xl:table-cell">Data</TableHead>
                      <TableHead className="w-[50px] py-2 text-xs font-medium text-right">Ações</TableHead>
                    </TableRow>
                 </TableHeader>
@@ -452,31 +452,36 @@ const LeadsManager: React.FC = () => {
                               {lead.email || '-'}
                             </div>
                           </TableCell>
-                          <TableCell className="py-2 hidden md:table-cell">
-                            {lead.whatsapp ? (
-                              <a
-                                href={formatWhatsAppLink(lead.whatsapp)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-green-600 hover:text-green-800 text-xs block max-w-[120px]"
-                                title={lead.whatsapp}
-                              >
-                                {lead.whatsapp}
-                              </a>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="py-2">
-                             <Badge variant="outline" className={`text-xs ${getStatusColor(lead.status)} px-1 py-0`}>
-                               {lead.status === 'novo' ? 'Novo' : 
-                                lead.status === 'contatado' ? 'Cont.' :
-                                lead.status === 'qualificado' ? 'Qual.' :
-                                lead.status === 'convertido' ? 'Conv.' : 
-                                lead.status === 'reuniao_marcada' ? 'Reunião' :
-                                lead.status === 'perdido' ? 'Perdido' : lead.status}
-                             </Badge>
-                          </TableCell>
+                           <TableCell className="py-2 hidden md:table-cell">
+                             {lead.whatsapp ? (
+                               <a
+                                 href={formatWhatsAppLink(lead.whatsapp)}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 className="text-green-600 hover:text-green-800 text-xs block max-w-[120px]"
+                                 title={lead.whatsapp}
+                               >
+                                 {lead.whatsapp}
+                               </a>
+                             ) : (
+                               <span className="text-xs text-muted-foreground">-</span>
+                             )}
+                           </TableCell>
+                           <TableCell className="py-2">
+                             <span className="text-xs text-muted-foreground">
+                               {format(new Date(lead.created_at), 'dd/MM/yyyy')}
+                             </span>
+                           </TableCell>
+                           <TableCell className="py-2">
+                              <Badge variant="outline" className={`text-xs ${getStatusColor(lead.status)} px-1 py-0`}>
+                                {lead.status === 'novo' ? 'Novo' : 
+                                 lead.status === 'contatado' ? 'Cont.' :
+                                 lead.status === 'qualificado' ? 'Qual.' :
+                                 lead.status === 'convertido' ? 'Conv.' : 
+                                 lead.status === 'reuniao_marcada' ? 'Reunião' :
+                                 lead.status === 'perdido' ? 'Perdido' : lead.status}
+                              </Badge>
+                           </TableCell>
                           <TableCell className="py-2 hidden lg:table-cell">
                             <div className="flex items-center gap-1">
                               {getFonteIcon(lead.utm_source)}
@@ -508,13 +513,8 @@ const LeadsManager: React.FC = () => {
                             ) : (
                               <span className="text-xs text-muted-foreground">-</span>
                             )}
-                          </TableCell>
-                           <TableCell className="py-2 hidden 2xl:table-cell">
-                             <span className="text-xs text-muted-foreground">
-                               {format(new Date(lead.created_at), 'dd/MM/yyyy')}
-                             </span>
                            </TableCell>
-                          <TableCell className="py-2 text-right">
+                           <TableCell className="py-2 text-right">
                             <Button
                               variant="ghost"
                               size="sm"
