@@ -181,6 +181,7 @@ export type Database = {
       }
       form_entries: {
         Row: {
+          abertura: string | null
           aluno_id: string | null
           atualizado_em: string | null
           created_at: string | null
@@ -193,9 +194,11 @@ export type Database = {
           pontuacao_esperada: number | null
           pontuacao_validada: number | null
           status: string | null
+          turma: string | null
           vendedor_id: string | null
         }
         Insert: {
+          abertura?: string | null
           aluno_id?: string | null
           atualizado_em?: string | null
           created_at?: string | null
@@ -208,9 +211,11 @@ export type Database = {
           pontuacao_esperada?: number | null
           pontuacao_validada?: number | null
           status?: string | null
+          turma?: string | null
           vendedor_id?: string | null
         }
         Update: {
+          abertura?: string | null
           aluno_id?: string | null
           atualizado_em?: string | null
           created_at?: string | null
@@ -223,6 +228,7 @@ export type Database = {
           pontuacao_esperada?: number | null
           pontuacao_validada?: number | null
           status?: string | null
+          turma?: string | null
           vendedor_id?: string | null
         }
         Relationships: [
