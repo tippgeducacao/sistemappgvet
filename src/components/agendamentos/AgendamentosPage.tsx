@@ -188,9 +188,22 @@ const AgendamentosPage: React.FC = () => {
     const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00.000-03:00`; // Fuso horário brasileiro
     const dataHoraFim = `${selectedDateForm}T${selectedEndTime}:00.000-03:00`; // Fuso horário brasileiro
     
+    console.log('🔍 DADOS PARA CRIAR AGENDAMENTO:', {
+      selectedLead,
+      selectedPosGraduacao,
+      selectedDateForm,
+      selectedTime,
+      selectedEndTime,
+      dataHoraAgendamento,
+      dataHoraFim,
+      observacoes
+    });
+    
     try {
       // Selecionar vendedor automaticamente
       const vendedorSelecionado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento);
+      
+      console.log('👤 VENDEDOR SELECIONADO:', vendedorSelecionado);
       
       if (!vendedorSelecionado) {
         toast.error('Nenhum vendedor disponível neste horário. Tente outro horário.');

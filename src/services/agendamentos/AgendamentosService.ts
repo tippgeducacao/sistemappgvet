@@ -94,7 +94,11 @@ export class AgendamentosService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao criar agendamento:', error);
+      console.error('🚨 ERRO DETALHADO AO CRIAR AGENDAMENTO:', error);
+      console.error('📅 Dados enviados:', dados);
+      if (error instanceof Error) {
+        console.error('📝 Mensagem de erro:', error.message);
+      }
       return null;
     }
   }
