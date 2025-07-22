@@ -23,7 +23,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
           <img src="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" alt="Logo" className="h-20 w-auto mx-auto mb-4 drop-shadow-lg" />
           <div className="text-gray-800 drop-shadow-sm">
             <span className="text-xl font-light">Seja o </span>
-            <span className="text-xl font-bold text-blue-600 typing-effect">Ponto</span>
+            <span className="text-xl font-bold text-blue-600">Ponto</span>
             <span className="text-xl font-light"> Fora da caixa</span>
           </div>
         </div>
