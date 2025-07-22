@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, ChevronLeft, ChevronRight, Clock, User } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, User, ExternalLink } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
@@ -192,6 +192,20 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
               <div className="text-sm">
                 <strong>SDR:</strong> {agendamentoSelecionado.sdr?.name}
               </div>
+              
+              {agendamentoSelecionado.link_reuniao && (
+                <div className="flex items-center gap-2 text-sm">
+                  <ExternalLink className="h-4 w-4" />
+                  <a 
+                    href={agendamentoSelecionado.link_reuniao} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Acessar Reunião
+                  </a>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="observacoes">Observações (opcional)</Label>

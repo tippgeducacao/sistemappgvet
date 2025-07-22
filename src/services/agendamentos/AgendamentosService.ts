@@ -8,6 +8,7 @@ export interface Agendamento {
   pos_graduacao_interesse: string;
   data_agendamento: string;
   data_fim_agendamento?: string;
+  link_reuniao: string;
   status: string;
   observacoes?: string;
   created_at: string;
@@ -46,11 +47,17 @@ export class AgendamentosService {
     pos_graduacao_interesse: string;
     data_agendamento: string;
     data_fim_agendamento?: string;
+    link_reuniao: string;
     observacoes?: string;
   }): Promise<Agendamento | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
+
+      // Validar se o link da reunião foi fornecido
+      if (!dados.link_reuniao?.trim()) {
+        throw new Error('Link da reunião é obrigatório');
+      }
 
       // Validar se a data/hora é no futuro (com margem de 5 minutos)
       const dataAgendamento = new Date(dados.data_agendamento);

@@ -11,6 +11,7 @@ export interface Agendamento {
   data_agendamento: string;
   data_fim_agendamento?: string;
   pos_graduacao_interesse: string;
+  link_reuniao: string;
   observacoes?: string;
   status: string;
   resultado_reuniao?: 'nao_compareceu' | 'compareceu_nao_comprou' | 'comprou' | null;

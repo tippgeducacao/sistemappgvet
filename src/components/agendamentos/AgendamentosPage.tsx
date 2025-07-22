@@ -38,6 +38,7 @@ const AgendamentosPage: React.FC = () => {
   const [selectedDateForm, setSelectedDateForm] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedEndTime, setSelectedEndTime] = useState('');
+  const [linkReuniao, setLinkReuniao] = useState('');
   const [observacoes, setObservacoes] = useState('');
   
   // Edit form state
@@ -169,7 +170,7 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const handleSubmit = async (): Promise<void> => {
-    if (!selectedLead || !selectedPosGraduacao || !selectedDateForm || !selectedTime || !selectedEndTime) {
+    if (!selectedLead || !selectedPosGraduacao || !selectedDateForm || !selectedTime || !selectedEndTime || !linkReuniao.trim()) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -216,6 +217,7 @@ const AgendamentosPage: React.FC = () => {
         pos_graduacao_interesse: selectedPosGraduacao,
         data_agendamento: dataHoraAgendamento,
         data_fim_agendamento: dataHoraFim,
+        link_reuniao: linkReuniao,
         observacoes
       });
 
@@ -245,6 +247,7 @@ const AgendamentosPage: React.FC = () => {
     setSelectedDateForm('');
     setSelectedTime('');
     setSelectedEndTime('');
+    setLinkReuniao('');
     setObservacoes('');
     setShowForm(false);
   };
@@ -895,6 +898,22 @@ const AgendamentosPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Link da Reunião */}
+            <div className="space-y-2">
+              <Label htmlFor="linkReuniao">Link da Reunião *</Label>
+              <Input
+                id="linkReuniao"
+                type="url"
+                placeholder="https://zoom.us/j/123456789 ou https://meet.google.com/abc-def-ghi"
+                value={linkReuniao}
+                onChange={(e) => setLinkReuniao(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Insira o link da reunião online (Zoom, Google Meet, Teams, etc.)
+              </p>
             </div>
 
             {/* Observações */}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, User, Phone, Mail, MessageSquare } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, MessageSquare, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
@@ -111,6 +111,20 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                   <div className="text-sm">
                     <strong>Interesse:</strong> {agendamento.pos_graduacao_interesse}
                   </div>
+                  
+                  {agendamento.link_reuniao && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <ExternalLink className="h-4 w-4" />
+                      <a 
+                        href={agendamento.link_reuniao} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Acessar Reunião
+                      </a>
+                    </div>
+                  )}
                   
                   {agendamento.observacoes && (
                     <div className="text-sm">

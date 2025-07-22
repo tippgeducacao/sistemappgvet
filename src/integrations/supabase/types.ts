@@ -22,6 +22,7 @@ export type Database = {
           data_resultado: string | null
           id: string
           lead_id: string
+          link_reuniao: string
           observacoes: string | null
           observacoes_resultado: string | null
           pos_graduacao_interesse: string
@@ -38,6 +39,7 @@ export type Database = {
           data_resultado?: string | null
           id?: string
           lead_id: string
+          link_reuniao?: string
           observacoes?: string | null
           observacoes_resultado?: string | null
           pos_graduacao_interesse: string
@@ -54,6 +56,7 @@ export type Database = {
           data_resultado?: string | null
           id?: string
           lead_id?: string
+          link_reuniao?: string
           observacoes?: string | null
           observacoes_resultado?: string | null
           pos_graduacao_interesse?: string

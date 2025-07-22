@@ -8,6 +8,7 @@ export interface AgendamentoLead {
   sdr_id: string;
   pos_graduacao_interesse: string;
   data_agendamento: string;
+  link_reuniao: string;
   status: string;
   observacoes?: string;
   created_at: string;
@@ -27,6 +28,7 @@ const fetchAgendamentosLeads = async (): Promise<AgendamentoLead[]> => {
       sdr_id,
       pos_graduacao_interesse,
       data_agendamento,
+      link_reuniao,
       status,
       observacoes,
       created_at,
