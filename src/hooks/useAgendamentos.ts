@@ -77,6 +77,41 @@ export const useAgendamentos = () => {
     }
   };
 
+  const fetchAgendamentosCancelados = async () => {
+    if (!profile?.id) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select(`
+          *,
+          lead:leads!agendamentos_lead_id_fkey (
+            nome,
+            email,
+            whatsapp
+          ),
+          sdr:profiles!agendamentos_sdr_id_fkey (
+            name,
+            email
+          )
+        `)
+        .eq('vendedor_id', profile.id)
+        .eq('status', 'cancelado')
+        .order('updated_at', { ascending: false })
+        .limit(10); // Limitar a 10 cancelamentos mais recentes
+
+      if (error) {
+        console.error('Erro ao buscar agendamentos cancelados:', error);
+        return [];
+      }
+
+      return (data || []) as Agendamento[];
+    } catch (error) {
+      console.error('Erro ao buscar agendamentos cancelados:', error);
+      return [];
+    }
+  };
+
   const atualizarResultadoReuniao = async (
     agendamentoId: string, 
     resultado: 'nao_compareceu' | 'compareceu_nao_comprou' | 'comprou',
@@ -116,6 +151,7 @@ export const useAgendamentos = () => {
     agendamentos,
     isLoading,
     fetchAgendamentos,
+    fetchAgendamentosCancelados,
     atualizarResultadoReuniao
   };
 };

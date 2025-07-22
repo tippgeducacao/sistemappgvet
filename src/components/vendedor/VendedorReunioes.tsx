@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, List, Users } from 'lucide-react';
+import { Calendar, List, Users, X } from 'lucide-react';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import ReunioesPlanilha from './ReunioesPlanilha';
 import ReunisoesCalendario from './ReunisoesCalendario';
+import ReunioesCanceladas from './ReunioesCanceladas';
 
 const VendedorReunioes: React.FC = () => {
-  const { agendamentos, isLoading, atualizarResultadoReuniao } = useAgendamentos();
+  const { agendamentos, isLoading, atualizarResultadoReuniao, fetchAgendamentosCancelados } = useAgendamentos();
 
   if (isLoading) {
     return (
@@ -92,6 +93,10 @@ const VendedorReunioes: React.FC = () => {
             <Calendar className="h-4 w-4" />
             Calendário
           </TabsTrigger>
+          <TabsTrigger value="canceladas" className="flex items-center gap-2">
+            <X className="h-4 w-4" />
+            Canceladas
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="planilha">
@@ -105,6 +110,12 @@ const VendedorReunioes: React.FC = () => {
           <ReunisoesCalendario 
             agendamentos={agendamentos}
             onAtualizarResultado={atualizarResultadoReuniao}
+          />
+        </TabsContent>
+
+        <TabsContent value="canceladas">
+          <ReunioesCanceladas 
+            fetchAgendamentosCancelados={fetchAgendamentosCancelados}
           />
         </TabsContent>
       </Tabs>

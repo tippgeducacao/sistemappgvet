@@ -34,7 +34,8 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
 
   const getAgendamentosDoDia = (dia: Date) => {
     return agendamentos.filter(agendamento => 
-      isSameDay(new Date(agendamento.data_agendamento), dia)
+      isSameDay(new Date(agendamento.data_agendamento), dia) &&
+      agendamento.status === 'agendado' // Filtrar apenas agendamentos ativos
     );
   };
 
