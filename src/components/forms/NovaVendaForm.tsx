@@ -10,6 +10,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { useAppStateStore } from '@/stores/AppStateStore';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useFormStore } from '@/store/FormStore';
 import CourseInfoSection from './sections/CourseInfoSection';
 import CourseInfoSectionVendedor from './sections/CourseInfoSectionVendedor';
 import CourseInfoSectionSDR from './sections/CourseInfoSectionSDR';
@@ -18,39 +19,10 @@ const NovaVendaForm: React.FC = () => {
   const { hideNovaVendaForm } = useAppStateStore();
   const { toast } = useToast();
   const { isSDR, isVendedor, isAdmin } = useUserRoles();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Estados do formulário
-  const [formData, setFormData] = useState({
-    nomeAluno: '',
-    emailAluno: '',
-    telefoneAluno: '',
-    crmvAluno: '',
-    cursoId: '',
-    formaPagamento: '',
-    valorContrato: '',
-    percentualDesconto: '',
-    dataPrimeiroPagamento: '',
-    carencia: '',
-    detalhesCarencia: '',
-    reembolsoMatricula: '',
-    indicacao: '',
-    nomeIndicador: '',
-    lotePos: '',
-    matricula: '',
-    modalidade: '',
-    parcelamento: '',
-    tipoVenda: '',
-    vendaCasada: '',
-    detalhesVendaCasada: '',
-    observacoes: ''
-  });
+  const { formData, updateField, clearForm, isSubmitting, setIsSubmitting } = useFormStore();
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    updateField(field as any, value);
   };
 
   // Renderizar seção de curso baseada no tipo de usuário
@@ -92,30 +64,7 @@ const NovaVendaForm: React.FC = () => {
       });
 
       // Limpar formulário e voltar
-      setFormData({
-        nomeAluno: '',
-        emailAluno: '',
-        telefoneAluno: '',
-        crmvAluno: '',
-        cursoId: '',
-        formaPagamento: '',
-        valorContrato: '',
-        percentualDesconto: '',
-        dataPrimeiroPagamento: '',
-        carencia: '',
-        detalhesCarencia: '',
-        reembolsoMatricula: '',
-        indicacao: '',
-        nomeIndicador: '',
-        lotePos: '',
-        matricula: '',
-        modalidade: '',
-        parcelamento: '',
-        tipoVenda: '',
-        vendaCasada: '',
-        detalhesVendaCasada: '',
-        observacoes: ''
-      });
+      clearForm();
       
       hideNovaVendaForm();
 
@@ -180,20 +129,20 @@ const NovaVendaForm: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="telefoneAluno">Telefone</Label>
+                  <Label htmlFor="telefone">Telefone</Label>
                   <Input
-                    id="telefoneAluno"
-                    value={formData.telefoneAluno}
-                    onChange={(e) => handleInputChange('telefoneAluno', e.target.value)}
+                    id="telefone"
+                    value={formData.telefone || ''}
+                    onChange={(e) => handleInputChange('telefone', e.target.value)}
                     placeholder="(11) 99999-9999"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="crmvAluno">CRMV</Label>
+                  <Label htmlFor="crmv">CRMV</Label>
                   <Input
-                    id="crmvAluno"
-                    value={formData.crmvAluno}
-                    onChange={(e) => handleInputChange('crmvAluno', e.target.value)}
+                    id="crmv"
+                    value={formData.crmv || ''}
+                    onChange={(e) => handleInputChange('crmv', e.target.value)}
                     placeholder="Número do CRMV"
                   />
                 </div>
@@ -214,7 +163,7 @@ const NovaVendaForm: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Forma de Pagamento</Label>
-                  <Select value={formData.formaPagamento} onValueChange={(value) => handleInputChange('formaPagamento', value)}>
+                  <Select value={formData.pagamento || ''} onValueChange={(value) => handleInputChange('pagamento', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a forma de pagamento" />
                     </SelectTrigger>
@@ -230,7 +179,7 @@ const NovaVendaForm: React.FC = () => {
                   <Label htmlFor="valorContrato">Valor do Contrato</Label>
                   <Input
                     id="valorContrato"
-                    value={formData.valorContrato}
+                    value={formData.valorContrato || ''}
                     onChange={(e) => handleInputChange('valorContrato', e.target.value)}
                     placeholder="R$ 0,00"
                   />
@@ -239,7 +188,7 @@ const NovaVendaForm: React.FC = () => {
                   <Label htmlFor="percentualDesconto">Percentual de Desconto</Label>
                   <Input
                     id="percentualDesconto"
-                    value={formData.percentualDesconto}
+                    value={formData.percentualDesconto || ''}
                     onChange={(e) => handleInputChange('percentualDesconto', e.target.value)}
                     placeholder="0%"
                   />
@@ -249,7 +198,7 @@ const NovaVendaForm: React.FC = () => {
                   <Input
                     id="dataPrimeiroPagamento"
                     type="date"
-                    value={formData.dataPrimeiroPagamento}
+                    value={formData.dataPrimeiroPagamento || ''}
                     onChange={(e) => handleInputChange('dataPrimeiroPagamento', e.target.value)}
                   />
                 </div>
@@ -259,16 +208,16 @@ const NovaVendaForm: React.FC = () => {
             {/* Observações */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Observações</h3>
-              <div>
-                <Label htmlFor="observacoes">Observações Gerais</Label>
-                <Textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => handleInputChange('observacoes', e.target.value)}
-                  placeholder="Informações adicionais sobre a venda..."
-                  rows={4}
-                />
-              </div>
+                <div>
+                  <Label htmlFor="observacoes">Observações Gerais</Label>
+                  <Textarea
+                    id="observacoes"
+                    value={formData.observacoes || ''}
+                    onChange={(e) => handleInputChange('observacoes', e.target.value)}
+                    placeholder="Informações adicionais sobre a venda..."
+                    rows={4}
+                  />
+                </div>
             </div>
 
             {/* Botões */}
