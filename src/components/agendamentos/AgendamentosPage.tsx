@@ -37,6 +37,7 @@ const AgendamentosPage: React.FC = () => {
   const [selectedVendedor, setSelectedVendedor] = useState('');
   const [selectedDateForm, setSelectedDateForm] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [selectedEndTime, setSelectedEndTime] = useState('');
   const [observacoes, setObservacoes] = useState('');
   
   // Edit form state
@@ -166,8 +167,14 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const handleSubmit = async (): Promise<void> => {
-    if (!selectedLead || !selectedPosGraduacao || !selectedDateForm || !selectedTime) {
+    if (!selectedLead || !selectedPosGraduacao || !selectedDateForm || !selectedTime || !selectedEndTime) {
       toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    // Validar se horário final é após horário inicial
+    if (selectedEndTime <= selectedTime) {
+      toast.error('O horário final deve ser posterior ao horário inicial');
       return;
     }
 
@@ -220,6 +227,7 @@ const AgendamentosPage: React.FC = () => {
     setSelectedVendedor('');
     setSelectedDateForm('');
     setSelectedTime('');
+    setSelectedEndTime('');
     setObservacoes('');
     setShowForm(false);
   };
@@ -801,7 +809,7 @@ const AgendamentosPage: React.FC = () => {
             </div>
 
             {/* Data e Horário */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Data *</Label>
                 <Input
@@ -812,17 +820,33 @@ const AgendamentosPage: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="horario">Horário *</Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="horario"
-                    type="time"
-                    value={selectedTime}
-                    onChange={(e) => setSelectedTime(e.target.value)}
-                    className="pl-10"
-                  />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="horario-inicio">Horário Início *</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="horario-inicio"
+                      type="time"
+                      value={selectedTime}
+                      onChange={(e) => setSelectedTime(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="horario-fim">Horário Fim *</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="horario-fim"
+                      type="time"
+                      value={selectedEndTime}
+                      onChange={(e) => setSelectedEndTime(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
