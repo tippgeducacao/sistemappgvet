@@ -93,7 +93,7 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
       />
 
       {/* Campos Turma e Abertura em uma linha */}
-      <div className="col-span-2 grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <FormInputField
           id="turma"
           label="Turma"
