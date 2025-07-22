@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           data_agendamento: string
+          data_fim_agendamento: string | null
           data_resultado: string | null
           id: string
           lead_id: string
@@ -33,6 +34,7 @@ export type Database = {
         Insert: {
           created_at?: string
           data_agendamento: string
+          data_fim_agendamento?: string | null
           data_resultado?: string | null
           id?: string
           lead_id: string
@@ -48,6 +50,7 @@ export type Database = {
         Update: {
           created_at?: string
           data_agendamento?: string
+          data_fim_agendamento?: string | null
           data_resultado?: string | null
           id?: string
           lead_id?: string

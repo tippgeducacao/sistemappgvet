@@ -184,6 +184,7 @@ const AgendamentosPage: React.FC = () => {
     }
 
     const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00`;
+    const dataHoraFim = `${selectedDateForm}T${selectedEndTime}:00`;
     
     try {
       // Selecionar vendedor automaticamente
@@ -199,6 +200,7 @@ const AgendamentosPage: React.FC = () => {
         vendedor_id: vendedorSelecionado.id,
         pos_graduacao_interesse: selectedPosGraduacao,
         data_agendamento: dataHoraAgendamento,
+        data_fim_agendamento: dataHoraFim,
         observacoes
       });
 
@@ -1082,7 +1084,14 @@ const AgendamentosPage: React.FC = () => {
                           <div>
                             <p className="text-muted-foreground">Data/Horário</p>
                             <p className="font-medium">
-                              {new Date(agendamento.data_agendamento).toLocaleString('pt-BR')}
+                              {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })} {' '}
+                              {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
+                              {agendamento.data_fim_agendamento && (
+                                <>
+                                  {' - '}
+                                  {format(new Date(agendamento.data_fim_agendamento), 'HH:mm', { locale: ptBR })}
+                                </>
+                              )}
                             </p>
                           </div>
                         </div>

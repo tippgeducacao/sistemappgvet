@@ -9,6 +9,7 @@ export interface Agendamento {
   sdr_id: string;
   vendedor_id: string;
   data_agendamento: string;
+  data_fim_agendamento?: string;
   pos_graduacao_interesse: string;
   observacoes?: string;
   status: string;

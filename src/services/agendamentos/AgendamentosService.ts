@@ -7,6 +7,7 @@ export interface Agendamento {
   sdr_id: string;
   pos_graduacao_interesse: string;
   data_agendamento: string;
+  data_fim_agendamento?: string;
   status: string;
   observacoes?: string;
   created_at: string;
@@ -44,6 +45,7 @@ export class AgendamentosService {
     vendedor_id: string;
     pos_graduacao_interesse: string;
     data_agendamento: string;
+    data_fim_agendamento?: string;
     observacoes?: string;
   }): Promise<Agendamento | null> {
     try {
