@@ -59,6 +59,19 @@ const AgendamentosPage: React.FC = () => {
     profissao: ''
   });
 
+  // New lead form fields
+  const [showNewLeadForm, setShowNewLeadForm] = useState(false);
+  const [newLeadData, setNewLeadData] = useState({
+    nome: '',
+    email: '',
+    whatsapp: '',
+    observacoes: '',
+    fonte_referencia: 'Agendamentos',
+    status: 'novo'
+  });
+
+  const { mutate: createLead, isPending: isCreatingLead } = useCreateLead();
+
   useEffect(() => {
     carregarDados();
   }, []);
@@ -375,6 +388,38 @@ const AgendamentosPage: React.FC = () => {
     }
   };
 
+  const handleCreateNewLead = async () => {
+    try {
+      if (!newLeadData.nome || !newLeadData.email || !newLeadData.whatsapp) {
+        toast.error('Nome, email e WhatsApp são obrigatórios');
+        return;
+      }
+
+      createLead(newLeadData, {
+        onSuccess: (leadCriado) => {
+          toast.success('Lead criado com sucesso!');
+          setNewLeadData({
+            nome: '',
+            email: '',
+            whatsapp: '',
+            observacoes: '',
+            fonte_referencia: 'Agendamentos',
+            status: 'novo'
+          });
+          setShowNewLeadForm(false);
+          carregarDados();
+        },
+        onError: (error) => {
+          console.error('Erro ao criar lead:', error);
+          toast.error('Erro ao criar lead');
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao criar lead:', error);
+      toast.error('Erro ao criar lead');
+    }
+  };
+
   const getStatusBadge = (status: string): JSX.Element => {
     const statusConfig = {
       agendado: { label: 'Agendado', variant: 'default' as const },
@@ -406,10 +451,20 @@ const AgendamentosPage: React.FC = () => {
           <h1 className="text-3xl font-bold">Agendamentos</h1>
           <p className="text-muted-foreground">Gerencie reuniões entre SDRs, leads e vendedores</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Agendamento
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowNewLeadForm(true)} 
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Novo Lead
+          </Button>
+          <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Agendamento
+          </Button>
+        </div>
       </div>
 
       {/* Form Modal */}
@@ -839,6 +894,85 @@ const AgendamentosPage: React.FC = () => {
             </Button>
             <Button onClick={handleCreateSprintHubLead}>
               Criar Lead
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {/* New Lead Form Modal */}
+      {showNewLeadForm && (
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle>Novo Lead</CardTitle>
+            <CardDescription>
+              Cadastre um novo lead no sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newLeadNome">Nome *</Label>
+              <Input
+                id="newLeadNome"
+                value={newLeadData.nome}
+                onChange={(e) => setNewLeadData(prev => ({ ...prev, nome: e.target.value }))}
+                placeholder="Nome completo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newLeadEmail">Email *</Label>
+              <Input
+                id="newLeadEmail"
+                type="email"
+                value={newLeadData.email}
+                onChange={(e) => setNewLeadData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="email@exemplo.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newLeadWhatsapp">WhatsApp *</Label>
+              <Input
+                id="newLeadWhatsapp"
+                value={newLeadData.whatsapp}
+                onChange={(e) => setNewLeadData(prev => ({ ...prev, whatsapp: e.target.value }))}
+                placeholder="(11) 99999-9999"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newLeadObservacoes">Observações</Label>
+              <Textarea
+                id="newLeadObservacoes"
+                value={newLeadData.observacoes}
+                onChange={(e) => setNewLeadData(prev => ({ ...prev, observacoes: e.target.value }))}
+                placeholder="Informações adicionais sobre o lead..."
+                rows={3}
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowNewLeadForm(false);
+                setNewLeadData({
+                  nome: '',
+                  email: '',
+                  whatsapp: '',
+                  observacoes: '',
+                  fonte_referencia: 'Agendamentos',
+                  status: 'novo'
+                });
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCreateNewLead}
+              disabled={isCreatingLead}
+            >
+              {isCreatingLead ? 'Criando...' : 'Criar Lead'}
             </Button>
           </CardFooter>
         </Card>
