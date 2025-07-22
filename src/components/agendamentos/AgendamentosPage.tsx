@@ -1077,7 +1077,7 @@ const AgendamentosPage: React.FC = () => {
 
       {/* Visualizations Tabs */}
       <Tabs defaultValue="lista" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="lista" className="flex items-center gap-2">
             <List className="h-4 w-4" />
             Lista
@@ -1086,22 +1086,28 @@ const AgendamentosPage: React.FC = () => {
             <Grid className="h-4 w-4" />
             Calendário
           </TabsTrigger>
+          <TabsTrigger value="cancelados" className="flex items-center gap-2">
+            <X className="h-4 w-4" />
+            Cancelados
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="lista">
           <div className="grid gap-4">
-            {agendamentos.length === 0 ? (
+            {agendamentos.filter(ag => ag.status !== 'cancelado').length === 0 ? (
               <Card>
                 <CardContent className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Nenhum agendamento encontrado</h3>
+                    <h3 className="text-lg font-semibold mb-2">Nenhum agendamento ativo encontrado</h3>
                     <p className="text-muted-foreground">Crie seu primeiro agendamento para começar</p>
                   </div>
                 </CardContent>
               </Card>
             ) : (
-              agendamentos.map((agendamento) => (
+              agendamentos
+                .filter(ag => ag.status !== 'cancelado') // Filtrar cancelados
+                .map((agendamento) => (
                 <Card key={agendamento.id}>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
@@ -1214,9 +1220,11 @@ const AgendamentosPage: React.FC = () => {
                 
                 const isCurrentMonth = currentDate.getMonth() === now.getMonth();
                 const isToday = currentDate.toDateString() === new Date().toDateString();
-                const dayAgendamentos = agendamentos.filter(ag => 
-                  new Date(ag.data_agendamento).toDateString() === currentDate.toDateString()
-                );
+                const dayAgendamentos = agendamentos
+                  .filter(ag => ag.status !== 'cancelado') // Filtrar cancelados do calendário
+                  .filter(ag => 
+                    new Date(ag.data_agendamento).toDateString() === currentDate.toDateString()
+                  );
                 
                 return (
                   <div
@@ -1256,6 +1264,7 @@ const AgendamentosPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {agendamentos
+                    .filter(ag => ag.status !== 'cancelado') // Filtrar cancelados
                     .filter(ag => new Date(ag.data_agendamento).toDateString() === selectedCalendarDate.toDateString())
                     .map((agendamento) => (
                       <div key={agendamento.id} className="p-3 border rounded-lg">
@@ -1279,6 +1288,94 @@ const AgendamentosPage: React.FC = () => {
                     ))}
                 </CardContent>
               </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="cancelados">
+          <div className="grid gap-4">
+            {agendamentos.filter(ag => ag.status === 'cancelado').length === 0 ? (
+              <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <X className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Nenhum agendamento cancelado</h3>
+                    <p className="text-muted-foreground">Todos os agendamentos estão ativos</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              agendamentos
+                .filter(ag => ag.status === 'cancelado') // Apenas cancelados
+                .map((agendamento) => (
+                  <Card key={agendamento.id}>
+                    <CardContent className="p-6 bg-red-50 border-red-200">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-3 flex-1">
+                          <div className="flex items-center gap-3">
+                            <User className="h-5 w-5 text-red-600" />
+                            <div>
+                              <p className="font-semibold text-red-900">{agendamento.lead?.nome}</p>
+                              <div className="flex items-center gap-4 text-sm text-red-700">
+                                {agendamento.lead?.email && (
+                                  <span className="flex items-center gap-1">
+                                    <Mail className="h-3 w-3" />
+                                    {agendamento.lead.email}
+                                  </span>
+                                )}
+                                {agendamento.lead?.whatsapp && (
+                                  <span className="flex items-center gap-1">
+                                    <Phone className="h-3 w-3" />
+                                    {agendamento.lead.whatsapp}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <p className="text-red-600">Pós-graduação</p>
+                              <p className="font-medium text-red-900">{agendamento.pos_graduacao_interesse}</p>
+                            </div>
+                            <div>
+                              <p className="text-red-600">Vendedor</p>
+                              <p className="font-medium text-red-900">{agendamento.vendedor?.name}</p>
+                            </div>
+                            <div>
+                              <p className="text-red-600">Data/Horário</p>
+                              <p className="font-medium text-red-900">
+                                {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })} {' '}
+                                {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
+                                {agendamento.data_fim_agendamento && (
+                                  <>
+                                    {' - '}
+                                    {format(new Date(agendamento.data_fim_agendamento), 'HH:mm', { locale: ptBR })}
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+
+                          {agendamento.observacoes && (
+                            <div>
+                              <p className="text-red-600 text-sm">Observações</p>
+                              <p className="text-sm text-red-900">{agendamento.observacoes}</p>
+                            </div>
+                          )}
+
+                          <div className="text-xs text-red-500">
+                            Cancelado em: {format(new Date(agendamento.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </div>
+                        </div>
+
+                        <div className="ml-4 flex flex-col items-end gap-2">
+                          {getStatusBadge(agendamento.status)}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
             )}
           </div>
         </TabsContent>
