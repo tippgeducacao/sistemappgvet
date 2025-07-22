@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useAppStateStore } from '@/stores/AppStateStore';
+import { useNavigationStore } from '@/stores/NavigationStore';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useFormStore } from '@/store/FormStore';
@@ -16,7 +16,7 @@ import CourseInfoSectionVendedor from './sections/CourseInfoSectionVendedor';
 import CourseInfoSectionSDR from './sections/CourseInfoSectionSDR';
 
 const NovaVendaForm: React.FC = () => {
-  const { hideNovaVendaForm } = useAppStateStore();
+  const { hideNovaVendaForm } = useNavigationStore();
   const { toast } = useToast();
   const { isSDR, isVendedor, isAdmin } = useUserRoles();
   const { formData, updateField, clearForm, isSubmitting, setIsSubmitting } = useFormStore();
