@@ -847,13 +847,24 @@ const AgendamentosPage: React.FC = () => {
                   <Label htmlFor="horario-inicio">Horário Início *</Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="horario-inicio"
-                      type="time"
-                      value={selectedTime}
-                      onChange={(e) => setSelectedTime(e.target.value)}
-                      className="pl-10"
-                    />
+                     <Input
+                       id="horario-inicio"
+                       type="time"
+                       value={selectedTime}
+                       onChange={(e) => {
+                         setSelectedTime(e.target.value);
+                         // Automaticamente definir horário final com 1 hora de diferença
+                         if (e.target.value) {
+                           const [hours, minutes] = e.target.value.split(':');
+                           const startTime = new Date();
+                           startTime.setHours(parseInt(hours), parseInt(minutes));
+                           const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Adicionar 1 hora
+                           const endTimeString = endTime.toTimeString().slice(0, 5);
+                           setSelectedEndTime(endTimeString);
+                         }
+                       }}
+                       className="pl-10"
+                     />
                   </div>
                 </div>
 
@@ -925,7 +936,18 @@ const AgendamentosPage: React.FC = () => {
               <Input
                 type="time"
                 value={editFormData.horario_inicio}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, horario_inicio: e.target.value }))}
+                onChange={(e) => {
+                  setEditFormData(prev => ({ ...prev, horario_inicio: e.target.value }));
+                  // Automaticamente definir horário final com 1 hora de diferença
+                  if (e.target.value) {
+                    const [hours, minutes] = e.target.value.split(':');
+                    const startTime = new Date();
+                    startTime.setHours(parseInt(hours), parseInt(minutes));
+                    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Adicionar 1 hora
+                    const endTimeString = endTime.toTimeString().slice(0, 5);
+                    setEditFormData(prev => ({ ...prev, horario_fim: endTimeString }));
+                  }
+                }}
               />
             </div>
 
