@@ -26,6 +26,8 @@ export interface FormData {
   modalidadeCurso?: string;
   cursoId: string;
   vendedor?: string;
+  turma?: string;
+  abertura?: string;
 
   // Informações de Pontuação
   lotePos: string;
@@ -66,6 +68,8 @@ const initialFormData: FormData = {
   ies: '',
   modalidadeCurso: '',
   cursoId: '',
+  turma: '',
+  abertura: '',
 
   // Scoring Info
   lotePos: '',

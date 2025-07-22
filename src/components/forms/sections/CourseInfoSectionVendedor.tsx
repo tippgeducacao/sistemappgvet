@@ -92,6 +92,27 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
         disabled={availableCourses.length === 0}
       />
 
+      {/* Campos Turma e Abertura em uma linha */}
+      <div className="col-span-2 grid grid-cols-2 gap-4">
+        <FormInputField
+          id="turma"
+          label="Turma"
+          value={formData.turma || ''}
+          onChange={(value) => updateField('turma', value)}
+          placeholder="01/25"
+          className="text-center"
+        />
+        
+        <FormInputField
+          id="abertura"
+          label="Abertura"
+          value={formData.abertura || ''}
+          onChange={(value) => updateField('abertura', value)}
+          placeholder="#01"
+          className="text-center"
+        />
+      </div>
+
       {availableCourses.length === 0 && !coursesLoading && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 col-span-2">
           <p className="text-orange-700 text-sm">
