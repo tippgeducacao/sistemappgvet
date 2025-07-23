@@ -47,9 +47,9 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
 
   const getUserIcon = () => {
     if (isComercialUser) {
-      return <Building2 className="h-5 w-5 stroke-[1.5]" />;
+      return <Building2 className="h-4 w-4 stroke-[1.5] text-slate-600" />;
     }
-    return <User className="h-5 w-5 stroke-[1.5]" />;
+    return <User className="h-4 w-4 stroke-[1.5] text-slate-600" />;
   };
 
   const getUserBadgeColor = () => {
@@ -76,14 +76,14 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
   };
 
   return (
-    <SidebarFooter className="border-t border-border/40 p-4 bg-gradient-to-t from-muted/20 to-transparent">
-      <div className="space-y-4">
-        <div className="flex items-center space-x-3 p-3 rounded-lg bg-card border border-border/40">
-          <div className="flex-shrink-0 p-2 rounded-full bg-primary/10">
+    <SidebarFooter className="border-t border-slate-200 p-4 bg-slate-50">
+      <div className="space-y-3">
+        <div className="flex items-center space-x-3 p-3 rounded-lg bg-white border border-slate-200">
+          <div className="flex-shrink-0">
             {getUserIcon()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
+            <p className="text-sm font-medium text-slate-900 truncate">
               {userName}
             </p>
             <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getUserBadgeColor()}`}>
@@ -96,7 +96,7 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
           variant="outline" 
           size="sm" 
           onClick={signOut}
-          className="w-full justify-start gap-2 rounded-lg border-border/40 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
+          className="w-full justify-start gap-2 rounded-lg border-slate-300 text-slate-700 hover:bg-slate-100"
         >
           <LogOut className="h-4 w-4 stroke-[1.5]" />
           Sair
