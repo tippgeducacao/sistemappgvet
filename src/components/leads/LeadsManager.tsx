@@ -66,7 +66,12 @@ const LeadsManager: React.FC = () => {
     fonteFilter: fonteFilter !== 'todos' ? fonteFilter : undefined,
   };
 
-  const { data: leadsData, isLoading } = useLeads(currentPage, 100, filtersForTable);
+  // Buscar TODOS os leads quando há busca ativa, ou paginados quando não há busca
+  const { data: leadsData, isLoading } = useLeads(
+    tableSearchTerm ? 1 : currentPage, 
+    tableSearchTerm ? 10000 : 100, // Se há busca, pega todos (limite alto)
+    filtersForTable
+  );
   const { data: totalLeadsCount = 0 } = useLeadsCount();
   const { data: filterData } = useLeadsFilterData();
   const { data: allLeadsForStats = [] } = useAllLeads(); // Para estatísticas e dashboard
@@ -74,12 +79,7 @@ const LeadsManager: React.FC = () => {
 
   // Dados para filtros e estatísticas
   const allLeads = leadsData?.leads || [];
-  const totalCount = leadsData?.totalCount || 0;
-  const totalPages = leadsData?.totalPages || 0;
-  const profissoes = filterData?.profissoes || [];
-  const paginasCaptura = filterData?.paginasCaptura || [];
-  const fontes = filterData?.fontes || [];
-
+  
   // Filtrar leads localmente com busca em tempo real
   const filteredLeads = allLeads.filter(lead => {
     if (!tableSearchTerm) return true;
@@ -92,8 +92,14 @@ const LeadsManager: React.FC = () => {
     );
   });
 
-  // Usar filteredLeads ao invés de leads
-  const leads = filteredLeads;
+  // Se há busca ativa, usar dados filtrados; senão usar dados normais
+  const leads = tableSearchTerm ? filteredLeads : allLeads;
+  const totalCount = tableSearchTerm ? filteredLeads.length : (leadsData?.totalCount || 0);
+  const totalPages = tableSearchTerm ? 1 : (leadsData?.totalPages || 0);
+  
+  const profissoes = filterData?.profissoes || [];
+  const paginasCaptura = filterData?.paginasCaptura || [];
+  const fontes = filterData?.fontes || [];
 
   // Extrair profissão das observações
   const extractProfissao = (observacoes?: string) => {
