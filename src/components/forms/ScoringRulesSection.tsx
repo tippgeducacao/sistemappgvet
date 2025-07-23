@@ -6,10 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useFormStore } from '@/store/FormStore';
 import { useScoringPoints, getPointsForFieldValue } from '@/hooks/useScoringPoints';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 const ScoringRulesSection: React.FC = () => {
   const { formData, updateField } = useFormStore();
   const { data: scoringRules = [], isLoading } = useScoringPoints();
+  const { isSDR } = useUserRoles();
 
   console.log('🔧 ScoringRulesSection renderizando...');
   console.log('📊 Regras carregadas:', scoringRules.length);
@@ -152,27 +154,29 @@ const ScoringRulesSection: React.FC = () => {
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="modalidade">
-              Modalidade do Curso
-              {renderPointsBadge(getFieldPoints('Modalidade do Curso', formData.modalidade))}
-            </Label>
-            <Select value={formData.modalidade} onValueChange={(value) => updateField('modalidade', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a modalidade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Híbrido (ITH)">
-                  Híbrido (ITH)
-                  {getSelectItemPoints('Modalidade do Curso', 'Híbrido (ITH)')}
-                </SelectItem>
-                <SelectItem value="Online (ITH)">
-                  Online (ITH)
-                  {getSelectItemPoints('Modalidade do Curso', 'Online (ITH)')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {!isSDR && (
+            <div>
+              <Label htmlFor="modalidade">
+                Modalidade do Curso
+                {renderPointsBadge(getFieldPoints('Modalidade do Curso', formData.modalidade))}
+              </Label>
+              <Select value={formData.modalidade} onValueChange={(value) => updateField('modalidade', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a modalidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Híbrido (ITH)">
+                    Híbrido (ITH)
+                    {getSelectItemPoints('Modalidade do Curso', 'Híbrido (ITH)')}
+                  </SelectItem>
+                  <SelectItem value="Online (ITH)">
+                    Online (ITH)
+                    {getSelectItemPoints('Modalidade do Curso', 'Online (ITH)')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="parcelamento">

@@ -16,6 +16,7 @@ const CourseInfoSectionSDR: React.FC<CourseInfoSectionSDRProps> = ({ formData, u
   // Auto-definir modalidade como "Curso" para SDRs
   useEffect(() => {
     updateField('modalidadeCurso', 'Curso');
+    updateField('modalidade', 'Híbrido (ITH)'); // Definir modalidade padrão para scoring
   }, [updateField]);
 
   useEffect(() => {
