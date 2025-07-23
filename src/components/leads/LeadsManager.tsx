@@ -50,15 +50,6 @@ const LeadsManager: React.FC = () => {
     setCurrentPage(1);
   }, [statusFilter, profissaoFilter, paginaFilter, fonteFilter]);
 
-  // Resetar página quando busca da tabela mudar (apenas quando Enter ou terminar de digitar)
-  React.useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setCurrentPage(1);
-    }, 500); // Debounce de 500ms
-
-    return () => clearTimeout(timeoutId);
-  }, [tableSearchTerm]);
-
   // Construir filtros para a tabela (incluindo busca por texto)
   const filters: LeadFilters = {
     searchTerm: tableSearchTerm || undefined,
@@ -422,6 +413,11 @@ const LeadsManager: React.FC = () => {
                   placeholder="Buscar por nome, email ou telefone na lista..."
                   value={tableSearchTerm}
                   onChange={(e) => setTableSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setCurrentPage(1);
+                    }
+                  }}
                   className="pl-10"
                 />
               </div>
