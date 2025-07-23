@@ -92,11 +92,6 @@ export const VENDOR_MENU_ITEMS: MenuItem[] = [
     icon: 'BarChart3'
   },
   {
-    title: 'Nova Venda',
-    section: 'nova-venda',
-    icon: 'Plus'
-  },
-  {
     title: 'Minhas Vendas',
     section: 'minhas-vendas',
     icon: 'ShoppingCart'
