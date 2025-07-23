@@ -41,42 +41,59 @@ const LeadsManager: React.FC = () => {
   const [paginaFilter, setPaginaFilter] = useState('todos');
   const [fonteFilter, setFonteFilter] = useState('todos');
   
-  // Filtro específico para a tabela de leads
+  // Filtro específico para a tabela de leads (busca local)
   const [tableSearchTerm, setTableSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Debounce da busca para evitar muitas consultas à API
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(tableSearchTerm);
-      if (tableSearchTerm !== debouncedSearchTerm) {
-        setCurrentPage(1);
-      }
-    }, 800); // Aumentei para 800ms para evitar muitas consultas
-
-    return () => clearTimeout(timer);
-  }, [tableSearchTerm, debouncedSearchTerm]);
 
   // Resetar página quando filtros mudarem (exceto busca da tabela)
   React.useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, profissaoFilter, paginaFilter, fonteFilter]);
 
-  // Construir filtros para a tabela (usando busca com debounce)
-  const filters: LeadFilters = {
-    searchTerm: debouncedSearchTerm || undefined,
+  // Construir filtros APENAS para os gráficos (SEM busca por texto)
+  const filtersForGraphs: LeadFilters = {
     statusFilter: statusFilter !== 'todos' ? statusFilter : undefined,
     profissaoFilter: profissaoFilter !== 'todos' ? profissaoFilter : undefined,
     paginaFilter: paginaFilter !== 'todos' ? paginaFilter : undefined,
     fonteFilter: fonteFilter !== 'todos' ? fonteFilter : undefined,
   };
 
-  const { data: leadsData, isLoading } = useLeads(currentPage, 100, filters);
+  // Construir filtros para a tabela (SEM busca - busca será local)
+  const filtersForTable: LeadFilters = {
+    statusFilter: statusFilter !== 'todos' ? statusFilter : undefined,
+    profissaoFilter: profissaoFilter !== 'todos' ? profissaoFilter : undefined,
+    paginaFilter: paginaFilter !== 'todos' ? paginaFilter : undefined,
+    fonteFilter: fonteFilter !== 'todos' ? fonteFilter : undefined,
+  };
+
+  const { data: leadsData, isLoading } = useLeads(currentPage, 100, filtersForTable);
   const { data: totalLeadsCount = 0 } = useLeadsCount();
   const { data: filterData } = useLeadsFilterData();
   const { data: allLeadsForStats = [] } = useAllLeads(); // Para estatísticas e dashboard
   const { data: agendamentosData = [] } = useAgendamentosLeads(); // Dados de agendamentos
+
+  // Dados para filtros e estatísticas
+  const allLeads = leadsData?.leads || [];
+  const totalCount = leadsData?.totalCount || 0;
+  const totalPages = leadsData?.totalPages || 0;
+  const profissoes = filterData?.profissoes || [];
+  const paginasCaptura = filterData?.paginasCaptura || [];
+  const fontes = filterData?.fontes || [];
+
+  // Filtrar leads localmente com busca em tempo real
+  const filteredLeads = allLeads.filter(lead => {
+    if (!tableSearchTerm) return true;
+    
+    const searchLower = tableSearchTerm.toLowerCase();
+    return (
+      lead.nome.toLowerCase().includes(searchLower) ||
+      lead.email?.toLowerCase().includes(searchLower) ||
+      lead.whatsapp?.includes(tableSearchTerm)
+    );
+  });
+
+  // Usar filteredLeads ao invés de leads
+  const leads = filteredLeads;
 
   // Extrair profissão das observações
   const extractProfissao = (observacoes?: string) => {
@@ -117,14 +134,6 @@ const LeadsManager: React.FC = () => {
     
     return `https://wa.me/${formattedNumber}`;
   };
-
-  // Dados para filtros e estatísticas
-  const leads = leadsData?.leads || [];
-  const totalCount = leadsData?.totalCount || 0;
-  const totalPages = leadsData?.totalPages || 0;
-  const profissoes = filterData?.profissoes || [];
-  const paginasCaptura = filterData?.paginasCaptura || [];
-  const fontes = filterData?.fontes || [];
 
   // Filtrar leads para estatísticas (usar allLeadsForStats) - SEM busca por texto
   const filteredLeadsForStats = allLeadsForStats.filter(lead => {
