@@ -45,10 +45,19 @@ const LeadsManager: React.FC = () => {
   const [tableSearchTerm, setTableSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Resetar página quando filtros mudarem
+  // Resetar página quando filtros mudarem (exceto busca da tabela)
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [tableSearchTerm, statusFilter, profissaoFilter, paginaFilter, fonteFilter]);
+  }, [statusFilter, profissaoFilter, paginaFilter, fonteFilter]);
+
+  // Resetar página quando busca da tabela mudar (apenas quando Enter ou terminar de digitar)
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(1);
+    }, 500); // Debounce de 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [tableSearchTerm]);
 
   // Construir filtros para a tabela (incluindo busca por texto)
   const filters: LeadFilters = {
