@@ -21,9 +21,9 @@ export const useAdminVendas = () => {
       });
       return result;
     },
-    staleTime: 0,
-    gcTime: 0,
-    refetchInterval: 5000,
+    staleTime: 30000, // 30 segundos - dados considerados "frescos"
+    gcTime: 300000,   // 5 minutos - tempo no cache
+    refetchInterval: false, // Remover auto-refetch que pode conflitar com atualizações manuais
   });
 
   const updateStatusMutation = useMutation({
@@ -57,10 +57,13 @@ export const useAdminVendas = () => {
       return { vendaId, status, result };
     },
     onSuccess: async () => {
-      console.log('🎉 MUTATION SUCCESS: Invalidando cache...');
+      console.log('🎉 MUTATION SUCCESS: Invalidando cache de forma otimizada...');
       
-      // Invalidar cache e aguardar
-      await queryClient.invalidateQueries({ queryKey: ['admin-vendas'] });
+      // Invalidar cache de forma mais eficiente
+      await queryClient.invalidateQueries({ 
+        queryKey: ['admin-vendas'],
+        exact: true // Invalidar apenas esta query específica
+      });
       
       toast({
         title: 'Sucesso',

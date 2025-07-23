@@ -87,10 +87,7 @@ export const useSecretariaVendas = () => {
 
       console.log('✅ SUCESSO! Status atualizado. Recarregando vendas...');
       
-      // Aguardar um pouco antes de recarregar para garantir que a atualização foi processada
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Recarregar vendas
+      // Recarregar vendas imediatamente
       await loadVendas();
       
       toast({
