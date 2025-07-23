@@ -18,7 +18,7 @@ const SidebarHeaderComponent: React.FC<SidebarHeaderComponentProps> = ({ userTyp
     if (isComercialUser) {
       return 'PPGVET - Comercial';
     }
-    return 'PPGVET Sistema';
+    return 'PPG Educação';
   };
 
   const getHeaderSubtitle = () => {
