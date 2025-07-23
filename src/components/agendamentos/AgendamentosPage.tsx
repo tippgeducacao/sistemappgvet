@@ -1237,6 +1237,20 @@ const AgendamentosPage: React.FC = () => {
           />
         </TabsContent>
 
+        <TabsContent value="planilha">
+          <AgendamentosSDRPlanilha 
+            agendamentos={agendamentos.filter(ag => ag.status !== 'cancelado')}
+            onRecarregarDados={carregarDados}
+          />
+        </TabsContent>
+
+        <TabsContent value="planilha">
+          <AgendamentosSDRPlanilha 
+            agendamentos={agendamentos.filter(ag => ag.status !== 'cancelado')}
+            onRecarregarDados={carregarDados}
+          />
+        </TabsContent>
+
         <TabsContent value="calendario">
           <div className="space-y-4">
             <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium mb-4">
