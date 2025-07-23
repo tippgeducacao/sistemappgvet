@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar, Clock, User, Phone, Mail, MessageSquare, ExternalLink } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isBefore, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
@@ -45,6 +46,27 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     }
   };
 
+  const isReuniaoPerdida = (agendamento: Agendamento) => {
+    if (agendamento.resultado_reuniao) return false;
+    
+    const dataFim = agendamento.data_fim_agendamento 
+      ? new Date(agendamento.data_fim_agendamento)
+      : new Date(new Date(agendamento.data_agendamento).getTime() + 60 * 60 * 1000); // 1 hora depois se não tiver fim
+    
+    return isAfter(new Date(), dataFim);
+  };
+
+  const formatarHorario = (agendamento: Agendamento) => {
+    const inicio = format(new Date(agendamento.data_agendamento), "HH:mm", { locale: ptBR });
+    
+    if (agendamento.data_fim_agendamento) {
+      const fim = format(new Date(agendamento.data_fim_agendamento), "HH:mm", { locale: ptBR });
+      return `${inicio} - ${fim}`;
+    }
+    
+    return inicio;
+  };
+
   const handleAtualizarResultado = async (resultado: 'nao_compareceu' | 'compareceu_nao_comprou' | 'comprou') => {
     if (!agendamentoSelecionado) return;
     
@@ -72,138 +94,217 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
           </CardContent>
         </Card>
       ) : (
-        agendamentos.map((agendamento) => (
-          <Card key={agendamento.id}>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-4">
-                    <h3 className="font-semibold text-lg">{agendamento.lead?.nome}</h3>
-                    {getStatusBadge(agendamento)}
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </div>
-                    
-                    {agendamento.lead?.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        {agendamento.lead.email}
-                      </div>
-                    )}
-                    
-                    {agendamento.lead?.whatsapp && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        {agendamento.lead.whatsapp}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <User className="h-4 w-4" />
-                    SDR: {agendamento.sdr?.name}
-                  </div>
-                  
-                  <div className="text-sm">
-                    <strong>Interesse:</strong> {agendamento.pos_graduacao_interesse}
-                  </div>
-                  
-                  {agendamento.link_reuniao && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <ExternalLink className="h-4 w-4" />
-                      <a 
-                        href={agendamento.link_reuniao} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        Acessar Reunião
-                      </a>
-                    </div>
-                  )}
-                  
-                  {agendamento.observacoes && (
-                    <div className="text-sm">
-                      <strong>Observações:</strong> {agendamento.observacoes}
-                    </div>
-                  )}
-                  
-                  {agendamento.observacoes_resultado && (
-                    <div className="text-sm">
-                      <strong>Resultado:</strong> {agendamento.observacoes_resultado}
-                    </div>
-                  )}
-                </div>
-                
-                {!agendamento.resultado_reuniao && (
-                  <Button 
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Horário</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Reunião</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {agendamentos.map((agendamento) => (
+                  <TableRow 
+                    key={agendamento.id}
+                    className={`cursor-pointer hover:bg-muted/50 ${
+                      isReuniaoPerdida(agendamento) ? 'bg-destructive/10 text-destructive' : ''
+                    }`}
                     onClick={() => abrirDialog(agendamento)}
-                    size="sm"
                   >
-                    Marcar Resultado
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))
+                    <TableCell className="font-medium">
+                      {agendamento.lead?.nome}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
+                    </TableCell>
+                    <TableCell>
+                      {formatarHorario(agendamento)}
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(agendamento)}
+                    </TableCell>
+                    <TableCell>
+                      {agendamento.link_reuniao && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(
+                              agendamento.link_reuniao.startsWith('http') 
+                                ? agendamento.link_reuniao 
+                                : `https://${agendamento.link_reuniao}`,
+                              '_blank'
+                            );
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Acessar
+                        </Button>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {!agendamento.resultado_reuniao && (
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirDialog(agendamento);
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          Marcar Resultado
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
 
       <Dialog open={dialogAberto} onOpenChange={setDialogAberto}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Marcar Resultado da Reunião</DialogTitle>
+            <DialogTitle>
+              {agendamentoSelecionado?.resultado_reuniao ? 'Detalhes da Reunião' : 'Marcar Resultado da Reunião'}
+            </DialogTitle>
           </DialogHeader>
           
           {agendamentoSelecionado && (
-            <div className="space-y-4">
-              <div className="text-sm">
-                <strong>Lead:</strong> {agendamentoSelecionado.lead?.nome}
+            <div className="space-y-6">
+              {/* Informações do Lead */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Informações do Lead
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <strong>Nome:</strong> {agendamentoSelecionado.lead?.nome}
+                  </div>
+                  {agendamentoSelecionado.lead?.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      <strong>Email:</strong> {agendamentoSelecionado.lead.email}
+                    </div>
+                  )}
+                  {agendamentoSelecionado.lead?.whatsapp && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      <strong>WhatsApp:</strong> {agendamentoSelecionado.lead.whatsapp}
+                    </div>
+                  )}
+                  <div>
+                    <strong>Interesse:</strong> {agendamentoSelecionado.pos_graduacao_interesse}
+                  </div>
+                </div>
               </div>
-              <div className="text-sm">
-                <strong>Data:</strong> {format(new Date(agendamentoSelecionado.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+
+              {/* Informações da Reunião */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Informações da Reunião
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <strong>Data:</strong> {format(new Date(agendamentoSelecionado.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
+                  </div>
+                  <div>
+                    <strong>Horário:</strong> {formatarHorario(agendamentoSelecionado)}
+                  </div>
+                  <div>
+                    <strong>SDR Responsável:</strong> {agendamentoSelecionado.sdr?.name}
+                  </div>
+                  <div>
+                    <strong>Status:</strong> {getStatusBadge(agendamentoSelecionado)}
+                  </div>
+                </div>
+
+                {agendamentoSelecionado.link_reuniao && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <ExternalLink className="h-4 w-4" />
+                    <a 
+                      href={agendamentoSelecionado.link_reuniao.startsWith('http') 
+                        ? agendamentoSelecionado.link_reuniao 
+                        : `https://${agendamentoSelecionado.link_reuniao}`
+                      } 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      Acessar Reunião
+                    </a>
+                  </div>
+                )}
+
+                {agendamentoSelecionado.observacoes && (
+                  <div className="text-sm">
+                    <strong>Observações do Agendamento:</strong> 
+                    <p className="mt-1 text-muted-foreground">{agendamentoSelecionado.observacoes}</p>
+                  </div>
+                )}
+
+                {agendamentoSelecionado.observacoes_resultado && (
+                  <div className="text-sm">
+                    <strong>Observações do Resultado:</strong> 
+                    <p className="mt-1 text-muted-foreground">{agendamentoSelecionado.observacoes_resultado}</p>
+                  </div>
+                )}
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="observacoes">Observações (opcional)</Label>
-                <Textarea
-                  id="observacoes"
-                  value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  placeholder="Adicione observações sobre a reunião..."
-                  className="min-h-20"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Button 
-                  onClick={() => handleAtualizarResultado('nao_compareceu')}
-                  variant="destructive"
-                  className="w-full"
-                >
-                  Lead Não Compareceu
-                </Button>
-                
-                <Button 
-                  onClick={() => handleAtualizarResultado('compareceu_nao_comprou')}
-                  variant="secondary"
-                  className="w-full"
-                >
-                  Compareceu mas Não Comprou
-                </Button>
-                
-                <Button 
-                  onClick={() => handleAtualizarResultado('comprou')}
-                  variant="default"
-                  className="w-full"
-                >
-                  Comprou
-                </Button>
-              </div>
+
+              {/* Marcar Resultado - só aparece se não tiver resultado ainda */}
+              {!agendamentoSelecionado.resultado_reuniao && (
+                <div className="space-y-4 border-t pt-4">
+                  <h3 className="font-semibold text-lg">Marcar Resultado</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="observacoes">Observações (opcional)</Label>
+                    <Textarea
+                      id="observacoes"
+                      value={observacoes}
+                      onChange={(e) => setObservacoes(e.target.value)}
+                      placeholder="Adicione observações sobre a reunião..."
+                      className="min-h-20"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <Button 
+                      onClick={() => handleAtualizarResultado('nao_compareceu')}
+                      variant="destructive"
+                      size="sm"
+                    >
+                      Não Compareceu
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => handleAtualizarResultado('compareceu_nao_comprou')}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      Não Comprou
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => handleAtualizarResultado('comprou')}
+                      variant="default"
+                      size="sm"
+                    >
+                      Comprou
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
