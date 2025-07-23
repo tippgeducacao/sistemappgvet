@@ -533,6 +533,7 @@ export type Database = {
           nivel: string | null
           photo_url: string | null
           pos_graduacoes: string[] | null
+          theme_preference: string | null
           updated_at: string | null
           user_type: string
         }
@@ -546,6 +547,7 @@ export type Database = {
           nivel?: string | null
           photo_url?: string | null
           pos_graduacoes?: string[] | null
+          theme_preference?: string | null
           updated_at?: string | null
           user_type: string
         }
@@ -559,6 +561,7 @@ export type Database = {
           nivel?: string | null
           photo_url?: string | null
           pos_graduacoes?: string[] | null
+          theme_preference?: string | null
           updated_at?: string | null
           user_type?: string
         }

@@ -8,8 +8,9 @@
 
 @layer base {
   :root {
+    /* Light Mode Colors */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215.4 16.3% 46.9%;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -49,25 +50,39 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 180 100% 35.5%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 318 51% 50%;
-    --secondary-foreground: 210 40% 98%;
+    /* Dark Mode Colors - Custom design */
+    --background: 0 0% 7.1%; /* #121212 equivalent */
+    --foreground: 210 20% 90%; /* #E5E7EB equivalent */
+    
+    --card: 0 0% 9%;
+    --card-foreground: 210 20% 90%;
+    
+    --popover: 0 0% 9%;
+    --popover-foreground: 210 20% 90%;
+    
+    --primary: 180 100% 35.5%; /* Keep PPGVET teal */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 262 52% 62%; /* #8B5CF6 equivalent - purple accent for dark mode */
+    --secondary-foreground: 0 0% 100%;
+    
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
+    
     --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent-foreground: 210 20% 90%;
+    
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
+    
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 180 100% 35.5%;
+    
+    /* Dark variants for PPGVET colors */
+    --ppgvet-gray-50: 210 20% 15%;
+    --ppgvet-gray-100: 210 20% 12%;
+    --ppgvet-gray-200: 210 16% 10%;
   }
 }
 
@@ -79,6 +94,17 @@
   body {
     @apply bg-background text-foreground font-inter;
     font-family: 'Inter', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Smooth transitions for all elements */
+  * {
+    transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  /* Override transition for interactive elements that need faster feedback */
+  button, [role="button"], a, input, select, textarea {
+    transition: all 0.2s ease;
   }
 }
 
