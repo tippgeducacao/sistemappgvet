@@ -257,16 +257,16 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   <div className="flex items-center font-medium">
                     {pontosDaSemana.toFixed(1)}
                   </div>
-                  
-                  {/* Percentual */}
-                  <div className="flex items-center">
-                    <span className={`font-medium ${
-                      comissaoData.percentual >= 100 ? 'text-green-600' : 
-                      comissaoData.percentual >= 80 ? 'text-yellow-600' : 'text-muted-foreground'
-                    }`}>
-                      {comissaoData.percentual.toFixed(0)}%
-                    </span>
-                  </div>
+                   
+                   {/* Percentual */}
+                   <div className="flex items-center">
+                     <span className={`font-medium ${
+                       progressoSemanal >= 100 ? 'text-green-600' : 
+                       progressoSemanal >= 80 ? 'text-yellow-600' : 'text-muted-foreground'
+                     }`}>
+                       {progressoSemanal.toFixed(0)}%
+                     </span>
+                   </div>
                   
                   {/* Multiplicador */}
                   <div className="flex items-center">
