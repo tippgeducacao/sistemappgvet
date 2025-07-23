@@ -34,21 +34,25 @@ import type { Lead, LeadFilters } from '@/hooks/useLeads';
 
 const LeadsManager: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filtros para os gráficos (sem busca por texto)
   const [statusFilter, setStatusFilter] = useState('todos');
   const [profissaoFilter, setProfissaoFilter] = useState('todos');
   const [paginaFilter, setPaginaFilter] = useState('todos');
   const [fonteFilter, setFonteFilter] = useState('todos');
+  
+  // Filtro específico para a tabela de leads
+  const [tableSearchTerm, setTableSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
   // Resetar página quando filtros mudarem
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, profissaoFilter, paginaFilter, fonteFilter]);
+  }, [tableSearchTerm, statusFilter, profissaoFilter, paginaFilter, fonteFilter]);
 
-  // Construir filtros
+  // Construir filtros para a tabela (incluindo busca por texto)
   const filters: LeadFilters = {
-    searchTerm: searchTerm || undefined,
+    searchTerm: tableSearchTerm || undefined,
     statusFilter: statusFilter !== 'todos' ? statusFilter : undefined,
     profissaoFilter: profissaoFilter !== 'todos' ? profissaoFilter : undefined,
     paginaFilter: paginaFilter !== 'todos' ? paginaFilter : undefined,
@@ -109,12 +113,8 @@ const LeadsManager: React.FC = () => {
   const paginasCaptura = filterData?.paginasCaptura || [];
   const fontes = filterData?.fontes || [];
 
-  // Filtrar leads para estatísticas (usar allLeadsForStats)
+  // Filtrar leads para estatísticas (usar allLeadsForStats) - SEM busca por texto
   const filteredLeadsForStats = allLeadsForStats.filter(lead => {
-    const matchesSearch = lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.whatsapp?.includes(searchTerm);
-    
     const matchesStatus = statusFilter === 'todos' || lead.status === statusFilter;
     
     const profissao = extractProfissao(lead.observacoes);
@@ -125,7 +125,7 @@ const LeadsManager: React.FC = () => {
     
     const matchesFonte = fonteFilter === 'todos' || lead.utm_source === fonteFilter;
     
-    return matchesSearch && matchesStatus && matchesProfissao && matchesPagina && matchesFonte;
+    return matchesStatus && matchesProfissao && matchesPagina && matchesFonte;
   });
 
   // Estatísticas baseadas nos leads filtrados
@@ -215,21 +215,10 @@ const LeadsManager: React.FC = () => {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Filtros</CardTitle>
           <CardDescription className="text-sm">
-            Os filtros aplicados afetam tanto os gráficos quanto a tabela de leads
+            Os filtros aplicados afetam os gráficos e estatísticas
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Busca */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Buscar por nome, email ou telefone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
           {/* Filtros em grade responsiva */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
             {/* Fonte */}
@@ -381,38 +370,51 @@ const LeadsManager: React.FC = () => {
         {/* Tabela de Leads */}
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="text-lg">Lista de Leads</CardTitle>
-                <CardDescription className="text-sm">
-                  {totalCount > 0 ? (
-                    <>Página {currentPage} de {totalPages} - {totalCount} leads filtrados ({leads.length} nesta página)</>
-                  ) : (
-                    'Nenhum lead encontrado'
-                  )}
-                </CardDescription>
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-lg">Lista de Leads</CardTitle>
+                  <CardDescription className="text-sm">
+                    {totalCount > 0 ? (
+                      <>Página {currentPage} de {totalPages} - {totalCount} leads filtrados ({leads.length} nesta página)</>
+                    ) : (
+                      'Nenhum lead encontrado'
+                    )}
+                  </CardDescription>
+                </div>
+                {/* Controles de paginação */}
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              {/* Controles de paginação */}
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  {currentPage} / {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+              
+              {/* Busca específica para a tabela */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Buscar por nome, email ou telefone na lista..."
+                  value={tableSearchTerm}
+                  onChange={(e) => setTableSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
             </div>
           </CardHeader>
