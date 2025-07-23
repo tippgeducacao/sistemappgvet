@@ -9,12 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List, Edit, X } from 'lucide-react';
+import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List, Edit, X, FileSpreadsheet } from 'lucide-react';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
 import { useCreateLead } from '@/hooks/useCreateLead';
 import { toast } from 'sonner';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import AgendamentosSDRPlanilha from '@/components/sdr/AgendamentosSDRPlanilha';
 
 const AgendamentosPage: React.FC = () => {
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
@@ -1227,6 +1228,13 @@ const AgendamentosPage: React.FC = () => {
               ))
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="planilha">
+          <AgendamentosSDRPlanilha 
+            agendamentos={agendamentos.filter(ag => ag.status !== 'cancelado')}
+            onRecarregarDados={carregarDados}
+          />
         </TabsContent>
 
         <TabsContent value="calendario">
