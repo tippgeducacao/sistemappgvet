@@ -746,6 +746,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_venda_status_fast: {
+        Args: {
+          venda_id_param: string
+          novo_status: string
+          pontuacao_param?: number
+          motivo_param?: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:

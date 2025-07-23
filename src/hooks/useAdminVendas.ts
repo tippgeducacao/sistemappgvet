@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminVendasService } from '@/services/vendas/AdminVendasService';
+import { FastUpdateService } from '@/services/vendas/FastUpdateService';
 import { useToast } from '@/hooks/use-toast';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
@@ -39,21 +40,20 @@ export const useAdminVendas = () => {
       motivoPendencia?: string;
       dataAssinaturaContrato?: string;
     }) => {
-      console.log('🎯 MUTATION SIMPLES: Iniciando atualização', { 
-        vendaId: vendaId.substring(0, 8), 
-        status,
-        dataAssinaturaContrato
-      });
+      console.log('⚡ useAdminVendas: Usando FastUpdateService para performance otimizada');
       
-      const result = await AdminVendasService.updateVendaStatus(
+      const result = await FastUpdateService.updateVendaStatus(
         vendaId,
         status,
         pontuacaoValidada,
-        motivoPendencia,
-        dataAssinaturaContrato
+        motivoPendencia
       );
       
-      console.log('✅ MUTATION SIMPLES: Concluída');
+      if (!result) {
+        throw new Error('Falha na atualização rápida');
+      }
+      
+      console.log('✅ MUTATION FAST: Concluída');
       return { vendaId, status, result };
     },
     onSuccess: async () => {

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { SecretariaUpdateService } from '@/services/vendas/SecretariaUpdateService';
+import { FastUpdateService } from '@/services/vendas/FastUpdateService';
 import { VendasDataService } from '@/services/vendas/VendasDataService';
 import { CacheService } from '@/services/cache/CacheService';
 import { useToast } from '@/hooks/use-toast';
@@ -66,7 +66,7 @@ export const useSecretariaVendas = () => {
     motivoPendencia?: string
   ) => {
     setIsUpdating(true);
-    console.log('🎯 SECRETARIA: Iniciando atualização de status:', { 
+    console.log('⚡ SECRETARIA: Usando FastUpdateService para performance otimizada:', { 
       vendaId: vendaId.substring(0, 8), 
       status,
       pontuacaoValidada,
@@ -74,7 +74,7 @@ export const useSecretariaVendas = () => {
     });
 
     try {
-      const success = await SecretariaUpdateService.updateVendaStatus(
+      const success = await FastUpdateService.updateVendaStatus(
         vendaId, 
         status, 
         pontuacaoValidada,
@@ -82,7 +82,7 @@ export const useSecretariaVendas = () => {
       );
       
       if (!success) {
-        throw new Error('Falha na atualização - função retornou false');
+        throw new Error('Falha na atualização rápida - função retornou false');
       }
 
       console.log('✅ SUCESSO! Status atualizado. Recarregando vendas...');
