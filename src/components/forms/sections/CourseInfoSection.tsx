@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { FormSelectField, FormInputField } from '@/components/ui/form-field';
 import { IES_OPTIONS, MODALIDADE_OPTIONS } from '@/constants/formOptions';
 import { useCourses } from '@/hooks/useCourses';
+import TurmaField from '../fields/TurmaField';
+import AberturaField from '../fields/AberturaField';
 
 interface CourseInfoSectionProps {
   formData: any;
@@ -104,6 +106,21 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
         placeholder={selectedModalidade ? `Selecione o ${selectedModalidade.toLowerCase()}` : "Primeiro selecione a modalidade"}
         disabled={!selectedModalidade}
       />
+
+      {/* Turma e Abertura lado a lado */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TurmaField
+          value={formData.turma || ''}
+          onChange={(value) => updateField('turma', value)}
+          label="Turma"
+        />
+        
+        <AberturaField
+          value={formData.abertura || ''}
+          onChange={(value) => updateField('abertura', value)}
+          label="Abertura"
+        />
+      </div>
 
       {/* Valor do contrato - campo menor à direita */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
