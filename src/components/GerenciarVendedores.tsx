@@ -23,6 +23,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { NiveisService } from '@/services/niveisService';
 import type { Vendedor } from '@/services/vendedoresService';
 import { formatarHorarioTrabalho, type HorarioTrabalho } from '@/utils/horarioUtils';
+import { ImageCropper } from '@/components/ImageCropper';
 
 const GerenciarVendedores: React.FC = () => {
   const { vendedores, allUsers, loading, fetchVendedores, fetchAllUsers, uploadPhoto, removePhoto, toggleUserStatus, resetPassword } = useVendedores();
@@ -38,6 +39,9 @@ const GerenciarVendedores: React.FC = () => {
   const [editingVendedor, setEditingVendedor] = useState<Vendedor | null>(null);
   const [resetPasswordVendedor, setResetPasswordVendedor] = useState<Vendedor | null>(null);
   const [showNiveisConfig, setShowNiveisConfig] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [currentVendedorId, setCurrentVendedorId] = useState<string>('');
   const { toast } = useToast();
   const { isAdmin, isSecretaria, isDiretor } = useUserRoles();
 
@@ -59,7 +63,7 @@ const GerenciarVendedores: React.FC = () => {
   // Verificar se o usuário tem permissão para alterar fotos
   const canEditPhotos = isDiretor;
 
-  const handlePhotoUpload = async (vendedorId: string, file: File) => {
+  const handlePhotoSelect = (vendedorId: string, file: File) => {
     if (!file.type.startsWith('image/')) {
       toast({
         title: "Erro",
@@ -78,13 +82,28 @@ const GerenciarVendedores: React.FC = () => {
       return;
     }
 
+    setSelectedImageFile(file);
+    setCurrentVendedorId(vendedorId);
+    setCropperOpen(true);
+  };
+
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
     try {
-      setUploadingPhoto(vendedorId);
-      await uploadPhoto(vendedorId, file);
+      setUploadingPhoto(currentVendedorId);
+      
+      // Converter blob para file
+      const croppedFile = new File([croppedImageBlob], 'profile-photo.jpg', {
+        type: 'image/jpeg'
+      });
+      
+      await uploadPhoto(currentVendedorId, croppedFile);
     } catch (error) {
       console.error('Erro no upload:', error);
     } finally {
       setUploadingPhoto(null);
+      setCropperOpen(false);
+      setSelectedImageFile(null);
+      setCurrentVendedorId('');
     }
   };
 
@@ -224,12 +243,12 @@ const GerenciarVendedores: React.FC = () => {
                                   type="file"
                                   accept="image/*"
                                   className="hidden"
-                                   onChange={(e) => {
-                                     const file = e.target.files?.[0];
-                                     if (file) {
-                                       handlePhotoUpload(vendedor.id, file);
-                                     }
-                                   }}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        handlePhotoSelect(vendedor.id, file);
+                                      }
+                                    }}
                                 />
                               </label>
                             )}
@@ -424,12 +443,12 @@ const GerenciarVendedores: React.FC = () => {
                                   type="file"
                                   accept="image/*"
                                   className="hidden"
-                                   onChange={(e) => {
-                                     const file = e.target.files?.[0];
-                                     if (file) {
-                                       handlePhotoUpload(vendedor.id, file);
-                                     }
-                                   }}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        handlePhotoSelect(vendedor.id, file);
+                                      }
+                                    }}
                                 />
                               </label>
                             )}
@@ -733,6 +752,19 @@ const GerenciarVendedores: React.FC = () => {
           setResetPasswordVendedor(null);
         }}
       />
+
+      {selectedImageFile && (
+        <ImageCropper
+          open={cropperOpen}
+          onClose={() => {
+            setCropperOpen(false);
+            setSelectedImageFile(null);
+            setCurrentVendedorId('');
+          }}
+          onCropComplete={handleCropComplete}
+          imageFile={selectedImageFile}
+        />
+      )}
       </div>
     </TooltipProvider>
   );
@@ -743,7 +775,7 @@ interface UserCardProps {
   vendedor: Vendedor;
   canEditPhotos: boolean;
   uploadingPhoto: string | null;
-  onPhotoUpload: (vendedorId: string, file: File) => void;
+  onPhotoSelect: (vendedorId: string, file: File) => void;
   onRemovePhoto: (vendedorId: string) => void;
   onToggleStatus: (userId: string, currentStatus: boolean) => void;
   onViewProfile: (user: { id: string; name: string; photo_url?: string; user_type?: string; nivel?: string }) => void;
@@ -756,7 +788,7 @@ const UserCard: React.FC<UserCardProps> = ({
   vendedor,
   canEditPhotos,
   uploadingPhoto,
-  onPhotoUpload,
+  onPhotoSelect,
   onRemovePhoto,
   onToggleStatus,
   onViewProfile,
@@ -796,7 +828,7 @@ const UserCard: React.FC<UserCardProps> = ({
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      onPhotoUpload(vendedor.id, file);
+                      onPhotoSelect(vendedor.id, file);
                     }
                   }}
                   disabled={uploadingPhoto === vendedor.id}
