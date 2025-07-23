@@ -59,6 +59,8 @@ export interface LeadFilters {
   profissaoFilter?: string;
   paginaFilter?: string;
   fonteFilter?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
 export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: LeadFilters = {}) => {
@@ -138,6 +140,16 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
           const match = lead.pagina_nome?.match(/\.com\.br\/([^?&#]+)/);
           const pagina = match ? match[1].trim() : null;
           return pagina === filters.paginaFilter;
+        });
+      }
+
+      // Filtro por data
+      if (filters.dateFrom || filters.dateTo) {
+        allFilteredLeads = allFilteredLeads.filter(lead => {
+          const leadDate = new Date(lead.created_at);
+          const matchesDateFrom = !filters.dateFrom || leadDate >= filters.dateFrom;
+          const matchesDateTo = !filters.dateTo || leadDate <= filters.dateTo;
+          return matchesDateFrom && matchesDateTo;
         });
       }
 

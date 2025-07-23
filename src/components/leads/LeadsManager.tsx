@@ -83,6 +83,8 @@ const LeadsManager: React.FC = () => {
     profissaoFilter: profissaoFilter !== 'todos' ? profissaoFilter : undefined,
     paginaFilter: paginaFilter !== 'todos' ? paginaFilter : undefined,
     fonteFilter: fonteFilter !== 'todos' ? fonteFilter : undefined,
+    dateFrom,
+    dateTo,
   };
 
   // Buscar TODOS os leads quando há busca ativa, ou paginados quando não há busca
