@@ -364,15 +364,29 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   // Função para calcular pontos por semana do vendedor
   const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
-    return weeks.map(week => {
+    return weeks.map((week, index) => {
       const weekPoints = vendasFiltradas
         .filter(venda => {
           if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
           
           const vendaDate = new Date(venda.enviado_em);
-          return vendaDate >= week.startDate && vendaDate <= week.endDate;
+          const isInRange = vendaDate >= week.startDate && vendaDate <= week.endDate;
+          
+          // Debug específico para semana 3 e vendedor teste
+          if (week.week === 3 && vendedorId) {
+            console.log(`🔍 Semana 3 Debug - Vendedor: ${vendedorId}`);
+            console.log(`📅 Período da semana: ${week.startDate.toISOString()} até ${week.endDate.toISOString()}`);
+            console.log(`💰 Venda: ${venda.aluno?.nome}, Data: ${vendaDate.toISOString()}, InRange: ${isInRange}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
+          }
+          
+          return isInRange;
         })
         .reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+      
+      // Debug total da semana 3
+      if (week.week === 3 && weekPoints > 0) {
+        console.log(`📊 Semana 3 - Vendedor: ${vendedorId}, Total de pontos: ${weekPoints}`);
+      }
       
       return weekPoints;
     });
