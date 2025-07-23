@@ -3,35 +3,31 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, User, Phone, Mail, MessageSquare, ExternalLink, Plus } from 'lucide-react';
-import { format, isBefore, isAfter } from 'date-fns';
+import { Calendar, User, Phone, Mail, ExternalLink, Plus } from 'lucide-react';
+import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import NovaVendaForm from '@/components/NovaVendaForm';
+import { useFormStore } from '@/store/FormStore';
 
 interface ReunioesPlanilhaProps {
   agendamentos: Agendamento[];
   onAtualizarResultado: (id: string, resultado: 'nao_compareceu' | 'compareceu_nao_comprou' | 'comprou', observacoes?: string) => Promise<boolean>;
 }
 
-interface NovaVendaModalProps {
-  agendamento: Agendamento;
-  open: boolean;
-  onClose: () => void;
-}
 
 const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   agendamentos,
   onAtualizarResultado
 }) => {
   const [dialogAberto, setDialogAberto] = useState(false);
-  const [novaVendaModalAberto, setNovaVendaModalAberto] = useState(false);
+  const [novaVendaAberto, setNovaVendaAberto] = useState(false);
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
   const [observacoes, setObservacoes] = useState('');
+  const { updateField, clearForm } = useFormStore();
 
   const getStatusBadge = (agendamento: Agendamento) => {
     if (agendamento.resultado_reuniao) {
@@ -94,8 +90,28 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   };
 
   const abrirNovaVenda = (agendamento: Agendamento) => {
+    // Limpar formulário primeiro
+    clearForm();
+    
+    // Preencher dados do lead
+    if (agendamento.lead) {
+      if (agendamento.lead.nome) {
+        updateField('nomeAluno', agendamento.lead.nome);
+      }
+      if (agendamento.lead.email) {
+        updateField('emailAluno', agendamento.lead.email);
+      }
+      if (agendamento.lead.whatsapp) {
+        updateField('telefone', agendamento.lead.whatsapp);
+      }
+    }
+    
+    // Adicionar observação sobre origem da venda
+    const observacaoOrigem = `Venda originada da reunião do dia ${format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`;
+    updateField('observacoes', observacaoOrigem);
+    
     setAgendamentoSelecionado(agendamento);
-    setNovaVendaModalAberto(true);
+    setNovaVendaAberto(true);
   };
 
   return (
@@ -330,170 +346,20 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       </Dialog>
 
       {/* Modal de Nova Venda */}
-      <NovaVendaModal 
-        agendamento={agendamentoSelecionado}
-        open={novaVendaModalAberto}
-        onClose={() => {
-          setNovaVendaModalAberto(false);
-          setAgendamentoSelecionado(null);
-        }}
-      />
+      {novaVendaAberto && (
+        <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
+          <NovaVendaForm 
+            onCancel={() => {
+              setNovaVendaAberto(false);
+              setAgendamentoSelecionado(null);
+              clearForm();
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };
 
-// Componente do Modal de Nova Venda
-const NovaVendaModal: React.FC<NovaVendaModalProps> = ({ agendamento, open, onClose }) => {
-  const [formData, setFormData] = useState({
-    nomeAluno: '',
-    emailAluno: '',
-    telefone: '',
-    posGraduacao: '',
-    observacoes: ''
-  });
-
-  // Preencher dados do lead quando o modal abrir
-  React.useEffect(() => {
-    if (agendamento?.lead && open) {
-      setFormData({
-        nomeAluno: agendamento.lead.nome || '',
-        emailAluno: agendamento.lead.email || '',
-        telefone: agendamento.lead.whatsapp || '',
-        posGraduacao: '', // Deixar em branco para o usuário escolher
-        observacoes: `Venda originada da reunião do dia ${format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
-      });
-    }
-  }, [agendamento, open]);
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Aqui você pode integrar com o serviço de vendas
-    console.log('Dados da nova venda:', formData);
-    
-    // Por enquanto, apenas fechamos o modal
-    // TODO: Integrar com o sistema de vendas existente
-    
-    onClose();
-  };
-
-  if (!agendamento) return null;
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Nova Venda - {agendamento.lead?.nome}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Informações do Lead */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Informações do Cliente
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nomeAluno">Nome Completo</Label>
-                <Input
-                  id="nomeAluno"
-                  value={formData.nomeAluno}
-                  onChange={(e) => handleInputChange('nomeAluno', e.target.value)}
-                  placeholder="Nome do cliente"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="emailAluno">E-mail</Label>
-                <Input
-                  id="emailAluno"
-                  type="email"
-                  value={formData.emailAluno}
-                  onChange={(e) => handleInputChange('emailAluno', e.target.value)}
-                  placeholder="email@exemplo.com"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone/WhatsApp</Label>
-                <Input
-                  id="telefone"
-                  value={formData.telefone}
-                  onChange={(e) => handleInputChange('telefone', e.target.value)}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="posGraduacao">Pós-Graduação</Label>
-                <Select value={formData.posGraduacao} onValueChange={(value) => handleInputChange('posGraduacao', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a pós-graduação" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="clinica-medica">Clínica Médica</SelectItem>
-                    <SelectItem value="cannabis-sativa">Cannabis Sativa</SelectItem>
-                    <SelectItem value="cirurgia">Cirurgia</SelectItem>
-                    <SelectItem value="cardiologia">Cardiologia</SelectItem>
-                    <SelectItem value="dermatologia">Dermatologia</SelectItem>
-                    <SelectItem value="neurologia">Neurologia</SelectItem>
-                    <SelectItem value="pediatria">Pediatria</SelectItem>
-                    <SelectItem value="oncologia">Oncologia</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          
-          {/* Observações */}
-          <div className="space-y-2">
-            <Label htmlFor="observacoes">Observações</Label>
-            <Textarea
-              id="observacoes"
-              value={formData.observacoes}
-              onChange={(e) => handleInputChange('observacoes', e.target.value)}
-              placeholder="Informações adicionais sobre a venda..."
-              className="min-h-20"
-            />
-          </div>
-          
-          {/* Informações da Reunião Original */}
-          <div className="bg-muted/50 p-4 rounded-lg">
-            <h4 className="font-medium mb-2">Reunião Original</h4>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <div><strong>Data:</strong> {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</div>
-              <div><strong>SDR:</strong> {agendamento.sdr?.name}</div>
-              <div><strong>Interesse Original:</strong> {agendamento.pos_graduacao_interesse}</div>
-            </div>
-          </div>
-          
-          {/* Botões */}
-          <div className="flex gap-4 pt-4">
-            <Button type="submit" className="flex-1">
-              Criar Venda
-            </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 export default ReunioesPlanilha;
