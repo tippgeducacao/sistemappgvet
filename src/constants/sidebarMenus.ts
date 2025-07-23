@@ -49,21 +49,6 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     title: 'Gerenciar Vendas',
     section: 'gerenciar-vendas',
     icon: 'FileText'
-  },
-  {
-    title: 'Gerenciar Cursos',
-    section: 'gerenciar-cursos',
-    icon: 'GraduationCap'
-  },
-  {
-    title: 'Gestão de Leads',
-    section: 'gestao-leads',
-    icon: 'Target'
-  },
-  {
-    title: 'Gerenciar Níveis',
-    section: 'gerenciar-niveis',
-    icon: 'Trophy'
   }
 ];
 
