@@ -69,13 +69,15 @@ const SidebarMenuComponent: React.FC = () => {
 
   const getIcon = (iconName: string) => {
     const IconComponent = Icons[iconName as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
-    return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
+    return IconComponent ? <IconComponent className="h-5 w-5 stroke-[1.5]" /> : null;
   };
 
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
-      <SidebarMenu>
+    <SidebarGroup className="px-3 py-2">
+      <SidebarGroupLabel className="text-xs font-medium text-muted-foreground/70 px-2 py-1 mb-2">
+        Menu Principal
+      </SidebarGroupLabel>
+      <SidebarMenu className="space-y-1">
         {menuItems.map((item) => (
           <SidebarMenuItem key={item.section}>
             <SidebarMenuButton
@@ -87,10 +89,18 @@ const SidebarMenuComponent: React.FC = () => {
                 handleSectionChange(item.section);
               }}
               isActive={activeSection === item.section}
-              className="w-full cursor-pointer"
+              className={`
+                w-full cursor-pointer rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-in-out
+                ${activeSection === item.section 
+                  ? 'bg-primary text-primary-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                }
+              `}
             >
-              {getIcon(item.icon)}
-              <span>{item.title}</span>
+              <div className="flex items-center gap-3">
+                {getIcon(item.icon)}
+                <span className="truncate">{item.title}</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}

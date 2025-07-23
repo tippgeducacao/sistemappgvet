@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { SidebarHeader } from '@/components/ui/sidebar';
-import { GraduationCap, Building2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/AuthStore';
 import type { UserType } from '@/types/user';
 
@@ -41,22 +40,21 @@ const SidebarHeaderComponent: React.FC<SidebarHeaderComponentProps> = ({ userTyp
     }
   };
 
-  const getHeaderIcon = () => {
-    if (isComercialUser) {
-      return <Building2 className="h-6 w-6 text-blue-600" />;
-    }
-    return <GraduationCap className="h-6 w-6 text-ppgvet-teal" />;
-  };
-
   return (
-    <SidebarHeader className="border-b p-4">
-      <div className="flex items-center space-x-3">
-        {getHeaderIcon()}
-        <div>
-          <h2 className="text-lg font-bold text-gray-900">
+    <SidebarHeader className="border-b border-border/40 p-6 bg-gradient-to-r from-background to-background/95">
+      <div className="flex items-center space-x-4">
+        <div className="flex-shrink-0">
+          <img 
+            src="/lovable-uploads/e2b888ac-54b9-453e-abda-ee6ef6e7fbb5.png" 
+            alt="PPGVET Logo" 
+            className="h-10 w-10 object-contain"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-semibold text-foreground truncate">
             {getHeaderTitle()}
           </h2>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground truncate">
             {getHeaderSubtitle()}
           </p>
         </div>

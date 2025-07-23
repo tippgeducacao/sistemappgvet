@@ -26,7 +26,7 @@ const AppSidebar: React.FC = () => {
   const userType = getUserType();
   
   return (
-    <Sidebar className="touch-none overscroll-none fixed left-0 top-0 h-screen w-64 z-40 overflow-hidden border-r bg-background">
+    <Sidebar className="touch-none overscroll-none fixed left-0 top-0 h-screen w-64 z-40 overflow-hidden border-r border-border/40 bg-card/50 backdrop-blur-sm">
       <SidebarHeaderComponent userType={userType} />
       <SidebarMenuComponent />
       <SidebarFooterComponent userType={userType} userName={userName} />
