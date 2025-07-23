@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { 
   Users, 
   Phone, 
@@ -19,12 +21,13 @@ import {
   Trophy,
   ChevronLeft,
   ChevronRight,
-  Calendar,
+  CalendarIcon,
   Clock
 } from 'lucide-react';
 import { useLeads, useLeadsCount, useLeadsFilterData, useAllLeads } from '@/hooks/useLeads';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 import LeadDetailsDialog from './LeadDetailsDialog';
 import LeadsDashboard from './LeadsDashboard';
@@ -45,6 +48,10 @@ const LeadsManager: React.FC = () => {
   const [tableSearchTerm, setTableSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Filtros por data
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
 
   // Debounce da busca - só faz a consulta após parar de digitar
   React.useEffect(() => {
@@ -59,7 +66,7 @@ const LeadsManager: React.FC = () => {
   // Resetar página quando filtros mudarem (exceto busca da tabela)
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, profissaoFilter, paginaFilter, fonteFilter]);
+  }, [statusFilter, profissaoFilter, paginaFilter, fonteFilter, dateFrom, dateTo]);
 
   // Construir filtros APENAS para os gráficos (SEM busca por texto)
   const filtersForGraphs: LeadFilters = {
@@ -165,7 +172,12 @@ const LeadsManager: React.FC = () => {
     
     const matchesFonte = fonteFilter === 'todos' || lead.utm_source === fonteFilter;
     
-    return matchesStatus && matchesProfissao && matchesPagina && matchesFonte;
+    // Filtro por data
+    const leadDate = new Date(lead.created_at);
+    const matchesDateFrom = !dateFrom || leadDate >= dateFrom;
+    const matchesDateTo = !dateTo || leadDate <= dateTo;
+    
+    return matchesStatus && matchesProfissao && matchesPagina && matchesFonte && matchesDateFrom && matchesDateTo;
   });
 
   // Estatísticas baseadas nos leads filtrados
@@ -260,7 +272,7 @@ const LeadsManager: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Filtros em grade responsiva */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3">
             {/* Fonte */}
             <Select value={fonteFilter} onValueChange={setFonteFilter}>
               <SelectTrigger className="w-full text-xs">
@@ -325,7 +337,74 @@ const LeadsManager: React.FC = () => {
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Data Inicial */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-xs font-normal",
+                    !dateFrom && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Data inicial"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateFrom}
+                  onSelect={setDateFrom}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            {/* Data Final */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-xs font-normal",
+                    !dateTo && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  {dateTo ? format(dateTo, "dd/MM/yyyy") : "Data final"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateTo}
+                  onSelect={setDateTo}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
+
+          {/* Botão para limpar filtros de data */}
+          {(dateFrom || dateTo) && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDateFrom(undefined);
+                  setDateTo(undefined);
+                }}
+                className="text-xs"
+              >
+                Limpar filtros de data
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
