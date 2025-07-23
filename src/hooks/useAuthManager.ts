@@ -25,7 +25,7 @@ export const useAuthManager = () => {
           console.log('Usuário autenticado, buscando perfil...');
           console.log('User metadata:', session.user.user_metadata);
           
-          setTimeout(async () => {
+          try {
             const profileData = await UserService.getProfile(session.user.id);
             console.log('Profile data retornado:', profileData);
             
@@ -45,9 +45,12 @@ export const useAuthManager = () => {
             } else {
               setProfile(profileData);
             }
-            
+          } catch (error) {
+            console.error('Erro ao buscar perfil:', error);
+            setProfile(null);
+          } finally {
             setLoading(false);
-          }, 0);
+          }
         } else {
           setProfile(null);
           setLoading(false);
