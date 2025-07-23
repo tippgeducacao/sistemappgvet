@@ -372,7 +372,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           const vendaDate = new Date(venda.enviado_em);
           return vendaDate >= week.startDate && vendaDate <= week.endDate;
         })
-        .reduce((sum, venda) => sum + (venda.pontuacao_esperada || 0), 0);
+        .reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       
       return weekPoints;
     });
