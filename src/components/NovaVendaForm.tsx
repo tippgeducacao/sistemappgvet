@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { FormPersistenceService } from '@/services/form/FormPersistenceService';
 import { VendasDataService } from '@/services/vendas/VendasDataService';
 import { useFormDetails } from '@/hooks/useFormDetails';
+import { useAgendamentos } from '@/hooks/useAgendamentos';
 import LeadInfoSection from './forms/LeadInfoSection';
 import ScoringRulesSection from './forms/ScoringRulesSection';
 import ObservationsSection from './forms/ObservationsSection';
@@ -31,6 +32,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
     setVendedor
   } = useFormStore();
   const { currentUser } = useAuthStore();
+  const { marcarReuniaoComoComprou } = useAgendamentos();
   
   // Buscar detalhes do formulário para edição
   const { data: formDetails } = useFormDetails(editId);
@@ -225,6 +227,18 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
       });
 
       console.log('✅ Formulário salvo com sucesso:', formEntryId);
+
+      // Se a venda veio de uma reunião, marcar como "comprou"
+      if (formData.agendamentoId && !editId) {
+        console.log('🔄 Marcando reunião como comprou:', formData.agendamentoId);
+        try {
+          await marcarReuniaoComoComprou(formData.agendamentoId);
+          console.log('✅ Reunião marcada como comprou com sucesso');
+        } catch (error) {
+          console.error('❌ Erro ao marcar reunião como comprou:', error);
+          // Não falhar a venda por causa disso, apenas logar o erro
+        }
+      }
 
       const isEdit = !!editId;
       toast({

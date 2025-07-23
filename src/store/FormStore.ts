@@ -29,6 +29,9 @@ export interface FormData {
   turma?: string;
   abertura?: string;
 
+  // Informações da reunião (se aplicável)
+  agendamentoId?: string;
+
   // Informações de Pontuação
   lotePos: string;
   matricula: string;

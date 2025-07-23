@@ -110,6 +110,9 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     const observacaoOrigem = `Venda originada da reunião do dia ${format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`;
     updateField('observacoes', observacaoOrigem);
     
+    // Adicionar ID do agendamento para controle
+    updateField('agendamentoId', agendamento.id);
+    
     setAgendamentoSelecionado(agendamento);
     setNovaVendaAberto(true);
   };

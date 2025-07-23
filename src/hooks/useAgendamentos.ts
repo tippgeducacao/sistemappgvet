@@ -144,6 +144,14 @@ export const useAgendamentos = () => {
     }
   };
 
+  const marcarReuniaoComoComprou = async (agendamentoId: string): Promise<boolean> => {
+    return await atualizarResultadoReuniao(
+      agendamentoId, 
+      'comprou', 
+      'Venda cadastrada automaticamente pelo sistema'
+    );
+  };
+
   useEffect(() => {
     fetchAgendamentos();
   }, [profile?.id]);
@@ -153,6 +161,7 @@ export const useAgendamentos = () => {
     isLoading,
     fetchAgendamentos,
     fetchAgendamentosCancelados,
-    atualizarResultadoReuniao
+    atualizarResultadoReuniao,
+    marcarReuniaoComoComprou
   };
 };
