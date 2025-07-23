@@ -1110,14 +1110,10 @@ const AgendamentosPage: React.FC = () => {
 
       {/* Visualizations Tabs */}
       <Tabs defaultValue="lista" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="lista" className="flex items-center gap-2">
             <List className="h-4 w-4" />
             Lista
-          </TabsTrigger>
-          <TabsTrigger value="planilha" className="flex items-center gap-2">
-            <FileSpreadsheet className="h-4 w-4" />
-            Planilha
           </TabsTrigger>
           <TabsTrigger value="calendario" className="flex items-center gap-2">
             <Grid className="h-4 w-4" />
@@ -1130,111 +1126,6 @@ const AgendamentosPage: React.FC = () => {
         </TabsList>
 
         <TabsContent value="lista">
-          <div className="grid gap-4">
-            {agendamentos.filter(ag => ag.status !== 'cancelado').length === 0 ? (
-              <Card>
-                <CardContent className="flex items-center justify-center py-8">
-                  <div className="text-center">
-                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Nenhum agendamento ativo encontrado</h3>
-                    <p className="text-muted-foreground">Crie seu primeiro agendamento para começar</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              agendamentos
-                .filter(ag => ag.status !== 'cancelado') // Filtrar cancelados
-                .map((agendamento) => (
-                <Card key={agendamento.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-3 flex-1">
-                        <div className="flex items-center gap-3">
-                          <User className="h-5 w-5 text-primary" />
-                          <div>
-                            <p className="font-semibold">{agendamento.lead?.nome}</p>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              {agendamento.lead?.email && (
-                                <span className="flex items-center gap-1">
-                                  <Mail className="h-3 w-3" />
-                                  {agendamento.lead.email}
-                                </span>
-                              )}
-                              {agendamento.lead?.whatsapp && (
-                                <span className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  {agendamento.lead.whatsapp}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Pós-graduação</p>
-                            <p className="font-medium">{agendamento.pos_graduacao_interesse}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Vendedor</p>
-                            <p className="font-medium">{agendamento.vendedor?.name}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Data/Horário</p>
-                             <p className="font-medium">
-                               {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })} {' '}
-                               {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
-                               {agendamento.data_fim_agendamento && (
-                                 <>
-                                   {' - '}
-                                   {format(new Date(agendamento.data_fim_agendamento), 'HH:mm', { locale: ptBR })}
-                                 </>
-                               )}
-                             </p>
-                          </div>
-                        </div>
-
-                        {agendamento.observacoes && (
-                          <div>
-                            <p className="text-muted-foreground text-sm">Observações</p>
-                            <p className="text-sm">{agendamento.observacoes}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="ml-4 flex flex-col items-end gap-2">
-                        {getStatusBadge(agendamento.status)}
-                        
-                        {agendamento.status === 'agendado' && (
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditAgendamento(agendamento)}
-                              className="text-blue-600 hover:text-blue-700"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCancelAgendamento(agendamento.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="planilha">
           <AgendamentosSDRPlanilha 
             agendamentos={agendamentos.filter(ag => ag.status !== 'cancelado')}
             onRecarregarDados={carregarDados}
