@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { FormSelectField, FormInputField } from '@/components/ui/form-field';
 import { IES_OPTIONS, MODALIDADE_OPTIONS } from '@/constants/formOptions';
 import { useCourses } from '@/hooks/useCourses';
-import TurmaField from '../fields/TurmaField';
-import AberturaField from '../fields/AberturaField';
 
 interface CourseInfoSectionProps {
   formData: any;
@@ -67,6 +65,60 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
     });
   };
 
+  const formatTurma = (value: string): string => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    
+    if (numbers === '') return '';
+    
+    // Pega apenas os números (turma pode ser até 99)
+    const turmaNumber = parseInt(numbers);
+    
+    // Formata com zero à esquerda se necessário e adiciona prefixo T
+    const formattedNumber = turmaNumber.toString().padStart(2, '0');
+    
+    return `T${formattedNumber}`;
+  };
+
+  const formatAbertura = (value: string): string => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    
+    if (numbers === '') return '';
+    
+    // Pega apenas os números (abertura pode ser até 99)
+    const aberturaNumber = parseInt(numbers);
+    
+    // Formata com zero à esquerda se necessário e adiciona prefixo #
+    const formattedNumber = aberturaNumber.toString().padStart(2, '0');
+    
+    return `#${formattedNumber}`;
+  };
+
+  const handleTurmaChange = (value: string) => {
+    if (value === '') {
+      updateField('turma', '');
+      return;
+    }
+    
+    // Se já tem o prefixo T, pega apenas os números
+    const cleanValue = value.replace(/^T/, '');
+    const formattedValue = formatTurma(cleanValue);
+    updateField('turma', formattedValue);
+  };
+
+  const handleAberturaChange = (value: string) => {
+    if (value === '') {
+      updateField('abertura', '');
+      return;
+    }
+    
+    // Se já tem o prefixo #, pega apenas os números
+    const cleanValue = value.replace(/^#/, '');
+    const formattedValue = formatAbertura(cleanValue);
+    updateField('abertura', formattedValue);
+  };
+
   const handleValorContratoChange = (value: string) => {
     const formattedValue = formatCurrency(value);
     updateField('valorContrato', formattedValue);
@@ -109,16 +161,22 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
 
       {/* Turma e Abertura lado a lado */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <TurmaField
-          value={formData.turma || ''}
-          onChange={(value) => updateField('turma', value)}
+        <FormInputField
+          id="turma"
           label="Turma"
+          value={formData.turma || ''}
+          onChange={handleTurmaChange}
+          placeholder="Ex: 2 (será T02)"
+          className="font-mono"
         />
         
-        <AberturaField
-          value={formData.abertura || ''}
-          onChange={(value) => updateField('abertura', value)}
+        <FormInputField
+          id="abertura"
           label="Abertura"
+          value={formData.abertura || ''}
+          onChange={handleAberturaChange}
+          placeholder="Ex: 5 (será #05)"
+          className="font-mono"
         />
       </div>
 
