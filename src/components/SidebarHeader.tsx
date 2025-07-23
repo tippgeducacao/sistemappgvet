@@ -41,7 +41,7 @@ const SidebarHeaderComponent: React.FC<SidebarHeaderComponentProps> = ({ userTyp
   };
 
   return (
-    <SidebarHeader className="border-b border-slate-200 p-4 bg-white">
+    <SidebarHeader className="border-b border-border p-4 bg-background">
       <div className="flex items-center space-x-3">
         <div className="flex-shrink-0">
           <img 
@@ -51,10 +51,10 @@ const SidebarHeaderComponent: React.FC<SidebarHeaderComponentProps> = ({ userTyp
           />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-bold text-slate-900 truncate">
+          <h2 className="text-lg font-bold text-foreground truncate">
             {getHeaderTitle()}
           </h2>
-          <p className="text-sm text-slate-600 truncate">
+          <p className="text-sm text-muted-foreground truncate">
             {getHeaderSubtitle()}
           </p>
         </div>

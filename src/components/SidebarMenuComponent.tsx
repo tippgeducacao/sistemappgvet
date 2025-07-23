@@ -69,12 +69,12 @@ const SidebarMenuComponent: React.FC = () => {
 
   const getIcon = (iconName: string) => {
     const IconComponent = Icons[iconName as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
-    return IconComponent ? <IconComponent className="h-4 w-4 stroke-[1.5] text-slate-600" /> : null;
+    return IconComponent ? <IconComponent className="h-4 w-4 stroke-[1.5] text-muted-foreground" /> : null;
   };
 
   return (
     <SidebarGroup className="px-4 py-2">
-      <SidebarGroupLabel className="text-xs font-semibold text-slate-500 px-0 py-2 mb-1">
+      <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-0 py-2 mb-1">
         Menu Principal
       </SidebarGroupLabel>
       <SidebarMenu className="space-y-0">
@@ -92,8 +92,8 @@ const SidebarMenuComponent: React.FC = () => {
               className={`
                 w-full cursor-pointer rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ease-in-out mb-1
                 ${activeSection === item.section 
-                  ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500' 
-                  : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-primary/10 text-primary border-l-4 border-primary' 
+                  : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                 }
               `}
             >
