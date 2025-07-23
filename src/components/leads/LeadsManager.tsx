@@ -41,9 +41,20 @@ const LeadsManager: React.FC = () => {
   const [paginaFilter, setPaginaFilter] = useState('todos');
   const [fonteFilter, setFonteFilter] = useState('todos');
   
-  // Filtro específico para a tabela de leads (busca local)
+  // Filtro específico para a tabela de leads com debounce
   const [tableSearchTerm, setTableSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Debounce da busca - só faz a consulta após parar de digitar
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(tableSearchTerm);
+      setCurrentPage(1);
+    }, 600); // 600ms de delay para evitar travamentos
+
+    return () => clearTimeout(timer);
+  }, [tableSearchTerm]);
 
   // Resetar página quando filtros mudarem (exceto busca da tabela)
   React.useEffect(() => {
@@ -58,8 +69,9 @@ const LeadsManager: React.FC = () => {
     fonteFilter: fonteFilter !== 'todos' ? fonteFilter : undefined,
   };
 
-  // Construir filtros para a tabela (SEM busca - busca será local)
+  // Construir filtros para a tabela (usando debounced search)
   const filtersForTable: LeadFilters = {
+    searchTerm: debouncedSearchTerm || undefined,
     statusFilter: statusFilter !== 'todos' ? statusFilter : undefined,
     profissaoFilter: profissaoFilter !== 'todos' ? profissaoFilter : undefined,
     paginaFilter: paginaFilter !== 'todos' ? paginaFilter : undefined,
@@ -68,8 +80,8 @@ const LeadsManager: React.FC = () => {
 
   // Buscar TODOS os leads quando há busca ativa, ou paginados quando não há busca
   const { data: leadsData, isLoading } = useLeads(
-    tableSearchTerm ? 1 : currentPage, 
-    tableSearchTerm ? 10000 : 100, // Se há busca, pega todos (limite alto)
+    debouncedSearchTerm ? 1 : currentPage, 
+    debouncedSearchTerm ? 10000 : 100, // Se há busca, pega todos (limite alto)
     filtersForTable
   );
   const { data: totalLeadsCount = 0 } = useLeadsCount();
