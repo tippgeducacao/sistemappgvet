@@ -43,16 +43,29 @@ const LeadsManager: React.FC = () => {
   
   // Filtro específico para a tabela de leads
   const [tableSearchTerm, setTableSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Debounce da busca para evitar muitas consultas à API
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(tableSearchTerm);
+      if (tableSearchTerm !== debouncedSearchTerm) {
+        setCurrentPage(1);
+      }
+    }, 800); // Aumentei para 800ms para evitar muitas consultas
+
+    return () => clearTimeout(timer);
+  }, [tableSearchTerm, debouncedSearchTerm]);
 
   // Resetar página quando filtros mudarem (exceto busca da tabela)
   React.useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, profissaoFilter, paginaFilter, fonteFilter]);
 
-  // Construir filtros para a tabela (incluindo busca por texto)
+  // Construir filtros para a tabela (usando busca com debounce)
   const filters: LeadFilters = {
-    searchTerm: tableSearchTerm || undefined,
+    searchTerm: debouncedSearchTerm || undefined,
     statusFilter: statusFilter !== 'todos' ? statusFilter : undefined,
     profissaoFilter: profissaoFilter !== 'todos' ? profissaoFilter : undefined,
     paginaFilter: paginaFilter !== 'todos' ? paginaFilter : undefined,
