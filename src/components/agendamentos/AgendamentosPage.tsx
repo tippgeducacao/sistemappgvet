@@ -1110,10 +1110,14 @@ const AgendamentosPage: React.FC = () => {
 
       {/* Visualizations Tabs */}
       <Tabs defaultValue="lista" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="lista" className="flex items-center gap-2">
             <List className="h-4 w-4" />
             Lista
+          </TabsTrigger>
+          <TabsTrigger value="planilha" className="flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Planilha
           </TabsTrigger>
           <TabsTrigger value="calendario" className="flex items-center gap-2">
             <Grid className="h-4 w-4" />
@@ -1228,20 +1232,6 @@ const AgendamentosPage: React.FC = () => {
               ))
             )}
           </div>
-        </TabsContent>
-
-        <TabsContent value="planilha">
-          <AgendamentosSDRPlanilha 
-            agendamentos={agendamentos.filter(ag => ag.status !== 'cancelado')}
-            onRecarregarDados={carregarDados}
-          />
-        </TabsContent>
-
-        <TabsContent value="planilha">
-          <AgendamentosSDRPlanilha 
-            agendamentos={agendamentos.filter(ag => ag.status !== 'cancelado')}
-            onRecarregarDados={carregarDados}
-          />
         </TabsContent>
 
         <TabsContent value="planilha">
