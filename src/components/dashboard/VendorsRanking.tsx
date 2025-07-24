@@ -19,6 +19,7 @@ import { DataFormattingService } from '@/services/formatting/DataFormattingServi
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
 
+
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -568,21 +569,14 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           </div>
           
           <div className="flex items-center gap-2">
-            {/* TESTE SUPER SIMPLES */}
-            <div className="bg-red-500 text-white p-2 rounded">
-              Estado: {isTVMode ? 'ABERTO' : 'FECHADO'}
-            </div>
-            
-            {/* Botão super simples */}
-            <div 
-              onClick={() => {
-                alert('CLICOU!');
-                setIsTVMode(!isTVMode);
-              }}
-              className="bg-purple-600 text-white p-2 rounded cursor-pointer hover:bg-purple-700"
+            {/* Botão TV */}
+            <button
+              onClick={() => setIsTVMode(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors"
+              title="Exibir em tela cheia (Modo TV)"
             >
-              TV {isTVMode ? 'FECHAR' : 'ABRIR'}
-            </div>
+              <Tv className="h-5 w-5" />
+            </button>
             {/* Botão de Exportar */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -792,10 +786,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         {/* Componente de exibição TV */}
         <TVRankingDisplay 
           isOpen={isTVMode}
-          onClose={() => {
-            console.log('🔥 TVRankingDisplay onClose chamado');
-            setIsTVMode(false);
-          }}
+          onClose={() => setIsTVMode(false)}
         />
 
       </CardContent>
