@@ -327,7 +327,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
               </div>
 
               {/* Cards embaixo do podium */}
-              <div className="space-y-1">
+              <div className="grid grid-cols-1 gap-1">
                 {allRanking.slice(0, Math.min(3, allRanking.length)).map((person, index) => (
                   <VendedorCard
                     key={person.id}
