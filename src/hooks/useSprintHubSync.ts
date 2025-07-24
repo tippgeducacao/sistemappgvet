@@ -20,53 +20,65 @@ export const useSprintHubSync = () => {
 
   return useMutation({
     mutationFn: async (): Promise<SyncResult> => {
-      console.log('🔄 Iniciando sincronização com SprintHub...');
+      console.log('🔄 Fazendo teste direto da API SprintHub...');
       
       try {
-        const { data, error } = await supabase.functions.invoke('test-sprinthub-api');
-
-        console.log('📊 Resposta da função:', { data, error });
-
-        if (error) {
-          console.error('❌ Erro retornado pela função:', error);
-          console.error('❌ Tipo do erro:', typeof error);
-          console.error('❌ Estrutura do erro:', JSON.stringify(error, null, 2));
-          
-          // Melhorar mensagem de erro baseada no tipo
-          let errorMessage = 'Erro na sincronização com SprintHub';
-          
-          if (error.message?.includes('API Key')) {
-            errorMessage = 'Erro de autenticação: Verifique sua API Key do SprintHub';
-          } else if (error.message?.includes('instância')) {
-            errorMessage = 'Erro de configuração: Verifique o nome da instância do SprintHub';
-          } else if (error.message?.includes('não configuradas')) {
-            errorMessage = 'Configuração incompleta: Verifique as variáveis SPRINTHUB_API_KEY e SPRINTHUB_INSTANCE';
-          } else if (error.message) {
-            errorMessage = error.message;
+        // Fazer requisição direta para a API SprintHub
+        const sprintHubApiKey = '5a9068f0-76c6-4a64-8c61-5b7a6b2d35bc';
+        const sprintHubInstance = 'sistemainterno';
+        
+        const apiUrl = `https://sprinthub-api-master.sprinthub.app/leads?i=${sprintHubInstance}`;
+        
+        console.log('📡 URL:', apiUrl);
+        console.log('🔑 API Key:', sprintHubApiKey.substring(0, 8) + '...');
+        
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sprintHubApiKey}`,
+            'apitoken': sprintHubApiKey
           }
-          
-          throw new Error(errorMessage);
+        });
+
+        console.log('📊 Status:', response.status);
+        console.log('📊 Status Text:', response.statusText);
+
+        if (!response.ok) {
+          throw new Error(`API SprintHub retornou erro ${response.status}: ${response.statusText}`);
         }
 
-        console.log('📊 Data recebida:', data);
-
-        if (!data) {
-          console.error('❌ Nenhuma data recebida');
-          throw new Error('Nenhuma resposta recebida da API');
+        const responseText = await response.text();
+        console.log('📝 Resposta (primeiros 200 chars):', responseText.substring(0, 200));
+        
+        let data;
+        try {
+          data = JSON.parse(responseText);
+          console.log('✅ JSON válido recebido');
+          console.log('📊 Tipo:', typeof data);
+          console.log('📊 É array:', Array.isArray(data));
+        } catch (e) {
+          throw new Error('Resposta da API não é JSON válido');
         }
 
-        console.log('📊 Success:', data.success);
-        console.log('📊 Data structure:', Object.keys(data));
+        // Simular resultado básico por enquanto
+        const result = {
+          success: true,
+          message: 'Teste direto da API funcionou!',
+          stats: {
+            total_sprinthub: Array.isArray(data) ? data.length : 0,
+            processed: 0,
+            inserted: 0,
+            skipped: 0,
+            errors: 0
+          }
+        };
 
-        if (!data.success) {
-          console.error('❌ Sincronização falhou:', data.error);
-          throw new Error(data.error || 'Erro desconhecido na sincronização');
-        }
-
-        console.log('✅ Sincronização bem-sucedida, retornando dados');
-        return data;
+        console.log('✅ Resultado do teste:', result);
+        return result;
+        
       } catch (err) {
-        console.error('💥 Erro capturado no try/catch:', err);
+        console.error('💥 Erro no teste direto:', err);
         throw err;
       }
     },
