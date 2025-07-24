@@ -138,18 +138,18 @@ const MatriculadasTab: React.FC<MatriculadasTabProps> = ({ vendas, showDeleteBut
                 });
                 
                 return (
-                  <div key={venda.id} className="border border-green-200 rounded-lg p-4 bg-green-50/50">
+                  <div key={venda.id} className="border border-green-200 dark:border-green-800 rounded-lg p-4 bg-green-50/50 dark:bg-green-950/30">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-3">
                           <span className="text-sm text-muted-foreground font-mono">#{index + 1}</span>
                           <h3 className="font-semibold text-lg">{venda.aluno?.nome || 'Nome não informado'}</h3>
-                          <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">
+                          <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-sm font-medium">
                             Matriculado
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                           <div>
                             <span className="font-medium">Email:</span> {venda.aluno?.email || 'Não informado'}
                           </div>

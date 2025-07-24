@@ -82,7 +82,7 @@ const PendentesTab: React.FC<PendentesTabProps> = ({ vendas, showDeleteButton = 
         <CardContent>
           <div className="space-y-4">
             {vendas.map((venda, index) => (
-              <div key={venda.id} className="border border-yellow-200 rounded-lg p-4 bg-yellow-50/50">
+              <div key={venda.id} className="border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 bg-yellow-50/50 dark:bg-yellow-950/30">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-3">
@@ -91,7 +91,7 @@ const PendentesTab: React.FC<PendentesTabProps> = ({ vendas, showDeleteButton = 
                       <Badge variant="secondary">Pendente</Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                       <div>
                         <span className="font-medium">Email:</span> {venda.aluno?.email || 'Não informado'}
                       </div>
