@@ -189,8 +189,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     if (!isOpen) return;
     
     const interval = setInterval(() => {
-      // Forçar re-render para atualizar dados
-      window.location.reload();
+      // Atualizar dados sem recarregar a página
+      window.location.hash = window.location.hash; // Força re-render
     }, 30000);
 
     return () => clearInterval(interval);
