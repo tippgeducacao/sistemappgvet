@@ -115,7 +115,7 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas, showDeleteButto
         <CardContent>
           <div className="space-y-4">
             {vendas.map((venda, index) => (
-              <div key={venda.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+              <div key={venda.id} className="border rounded-lg p-4 hover:bg-muted/50 dark:hover:bg-muted/80 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-3">
