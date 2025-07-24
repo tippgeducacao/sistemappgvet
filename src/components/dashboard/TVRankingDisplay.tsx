@@ -29,7 +29,7 @@ interface TVRankingDisplayProps {
 const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
   const podiumHeights = [80, 100, 60];
   const positions = ['2º', '1º', '3º'];
-  const colors = ['bg-slate-500', 'bg-yellow-500', 'bg-orange-500'];
+  const colors = ['bg-muted-foreground', 'bg-yellow-500', 'bg-orange-500'];
 
   return (
     <div className="flex items-end justify-center gap-2 mb-6">
@@ -45,10 +45,10 @@ const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
             <img
               src={person?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person?.name}`}
               alt={person?.name}
-              className="w-12 h-12 rounded-full mx-auto mb-1 border-2 border-white/20"
+              className="w-12 h-12 rounded-full mx-auto mb-1 border-2 border-border"
             />
-            <div className="text-xs font-medium text-white">{person?.name.split(' ')[0]}</div>
-            <div className="text-xs text-teal-400">{person?.pontuacao.toFixed(1)} pts</div>
+            <div className="text-xs font-medium text-foreground">{person?.name.split(' ')[0]}</div>
+            <div className="text-xs text-primary">{person?.pontuacao.toFixed(1)} pts</div>
             {person?.isSDR && (
               <Badge variant="secondary" className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30 mt-1">
                 SDR
@@ -79,20 +79,20 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.05 }}
-      className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:shadow-md transition-shadow backdrop-blur-sm"
+      className="bg-card/90 border border-border rounded-lg p-4 hover:shadow-md transition-shadow backdrop-blur-sm"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 bg-teal-500 text-white rounded-full text-sm font-bold">
+          <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-bold">
             {rank}
           </div>
           <img
             src={person.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person.name}`}
             alt={person.name}
-            className="w-10 h-10 rounded-full border-2 border-white/20"
+            className="w-10 h-10 rounded-full border-2 border-border"
           />
           <div>
-            <div className="font-medium text-white flex items-center gap-2">
+            <div className="font-medium text-foreground flex items-center gap-2">
               {person.name.split(' ')[0]}
               {person.isSDR && (
                 <Badge variant="secondary" className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30">
@@ -100,14 +100,14 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
                 </Badge>
               )}
             </div>
-            <div className="text-sm text-teal-400">{person.pontuacao.toFixed(1)} pts • {person.weeklySales} vendas</div>
+            <div className="text-sm text-primary">{person.pontuacao.toFixed(1)} pts • {person.weeklySales} vendas</div>
           </div>
         </div>
         <div className="flex items-center gap-1">
           {weeklyProgress >= 100 ? (
-            <TrendingUp className="w-4 h-4 text-green-400" />
+            <TrendingUp className="w-4 h-4 text-green-500" />
           ) : (
-            <TrendingDown className="w-4 h-4 text-red-400" />
+            <TrendingDown className="w-4 h-4 text-red-500" />
           )}
         </div>
       </div>
@@ -115,23 +115,24 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
       <div className="space-y-3">
         <div>
           <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-1 text-xs text-white/70">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Target className="w-3 h-3" />
               Meta Semanal
             </div>
-            <span className="text-xs font-medium text-white">{weeklyProgress.toFixed(0)}%</span>
+            <span className="text-xs font-medium text-foreground">{weeklyProgress.toFixed(0)}%</span>
           </div>
           <Progress value={Math.min(weeklyProgress, 100)} className="h-2" />
         </div>
         
         <div>
           <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-1 text-xs text-white/70">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Calendar className="w-3 h-3" />
               Meta Diária
             </div>
-            <span className="text-xs font-medium text-white">{person.dailyTarget.toFixed(1)} pts</span>
+            <span className="text-xs font-medium text-foreground">{dailyProgress.toFixed(0)}%</span>
           </div>
+          <Progress value={Math.min(dailyProgress, 100)} className="h-2" />
         </div>
       </div>
     </motion.div>
@@ -290,6 +291,37 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     });
   }, [salespeople]);
 
+  // Calcular totais mensais também
+  const totalMonthlySales = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const vendasDoMes = vendas.filter(venda => {
+      const dataVenda = new Date(venda.enviado_em);
+      return dataVenda >= startOfMonth && 
+             dataVenda <= endOfMonth && 
+             venda.status === 'matriculado';
+    });
+    
+    return vendasDoMes.length;
+  }, [vendas]);
+
+  const totalMonthlyPoints = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const vendasDoMes = vendas.filter(venda => {
+      const dataVenda = new Date(venda.enviado_em);
+      return dataVenda >= startOfMonth && 
+             dataVenda <= endOfMonth && 
+             venda.status === 'matriculado';
+    });
+    
+    return vendasDoMes.reduce((sum, venda) => sum + (venda.pontuacao_esperada || 0), 0);
+  }, [vendas]);
+
   const totalWeeklySales = useMemo(() => {
     return sortedSalespeople.reduce((sum, person) => sum + person.weeklySales, 0);
   }, [sortedSalespeople]);
@@ -303,19 +335,26 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white z-50">
-      <div className="h-screen flex flex-col">
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-teal-500/30 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-3 rounded-xl">
-              <Trophy className="h-8 w-8 text-white" />
+    <div className="fixed inset-0 bg-background relative overflow-hidden z-50">
+      {/* Background with gradient and animated elements - same as login */}
+      <div className="absolute inset-0 bg-gradient-to-br from-ppgvet-teal/20 via-ppgvet-magenta/10 to-ppgvet-teal/30 dark:from-ppgvet-teal/10 dark:via-ppgvet-magenta/5 dark:to-ppgvet-teal/15">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-ppgvet-teal/30 dark:bg-ppgvet-teal/15 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-ppgvet-magenta/20 dark:bg-ppgvet-magenta/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-ppgvet-teal/20 dark:bg-ppgvet-teal/10 rounded-full blur-2xl animate-pulse delay-2000"></div>
+      </div>
+
+      <div className="relative z-10 h-screen flex flex-col">
+        {/* Header - Menor conforme solicitado */}
+        <div className="flex justify-between items-center px-4 py-3 border-b border-border/50 shrink-0 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-r from-primary to-primary/80 p-2 rounded-lg">
+              <Trophy className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold text-foreground">
                 Ranking de Vendedores
               </h1>
-              <p className="text-lg text-white/80">
+              <p className="text-sm text-muted-foreground">
                 Semanal • {totalWeeklySales} vendas • {totalWeeklyPoints.toFixed(1)} pts
               </p>
             </div>
@@ -324,42 +363,53 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
           <div className="flex items-center gap-2">
             <button
               onClick={toggleFullscreen}
-              className="p-3 hover:bg-white/10 rounded-xl transition-colors"
+              className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
               title={isFullscreen ? "Sair da tela cheia" : "Tela cheia"}
             >
-              {isFullscreen ? <Minimize2 className="h-6 w-6" /> : <Maximize2 className="h-6 w-6" />}
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </button>
             <button
               onClick={onClose}
-              className="p-3 hover:bg-white/10 rounded-xl transition-colors"
+              className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
             >
-              <X className="h-6 w-6" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center flex-1">
-            <div className="text-4xl text-white/60">Carregando dados...</div>
+            <div className="text-2xl text-muted-foreground">Carregando dados...</div>
           </div>
         ) : (
-          <div className="p-6">
+          <div className="p-4">
             <div className="max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-150px)]">
-                {/* Coluna Esquerda - Pódio e Total */}
-                <div className="lg:col-span-1 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-120px)]">
+                {/* Coluna Esquerda - Pódio e Totais */}
+                <div className="lg:col-span-1 space-y-4">
                   <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 backdrop-blur-sm"
+                    className="backdrop-blur-lg bg-card/95 border border-border rounded-lg p-4"
                   >
-                    <h2 className="text-2xl font-bold text-white mb-2">Total Semanal</h2>
-                    <div className="text-3xl font-bold text-teal-400">{totalWeeklySales} vendas</div>
-                    <div className="text-xl font-bold text-cyan-400">{totalWeeklyPoints.toFixed(1)} pontos</div>
+                    <h2 className="text-lg font-bold text-foreground mb-3">Total Semanal</h2>
+                    <div className="text-2xl font-bold text-primary">{totalWeeklySales} vendas</div>
+                    <div className="text-lg font-bold text-secondary">{totalWeeklyPoints.toFixed(1)} pontos</div>
                   </motion.div>
 
-                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 backdrop-blur-sm">
-                    <h2 className="text-xl font-bold text-white mb-4 text-center">Top Performers</h2>
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="backdrop-blur-lg bg-card/95 border border-border rounded-lg p-4"
+                  >
+                    <h2 className="text-lg font-bold text-foreground mb-3">Total Mensal</h2>
+                    <div className="text-2xl font-bold text-primary">{totalMonthlySales} vendas</div>
+                    <div className="text-lg font-bold text-secondary">{totalMonthlyPoints.toFixed(1)} pontos</div>
+                  </motion.div>
+
+                  <div className="backdrop-blur-lg bg-card/95 border border-border rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-foreground mb-4 text-center">Top Performers</h2>
                     <Podium topThree={topThree} />
                   </div>
                 </div>
@@ -367,8 +417,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
                 {/* Coluna Direita - Grid de Vendedores */}
                 <div className="lg:col-span-3">
                   <div className="h-full overflow-hidden">
-                    <h2 className="text-2xl font-bold text-white mb-6">Ranking Completo</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 h-[calc(100vh-250px)] overflow-y-auto pr-2">
+                    <h2 className="text-xl font-bold text-foreground mb-4">Ranking Completo</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 h-[calc(100vh-180px)] overflow-y-auto pr-2">
                       {sortedSalespeople.map((person, index) => (
                         <VendedorCard
                           key={person.id}
