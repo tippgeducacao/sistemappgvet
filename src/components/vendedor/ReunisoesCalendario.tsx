@@ -43,11 +43,11 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
     if (agendamento.resultado_reuniao) {
       switch (agendamento.resultado_reuniao) {
         case 'nao_compareceu':
-          return 'bg-red-100 text-red-800 border-red-200';
+          return 'bg-destructive/10 text-destructive border-destructive/20 dark:bg-destructive/20 dark:text-destructive dark:border-destructive/40';
         case 'compareceu_nao_comprou':
-          return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+          return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800/40';
         case 'comprou':
-          return 'bg-green-100 text-green-800 border-green-200';
+          return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/40';
       }
     }
     
@@ -55,9 +55,9 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
     const agora = new Date();
     
     if (dataReuniao > agora) {
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/40';
     } else {
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -116,8 +116,8 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
                   key={dia.toISOString()}
                   className={`
                     min-h-20 p-1 border rounded-lg transition-colors
-                    ${isOutsideMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}
-                    ${agendamentosDoDia.length > 0 ? 'border-primary/20' : 'border-gray-200'}
+                    ${isOutsideMonth ? 'bg-muted/50 text-muted-foreground' : 'bg-card'}
+                    ${agendamentosDoDia.length > 0 ? 'border-primary/20' : 'border-border'}
                   `}
                 >
                   <div className="text-sm font-medium mb-1">
@@ -152,23 +152,23 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
           
           <div className="mt-4 flex flex-wrap gap-4 text-xs">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded"></div>
+              <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded dark:bg-blue-900/20 dark:border-blue-800/40"></div>
               <span>Agendado</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded"></div>
+              <div className="w-3 h-3 bg-muted border border-border rounded"></div>
               <span>Pendente</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
+              <div className="w-3 h-3 bg-destructive/10 border border-destructive/20 rounded dark:bg-destructive/20 dark:border-destructive/40"></div>
               <span>Não Compareceu</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-yellow-100 border border-yellow-200 rounded"></div>
+              <div className="w-3 h-3 bg-yellow-100 border border-yellow-200 rounded dark:bg-yellow-900/20 dark:border-yellow-800/40"></div>
               <span>Não Comprou</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-100 border border-green-200 rounded"></div>
+              <div className="w-3 h-3 bg-green-100 border border-green-200 rounded dark:bg-green-900/20 dark:border-green-800/40"></div>
               <span>Comprou</span>
             </div>
           </div>
