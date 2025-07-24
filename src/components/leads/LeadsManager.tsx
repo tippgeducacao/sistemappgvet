@@ -31,7 +31,6 @@ import { cn } from '@/lib/utils';
 
 import LeadDetailsDialog from './LeadDetailsDialog';
 import LeadsDashboard from './LeadsDashboard';
-import SprintHubSyncButton from './SprintHubSyncButton';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import type { Lead, LeadFilters } from '@/hooks/useLeads';
 
@@ -260,7 +259,6 @@ const LeadsManager: React.FC = () => {
           <Badge variant="outline" className="text-xs sm:text-sm whitespace-nowrap">
             {totalLeadsCount} leads totais
           </Badge>
-          <SprintHubSyncButton />
         </div>
       </div>
 
