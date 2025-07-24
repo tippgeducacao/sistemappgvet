@@ -17,7 +17,7 @@ import { useNiveis } from '@/hooks/useNiveis';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
-import TVRankingDisplay from './TVRankingDisplay';
+
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -777,11 +777,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           onClose={() => setSelectedVendedorForGoals(null)}
         />
 
-        {/* Componente de exibição TV */}
-        <TVRankingDisplay 
-          isOpen={isTVMode}
-          onClose={() => setIsTVMode(false)}
-        />
       </CardContent>
     </Card>
   );
