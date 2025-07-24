@@ -18,6 +18,7 @@ import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
+import TestTVButton from '../debug/TestTVButton';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -556,30 +557,35 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   return (
     <Card>
+      {/* Componente de teste */}
+      <TestTVButton />
+      
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-3">
               Ranking de Vendedores
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('🔥🔥🔥 BOTÃO TV CLICADO!!! Estado anterior:', isTVMode);
-                  setIsTVMode(true);
-                  console.log('🔥🔥🔥 Estado setado para TRUE');
-                }}
-                className="inline-flex items-center justify-center p-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 hover:scale-105 group"
-                title="Exibir em tela cheia (Modo TV)"
-              >
-                <Tv className="h-5 w-5 group-hover:animate-pulse" />
-              </button>
             </CardTitle>
             <CardDescription>
               Todos os {ranking.length} vendedores por pontos - {mesAtualSelecionado}
             </CardDescription>
           </div>
+          
           <div className="flex items-center gap-2">
+            {/* Botão TV movido para fora do CardTitle */}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔥🔥🔥 BOTÃO TV CLICADO!!! Estado anterior:', isTVMode);
+                setIsTVMode(true);
+                console.log('🔥🔥🔥 Estado setado para TRUE');
+              }}
+              className="inline-flex items-center justify-center p-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 hover:scale-105 group"
+              title="Exibir em tela cheia (Modo TV)"
+            >
+              <Tv className="h-5 w-5 group-hover:animate-pulse" />
+            </button>
             {/* Botão de Exportar */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
