@@ -66,7 +66,7 @@ const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
   );
 };
 
-const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person, rank }) => {
+const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: boolean }> = ({ person, rank, isTopThree = false }) => {
   const weeklyProgress = person.weeklyTarget > 0 ? (person.weeklySales / person.weeklyTarget) * 100 : 0;
   const dailyProgress = person.dailyTarget > 0 ? (person.dailySales / person.dailyTarget) * 100 : 0;
 
@@ -75,7 +75,11 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.05 }}
-      className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-shadow"
+      className={`border rounded-lg p-3 hover:shadow-md transition-shadow ${
+        isTopThree 
+          ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-400 dark:border-yellow-500 shadow-lg' 
+          : 'bg-card border-border'
+      }`}
     >
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
@@ -332,66 +336,16 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         }}
       >
         <div className="max-w-full mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[calc(100vh-120px)]">
-            {/* Coluna esquerda - Podium e Total */}
-            <div className="lg:col-span-1 space-y-2">
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-2 shadow-xl"
-              >
-                <h2 className="text-md font-bold text-foreground mb-1">Total Semanal</h2>
-                <div className="text-lg font-bold text-primary">{totalWeeklySales} vendas</div>
-              </motion.div>
-
-              <div className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-2 shadow-xl">
-                <h2 className="text-sm font-bold text-foreground mb-1 text-center">Top 3</h2>
-                {topThree.length >= 3 ? (
-                  <Podium topThree={topThree} />
-                ) : (
-                  <div className="text-center text-muted-foreground text-xs">Poucos vendedores</div>
-                )}
-              </div>
-            </div>
-
-            {/* 3 Colunas para vendedores - 5 em cada */}
-            <div className="lg:col-span-3 grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <div className="space-y-2">
-                  {allRanking.slice(0, 5).map((person, index) => (
-                    <VendedorCard
-                      key={person.id}
-                      person={person}
-                      rank={index + 1}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="space-y-2">
-                  {allRanking.slice(5, 10).map((person, index) => (
-                    <VendedorCard
-                      key={person.id}
-                      person={person}
-                      rank={index + 6}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="space-y-2">
-                  {allRanking.slice(10, 15).map((person, index) => (
-                    <VendedorCard
-                      key={person.id}
-                      person={person}
-                      rank={index + 11}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+          {/* Grid de 5 colunas para todos os vendedores */}
+          <div className="grid grid-cols-5 gap-4">
+            {allRanking.map((person, index) => (
+              <VendedorCard
+                key={person.id}
+                person={person}
+                rank={index + 1}
+                isTopThree={index < 3}
+              />
+            ))}
           </div>
         </div>
       </div>
