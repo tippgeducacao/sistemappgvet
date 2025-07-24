@@ -568,18 +568,21 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Novo botão TV funcional */}
-            <button
+            {/* TESTE SUPER SIMPLES */}
+            <div className="bg-red-500 text-white p-2 rounded">
+              Estado: {isTVMode ? 'ABERTO' : 'FECHADO'}
+            </div>
+            
+            {/* Botão super simples */}
+            <div 
               onClick={() => {
-                console.log('🔥🔥🔥 NOVO BOTÃO TV CLICADO!!!');
-                setIsTVMode(true);
-                console.log('🔥🔥🔥 Estado setado para TRUE');
+                alert('CLICOU!');
+                setIsTVMode(!isTVMode);
               }}
-              className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors"
-              title="Exibir em tela cheia (Modo TV)"
+              className="bg-purple-600 text-white p-2 rounded cursor-pointer hover:bg-purple-700"
             >
-              <Tv className="h-5 w-5" />
-            </button>
+              TV {isTVMode ? 'FECHAR' : 'ABRIR'}
+            </div>
             {/* Botão de Exportar */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
