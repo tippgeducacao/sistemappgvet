@@ -28,12 +28,12 @@ interface TVRankingDisplayProps {
 }
 
 const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
-  const podiumHeights = [80, 100, 60];
+  const podiumHeights = [50, 70, 40];
   const positions = ['2nd', '1st', '3rd'];
   const colors = ['bg-gray-400', 'bg-yellow-500', 'bg-orange-400'];
 
   return (
-    <div className="flex items-end justify-center gap-2 mb-6">
+    <div className="flex items-end justify-center gap-1 mb-4">
       {[topThree[1], topThree[0], topThree[2]].map((person, index) => (
         <motion.div
           key={person?.id}
@@ -42,22 +42,22 @@ const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
           transition={{ delay: index * 0.2 }}
           className="flex flex-col items-center"
         >
-          <div className="mb-2 text-center">
+          <div className="mb-1 text-center">
             <img
               src={person?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person?.name.replace(' ', '')}`}
               alt={person?.name}
-              className="w-12 h-12 rounded-full mx-auto mb-1"
+              className="w-8 h-8 rounded-full mx-auto mb-1"
             />
             <div className="text-xs font-medium text-foreground">{person?.name}</div>
             <div className="text-xs text-muted-foreground">{person?.points} pts</div>
           </div>
           <div
-            className={`${colors[index]} rounded-t-lg flex items-end justify-center text-white font-bold text-sm relative`}
-            style={{ height: `${podiumHeights[index]}px`, width: '80px' }}
+            className={`${colors[index]} rounded-t-lg flex items-end justify-center text-white font-bold text-xs relative`}
+            style={{ height: `${podiumHeights[index]}px`, width: '60px' }}
           >
-            <div className="absolute top-2">
-              {index === 1 && <Trophy className="w-6 h-6" />}
-              {index !== 1 && <span>{positions[index]}</span>}
+            <div className="absolute top-1">
+              {index === 1 && <Trophy className="w-4 h-4" />}
+              {index !== 1 && <span className="text-xs">{positions[index]}</span>}
             </div>
           </div>
         </motion.div>
@@ -75,7 +75,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.05 }}
-      className="bg-card border border-border rounded-lg p-1.5 hover:shadow-md transition-shadow"
+      className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-shadow"
     >
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
@@ -213,8 +213,10 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return vendaDate >= startOfDay && vendaDate <= endOfDay && venda.status === 'matriculado';
   });
 
-  // Calcular dados dos vendedores
-  const vendedoresData: VendedorData[] = vendedores.map(vendedor => {
+  // Calcular dados dos vendedores (filtrar apenas vendedores e SDRs, excluir admins)
+  const vendedoresData: VendedorData[] = vendedores
+    .filter(vendedor => vendedor.user_type && !vendedor.user_type.includes('admin'))
+    .map(vendedor => {
     const isSDR = vendedor.user_type?.includes('sdr') || false;
     
     if (isSDR) {
@@ -305,55 +307,67 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       {/* Conteúdo principal */}
       <div className="relative z-10 p-4 min-h-[calc(100vh-80px)]">
         <div className="max-w-full mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[calc(100vh-120px)]">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[calc(100vh-120px)]">
             {/* Coluna esquerda - Podium e Total */}
             <div className="lg:col-span-1 space-y-2">
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-3 shadow-xl"
+                className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-2 shadow-xl"
               >
-                <h2 className="text-lg font-bold text-foreground mb-1">Total Semanal</h2>
-                <div className="text-xl font-bold text-primary">{totalWeeklySales} vendas</div>
+                <h2 className="text-md font-bold text-foreground mb-1">Total Semanal</h2>
+                <div className="text-lg font-bold text-primary">{totalWeeklySales} vendas</div>
               </motion.div>
 
-              <div className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-3 shadow-xl">
-                <h2 className="text-md font-bold text-foreground mb-2 text-center">Top Vendedores</h2>
+              <div className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-2 shadow-xl">
+                <h2 className="text-sm font-bold text-foreground mb-1 text-center">Top 3</h2>
                 {topThree.length >= 3 ? (
                   <Podium topThree={topThree} />
                 ) : (
-                  <div className="text-center text-muted-foreground text-sm">Poucos vendedores para podium</div>
+                  <div className="text-center text-muted-foreground text-xs">Poucos vendedores</div>
                 )}
-              </div>
-
-              {/* Cards embaixo do podium */}
-              <div className="grid grid-cols-1 gap-1">
-                {allRanking.slice(0, Math.min(3, allRanking.length)).map((person, index) => (
-                  <VendedorCard
-                    key={person.id}
-                    person={person}
-                    rank={index + 1}
-                  />
-                ))}
               </div>
             </div>
 
-            {/* Colunas do meio e direita - Grid dos restantes */}
-            <div className="lg:col-span-2">
-              <h2 className="text-lg font-bold text-foreground mb-3">Ranking Completo</h2>
-              <div 
-                className="grid grid-cols-2 gap-2 auto-rows-min"
-                style={{ 
-                  maxHeight: 'calc(100vh - 160px)',
-                }}
-              >
-                {allRanking.slice(3).map((person, index) => (
-                  <VendedorCard
-                    key={person.id}
-                    person={person}
-                    rank={index + 4}
-                  />
-                ))}
+            {/* 3 Colunas para vendedores - 5 em cada */}
+            <div className="lg:col-span-3 grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold text-foreground text-center">Coluna 1</h3>
+                <div className="space-y-2">
+                  {allRanking.slice(0, 5).map((person, index) => (
+                    <VendedorCard
+                      key={person.id}
+                      person={person}
+                      rank={index + 1}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold text-foreground text-center">Coluna 2</h3>
+                <div className="space-y-2">
+                  {allRanking.slice(5, 10).map((person, index) => (
+                    <VendedorCard
+                      key={person.id}
+                      person={person}
+                      rank={index + 6}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold text-foreground text-center">Coluna 3</h3>
+                <div className="space-y-2">
+                  {allRanking.slice(10, 15).map((person, index) => (
+                    <VendedorCard
+                      key={person.id}
+                      person={person}
+                      rank={index + 11}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
