@@ -338,6 +338,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     console.log('🔥 TVRankingDisplay não está aberto, retornando null');
     return null;
   }
+  
+  console.log('🔥 TVRankingDisplay RENDERIZANDO TELA!!');
 
   return (
     <div className="fixed inset-0 bg-background relative overflow-hidden z-50">

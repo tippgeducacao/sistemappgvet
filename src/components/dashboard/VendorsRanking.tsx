@@ -57,6 +57,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   // Estado para modo TV
   const [isTVMode, setIsTVMode] = useState(false);
   
+  console.log('🔥 VendorsRanking - isTVMode atual:', isTVMode);
+  
   // Usar filtro externo se disponível, senão usar interno
   const selectedMonth = propSelectedMonth && propSelectedYear 
     ? `${propSelectedYear}-${String(propSelectedMonth).padStart(2, '0')}`
