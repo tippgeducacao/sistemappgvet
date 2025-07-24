@@ -13,6 +13,11 @@ const CourseInfoSectionSDR: React.FC<CourseInfoSectionSDRProps> = ({ formData, u
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
 
+  // Opções de modalidade apenas com "Curso" para SDRs
+  const modalidadeOptionsSDR = [
+    { value: 'Curso', label: 'Curso' }
+  ];
+
   // Auto-definir modalidade como "Curso" para SDRs (não permite mudança)
   useEffect(() => {
     updateField('modalidadeCurso', 'Curso');
@@ -73,6 +78,15 @@ const CourseInfoSectionSDR: React.FC<CourseInfoSectionSDRProps> = ({ formData, u
         placeholder="Selecione a instituição"
       />
 
+      <FormSelectField
+        id="modalidadeCurso"
+        label="Modalidade *"
+        value={formData.modalidadeCurso || 'Curso'}
+        onChange={(value) => updateField('modalidadeCurso', value)}
+        options={modalidadeOptionsSDR}
+        disabled={true}
+        placeholder="Curso (pré-selecionado)"
+      />
 
       <FormSelectField
         id="cursoId"
