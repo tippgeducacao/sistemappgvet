@@ -23,7 +23,7 @@ export const useSprintHubSync = () => {
       console.log('🔄 Iniciando sincronização com SprintHub...');
       
       try {
-        const { data, error } = await supabase.functions.invoke('sync-sprinthub-leads');
+        const { data, error } = await supabase.functions.invoke('test-sync');
 
         console.log('📊 Resposta da função:', { data, error });
 
