@@ -75,20 +75,20 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.05 }}
-      className="bg-card border border-border rounded-lg p-2 hover:shadow-md transition-shadow"
+      className="bg-card border border-border rounded-lg p-1.5 hover:shadow-md transition-shadow"
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-bold">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-bold">
             {rank}
           </div>
           <img
             src={person.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person.name.replace(' ', '')}`}
             alt={person.name}
-            className="w-8 h-8 rounded-full"
+            className="w-6 h-6 rounded-full"
           />
           <div>
-            <div className="text-sm font-medium text-foreground">{person.name}</div>
+            <div className="text-xs font-medium text-foreground">{person.name}</div>
             <div className="text-xs text-muted-foreground">
               {person.isSDR ? `${person.weeklySales} reuniões` : `${person.points} pts`}
             </div>
@@ -106,7 +106,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
       
       <div className="space-y-1">
         <div>
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-0.5">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Target className="w-2 h-2" />
               {person.isSDR ? 'Meta Reuniões Semanal' : 'Meta Vendas Semanal'}
@@ -119,7 +119,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
         </div>
         
         <div>
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-0.5">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Calendar className="w-2 h-2" />
               {person.isSDR ? 'Meta Reuniões Diária' : 'Meta Vendas Diária'}
@@ -305,43 +305,53 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       {/* Conteúdo principal */}
       <div className="relative z-10 p-4 min-h-[calc(100vh-80px)]">
         <div className="max-w-full mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[calc(100vh-120px)]">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[calc(100vh-120px)]">
             {/* Coluna esquerda - Podium e Total */}
-            <div className="lg:col-span-1 space-y-4">
+            <div className="lg:col-span-1 space-y-2">
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-4 shadow-xl"
+                className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-3 shadow-xl"
               >
-                <h2 className="text-xl font-bold text-foreground mb-2">Total Semanal</h2>
-                <div className="text-2xl font-bold text-primary">{totalWeeklySales} vendas</div>
+                <h2 className="text-lg font-bold text-foreground mb-1">Total Semanal</h2>
+                <div className="text-xl font-bold text-primary">{totalWeeklySales} vendas</div>
               </motion.div>
 
-              <div className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-4 shadow-xl">
-                <h2 className="text-lg font-bold text-foreground mb-4 text-center">Top Vendedores</h2>
+              <div className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-3 shadow-xl">
+                <h2 className="text-md font-bold text-foreground mb-2 text-center">Top Vendedores</h2>
                 {topThree.length >= 3 ? (
                   <Podium topThree={topThree} />
                 ) : (
-                  <div className="text-center text-muted-foreground">Poucos vendedores para podium</div>
+                  <div className="text-center text-muted-foreground text-sm">Poucos vendedores para podium</div>
                 )}
               </div>
-            </div>
 
-            {/* Coluna direita - Grid de todos */}
-            <div className="lg:col-span-3">
-              <h2 className="text-xl font-bold text-foreground mb-4">Ranking Completo</h2>
-              <div 
-                className="grid grid-cols-3 gap-3 auto-rows-min"
-                style={{ 
-                  maxHeight: 'calc(100vh - 200px)',
-                  gridTemplateRows: `repeat(${Math.ceil(allRanking.length / 3)}, minmax(auto, 1fr))`
-                }}
-              >
-                {allRanking.map((person, index) => (
+              {/* Cards embaixo do podium */}
+              <div className="space-y-1">
+                {allRanking.slice(0, Math.min(3, allRanking.length)).map((person, index) => (
                   <VendedorCard
                     key={person.id}
                     person={person}
                     rank={index + 1}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Colunas do meio e direita - Grid dos restantes */}
+            <div className="lg:col-span-2">
+              <h2 className="text-lg font-bold text-foreground mb-3">Ranking Completo</h2>
+              <div 
+                className="grid grid-cols-2 gap-2 auto-rows-min"
+                style={{ 
+                  maxHeight: 'calc(100vh - 160px)',
+                }}
+              >
+                {allRanking.slice(3).map((person, index) => (
+                  <VendedorCard
+                    key={person.id}
+                    person={person}
+                    rank={index + 4}
                   />
                 ))}
               </div>
