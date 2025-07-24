@@ -3,6 +3,7 @@ import React from 'react';
 import { User, LogOut, Building2 } from 'lucide-react';
 import { SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/AuthStore';
 import type { UserType } from '@/types/user';
@@ -45,11 +46,14 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
     }
   };
 
-  const getUserIcon = () => {
-    if (isComercialUser) {
-      return <Building2 className="h-4 w-4 stroke-[1.5] text-muted-foreground" />;
-    }
-    return <User className="h-4 w-4 stroke-[1.5] text-muted-foreground" />;
+  const getProfileImage = () => {
+    // URL da foto do perfil se disponível - usando any para acessar propriedades não tipadas
+    return (profile as any)?.foto_url || null;
+  };
+
+  const getUserInitials = () => {
+    const name = userName || profile?.name || 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   const getUserBadgeColor = () => {
@@ -80,7 +84,12 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
       <div className="space-y-3">
         <div className="flex items-center space-x-3 p-3 rounded-lg bg-card border border-border">
           <div className="flex-shrink-0">
-            {getUserIcon()}
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={getProfileImage() || undefined} alt={userName} />
+              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                {getUserInitials()}
+              </AvatarFallback>
+            </Avatar>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-card-foreground truncate">

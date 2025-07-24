@@ -23,7 +23,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-gray-700 font-medium">E-mail</Label>
+        <Label htmlFor="email" className="text-foreground font-medium">E-mail</Label>
         <Input
           id="email"
           type="email"
@@ -31,13 +31,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="h-12 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-ppgvet-teal-500 focus:ring-2 focus:ring-ppgvet-teal-500/20"
+          className="h-12 bg-background border-border text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20"
           autoComplete="email"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-gray-700 font-medium">Senha</Label>
+        <Label htmlFor="password" className="text-foreground font-medium">Senha</Label>
         <div className="relative">
           <Input
             id="password"
@@ -46,14 +46,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="h-12 pr-10 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-ppgvet-teal-500 focus:ring-2 focus:ring-ppgvet-teal-500/20"
+            className="h-12 pr-10 bg-background border-border text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20"
             autoComplete="current-password"
           />
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-gray-100/20 text-gray-600 hover:text-gray-800"
+            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-muted/20 text-muted-foreground hover:text-foreground"
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? (
@@ -67,7 +67,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
 
       <Button 
         type="submit" 
-        className="w-full h-12 bg-gradient-to-r from-ppgvet-teal-500 to-ppgvet-teal-600 hover:from-ppgvet-teal-600 hover:to-ppgvet-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] backdrop-blur-sm border border-white/20"
+        className="w-full h-12 bg-gradient-to-r from-ppgvet-teal to-ppgvet-teal hover:from-ppgvet-teal/90 hover:to-ppgvet-teal/90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] backdrop-blur-sm border border-white/20"
         disabled={isLoading}
       >
         {isLoading ? (

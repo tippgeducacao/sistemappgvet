@@ -22,10 +22,10 @@ const VendedorDashboard: React.FC = () => {
     <div className="space-y-6">
       {/* Header sem botão Nova Venda */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-foreground">
           Olá, {profile?.name || 'Vendedor'}!
         </h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-muted-foreground mt-2">
           Gerencie suas vendas e acompanhe seu desempenho
         </p>
       </div>
@@ -67,7 +67,7 @@ const VendedorDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           {vendas.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Nenhuma venda cadastrada ainda</p>
               <p className="text-sm">Acesse a aba "Nova Venda" para começar</p>
