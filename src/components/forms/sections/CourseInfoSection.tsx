@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { FormSelectField, FormInputField } from '@/components/ui/form-field';
 import { IES_OPTIONS, MODALIDADE_OPTIONS } from '@/constants/formOptions';
 import { useCourses } from '@/hooks/useCourses';
+import { useAuthStore } from '@/stores/AuthStore';
 
 interface CourseInfoSectionProps {
   formData: any;
@@ -11,9 +12,27 @@ interface CourseInfoSectionProps {
 
 const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateField }) => {
   const { fetchCoursesByModalidade } = useCourses();
+  const { currentUser } = useAuthStore();
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
   const [selectedModalidade, setSelectedModalidade] = useState(formData.modalidadeCurso || '');
+
+  // Verificar se é SDR
+  const isSDR = currentUser?.user_type === 'sdr_inbound' || currentUser?.user_type === 'sdr_outbound';
+  
+  // Modalidades disponíveis baseadas no tipo de usuário
+  const modalidadeOptions = isSDR 
+    ? [{ value: 'Curso', label: 'Curso' }] 
+    : MODALIDADE_OPTIONS;
+
+  // Auto-definir modalidade para SDRs
+  useEffect(() => {
+    if (isSDR && !formData.modalidadeCurso) {
+      updateField('modalidadeCurso', 'Curso');
+      updateField('modalidade', 'Híbrido (ITH)');
+      setSelectedModalidade('Curso');
+    }
+  }, [isSDR, updateField, formData.modalidadeCurso]);
 
   useEffect(() => {
     const loadCoursesByModalidade = async () => {
@@ -137,14 +156,15 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
           placeholder="Selecione a instituição"
         />
 
-        <FormSelectField
-          id="modalidadeCurso"
-          label="Modalidade *"
-          value={formData.modalidadeCurso || ''}
-          onChange={handleModalidadeChange}
-          options={MODALIDADE_OPTIONS}
-          placeholder="Selecione a modalidade"
-        />
+      <FormSelectField
+        id="modalidadeCurso"
+        label="Modalidade *"
+        value={formData.modalidadeCurso || (isSDR ? 'Curso' : '')}
+        onChange={handleModalidadeChange}
+        options={modalidadeOptions}
+        disabled={isSDR}
+        placeholder={isSDR ? "Curso (pré-selecionado)" : "Selecione a modalidade"}
+      />
       </div>
 
       {/* Curso - campo longo, linha inteira */}
