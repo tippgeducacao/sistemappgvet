@@ -18,7 +18,6 @@ import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
-import TestTVButton from '../debug/TestTVButton';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -557,9 +556,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   return (
     <Card>
-      {/* Componente de teste */}
-      <TestTVButton />
-      
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

@@ -34,17 +34,17 @@ const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
     <div className="flex items-end justify-center gap-2 mb-6">
       {[topThree[1], topThree[0], topThree[2]].map((person, index) => (
         <div
-          key={person?.id}
+          key={person?.id || index}
           className="flex flex-col items-center"
         >
           <div className="mb-2 text-center">
             <img
               src={person?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person?.name}`}
-              alt={person?.name}
+              alt={person?.name || 'Vendedor'}
               className="w-12 h-12 rounded-full mx-auto mb-1 border-2 border-border"
             />
-            <div className="text-xs font-medium text-foreground">{person?.name.split(' ')[0]}</div>
-            <div className="text-xs text-primary">{person?.pontuacao.toFixed(1)} pts</div>
+            <div className="text-xs font-medium text-foreground">{person?.name?.split(' ')[0] || 'N/A'}</div>
+            <div className="text-xs text-primary">{person?.pontuacao?.toFixed(1) || '0.0'} pts</div>
             {person?.isSDR && (
               <Badge variant="secondary" className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30 mt-1">
                 SDR
@@ -71,9 +71,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
   const dailyProgress = person.dailyTarget > 0 ? (person.dailySales / person.dailyTarget) * 100 : 0;
 
   return (
-    <div
-      className="bg-card/90 border border-border rounded-lg p-4 hover:shadow-md transition-shadow backdrop-blur-sm"
-    >
+    <div className="bg-card/90 border border-border rounded-lg p-4 hover:shadow-md transition-shadow backdrop-blur-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-bold">
@@ -352,13 +350,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
 
       <div className="relative z-10 h-screen flex flex-col">
         {/* Header - Menor conforme solicitado */}
-        <div className="flex justify-between items-center px-4 py-3 border-b border-border/50 shrink-0 backdrop-blur-md">
+        <div className="flex justify-between items-center px-4 py-2 border-b border-border/50 shrink-0 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-r from-primary to-primary/80 p-2 rounded-lg">
-              <Trophy className="h-5 w-5 text-primary-foreground" />
+              <Trophy className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">
+              <h1 className="text-lg font-bold text-foreground">
                 Ranking de Vendedores
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -394,17 +392,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-120px)]">
                 {/* Coluna Esquerda - Pódio e Totais */}
                 <div className="lg:col-span-1 space-y-4">
-                  <div
-                    className="backdrop-blur-lg bg-card/95 border border-border rounded-lg p-4"
-                  >
+                  <div className="backdrop-blur-lg bg-card/95 border border-border rounded-lg p-4">
                     <h2 className="text-lg font-bold text-foreground mb-3">Total Semanal</h2>
                     <div className="text-2xl font-bold text-primary">{totalWeeklySales} vendas</div>
                     <div className="text-lg font-bold text-secondary">{totalWeeklyPoints.toFixed(1)} pontos</div>
                   </div>
 
-                  <div
-                    className="backdrop-blur-lg bg-card/95 border border-border rounded-lg p-4"
-                  >
+                  <div className="backdrop-blur-lg bg-card/95 border border-border rounded-lg p-4">
                     <h2 className="text-lg font-bold text-foreground mb-3">Total Mensal</h2>
                     <div className="text-2xl font-bold text-primary">{totalMonthlySales} vendas</div>
                     <div className="text-lg font-bold text-secondary">{totalMonthlyPoints.toFixed(1)} pontos</div>
