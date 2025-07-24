@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useAllVendas } from '@/hooks/useVendas';
@@ -137,6 +137,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
 
 const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [zoom, setZoom] = useState(100);
   const { vendas } = useAllVendas();
   const { vendedores } = useVendedores();
   const { metasSemanais, getSemanaAtual } = useMetasSemanais();
@@ -295,6 +296,23 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       <div className="relative z-10 flex justify-between items-center p-4 backdrop-blur-md border-b border-white/20">
         <h1 className="text-2xl font-bold text-foreground">Ranking de Vendas - TV</h1>
         <div className="flex gap-2">
+          <Button 
+            onClick={() => setZoom(Math.max(10, zoom - 10))} 
+            variant="outline" 
+            size="sm"
+            disabled={zoom <= 10}
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <span className="flex items-center px-2 text-sm font-medium text-foreground">{zoom}%</span>
+          <Button 
+            onClick={() => setZoom(Math.min(200, zoom + 10))} 
+            variant="outline" 
+            size="sm"
+            disabled={zoom >= 200}
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
           <Button onClick={toggleFullscreen} variant="outline" size="sm">
             {isFullscreen ? 'Sair Tela Cheia' : 'Tela Cheia'}
           </Button>
@@ -305,7 +323,10 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       </div>
 
       {/* Conteúdo principal */}
-      <div className="relative z-10 p-4 min-h-[calc(100vh-80px)]">
+      <div 
+        className="relative z-10 p-4 min-h-[calc(100vh-80px)] transform-gpu origin-top-left transition-transform duration-300"
+        style={{ transform: `scale(${zoom / 100})` }}
+      >
         <div className="max-w-full mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[calc(100vh-120px)]">
             {/* Coluna esquerda - Podium e Total */}
@@ -332,7 +353,6 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
             {/* 3 Colunas para vendedores - 5 em cada */}
             <div className="lg:col-span-3 grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <h3 className="text-sm font-bold text-foreground text-center">Coluna 1</h3>
                 <div className="space-y-2">
                   {allRanking.slice(0, 5).map((person, index) => (
                     <VendedorCard
@@ -345,7 +365,6 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
               </div>
               
               <div className="space-y-2">
-                <h3 className="text-sm font-bold text-foreground text-center">Coluna 2</h3>
                 <div className="space-y-2">
                   {allRanking.slice(5, 10).map((person, index) => (
                     <VendedorCard
@@ -358,7 +377,6 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
               </div>
               
               <div className="space-y-2">
-                <h3 className="text-sm font-bold text-foreground text-center">Coluna 3</h3>
                 <div className="space-y-2">
                   {allRanking.slice(10, 15).map((person, index) => (
                     <VendedorCard
