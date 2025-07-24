@@ -75,60 +75,60 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.05 }}
-      className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+      className="bg-card border border-border rounded-lg p-2 hover:shadow-md transition-shadow"
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-bold">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-bold">
             {rank}
           </div>
           <img
             src={person.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person.name.replace(' ', '')}`}
             alt={person.name}
-            className="w-10 h-10 rounded-full"
+            className="w-8 h-8 rounded-full"
           />
           <div>
-            <div className="font-medium text-foreground">{person.name}</div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm font-medium text-foreground">{person.name}</div>
+            <div className="text-xs text-muted-foreground">
               {person.isSDR ? `${person.weeklySales} reuniões` : `${person.points} pts`}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          {person.isSDR && <Users className="w-4 h-4 text-blue-500" />}
+          {person.isSDR && <Users className="w-3 h-3 text-blue-500" />}
           {!person.isSDR && (weeklyProgress >= 100 ? (
-            <TrendingUp className="w-4 h-4 text-green-500" />
+            <TrendingUp className="w-3 h-3 text-green-500" />
           ) : (
-            <TrendingDown className="w-4 h-4 text-red-500" />
+            <TrendingDown className="w-3 h-3 text-red-500" />
           ))}
         </div>
       </div>
       
-      <div className="space-y-2">
+      <div className="space-y-1">
         <div>
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Target className="w-3 h-3" />
+              <Target className="w-2 h-2" />
               {person.isSDR ? 'Meta Reuniões Semanal' : 'Meta Vendas Semanal'}
             </div>
             <span className="text-xs font-medium">
               {person.isSDR ? `${person.weeklySales}/${person.weeklyTarget}` : `${person.weeklySales}/${person.weeklyTarget}`} ({weeklyProgress.toFixed(0)}%)
             </span>
           </div>
-          <Progress value={Math.min(weeklyProgress, 100)} className="h-2" />
+          <Progress value={Math.min(weeklyProgress, 100)} className="h-1" />
         </div>
         
         <div>
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Calendar className="w-3 h-3" />
+              <Calendar className="w-2 h-2" />
               {person.isSDR ? 'Meta Reuniões Diária' : 'Meta Vendas Diária'}
             </div>
             <span className="text-xs font-medium">
               {person.isSDR ? `${person.dailySales}/${person.dailyTarget}` : `${person.dailySales}/${person.dailyTarget}`} ({dailyProgress.toFixed(0)}%)
             </span>
           </div>
-          <Progress value={Math.min(dailyProgress, 100)} className="h-2" />
+          <Progress value={Math.min(dailyProgress, 100)} className="h-1" />
         </div>
       </div>
     </motion.div>
