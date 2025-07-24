@@ -560,7 +560,10 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
             <CardTitle className="flex items-center gap-3">
               Ranking de Vendedores
               <button
-                onClick={() => setIsTVMode(true)}
+                onClick={() => {
+                  console.log('🔥 Botão TV clicado! Abrindo TVRankingDisplay');
+                  setIsTVMode(true);
+                }}
                 className="inline-flex items-center justify-center p-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 hover:scale-105 group"
                 title="Exibir em tela cheia (Modo TV)"
               >

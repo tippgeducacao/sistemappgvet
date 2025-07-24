@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Maximize2, Minimize2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -34,11 +33,8 @@ const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
   return (
     <div className="flex items-end justify-center gap-2 mb-6">
       {[topThree[1], topThree[0], topThree[2]].map((person, index) => (
-        <motion.div
+        <div
           key={person?.id}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.2 }}
           className="flex flex-col items-center"
         >
           <div className="mb-2 text-center">
@@ -64,7 +60,7 @@ const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
               {index !== 1 && <span>{positions[index]}</span>}
             </div>
           </div>
-        </motion.div>
+        </div>
       ))}
     </div>
   );
@@ -75,10 +71,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
   const dailyProgress = person.dailyTarget > 0 ? (person.dailySales / person.dailyTarget) * 100 : 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: rank * 0.05 }}
+    <div
       className="bg-card/90 border border-border rounded-lg p-4 hover:shadow-md transition-shadow backdrop-blur-sm"
     >
       <div className="flex items-center justify-between mb-3">
@@ -135,11 +128,13 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
           <Progress value={Math.min(dailyProgress, 100)} className="h-2" />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
 const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) => {
+  console.log('🔥 TVRankingDisplay renderizando - isOpen:', isOpen);
+  
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { vendedores, loading: vendedoresLoading } = useVendedores();
@@ -332,7 +327,17 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
 
   const topThree = sortedSalespeople.slice(0, 3);
 
-  if (!isOpen) return null;
+  console.log('🔥 TVRankingDisplay dados:', {
+    isOpen,
+    isLoading,
+    sortedSalespeopleLenght: sortedSalespeople.length,
+    topThreeLength: topThree.length
+  });
+
+  if (!isOpen) {
+    console.log('🔥 TVRankingDisplay não está aberto, retornando null');
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-background relative overflow-hidden z-50">
@@ -387,26 +392,21 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-120px)]">
                 {/* Coluna Esquerda - Pódio e Totais */}
                 <div className="lg:col-span-1 space-y-4">
-                  <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                  <div
                     className="backdrop-blur-lg bg-card/95 border border-border rounded-lg p-4"
                   >
                     <h2 className="text-lg font-bold text-foreground mb-3">Total Semanal</h2>
                     <div className="text-2xl font-bold text-primary">{totalWeeklySales} vendas</div>
                     <div className="text-lg font-bold text-secondary">{totalWeeklyPoints.toFixed(1)} pontos</div>
-                  </motion.div>
+                  </div>
 
-                  <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
+                  <div
                     className="backdrop-blur-lg bg-card/95 border border-border rounded-lg p-4"
                   >
                     <h2 className="text-lg font-bold text-foreground mb-3">Total Mensal</h2>
                     <div className="text-2xl font-bold text-primary">{totalMonthlySales} vendas</div>
                     <div className="text-lg font-bold text-secondary">{totalMonthlyPoints.toFixed(1)} pontos</div>
-                  </motion.div>
+                  </div>
 
                   <div className="backdrop-blur-lg bg-card/95 border border-border rounded-lg p-4">
                     <h2 className="text-lg font-bold text-foreground mb-4 text-center">Top Performers</h2>
