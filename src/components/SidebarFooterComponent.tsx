@@ -80,22 +80,22 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
   };
 
   return (
-    <SidebarFooter className="border-t border-border p-4 bg-muted/30">
+    <SidebarFooter className="border-t border-ppgvet-teal/20 p-3 bg-gradient-to-r from-ppgvet-teal/5 to-ppgvet-magenta/5 dark:from-ppgvet-teal/10 dark:to-ppgvet-magenta/10">
       <div className="space-y-3">
-        <div className="flex items-center space-x-3 p-3 rounded-lg bg-card border border-border">
+        <div className="flex items-center space-x-3 p-2.5 rounded-lg bg-card/60 backdrop-blur-sm border border-ppgvet-teal/20 shadow-sm">
           <div className="flex-shrink-0">
-            <Avatar className="h-8 w-8">
+            <Avatar className="h-7 w-7 ring-2 ring-ppgvet-teal/20">
               <AvatarImage src={getProfileImage() || undefined} alt={userName} />
-              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+              <AvatarFallback className="bg-ppgvet-teal/10 text-ppgvet-teal text-xs font-bold">
                 {getUserInitials()}
               </AvatarFallback>
             </Avatar>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-card-foreground truncate">
+            <p className="text-sm font-medium text-foreground truncate">
               {userName}
             </p>
-            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getUserBadgeColor()}`}>
+            <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-ppgvet-teal/10 text-ppgvet-teal border-ppgvet-teal/30 dark:bg-ppgvet-teal/20 dark:text-ppgvet-teal`}>
               {getUserTypeLabel()}
             </div>
           </div>
@@ -105,7 +105,7 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
           variant="outline" 
           size="sm" 
           onClick={signOut}
-          className="w-full justify-start gap-2 rounded-lg"
+          className="w-full justify-start gap-2 rounded-lg border-ppgvet-teal/30 hover:bg-ppgvet-teal/10 hover:text-ppgvet-teal hover:border-ppgvet-teal/50 transition-all duration-200"
         >
           <LogOut className="h-4 w-4 stroke-[1.5]" />
           Sair

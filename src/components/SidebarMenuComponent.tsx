@@ -69,15 +69,15 @@ const SidebarMenuComponent: React.FC = () => {
 
   const getIcon = (iconName: string) => {
     const IconComponent = Icons[iconName as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
-    return IconComponent ? <IconComponent className="h-4 w-4 stroke-[1.5] text-muted-foreground" /> : null;
+    return IconComponent ? <IconComponent className="h-4 w-4 stroke-[1.5]" /> : null;
   };
 
   return (
-    <SidebarGroup className="px-4 py-2">
-      <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-0 py-2 mb-1">
+    <SidebarGroup className="px-3 py-2">
+      <SidebarGroupLabel className="text-xs font-semibold text-ppgvet-teal dark:text-ppgvet-teal/80 px-0 py-2 mb-2">
         Menu Principal
       </SidebarGroupLabel>
-      <SidebarMenu className="space-y-0">
+      <SidebarMenu className="space-y-1">
         {menuItems.map((item) => (
           <SidebarMenuItem key={item.section}>
             <SidebarMenuButton
@@ -90,15 +90,15 @@ const SidebarMenuComponent: React.FC = () => {
               }}
               isActive={activeSection === item.section}
               className={`
-                w-full cursor-pointer rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ease-in-out mb-1
+                w-full cursor-pointer rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-in-out
                 ${activeSection === item.section 
-                  ? 'bg-primary/10 text-primary border-l-4 border-primary' 
-                  : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                  ? 'bg-gradient-to-r from-ppgvet-teal/15 to-ppgvet-magenta/10 text-ppgvet-teal dark:text-ppgvet-teal border-l-3 border-ppgvet-teal shadow-sm' 
+                  : 'text-muted-foreground hover:bg-ppgvet-gray-50 dark:hover:bg-ppgvet-gray-100 hover:text-foreground'
                 }
               `}
             >
               <div className="flex items-center gap-3">
-                <div className="flex-shrink-0">
+                <div className={`flex-shrink-0 ${activeSection === item.section ? 'text-ppgvet-teal' : 'text-muted-foreground'}`}>
                   {getIcon(item.icon)}
                 </div>
                 <span className="truncate">{item.title}</span>
