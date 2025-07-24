@@ -303,22 +303,22 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       </div>
 
       {/* Conteúdo principal */}
-      <div className="relative z-10 p-6 h-[calc(100vh-80px)] overflow-hidden">
-        <div className="max-w-7xl mx-auto h-full">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+      <div className="relative z-10 p-4 min-h-[calc(100vh-80px)]">
+        <div className="max-w-full mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[calc(100vh-120px)]">
             {/* Coluna esquerda - Podium e Total */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="lg:col-span-1 space-y-4">
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-6 shadow-xl"
+                className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-4 shadow-xl"
               >
-                <h2 className="text-2xl font-bold text-foreground mb-2">Total Semanal</h2>
-                <div className="text-3xl font-bold text-primary">{totalWeeklySales} vendas</div>
+                <h2 className="text-xl font-bold text-foreground mb-2">Total Semanal</h2>
+                <div className="text-2xl font-bold text-primary">{totalWeeklySales} vendas</div>
               </motion.div>
 
-              <div className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-6 shadow-xl">
-                <h2 className="text-xl font-bold text-foreground mb-4 text-center">Top Vendedores</h2>
+              <div className="bg-card/95 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-lg p-4 shadow-xl">
+                <h2 className="text-lg font-bold text-foreground mb-4 text-center">Top Vendedores</h2>
                 {topThree.length >= 3 ? (
                   <Podium topThree={topThree} />
                 ) : (
@@ -329,17 +329,21 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
 
             {/* Coluna direita - Grid de todos */}
             <div className="lg:col-span-3">
-              <div className="h-full overflow-hidden">
-                <h2 className="text-2xl font-bold text-foreground mb-6">Ranking Completo</h2>
-                <div className="grid grid-cols-3 gap-4 h-[calc(100%-60px)] overflow-y-auto pr-2">
-                  {allRanking.map((person, index) => (
-                    <VendedorCard
-                      key={person.id}
-                      person={person}
-                      rank={index + 1}
-                    />
-                  ))}
-                </div>
+              <h2 className="text-xl font-bold text-foreground mb-4">Ranking Completo</h2>
+              <div 
+                className="grid grid-cols-3 gap-3 auto-rows-min"
+                style={{ 
+                  maxHeight: 'calc(100vh - 200px)',
+                  gridTemplateRows: `repeat(${Math.ceil(allRanking.length / 3)}, minmax(auto, 1fr))`
+                }}
+              >
+                {allRanking.map((person, index) => (
+                  <VendedorCard
+                    key={person.id}
+                    person={person}
+                    rank={index + 1}
+                  />
+                ))}
               </div>
             </div>
           </div>
