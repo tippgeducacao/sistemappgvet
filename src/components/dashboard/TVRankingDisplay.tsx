@@ -365,14 +365,14 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
 
       {/* Conteúdo principal */}
       <div 
-        className="relative z-10 p-4 min-h-[calc(100vh-80px)] origin-top-left transition-transform duration-300"
+        className="relative z-10 p-4 min-h-[calc(100vh-80px)] origin-top-left transition-transform duration-300 overflow-hidden"
         style={{ 
           transform: `scale(${zoom / 100})`,
           width: `${10000 / zoom}%`,
           height: `${10000 / zoom}%`,
         }}
       >
-        <div className="max-w-full mx-auto">
+        <div className="max-w-full mx-auto overflow-hidden">
           {/* Grid de 5 colunas para todos os vendedores */}
           <div className="grid grid-cols-5 gap-4">
             {/* Top 3 vendedores */}
