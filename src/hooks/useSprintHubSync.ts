@@ -22,36 +22,53 @@ export const useSprintHubSync = () => {
     mutationFn: async (): Promise<SyncResult> => {
       console.log('🔄 Iniciando sincronização com SprintHub...');
       
-      const { data, error } = await supabase.functions.invoke('sync-sprinthub-leads');
+      try {
+        const { data, error } = await supabase.functions.invoke('sync-sprinthub-leads');
 
-      if (error) {
-        console.error('❌ Erro na sincronização:', error);
-        
-        // Melhorar mensagem de erro baseada no tipo
-        let errorMessage = 'Erro na sincronização com SprintHub';
-        
-        if (error.message?.includes('API Key')) {
-          errorMessage = 'Erro de autenticação: Verifique sua API Key do SprintHub';
-        } else if (error.message?.includes('instância')) {
-          errorMessage = 'Erro de configuração: Verifique o nome da instância do SprintHub';
-        } else if (error.message?.includes('não configuradas')) {
-          errorMessage = 'Configuração incompleta: Verifique as variáveis SPRINTHUB_API_KEY e SPRINTHUB_INSTANCE';
-        } else if (error.message) {
-          errorMessage = error.message;
+        console.log('📊 Resposta da função:', { data, error });
+
+        if (error) {
+          console.error('❌ Erro retornado pela função:', error);
+          console.error('❌ Tipo do erro:', typeof error);
+          console.error('❌ Estrutura do erro:', JSON.stringify(error, null, 2));
+          
+          // Melhorar mensagem de erro baseada no tipo
+          let errorMessage = 'Erro na sincronização com SprintHub';
+          
+          if (error.message?.includes('API Key')) {
+            errorMessage = 'Erro de autenticação: Verifique sua API Key do SprintHub';
+          } else if (error.message?.includes('instância')) {
+            errorMessage = 'Erro de configuração: Verifique o nome da instância do SprintHub';
+          } else if (error.message?.includes('não configuradas')) {
+            errorMessage = 'Configuração incompleta: Verifique as variáveis SPRINTHUB_API_KEY e SPRINTHUB_INSTANCE';
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          throw new Error(errorMessage);
         }
-        
-        throw new Error(errorMessage);
-      }
 
-      if (!data) {
-        throw new Error('Nenhuma resposta recebida da API');
-      }
+        console.log('📊 Data recebida:', data);
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erro desconhecido na sincronização');
-      }
+        if (!data) {
+          console.error('❌ Nenhuma data recebida');
+          throw new Error('Nenhuma resposta recebida da API');
+        }
 
-      return data;
+        console.log('📊 Success:', data.success);
+        console.log('📊 Data structure:', Object.keys(data));
+
+        if (!data.success) {
+          console.error('❌ Sincronização falhou:', data.error);
+          throw new Error(data.error || 'Erro desconhecido na sincronização');
+        }
+
+        console.log('✅ Sincronização bem-sucedida, retornando dados');
+        return data;
+      } catch (err) {
+        console.error('💥 Erro capturado no try/catch:', err);
+        throw err;
+      }
     },
     onSuccess: (result) => {
       // Invalidar queries para atualizar a lista de leads
