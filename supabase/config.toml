@@ -6,5 +6,8 @@ verify_jwt = false
 [functions.test-sync]
 verify_jwt = false
 
+[functions.test-sprinthub-api]
+verify_jwt = false
+
 [functions.sync-sprinthub-leads]
 verify_jwt = false
