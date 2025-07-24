@@ -70,16 +70,27 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
   const weeklyProgress = person.weeklyTarget > 0 ? (person.weeklySales / person.weeklyTarget) * 100 : 0;
   const dailyProgress = person.dailyTarget > 0 ? (person.dailySales / person.dailyTarget) * 100 : 0;
 
+  const getTopThreeStyle = () => {
+    if (!isTopThree) return 'bg-card border-border';
+    
+    switch (rank) {
+      case 1:
+        return 'bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 dark:from-yellow-600 dark:via-yellow-700 dark:to-yellow-800 border-yellow-500 dark:border-yellow-400 shadow-xl shadow-yellow-500/30';
+      case 2:
+        return 'bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500 dark:from-gray-500 dark:via-gray-600 dark:to-gray-700 border-gray-400 dark:border-gray-300 shadow-xl shadow-gray-500/30';
+      case 3:
+        return 'bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 dark:from-orange-600 dark:via-orange-700 dark:to-orange-800 border-orange-500 dark:border-orange-400 shadow-xl shadow-orange-500/30';
+      default:
+        return 'bg-card border-border';
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.05 }}
-      className={`border rounded-lg p-3 hover:shadow-md transition-shadow ${
-        isTopThree 
-          ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-400 dark:border-yellow-500 shadow-lg' 
-          : 'bg-card border-border'
-      }`}
+      className={`border rounded-lg p-3 hover:shadow-md transition-shadow ${getTopThreeStyle()}`}
     >
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
@@ -133,6 +144,31 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
             </span>
           </div>
           <Progress value={Math.min(dailyProgress, 100)} className="h-1" />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const TotalSalesCard: React.FC<{ weeklyTotal: number; monthlyTotal: number }> = ({ weeklyTotal, monthlyTotal }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 border border-blue-400 dark:border-blue-300 rounded-lg p-4 shadow-xl text-white"
+    >
+      <div className="text-center">
+        <h3 className="text-lg font-bold mb-2">Vendas Totais</h3>
+        <div className="space-y-2">
+          <div>
+            <div className="text-sm opacity-90">Esta Semana</div>
+            <div className="text-2xl font-bold">{weeklyTotal}</div>
+          </div>
+          <div className="h-px bg-white/20"></div>
+          <div>
+            <div className="text-sm opacity-90">Este Mês</div>
+            <div className="text-2xl font-bold">{monthlyTotal}</div>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -284,6 +320,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const remaining = allRanking.slice(3);
 
   const totalWeeklySales = vendedoresOnly.reduce((sum, person) => sum + person.weeklySales, 0);
+  const totalMonthlySales = vendedoresOnly.reduce((sum, person) => sum + person.monthlyTotal, 0);
 
   if (!isOpen) return null;
 
@@ -338,12 +375,31 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         <div className="max-w-full mx-auto">
           {/* Grid de 5 colunas para todos os vendedores */}
           <div className="grid grid-cols-5 gap-4">
-            {allRanking.map((person, index) => (
+            {/* Top 3 vendedores */}
+            {allRanking.slice(0, 3).map((person, index) => (
               <VendedorCard
                 key={person.id}
                 person={person}
                 rank={index + 1}
-                isTopThree={index < 3}
+                isTopThree={true}
+              />
+            ))}
+            
+            {/* Card de vendas totais no lugar do 4º card */}
+            <div className="col-span-2">
+              <TotalSalesCard 
+                weeklyTotal={totalWeeklySales} 
+                monthlyTotal={totalMonthlySales} 
+              />
+            </div>
+            
+            {/* Resto dos vendedores a partir da segunda linha */}
+            {allRanking.slice(3).map((person, index) => (
+              <VendedorCard
+                key={person.id}
+                person={person}
+                rank={index + 4}
+                isTopThree={false}
               />
             ))}
           </div>
