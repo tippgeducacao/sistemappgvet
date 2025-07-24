@@ -62,15 +62,25 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
 
   const isLoading = vendasLoading || vendedoresLoading || metasLoading;
 
-  // Filtrar vendedores
-  const vendedoresFiltrados = useMemo(() => {
+  // Separar vendedores de SDRs
+  const { vendedoresNormais, vendedoresSDR } = useMemo(() => {
     const userEmail = profile?.email || currentUser?.email;
     const isSpecificAdmin = userEmail === 'wallasmonteiro019@gmail.com';
     
-    return vendedores.filter(vendedor => {
+    const vendedoresFiltrados = vendedores.filter(vendedor => {
       if (isSpecificAdmin) return true;
       return vendedor.name !== 'Vendedor teste';
     });
+
+    const vendedoresNormais = vendedoresFiltrados.filter(vendedor => 
+      !vendedor.user_type?.includes('sdr')
+    );
+    
+    const vendedoresSDR = vendedoresFiltrados.filter(vendedor => 
+      vendedor.user_type?.includes('sdr')
+    );
+
+    return { vendedoresNormais, vendedoresSDR };
   }, [vendedores, profile?.email, currentUser?.email]);
 
   // Calcular estatísticas da semana atual
@@ -113,9 +123,9 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return statsVendedor;
   }, [vendas]);
 
-  // Criar ranking com dados dos vendedores
-  const ranking = useMemo(() => {
-    return vendedoresFiltrados.map(vendedor => {
+  // Função para criar ranking
+  const criarRanking = (vendedoresList: any[]) => {
+    return vendedoresList.map(vendedor => {
       const stats = vendedoresStats[vendedor.id] || { vendas: 0, pontuacao: 0 };
       
       // Buscar meta semanal do vendedor
@@ -144,12 +154,17 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       if (a.pontuacao !== b.pontuacao) return b.pontuacao - a.pontuacao;
       return a.nome.localeCompare(b.nome);
     });
-  }, [vendedoresFiltrados, vendedoresStats, metasSemanais, selectedWeek]);
+  };
+
+  // Rankings separados
+  const rankingVendedores = useMemo(() => criarRanking(vendedoresNormais), [vendedoresNormais, vendedoresStats, metasSemanais, selectedWeek]);
+  const rankingSDR = useMemo(() => criarRanking(vendedoresSDR), [vendedoresSDR, vendedoresStats, metasSemanais, selectedWeek]);
 
   // Dados para exibição
-  const totalVendas = ranking.reduce((sum, v) => sum + v.vendas, 0);
-  const top3 = ranking.slice(0, 3);
-  const demaisVendedores = ranking.slice(3);
+  const totalVendas = rankingVendedores.reduce((sum, v) => sum + v.vendas, 0) + rankingSDR.reduce((sum, v) => sum + v.vendas, 0);
+  const top3 = rankingVendedores.slice(0, 3);
+  const demaisVendedores = rankingVendedores.slice(3);
+  const totalVendedores = rankingVendedores.length + rankingSDR.length;
 
   if (!isOpen) return null;
 
@@ -167,7 +182,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
                 RANKING VENDEDORES
               </h1>
               <p className="text-sm text-white/80">
-                Semana Atual • {totalVendas} vendas • {ranking.length} vendedores
+                Semana Atual • {totalVendas} vendas • {totalVendedores} vendedores
               </p>
             </div>
           </div>
@@ -274,84 +289,153 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
               </div>
             )}
 
-            {/* Lista Completa de Vendedores - Grid Responsivo para TV */}
-            <div className="flex-1">
-              <div className="grid gap-2 h-full content-start" 
-                   style={{ 
-                     gridTemplateColumns: `repeat(auto-fit, minmax(${isFullscreen ? '200px' : '180px'}, 1fr))`,
-                     gridAutoRows: 'min-content'
-                   }}>
-                {ranking.map((vendedor, index) => (
-                  <div
-                    key={vendedor.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                      index < 3 ? 
-                        'bg-gradient-to-r from-ppgvet-teal/30 to-blue-600/30 border-2 border-ppgvet-teal/50' : 
-                        'bg-white/10 hover:bg-white/15'
-                    }`}
-                  >
-                    {/* Posição */}
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                      index === 0 ? 'bg-yellow-500 text-white' :
-                      index === 1 ? 'bg-gray-400 text-white' :
-                      index === 2 ? 'bg-amber-600 text-white' :
-                      'bg-white/20 text-white'
-                    }`}>
-                      {index + 1}
-                    </div>
-
-                    {/* Avatar */}
-                    <Avatar className={`${isFullscreen ? 'h-12 w-12' : 'h-10 w-10'} border-2 border-white/30 flex-shrink-0`}>
-                      <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
-                      <AvatarFallback className="bg-white/20 text-white text-xs">
-                        {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    {/* Info do vendedor */}
-                    <div className="flex-1 min-w-0">
-                      <h4 className={`font-semibold text-white ${isFullscreen ? 'text-base' : 'text-sm'} truncate`} title={vendedor.nome}>
-                        {vendedor.nome.length > (isFullscreen ? 20 : 15) ? 
-                          vendedor.nome.substring(0, isFullscreen ? 20 : 15) + '...' : 
-                          vendedor.nome
-                        }
-                      </h4>
-                      <div className="flex items-center gap-1 text-xs text-white/80">
-                        <Target className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">Meta: {vendedor.metaSemanal}</span>
-                      </div>
-                    </div>
-
-                    {/* Métricas */}
-                    <div className="text-right flex-shrink-0">
-                      <div className={`${isFullscreen ? 'text-xl' : 'text-lg'} font-bold text-white`}>
-                        {vendedor.vendas}
-                      </div>
-                      <div className={`text-xs font-semibold ${
-                        vendedor.percentualAtingido >= 100 ? 'text-green-400' :
-                        vendedor.percentualAtingido >= 80 ? 'text-yellow-400' :
-                        'text-red-400'
+            {/* Layout com duas colunas - Vendedores e SDRs */}
+            <div className="flex-1 grid grid-cols-2 gap-4">
+              {/* Coluna dos Vendedores */}
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-center text-white mb-4">VENDEDORES</h2>
+                <div className="space-y-2 max-h-full overflow-y-auto">
+                  {rankingVendedores.map((vendedor, index) => (
+                    <div
+                      key={vendedor.id}
+                      className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                        index < 3 ? 
+                          'bg-gradient-to-r from-ppgvet-teal/30 to-blue-600/30 border-2 border-ppgvet-teal/50' : 
+                          'bg-white/10 hover:bg-white/15'
+                      }`}
+                    >
+                      {/* Posição */}
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                        index === 0 ? 'bg-yellow-500 text-white' :
+                        index === 1 ? 'bg-gray-400 text-white' :
+                        index === 2 ? 'bg-amber-600 text-white' :
+                        'bg-white/20 text-white'
                       }`}>
-                        {vendedor.percentualAtingido.toFixed(1)}%
+                        {index + 1}
+                      </div>
+
+                      {/* Avatar */}
+                      <Avatar className={`${isFullscreen ? 'h-12 w-12' : 'h-10 w-10'} border-2 border-white/30 flex-shrink-0`}>
+                        <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
+                        <AvatarFallback className="bg-white/20 text-white text-xs">
+                          {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      {/* Info do vendedor */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className={`font-semibold text-white ${isFullscreen ? 'text-base' : 'text-sm'} truncate`} title={vendedor.nome}>
+                          {vendedor.nome.length > (isFullscreen ? 15 : 12) ? 
+                            vendedor.nome.substring(0, isFullscreen ? 15 : 12) + '...' : 
+                            vendedor.nome
+                          }
+                        </h4>
+                        <div className="flex items-center gap-1 text-xs text-white/80">
+                          <Target className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">Meta: {vendedor.metaSemanal} | Pts: {vendedor.pontuacao}</span>
+                        </div>
+                      </div>
+
+                      {/* Métricas */}
+                      <div className="text-right flex-shrink-0">
+                        <div className={`${isFullscreen ? 'text-xl' : 'text-lg'} font-bold text-white`}>
+                          {vendedor.vendas}
+                        </div>
+                        <div className={`text-xs font-semibold ${
+                          vendedor.percentualAtingido >= 100 ? 'text-green-400' :
+                          vendedor.percentualAtingido >= 80 ? 'text-yellow-400' :
+                          'text-red-400'
+                        }`}>
+                          {vendedor.percentualAtingido.toFixed(1)}%
+                        </div>
+                      </div>
+
+                      {/* Barra de progresso para metas */}
+                      <div className="w-2 h-full bg-white/20 rounded-full flex-shrink-0">
+                        <div 
+                          className={`w-full rounded-full transition-all duration-500 ${
+                            vendedor.percentualAtingido >= 100 ? 'bg-green-500' :
+                            vendedor.percentualAtingido >= 80 ? 'bg-yellow-500' :
+                            'bg-red-500'
+                          }`}
+                          style={{ 
+                            height: `${Math.min(vendedor.percentualAtingido, 100)}%`,
+                            minHeight: vendedor.percentualAtingido > 0 ? '8px' : '0'
+                          }}
+                        />
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    {/* Barra de progresso para metas */}
-                    <div className="w-2 h-full bg-white/20 rounded-full flex-shrink-0">
-                      <div 
-                        className={`w-full rounded-full transition-all duration-500 ${
-                          vendedor.percentualAtingido >= 100 ? 'bg-green-500' :
-                          vendedor.percentualAtingido >= 80 ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`}
-                        style={{ 
-                          height: `${Math.min(vendedor.percentualAtingido, 100)}%`,
-                          minHeight: vendedor.percentualAtingido > 0 ? '8px' : '0'
-                        }}
-                      />
+              {/* Coluna dos SDRs */}
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-center text-white mb-4">SDRs</h2>
+                <div className="space-y-2 max-h-full overflow-y-auto">
+                  {rankingSDR.map((vendedor, index) => (
+                    <div
+                      key={vendedor.id}
+                      className="flex items-center gap-3 p-3 rounded-lg transition-all bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30"
+                    >
+                      {/* Posição */}
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 bg-purple-500 text-white">
+                        {index + 1}
+                      </div>
+
+                      {/* Avatar */}
+                      <Avatar className={`${isFullscreen ? 'h-12 w-12' : 'h-10 w-10'} border-2 border-purple-400/50 flex-shrink-0`}>
+                        <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
+                        <AvatarFallback className="bg-purple-500/30 text-white text-xs">
+                          {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      {/* Info do vendedor */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className={`font-semibold text-white ${isFullscreen ? 'text-base' : 'text-sm'} truncate`} title={vendedor.nome}>
+                          {vendedor.nome.length > (isFullscreen ? 15 : 12) ? 
+                            vendedor.nome.substring(0, isFullscreen ? 15 : 12) + '...' : 
+                            vendedor.nome
+                          }
+                        </h4>
+                        <div className="flex items-center gap-1 text-xs text-white/80">
+                          <Target className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">Meta: {vendedor.metaSemanal} | Pts: {vendedor.pontuacao}</span>
+                        </div>
+                      </div>
+
+                      {/* Métricas */}
+                      <div className="text-right flex-shrink-0">
+                        <div className={`${isFullscreen ? 'text-xl' : 'text-lg'} font-bold text-white`}>
+                          {vendedor.vendas}
+                        </div>
+                        <div className={`text-xs font-semibold ${
+                          vendedor.percentualAtingido >= 100 ? 'text-green-400' :
+                          vendedor.percentualAtingido >= 80 ? 'text-yellow-400' :
+                          'text-red-400'
+                        }`}>
+                          {vendedor.percentualAtingido.toFixed(1)}%
+                        </div>
+                      </div>
+
+                      {/* Barra de progresso para metas */}
+                      <div className="w-2 h-full bg-white/20 rounded-full flex-shrink-0">
+                        <div 
+                          className={`w-full rounded-full transition-all duration-500 ${
+                            vendedor.percentualAtingido >= 100 ? 'bg-green-500' :
+                            vendedor.percentualAtingido >= 80 ? 'bg-yellow-500' :
+                            'bg-red-500'
+                          }`}
+                          style={{ 
+                            height: `${Math.min(vendedor.percentualAtingido, 100)}%`,
+                            minHeight: vendedor.percentualAtingido > 0 ? '8px' : '0'
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
