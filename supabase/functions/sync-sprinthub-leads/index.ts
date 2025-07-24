@@ -8,11 +8,11 @@ const corsHeaders = {
 };
 
 interface SprintHubLead {
-  id: string;
+  id: number;
+  fullname: string;
   email: string;
-  nome: string;
   whatsapp?: string;
-  created_at: string;
+  created_at?: string;
   observacoes?: string;
   regiao?: string;
   utm_source?: string;
@@ -50,145 +50,62 @@ serve(async (req) => {
       throw new Error(`Variáveis de ambiente não configuradas: ${missingVars.join(', ')}`);
     }
 
-    console.log('🚀 Iniciando teste de conectividade com SprintHub');
+    console.log('🚀 Fazendo requisição para SprintHub API conforme documentação');
 
-    // Vamos testar primeiro a conectividade básica com o SprintHub
-    const testUrls = [
-      // Teste 1: URL principal da API (mais provável)
-      `https://api.sprinthub.com.br/v1/leads?client=${sprintHubInstance}&api_key=${sprintHubApiKey}`,
-      
-      // Teste 2: URL com dominio que vimos nos logs
-      `https://sprinthub-api-master.sprinthub.app/api/v1/leads?client=${sprintHubInstance}&api_key=${sprintHubApiKey}`,
-      
-      // Teste 3: Formato REST padrão
-      `https://api.sprinthub.com.br/leads?tenant=${sprintHubInstance}&key=${sprintHubApiKey}`,
-      
-      // Teste 4: Formato com autenticação no header
-      `https://api.sprinthub.com.br/v1/leads`,
-    ];
+    // URL conforme documentação oficial
+    const apiUrl = `https://sprinthub-api-master.sprinthub.app/leads?i=${sprintHubInstance}`;
+    
+    console.log(`📡 URL: ${apiUrl}`);
+    console.log(`🔑 API Token configurado: ${!!sprintHubApiKey}`);
 
-    let sprintHubData;
-    let successfulUrl = '';
-    let allErrors: string[] = [];
-
-    for (let i = 0; i < testUrls.length; i++) {
-      const testUrl = testUrls[i];
-      
-      try {
-        console.log(`\n🧪 === TESTE ${i + 1}/${testUrls.length} ===`);
-        console.log(`URL: ${testUrl.replace(sprintHubApiKey, '***API_KEY***')}`);
-        
-        let requestOptions: RequestInit = {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'User-Agent': 'PPG-Education-CRM/1.0'
-          }
-        };
-
-        // Para o teste 4, usar autenticação no header
-        if (i === 3) {
-          requestOptions.headers = {
-            ...requestOptions.headers,
-            'Authorization': `Bearer ${sprintHubApiKey}`,
-            'X-API-Key': sprintHubApiKey,
-            'X-Client': sprintHubInstance,
-            'X-Tenant': sprintHubInstance
-          };
-          console.log('🔑 Usando autenticação via headers');
-        }
-
-        console.log('📡 Fazendo requisição...');
-        const response = await fetch(testUrl, requestOptions);
-
-        console.log(`📊 Status: ${response.status} ${response.statusText}`);
-        console.log(`📊 Content-Type: ${response.headers.get('content-type')}`);
-
-        const responseText = await response.text();
-        console.log(`📝 Resposta (primeiros 200 chars): ${responseText.substring(0, 200)}`);
-
-        if (response.status === 401) {
-          allErrors.push(`Teste ${i + 1}: Erro de autenticação (401) - API Key pode estar incorreta`);
-          console.log('❌ ERRO: Problema de autenticação - verifique a API Key');
-          continue;
-        }
-
-        if (response.status === 403) {
-          allErrors.push(`Teste ${i + 1}: Acesso negado (403) - Cliente pode não ter permissão`);
-          console.log('❌ ERRO: Acesso negado - verifique permissões no SprintHub');
-          continue;
-        }
-
-        if (response.status === 404) {
-          allErrors.push(`Teste ${i + 1}: Endpoint não encontrado (404) - URL pode estar incorreta`);
-          console.log('❌ ERRO: Endpoint não encontrado');
-          continue;
-        }
-
-        if (!response.ok) {
-          allErrors.push(`Teste ${i + 1}: Status ${response.status} - ${responseText}`);
-          console.log(`❌ ERRO: Status ${response.status}`);
-          continue;
-        }
-
-        // Tentar fazer parse do JSON
-        try {
-          const data = JSON.parse(responseText);
-          sprintHubData = data;
-          successfulUrl = testUrl;
-          console.log(`✅ SUCESSO! Dados recebidos:`, typeof data);
-          console.log(`✅ Estrutura:`, Array.isArray(data) ? `Array com ${data.length} items` : Object.keys(data || {}));
-          break;
-        } catch (parseError) {
-          allErrors.push(`Teste ${i + 1}: Erro de parse JSON - Resposta não é JSON válido`);
-          console.log(`❌ ERRO: Parse JSON falhou`, parseError);
-          continue;
-        }
-
-      } catch (fetchError) {
-        allErrors.push(`Teste ${i + 1}: Erro de rede - ${fetchError.message}`);
-        console.log(`❌ ERRO: Falha na requisição`, fetchError);
-        continue;
+    const requestOptions: RequestInit = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sprintHubApiKey}`,
+        'apitoken': sprintHubApiKey
       }
+    };
+
+    console.log('📡 Fazendo requisição...');
+    const response = await fetch(apiUrl, requestOptions);
+
+    console.log(`📊 Status: ${response.status} ${response.statusText}`);
+    console.log(`📊 Content-Type: ${response.headers.get('content-type')}`);
+
+    const responseText = await response.text();
+    console.log(`📝 Resposta (primeiros 300 chars): ${responseText.substring(0, 300)}`);
+
+    if (response.status === 401) {
+      throw new Error('Erro de autenticação: Verifique sua API Key do SprintHub');
     }
 
-    // Se nenhum teste funcionou, retornar diagnóstico detalhado
-    if (!sprintHubData || !successfulUrl) {
-      console.log('\n💥 === DIAGNÓSTICO FINAL ===');
-      console.log('❌ Todos os testes falharam');
-      
-      const diagnosticInfo = {
-        success: false,
-        error: 'Não foi possível conectar com a API do SprintHub',
-        diagnostico: {
-          api_key_configurada: !!sprintHubApiKey,
-          api_key_formato_valido: sprintHubApiKey ? sprintHubApiKey.length > 10 : false,
-          instancia_configurada: !!sprintHubInstance,
-          instancia_valor: sprintHubInstance,
-          testes_realizados: testUrls.length,
-          erros_por_teste: allErrors
-        },
-        proximos_passos: [
-          '1. Verifique se a API Key está correta no painel do SprintHub',
-          '2. Confirme se o nome da instância "grupoppgeducacao" está correto',
-          '3. Verifique se o acesso à API está habilitado nas configurações do SprintHub',
-          '4. Entre em contato com o suporte do SprintHub para confirmar a URL correta da API',
-          '5. Verifique se existe alguma configuração de IP whitelist no SprintHub'
-        ],
-        contato_suporte: 'Entre em contato com o suporte do SprintHub e informe que está tentando acessar a API de leads via webhook/integração'
-      };
-
-      return new Response(JSON.stringify(diagnosticInfo, null, 2), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (response.status === 403) {
+      throw new Error('Acesso negado: Verifique permissões da instância no SprintHub');
     }
 
-    // Se chegou até aqui, conseguiu conectar - processar os dados
+    if (response.status === 404) {
+      throw new Error('Endpoint não encontrado: Verifique o nome da instância no SprintHub');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP ${response.status}: ${responseText}`);
+    }
+
+    // Parse da resposta JSON
+    let sprintHubData;
+    try {
+      sprintHubData = JSON.parse(responseText);
+      console.log(`✅ JSON parseado com sucesso`);
+    } catch (parseError) {
+      console.log(`❌ ERRO: Parse JSON falhou`, parseError);
+      throw new Error('Resposta da API SprintHub não é um JSON válido');
+    }
+
+    // Processar os dados recebidos
     console.log('\n✅ === PROCESSAMENTO DOS DADOS ===');
     console.log('🎉 Conexão estabelecida com sucesso!');
-    console.log('📊 URL que funcionou:', successfulUrl.replace(sprintHubApiKey, '***API_KEY***'));
+    console.log('📊 URL utilizada:', apiUrl.replace(sprintHubApiKey, '***API_KEY***'));
 
     console.log('📊 Tipo de dados recebidos:', typeof sprintHubData);
     console.log('📊 É array?', Array.isArray(sprintHubData));
@@ -216,11 +133,23 @@ serve(async (req) => {
     // Buscar leads existentes do SprintHub para evitar duplicatas
     const { data: existingLeads } = await supabaseClient
       .from('leads')
-      .select('sprinthub_id, email')
-      .eq('fonte_captura', 'SprintHub');
+      .select('email, observacoes')
+      .eq('fonte_referencia', 'SprintHub');
 
-    const existingSprintHubIds = new Set(existingLeads?.map(l => l.sprinthub_id) || []);
-    const existingEmails = new Set(existingLeads?.map(l => l.email?.toLowerCase()) || []);
+    // Extrair IDs do SprintHub das observações e emails para evitar duplicatas
+    const existingSprintHubIds = new Set();
+    const existingEmails = new Set();
+    
+    existingLeads?.forEach(lead => {
+      if (lead.email) {
+        existingEmails.add(lead.email.toLowerCase());
+      }
+      // Extrair ID do SprintHub das observações
+      const sprintHubIdMatch = lead.observacoes?.match(/ID: (\d+)/);
+      if (sprintHubIdMatch) {
+        existingSprintHubIds.add(parseInt(sprintHubIdMatch[1]));
+      }
+    });
 
     let processedCount = 0;
     let skippedCount = 0;
@@ -230,7 +159,7 @@ serve(async (req) => {
     for (const sprintLead of sprintHubData) {
       try {
         // Verificar se o lead tem os campos mínimos necessários
-        if (!sprintLead.id || (!sprintLead.email && !sprintLead.nome)) {
+        if (!sprintLead.id || (!sprintLead.email && !sprintLead.fullname)) {
           console.warn('⚠️ Lead ignorado por falta de dados mínimos:', sprintLead);
           errorCount++;
           continue;
@@ -247,19 +176,16 @@ serve(async (req) => {
 
         // Preparar dados do lead
         const leadData = {
-          nome: sprintLead.nome || 'Nome não informado',
+          nome: sprintLead.fullname || 'Nome não informado',
           email: sprintLead.email || null,
           whatsapp: sprintLead.whatsapp || null,
-          data_captura: sprintLead.created_at || new Date().toISOString(),
-          fonte_captura: 'SprintHub',
-          sprinthub_id: sprintLead.id,
+          fonte_referencia: 'SprintHub',
           status: 'novo',
-          observacoes: sprintLead.observacoes || null,
+          observacoes: sprintLead.observacoes || `Lead importado do SprintHub - ID: ${sprintLead.id}`,
           regiao: sprintLead.regiao || null,
           utm_source: sprintLead.utm_source || null,
           utm_medium: sprintLead.utm_medium || null,
-          utm_campaign: sprintLead.utm_campaign || null,
-          convertido_em_venda: false
+          utm_campaign: sprintLead.utm_campaign || null
         };
 
         newLeads.push(leadData);
@@ -297,16 +223,19 @@ serve(async (req) => {
 
     const result = {
       success: true,
-      message: 'Teste de conectividade realizado com sucesso',
-      url_utilizada: successfulUrl.replace(sprintHubApiKey, '***API_KEY***'),
-      dados_recebidos: {
-        tipo: typeof sprintHubData,
-        eh_array: Array.isArray(sprintHubData),
-        propriedades: Array.isArray(sprintHubData) ? `Array com ${sprintHubData.length} items` : Object.keys(sprintHubData || {})
+      message: insertedCount > 0 ? 
+        `Sincronização concluída! ${insertedCount} novos leads importados` : 
+        'Sincronização concluída - Nenhum lead novo encontrado',
+      stats: {
+        total_sprinthub: sprintHubData.length,
+        processed: processedCount,
+        inserted: insertedCount,
+        skipped: skippedCount,
+        errors: errorCount
       }
     };
 
-    console.log('🎯 Teste concluído:', result);
+    console.log('🎯 Sincronização concluída:', result);
 
     return new Response(JSON.stringify(result, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
