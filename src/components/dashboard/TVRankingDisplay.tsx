@@ -104,14 +104,16 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
         </div>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div>
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Target className="w-3 h-3" />
               {person.isSDR ? 'Meta Reuniões Semanal' : 'Meta Vendas Semanal'}
             </div>
-            <span className="text-xs font-medium">{weeklyProgress.toFixed(0)}%</span>
+            <span className="text-xs font-medium">
+              {person.isSDR ? `${person.weeklySales}/${person.weeklyTarget}` : `${person.weeklySales}/${person.weeklyTarget}`} ({weeklyProgress.toFixed(0)}%)
+            </span>
           </div>
           <Progress value={Math.min(weeklyProgress, 100)} className="h-2" />
         </div>
@@ -122,7 +124,9 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
               <Calendar className="w-3 h-3" />
               {person.isSDR ? 'Meta Reuniões Diária' : 'Meta Vendas Diária'}
             </div>
-            <span className="text-xs font-medium">{dailyProgress.toFixed(0)}%</span>
+            <span className="text-xs font-medium">
+              {person.isSDR ? `${person.dailySales}/${person.dailyTarget}` : `${person.dailySales}/${person.dailyTarget}`} ({dailyProgress.toFixed(0)}%)
+            </span>
           </div>
           <Progress value={Math.min(dailyProgress, 100)} className="h-2" />
         </div>
@@ -198,16 +202,27 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return vendaDate >= startOfMonth && vendaDate <= endOfMonth && venda.status === 'matriculado';
   });
 
+  // Filtrar vendas do dia atual
+  const startOfDay = new Date(today);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(today);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const vendasDiaAtual = vendas.filter(venda => {
+    const vendaDate = new Date(venda.enviado_em);
+    return vendaDate >= startOfDay && vendaDate <= endOfDay && venda.status === 'matriculado';
+  });
+
   // Calcular dados dos vendedores
   const vendedoresData: VendedorData[] = vendedores.map(vendedor => {
     const isSDR = vendedor.user_type?.includes('sdr') || false;
     
     if (isSDR) {
-      // Para SDRs - contar reuniões (simulado por enquanto)
-      const reunioesSemana = Math.floor(Math.random() * 20) + 5; // Mock data
-      const reunioesDia = Math.floor(Math.random() * 5) + 1; // Mock data
-      const metaSemanalReunioes = 25;
-      const metaDiariaReunioes = 4;
+      // Para SDRs - usar dados reais das reuniões quando disponível
+      const reunioesSemana = 0; // TODO: buscar reuniões reais da semana
+      const reunioesDia = 0; // TODO: buscar reuniões reais do dia
+      const metaSemanalReunioes = 25; // Meta padrão
+      const metaDiariaReunioes = 4; // Meta padrão
 
       return {
         id: vendedor.id,
@@ -219,12 +234,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         avatar: vendedor.photo_url || '',
         points: 0, // SDRs não têm pontuação
         isSDR: true,
-        monthlyTotal: Math.floor(Math.random() * 80) + 40 // Mock reuniões do mês
+        monthlyTotal: 0 // TODO: buscar reuniões reais do mês
       };
     } else {
-      // Para vendedores - contar vendas e pontuação
+      // Para vendedores - contar vendas e pontuação reais
       const vendasVendedorSemana = vendasSemanaAtual.filter(v => v.vendedor_id === vendedor.id);
       const vendasVendedorMes = vendasMesAtual.filter(v => v.vendedor_id === vendedor.id);
+      const vendasVendedorDia = vendasDiaAtual.filter(v => v.vendedor_id === vendedor.id);
       
       const metaSemanal = metasSemanais.find(m => 
         m.vendedor_id === vendedor.id && 
@@ -240,7 +256,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         name: vendedor.name,
         weeklySales: vendasVendedorSemana.length,
         weeklyTarget: metaSemanal,
-        dailySales: Math.floor(Math.random() * 3) + 1, // Mock vendas do dia
+        dailySales: vendasVendedorDia.length, // Vendas reais do dia
         dailyTarget: metaDiaria,
         avatar: vendedor.photo_url || '',
         points,
@@ -315,7 +331,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
             <div className="lg:col-span-3">
               <div className="h-full overflow-hidden">
                 <h2 className="text-2xl font-bold text-foreground mb-6">Ranking Completo</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 h-[calc(100%-60px)] overflow-y-auto pr-2">
+                <div className="grid grid-cols-3 gap-4 h-[calc(100%-60px)] overflow-y-auto pr-2">
                   {allRanking.map((person, index) => (
                     <VendedorCard
                       key={person.id}
