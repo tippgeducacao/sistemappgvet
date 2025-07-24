@@ -2,3 +2,6 @@ project_id = "lrpyxyhhqfzozrkklxwu"
 
 [functions.webhook-leads]
 verify_jwt = false
+
+[functions.sync-sprinthub-leads]
+verify_jwt = true
