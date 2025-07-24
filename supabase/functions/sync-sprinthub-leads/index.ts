@@ -9,9 +9,10 @@ const corsHeaders = {
 
 interface SprintHubLead {
   id: number;
-  fullname: string;
+  firstname?: string;
   email: string;
   whatsapp?: string;
+  city?: string;
   created_at?: string;
   observacoes?: string;
   regiao?: string;
@@ -159,7 +160,7 @@ serve(async (req) => {
     for (const sprintLead of sprintHubData) {
       try {
         // Verificar se o lead tem os campos mínimos necessários
-        if (!sprintLead.id || (!sprintLead.email && !sprintLead.fullname)) {
+        if (!sprintLead.id || (!sprintLead.email && !sprintLead.firstname)) {
           console.warn('⚠️ Lead ignorado por falta de dados mínimos:', sprintLead);
           errorCount++;
           continue;
@@ -176,13 +177,13 @@ serve(async (req) => {
 
         // Preparar dados do lead
         const leadData = {
-          nome: sprintLead.fullname || 'Nome não informado',
+          nome: sprintLead.firstname || 'Nome não informado',
           email: sprintLead.email || null,
           whatsapp: sprintLead.whatsapp || null,
           fonte_referencia: 'SprintHub',
           status: 'novo',
           observacoes: sprintLead.observacoes || `Lead importado do SprintHub - ID: ${sprintLead.id}`,
-          regiao: sprintLead.regiao || null,
+          regiao: sprintLead.city || sprintLead.regiao || null,
           utm_source: sprintLead.utm_source || null,
           utm_medium: sprintLead.utm_medium || null,
           utm_campaign: sprintLead.utm_campaign || null
