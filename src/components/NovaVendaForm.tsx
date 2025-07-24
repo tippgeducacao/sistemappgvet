@@ -12,8 +12,10 @@ import { VendasDataService } from '@/services/vendas/VendasDataService';
 import { useFormDetails } from '@/hooks/useFormDetails';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import LeadInfoSection from './forms/LeadInfoSection';
+import LeadInfoSectionSDR from './forms/LeadInfoSectionSDR';
 import ScoringRulesSection from './forms/ScoringRulesSection';
 import ObservationsSection from './forms/ObservationsSection';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import FormProgressBar from './forms/FormProgressBar';
 
 interface NovaVendaFormProps {
@@ -23,6 +25,7 @@ interface NovaVendaFormProps {
 
 const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
   const { toast } = useToast();
+  const { isSDR } = useUserRoles();
   const { 
     formData, 
     isSubmitting, 
@@ -323,7 +326,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
-              <LeadInfoSection />
+              {isSDR ? <LeadInfoSectionSDR /> : <LeadInfoSection />}
               <ScoringRulesSection />
               <ObservationsSection />
 
