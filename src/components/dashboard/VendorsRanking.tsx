@@ -621,24 +621,24 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           <div className="space-y-4">
             {/* Top 3 Vendedores */}
             {top3Vendedores.length > 0 && (
-              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-lg p-6 mb-6">
+              <div className="bg-gradient-to-r from-ppgvet-teal/10 to-ppgvet-magenta/10 dark:from-ppgvet-teal/20 dark:to-ppgvet-magenta/20 border-2 border-ppgvet-teal/30 dark:border-ppgvet-teal/50 rounded-lg p-6 mb-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <Trophy className="h-6 w-6 text-yellow-600" />
-                  <h3 className="font-bold text-xl text-yellow-800">Top 3 Vendedores</h3>
+                  <Trophy className="h-6 w-6 text-ppgvet-teal dark:text-ppgvet-teal" />
+                  <h3 className="font-bold text-xl text-foreground">Top 3 Vendedores</h3>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {top3Vendedores.map((vendedor, index) => {
                     const icons = [Trophy, Medal, Award];
                     const IconComponent = icons[index];
-                    const colors = ['text-yellow-500', 'text-gray-400', 'text-amber-600'];
-                    const bgColors = ['bg-yellow-100', 'bg-gray-100', 'bg-amber-100'];
+                    const colors = ['text-ppgvet-teal', 'text-muted-foreground', 'text-ppgvet-magenta'];
+                    const bgColors = ['bg-ppgvet-teal/20 dark:bg-ppgvet-teal/30', 'bg-muted/30 dark:bg-muted/50', 'bg-ppgvet-magenta/20 dark:bg-ppgvet-magenta/30'];
                     const positions = ['#1', '#2', '#3'];
                     
                     return (
                       <div 
                         key={vendedor.id} 
-                        className="bg-white rounded-lg p-4 border cursor-pointer hover:shadow-md transition-shadow"
+                        className="bg-card dark:bg-card border border-border cursor-pointer hover:shadow-lg dark:hover:shadow-lg transition-shadow rounded-lg p-4"
                         onClick={() => setSelectedVendedorForGoals({
                           id: vendedor.id,
                           name: vendedor.nome,
@@ -651,12 +651,12 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="font-bold text-gray-800">{vendedor.nome}</h4>
-                              <Badge className={`${index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-amber-600'} text-white text-xs`}>
+                              <h4 className="font-bold text-foreground">{vendedor.nome}</h4>
+                              <Badge className={`${index === 0 ? 'bg-ppgvet-teal' : index === 1 ? 'bg-muted-foreground' : 'bg-ppgvet-magenta'} text-white text-xs`}>
                                 {positions[index]}
                               </Badge>
                             </div>
-                            <Avatar className="h-12 w-12 mt-2 border-2 border-yellow-300">
+                            <Avatar className="h-12 w-12 mt-2 border-2 border-ppgvet-teal/50">
                               <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
                               <AvatarFallback className="text-sm">
                                 {vendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
@@ -669,7 +669,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                           <p className="font-bold text-ppgvet-magenta text-lg">
                             {DataFormattingService.formatPoints(vendedor.pontuacao)} pts
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-muted-foreground">
                             Posição #{index + 1}
                           </p>
                         </div>
@@ -678,15 +678,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                         <div className="flex gap-2 mt-3">
                           <div className="flex-1">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs font-medium text-gray-600">Meta Semana</span>
-                              <span className="text-xs text-gray-500">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{vendedor.metaSemanal} pts</span>
+                              <span className="text-xs font-medium text-muted-foreground">Meta Semana</span>
+                              <span className="text-xs text-muted-foreground">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{vendedor.metaSemanal} pts</span>
                             </div>
                             <Progress value={Math.min(vendedor.progressoSemanal, 100)} className="h-1.5" />
                           </div>
                           <div className="flex-1">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs font-medium text-gray-600">Meta Dia</span>
-                              <span className="text-xs text-gray-500">{DataFormattingService.formatPoints(vendedor.metaDiariaRestante)} pts/dia</span>
+                              <span className="text-xs font-medium text-muted-foreground">Meta Dia</span>
+                              <span className="text-xs text-muted-foreground">{DataFormattingService.formatPoints(vendedor.metaDiariaRestante)} pts/dia</span>
                             </div>
                             <Progress value={Math.min(vendedor.progressoDiario, 100)} className="h-1.5" />
                           </div>
@@ -702,7 +702,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
             {rankingSemTop3.map((vendedor, index) => (
               <div 
                 key={vendedor.id} 
-                className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-muted/50 dark:hover:bg-muted/80 transition-colors"
                 onClick={() => setSelectedVendedorForGoals({
                   id: vendedor.id,
                   name: vendedor.nome,
@@ -757,7 +757,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
-                    <p className="text-xs text-gray-500">#{index + 4}º lugar</p>
+                    <p className="text-xs text-muted-foreground">#{index + 4}º lugar</p>
                     <p className="font-bold text-ppgvet-magenta text-lg">{DataFormattingService.formatPoints(vendedor.pontuacao)} pts</p>
                   </div>
                 </div>
