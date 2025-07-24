@@ -572,19 +572,17 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Botão TV movido para fora do CardTitle */}
+            {/* Novo botão TV funcional */}
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('🔥🔥🔥 BOTÃO TV CLICADO!!! Estado anterior:', isTVMode);
+              onClick={() => {
+                console.log('🔥🔥🔥 NOVO BOTÃO TV CLICADO!!!');
                 setIsTVMode(true);
                 console.log('🔥🔥🔥 Estado setado para TRUE');
               }}
-              className="inline-flex items-center justify-center p-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 hover:scale-105 group"
+              className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors"
               title="Exibir em tela cheia (Modo TV)"
             >
-              <Tv className="h-5 w-5 group-hover:animate-pulse" />
+              <Tv className="h-5 w-5" />
             </button>
             {/* Botão de Exportar */}
             <DropdownMenu>
