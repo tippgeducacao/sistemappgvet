@@ -46,9 +46,9 @@ const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
             <img
               src={person?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person?.name.replace(' ', '')}`}
               alt={person?.name}
-              className="w-8 h-8 rounded-full mx-auto mb-1"
+              className="w-12 h-12 rounded-full mx-auto mb-1"
             />
-            <div className="text-xs font-medium text-foreground">{person?.name}</div>
+            <div className="text-sm font-medium text-foreground">{person?.name}</div>
             <div className="text-xs text-muted-foreground">{person?.points} pts</div>
           </div>
           <div
@@ -85,10 +85,10 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number }> = ({ person
           <img
             src={person.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person.name.replace(' ', '')}`}
             alt={person.name}
-            className="w-6 h-6 rounded-full"
+            className="w-9 h-9 rounded-full"
           />
           <div>
-            <div className="text-xs font-medium text-foreground">{person.name}</div>
+            <div className="text-sm font-medium text-foreground">{person.name}</div>
             <div className="text-xs text-muted-foreground">
               {person.isSDR ? `${person.weeklySales} reuniões` : `${person.points} pts`}
             </div>
