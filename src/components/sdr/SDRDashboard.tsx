@@ -8,7 +8,7 @@ import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 import ReunioesCanceladasSDR from './ReunioesCanceladasSDR';
 import SDRMetasDiarias from '@/components/dashboard/SDRMetasDiarias';
-import { FileText, Users, Calendar, TrendingUp, X } from 'lucide-react';
+import { FileText, Users, Calendar, TrendingUp, X, CheckCircle, XCircle, DollarSign } from 'lucide-react';
 
 const SDRDashboard: React.FC = () => {
   const { profile } = useAuthStore();
@@ -44,6 +44,19 @@ const SDRDashboard: React.FC = () => {
   const vendasMatriculadas = vendasDoMes.filter(v => v.status === 'matriculado').length;
   const vendasPendentes = vendasDoMes.filter(v => v.status === 'pendente').length;
   const agendamentosRealizados = agendamentosDoMes.filter(a => a.status === 'realizado').length;
+  
+  // Métricas de reuniões
+  const reunioesComparecidas = agendamentosDoMes.filter(a => 
+    a.resultado_reuniao && a.resultado_reuniao !== 'nao_compareceu'
+  ).length;
+  
+  const reunioesNaoComparecidas = agendamentosDoMes.filter(a => 
+    a.resultado_reuniao === 'nao_compareceu'
+  ).length;
+  
+  const reunioesConvertidas = agendamentosDoMes.filter(a => 
+    a.resultado_reuniao === 'comprou'
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -127,6 +140,48 @@ const SDRDashboard: React.FC = () => {
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
       />
+
+      {/* Cards de métricas de reuniões */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reuniões Comparecidas</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{reunioesComparecidas}</div>
+            <p className="text-xs text-muted-foreground">
+              Cliente compareceu
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reuniões Não Comparecidas</CardTitle>
+            <XCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{reunioesNaoComparecidas}</div>
+            <p className="text-xs text-muted-foreground">
+              Cliente não compareceu
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reuniões Convertidas</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{reunioesConvertidas}</div>
+            <p className="text-xs text-muted-foreground">
+              Cliente comprou
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Tabs para diferentes visualizações */}
       <Tabs defaultValue="vendas" className="space-y-4">
