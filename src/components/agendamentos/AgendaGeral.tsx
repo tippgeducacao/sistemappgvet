@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar as CalendarIcon, User, Clock, Book, Filter, X } from 'lucide-react';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +20,7 @@ interface Vendedor {
   id: string;
   name: string;
   email: string;
+  photo_url?: string;
   pos_graduacoes: string[];
   horario_trabalho: any;
   cursos?: any[];
@@ -66,7 +68,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       // Buscar vendedores ativos
       const { data: vendedoresData, error: vendedoresError } = await supabase
         .from('profiles')
-        .select('id, name, email, pos_graduacoes, horario_trabalho')
+        .select('id, name, email, photo_url, pos_graduacoes, horario_trabalho')
         .eq('user_type', 'vendedor')
         .eq('ativo', true)
         .order('name');
@@ -501,7 +503,12 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                         <div key={vendedor.id} className="border rounded-lg p-4 space-y-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <User className="h-5 w-5 text-muted-foreground" />
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={vendedor.photo_url} />
+                                <AvatarFallback>
+                                  {vendedor.name?.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
                               <div>
                                 <h4 className="font-semibold">{vendedor.name}</h4>
                                 <p className="text-sm text-muted-foreground">{vendedor.email}</p>
