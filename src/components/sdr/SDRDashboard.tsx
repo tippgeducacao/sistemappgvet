@@ -7,9 +7,10 @@ import { useAllLeads } from '@/hooks/useLeads';
 import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 import ReunioesCanceladasSDR from './ReunioesCanceladasSDR';
+import HistoricoReunioes from './HistoricoReunioes';
 import SDRMetasDiarias from '@/components/dashboard/SDRMetasDiarias';
 import { ReunioesChart } from '@/components/dashboard/ReunioesChart';
-import { FileText, Users, Calendar, TrendingUp, X } from 'lucide-react';
+import { FileText, Users, Calendar, TrendingUp, X, History } from 'lucide-react';
 
 const SDRDashboard: React.FC = () => {
   const { profile } = useAuthStore();
@@ -139,6 +140,10 @@ const SDRDashboard: React.FC = () => {
             <FileText className="h-4 w-4" />
             Vendas Recentes
           </TabsTrigger>
+          <TabsTrigger value="historico" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Histórico
+          </TabsTrigger>
           <TabsTrigger value="canceladas" className="flex items-center gap-2">
             <X className="h-4 w-4" />
             Agendamentos Cancelados
@@ -192,6 +197,10 @@ const SDRDashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="historico">
+          <HistoricoReunioes />
         </TabsContent>
 
         <TabsContent value="canceladas">
