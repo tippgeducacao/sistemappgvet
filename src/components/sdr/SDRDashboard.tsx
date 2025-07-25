@@ -7,6 +7,7 @@ import { useAllLeads } from '@/hooks/useLeads';
 import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 import ReunioesCanceladasSDR from './ReunioesCanceladasSDR';
+import SDRMetasDiarias from '@/components/dashboard/SDRMetasDiarias';
 import { FileText, Users, Calendar, TrendingUp, X } from 'lucide-react';
 
 const SDRDashboard: React.FC = () => {
@@ -120,6 +121,12 @@ const SDRDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Metas Diárias e Semanais */}
+      <SDRMetasDiarias 
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+      />
 
       {/* Tabs para diferentes visualizações */}
       <Tabs defaultValue="vendas" className="space-y-4">
