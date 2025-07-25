@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AgendamentosSDRPlanilha from '@/components/sdr/AgendamentosSDRPlanilha';
+import AgendaGeral from './AgendaGeral';
+import AgendamentoErrorDiagnosis from './AgendamentoErrorDiagnosis';
 
 const AgendamentosPage: React.FC = () => {
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
@@ -55,6 +57,13 @@ const AgendamentosPage: React.FC = () => {
   
   // Calendar state for main page
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
+  
+  // Agenda Geral state
+  const [showAgendaGeral, setShowAgendaGeral] = useState(false);
+  
+  // Error diagnosis state
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [showErrorDiagnosis, setShowErrorDiagnosis] = useState(false);
   
   // SprintHub form fields
   const [sprintHubLead, setSprintHubLead] = useState({
@@ -235,7 +244,15 @@ const AgendamentosPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Erro ao criar agendamento:', error);
-      toast.error('Erro ao criar agendamento');
+      
+      // Mostrar mensagem de erro mais específica e diagnóstico
+      if (error instanceof Error) {
+        setLastError(error.message);
+        setShowErrorDiagnosis(true);
+        toast.error(error.message);
+      } else {
+        toast.error('Erro ao criar agendamento');
+      }
     }
   };
 
@@ -411,7 +428,15 @@ const AgendamentosPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Erro ao atualizar agendamento:', error);
-      toast.error('Erro ao atualizar agendamento');
+      
+      // Mostrar mensagem de erro mais específica e diagnóstico
+      if (error instanceof Error) {
+        setLastError(error.message);
+        setShowErrorDiagnosis(true);
+        toast.error(error.message);
+      } else {
+        toast.error('Erro ao atualizar agendamento');
+      }
     }
   };
 
@@ -501,10 +526,20 @@ const AgendamentosPage: React.FC = () => {
           <h1 className="text-3xl font-bold">Agendamentos</h1>
           <p className="text-muted-foreground">Gerencie reuniões entre SDRs, leads e vendedores</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Agendamento
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowAgendaGeral(true)} 
+            className="flex items-center gap-2"
+          >
+            <Calendar className="h-4 w-4" />
+            Agenda Geral
+          </Button>
+          <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Agendamento
+          </Button>
+        </div>
       </div>
 
       {/* Form Modal */}
@@ -1315,6 +1350,36 @@ const AgendamentosPage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Error Diagnosis Modal */}
+      {showErrorDiagnosis && lastError && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="max-w-2xl w-full">
+            <AgendamentoErrorDiagnosis 
+              error={lastError}
+              vendedor={vendedores.find(v => v.id === selectedVendedor)}
+              dataAgendamento={selectedDateForm && selectedTime ? `${selectedDateForm}T${selectedTime}:00` : undefined}
+            />
+            <div className="flex justify-end mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowErrorDiagnosis(false);
+                  setLastError(null);
+                }}
+              >
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agenda Geral Modal */}
+      <AgendaGeral 
+        isOpen={showAgendaGeral} 
+        onClose={() => setShowAgendaGeral(false)} 
+      />
     </div>
   );
 };

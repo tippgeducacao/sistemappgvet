@@ -104,10 +104,14 @@ export class AgendamentosService {
     } catch (error) {
       console.error('🚨 ERRO DETALHADO AO CRIAR AGENDAMENTO:', error);
       console.error('📅 Dados enviados:', dados);
+      
       if (error instanceof Error) {
         console.error('📝 Mensagem de erro:', error.message);
+        // Re-lançar o erro para mostrar a mensagem específica
+        throw error;
       }
-      return null;
+      
+      throw new Error('Erro inesperado ao criar agendamento');
     }
   }
 
@@ -420,7 +424,13 @@ export class AgendamentosService {
       return true;
     } catch (error) {
       console.error('Erro ao atualizar agendamento (SDR):', error);
-      return false;
+      
+      if (error instanceof Error) {
+        // Re-lançar o erro para mostrar a mensagem específica
+        throw error;
+      }
+      
+      throw new Error('Erro inesperado ao atualizar agendamento');
     }
   }
 
