@@ -6,6 +6,7 @@ import { Calendar, Clock, User, ExternalLink, Eye } from 'lucide-react';
 import { useAuthStore } from '@/stores/AuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingState from '@/components/ui/loading-state';
+import MonthYearFilter from '@/components/common/MonthYearFilter';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -39,6 +40,11 @@ const HistoricoReunioes: React.FC = () => {
   const [reunioes, setReunioes] = useState<HistoricoReuniao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useAuthStore();
+
+  // Estado para filtros de período
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
 
   const fetchHistoricoReunioes = async () => {
     if (!profile?.id) return;
@@ -78,7 +84,14 @@ const HistoricoReunioes: React.FC = () => {
 
   useEffect(() => {
     fetchHistoricoReunioes();
-  }, [profile?.id]);
+  }, [profile?.id, selectedMonth, selectedYear]);
+
+  // Filtrar reuniões pelo mês/ano selecionado
+  const reunioesFiltradas = reunioes.filter(reuniao => {
+    const dataAgendamento = new Date(reuniao.data_agendamento);
+    return dataAgendamento.getMonth() + 1 === selectedMonth && 
+           dataAgendamento.getFullYear() === selectedYear;
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -130,6 +143,16 @@ const HistoricoReunioes: React.FC = () => {
           <CardDescription>Todas as reuniões que você agendou</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Filtro por período */}
+          <div className="mb-6">
+            <MonthYearFilter
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              onMonthChange={setSelectedMonth}
+              onYearChange={setSelectedYear}
+            />
+          </div>
+          
           <div className="text-center py-8 text-muted-foreground">
             <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-lg mb-2">Nenhuma reunião agendada ainda</p>
@@ -145,12 +168,32 @@ const HistoricoReunioes: React.FC = () => {
       <CardHeader>
         <CardTitle>Histórico de Reuniões</CardTitle>
         <CardDescription>
-          {reunioes.length} reuniões agendadas no total
+          {reunioesFiltradas.length} reuniões encontradas no período selecionado
+          {reunioes.length > reunioesFiltradas.length && 
+            ` (${reunioes.length} total)`
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {reunioes.map((reuniao) => (
+        {/* Filtro por período */}
+        <div className="mb-6">
+          <MonthYearFilter
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+          />
+        </div>
+
+        {reunioesFiltradas.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg mb-2">Nenhuma reunião encontrada neste período</p>
+            <p className="text-sm">Selecione outro mês/ano ou aguarde novas reuniões</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reunioesFiltradas.map((reuniao) => (
             <div key={reuniao.id} className="border rounded-lg p-4 space-y-3">
               {/* Header da reunião */}
               <div className="flex items-start justify-between">
@@ -231,7 +274,8 @@ const HistoricoReunioes: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
