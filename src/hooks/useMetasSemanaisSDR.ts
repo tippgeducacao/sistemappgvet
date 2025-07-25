@@ -20,22 +20,36 @@ export const useMetasSemanaisSDR = () => {
 
   // Buscar meta semanal específica do SDR baseada no nível do usuário
   const getMetaSemanalSDR = (vendedorId: string, ano: number, semana: number): MetaSemanalSDR | undefined => {
-    const userNivel = (currentUser as any)?.nivel;
+    // Combinar user_type e nivel para formar o nível completo
+    const userType = profile?.user_type;
+    const nivel = (currentUser as any)?.nivel || (profile as any)?.nivel || 'junior';
+    
+    let nivelCompleto = '';
+    if (userType === 'sdr_inbound') {
+      nivelCompleto = `sdr_inbound_${nivel}`;
+    } else if (userType === 'sdr_outbound') {
+      nivelCompleto = `sdr_outbound_${nivel}`;
+    } else {
+      nivelCompleto = nivel; // Para vendedores normais
+    }
+    
     console.log('🔍 getMetaSemanalSDR: Buscando meta', { 
       vendedorId, 
       ano, 
       semana, 
-      userNivel,
+      userType,
+      nivel,
+      nivelCompleto,
       currentUser: currentUser ? { id: currentUser.id, user_type: (currentUser as any).user_type } : null,
-      profile: profile ? { id: profile.id, user_type: profile.user_type } : null 
+      profile: profile ? { id: profile.id, user_type: profile.user_type, nivel: (profile as any).nivel } : null 
     });
     
-    if (!userNivel) {
-      console.log('❌ getMetaSemanalSDR: Nível não encontrado');
+    if (!nivelCompleto) {
+      console.log('❌ getMetaSemanalSDR: Nível completo não encontrado');
       return undefined;
     }
     
-    const metaAgendamentos = getMetaPadraoSDR(userNivel);
+    const metaAgendamentos = getMetaPadraoSDR(nivelCompleto);
     
     const resultado = {
       id: `${vendedorId}-${ano}-${semana}`,
