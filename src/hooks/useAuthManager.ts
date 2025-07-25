@@ -14,38 +14,28 @@ export const useAuthManager = () => {
   } = useAuthStore();
 
   useEffect(() => {
+    let mounted = true;
+    
     const { data: { subscription } } = AuthService.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer profile fetch to avoid blocking auth state changes
-          setTimeout(async () => {
-            try {
-              const profileData = await UserService.getProfile(session.user.id);
-              
-              if (!profileData) {
-                // Create basic profile if none exists
-                const basicProfile = {
-                  id: session.user.id,
-                  name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário',
-                  email: session.user.email || '',
-                  user_type: session.user.user_metadata?.user_type || 'vendedor',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                  photo_url: null
-                };
-                setProfile(basicProfile);
-              } else {
-                setProfile(profileData);
-              }
-            } catch (error) {
-              console.error('Erro ao buscar perfil:', error);
-            } finally {
-              setLoading(false);
-            }
-          }, 0);
+          // Create basic profile immediately
+          const basicProfile = {
+            id: session.user.id,
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário',
+            email: session.user.email || '',
+            user_type: session.user.user_metadata?.user_type || 'vendedor',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            photo_url: null
+          };
+          setProfile(basicProfile);
+          setLoading(false);
         } else {
           setProfile(null);
           setLoading(false);
@@ -55,16 +45,20 @@ export const useAuthManager = () => {
 
     // Check for existing session
     AuthService.getCurrentSession().then((session) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (!session) {
         setLoading(false);
       }
     }).catch(() => {
-      setLoading(false);
+      if (mounted) setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [setUser, setProfile, setSession, setLoading]);
 
   const signIn = async (email: string, password: string) => {
