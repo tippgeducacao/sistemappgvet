@@ -8,7 +8,7 @@ export const useUserManagement = () => {
   const { user, profile, loading, setCurrentUser } = useAuthStore();
 
   useEffect(() => {
-    if (!loading && !user && window.location.pathname !== '/auth') {
+    if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);

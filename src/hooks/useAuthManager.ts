@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -14,28 +15,39 @@ export const useAuthManager = () => {
   } = useAuthStore();
 
   useEffect(() => {
-    let mounted = true;
-    
     const { data: { subscription } } = AuthService.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
-        
+      async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Create basic profile immediately
-          const basicProfile = {
-            id: session.user.id,
-            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário',
-            email: session.user.email || '',
-            user_type: session.user.user_metadata?.user_type || 'vendedor',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            photo_url: null
-          };
-          setProfile(basicProfile);
-          setLoading(false);
+          console.log('Usuário autenticado, buscando perfil...');
+          console.log('User metadata:', session.user.user_metadata);
+          
+          setTimeout(async () => {
+            const profileData = await UserService.getProfile(session.user.id);
+            console.log('Profile data retornado:', profileData);
+            
+            // Se não encontrou perfil, usar dados básicos do usuário
+            if (!profileData) {
+              console.log('Perfil não encontrado, usando dados do usuário...');
+              const basicProfile = {
+                id: session.user.id,
+                name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário',
+                email: session.user.email || '',
+                user_type: session.user.user_metadata?.user_type || 'vendedor',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                photo_url: null
+              };
+              setProfile(basicProfile);
+            } else {
+              setProfile(profileData);
+            }
+            
+            setLoading(false);
+          }, 100);
         } else {
           setProfile(null);
           setLoading(false);
@@ -43,22 +55,19 @@ export const useAuthManager = () => {
       }
     );
 
-    // Check for existing session
     AuthService.getCurrentSession().then((session) => {
-      if (!mounted) return;
+      console.log('Sessão existente:', session?.user?.email || 'Nenhuma');
+      if (session?.user) {
+        console.log('Metadata da sessão existente:', session.user.user_metadata);
+      }
       setSession(session);
       setUser(session?.user ?? null);
       if (!session) {
         setLoading(false);
       }
-    }).catch(() => {
-      if (mounted) setLoading(false);
     });
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [setUser, setProfile, setSession, setLoading]);
 
   const signIn = async (email: string, password: string) => {
