@@ -21,11 +21,23 @@ export const useMetasSemanaisSDR = () => {
   // Buscar meta semanal específica do SDR baseada no nível do usuário
   const getMetaSemanalSDR = (vendedorId: string, ano: number, semana: number): MetaSemanalSDR | undefined => {
     const userNivel = (currentUser as any)?.nivel;
-    if (!userNivel) return undefined;
+    console.log('🔍 getMetaSemanalSDR: Buscando meta', { 
+      vendedorId, 
+      ano, 
+      semana, 
+      userNivel,
+      currentUser: currentUser ? { id: currentUser.id, user_type: (currentUser as any).user_type } : null,
+      profile: profile ? { id: profile.id, user_type: profile.user_type } : null 
+    });
+    
+    if (!userNivel) {
+      console.log('❌ getMetaSemanalSDR: Nível não encontrado');
+      return undefined;
+    }
     
     const metaAgendamentos = getMetaPadraoSDR(userNivel);
     
-    return {
+    const resultado = {
       id: `${vendedorId}-${ano}-${semana}`,
       vendedor_id: vendedorId,
       ano,
@@ -34,6 +46,9 @@ export const useMetasSemanaisSDR = () => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
+    
+    console.log('✅ getMetaSemanalSDR: Meta encontrada', resultado);
+    return resultado;
   };
 
   // Obter a meta padrão baseada no nível do SDR

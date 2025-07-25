@@ -16,6 +16,8 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
   selectedMonth, 
   selectedYear 
 }) => {
+  console.log('🚀 SDRMetasDiarias: Componente iniciado', { selectedMonth, selectedYear });
+  
   const { profile } = useAuthStore();
   const { 
     getMetaSemanalSDR, 
@@ -23,6 +25,12 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
     loading: metasLoading 
   } = useMetasSemanaisSDR();
   const { agendamentos } = useAgendamentosSDR();
+  
+  console.log('📊 SDRMetasDiarias: Dados do usuário', { 
+    profile: { id: profile?.id, user_type: profile?.user_type }, 
+    agendamentos: agendamentos?.length || 0,
+    metasLoading 
+  });
 
   // Verificar se é mês/ano atual para mostrar metas diárias
   const currentDate = new Date();
@@ -67,6 +75,14 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
   // Obter semana atual e meta semanal
   const semanaAtual = getSemanaAtual();
   const metaSemanal = profile?.id ? getMetaSemanalSDR(profile.id, selectedYear, semanaAtual) : null;
+  
+  console.log('🎯 SDRMetasDiarias: Meta semanal calculada', { 
+    semanaAtual, 
+    metaSemanal, 
+    userId: profile?.id,
+    userType: profile?.user_type,
+    selectedYear 
+  });
 
   // Calcular agendamentos da semana atual
   const inicioSemana = new Date();
