@@ -38,7 +38,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const [cursos, setCursos] = useState<any[]>([]);
 
   // Filtros
-  const [filtroPosgGraduacao, setFiltroPosgGraduacao] = useState<string>('');
+  const [filtroPosgGraduacao, setFiltroPosgGraduacao] = useState<string>('todas');
   const [filtroHorarioInicio, setFiltroHorarioInicio] = useState<string>('');
   const [filtroHorarioFim, setFiltroHorarioFim] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
@@ -130,7 +130,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     let vendedoresFiltrados = [...vendedores];
 
     // Filtro por pós-graduação
-    if (filtroPosgGraduacao) {
+    if (filtroPosgGraduacao && filtroPosgGraduacao !== 'todas') {
       vendedoresFiltrados = vendedoresFiltrados.filter(vendedor => 
         vendedor.cursos?.some(curso => 
           curso.toLowerCase().includes(filtroPosgGraduacao.toLowerCase())
@@ -241,7 +241,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   };
 
   const limparFiltros = () => {
-    setFiltroPosgGraduacao('');
+    setFiltroPosgGraduacao('todas');
     setFiltroHorarioInicio('');
     setFiltroHorarioFim('');
   };
@@ -356,7 +356,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                 >
                   {showFilters ? 'Ocultar' : 'Mostrar'} Filtros
                 </Button>
-                {(filtroPosgGraduacao || filtroHorarioInicio || filtroHorarioFim) && (
+                {((filtroPosgGraduacao && filtroPosgGraduacao !== 'todas') || filtroHorarioInicio || filtroHorarioFim) && (
                   <Button variant="outline" size="sm" onClick={limparFiltros}>
                     <X className="h-3 w-3 mr-1" />
                     Limpar
@@ -376,7 +376,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                       <SelectValue placeholder="Todas as especializações" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as especializações</SelectItem>
+                      <SelectItem value="todas">Todas as especializações</SelectItem>
                       {posGraduacoesUnicas.map((pos, index) => (
                         <SelectItem key={index} value={pos}>
                           {pos}
@@ -448,9 +448,9 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
               <CardHeader>
                 <CardTitle>
                   Disponibilidade para {selectedDate && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                  {(filtroPosgGraduacao || (filtroHorarioInicio && filtroHorarioFim)) && (
+                  {((filtroPosgGraduacao && filtroPosgGraduacao !== 'todas') || (filtroHorarioInicio && filtroHorarioFim)) && (
                     <div className="text-sm font-normal text-muted-foreground mt-1">
-                      {filtroPosgGraduacao && (
+                      {filtroPosgGraduacao && filtroPosgGraduacao !== 'todas' && (
                         <Badge variant="outline" className="mr-2">
                           {filtroPosgGraduacao}
                         </Badge>
@@ -485,7 +485,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                         : "Nenhum vendedor corresponde aos filtros aplicados"
                       }
                     </div>
-                    {(filtroPosgGraduacao || filtroHorarioInicio || filtroHorarioFim) && (
+                    {((filtroPosgGraduacao && filtroPosgGraduacao !== 'todas') || filtroHorarioInicio || filtroHorarioFim) && (
                       <Button variant="outline" size="sm" className="mt-2" onClick={limparFiltros}>
                         Limpar Filtros
                       </Button>
