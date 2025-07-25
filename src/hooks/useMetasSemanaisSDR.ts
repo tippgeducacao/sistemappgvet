@@ -16,13 +16,14 @@ export interface MetaSemanalSDR {
 export const useMetasSemanaisSDR = () => {
   const [loading, setLoading] = useState(false);
   const { niveis } = useNiveis();
-  const { profile } = useAuthStore();
+  const { profile, currentUser } = useAuthStore();
 
-  // Buscar meta semanal específica do SDR baseada no tipo de usuário
+  // Buscar meta semanal específica do SDR baseada no nível do usuário
   const getMetaSemanalSDR = (vendedorId: string, ano: number, semana: number): MetaSemanalSDR | undefined => {
-    if (!profile?.user_type) return undefined;
+    const userNivel = (currentUser as any)?.nivel || profile?.user_type;
+    if (!userNivel) return undefined;
     
-    const metaAgendamentos = getMetaPadraoSDR(profile.user_type);
+    const metaAgendamentos = getMetaPadraoSDR(userNivel);
     
     return {
       id: `${vendedorId}-${ano}-${semana}`,
@@ -37,15 +38,27 @@ export const useMetasSemanaisSDR = () => {
 
   // Obter a meta padrão baseada no nível do SDR
   const getMetaPadraoSDR = (nivel: string): number => {
+    console.log('🔍 Buscando meta para nível:', nivel);
+    console.log('📊 Níveis disponíveis:', niveis);
+    
     const nivelConfig = niveis.find(n => n.nivel === nivel);
+    console.log('⚙️ Configuração do nível encontrada:', nivelConfig);
+    
+    let meta = 0;
     
     if (nivel.includes('inbound')) {
-      return nivelConfig?.meta_semanal_inbound || 0;
+      meta = nivelConfig?.meta_semanal_inbound || 0;
+      console.log('📈 Meta inbound encontrada:', meta);
     } else if (nivel.includes('outbound')) {
-      return nivelConfig?.meta_semanal_outbound || 0;
+      meta = nivelConfig?.meta_semanal_outbound || 0;
+      console.log('📈 Meta outbound encontrada:', meta);
+    } else {
+      // Para vendedores normais, usar meta_semanal_vendedor
+      meta = nivelConfig?.meta_semanal_vendedor || 0;
+      console.log('📈 Meta vendedor encontrada:', meta);
     }
     
-    return 0;
+    return meta;
   };
 
   // Calcular a semana atual
