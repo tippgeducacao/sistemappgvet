@@ -41,17 +41,18 @@ export class NiveisService {
   static async updateNivel(id: string, dados: Partial<Omit<NivelVendedor, 'id' | 'created_at' | 'updated_at'>>): Promise<void> {
     console.log('📝 Atualizando nível:', id, dados);
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('niveis_vendedores')
       .update(dados)
-      .eq('id', id);
+      .eq('id', id)
+      .select();
 
     if (error) {
       console.error('❌ Erro ao atualizar nível:', error);
       throw error;
     }
     
-    console.log('✅ Nível atualizado com sucesso');
+    console.log('✅ Nível atualizado com sucesso:', data);
   }
 
   static async updateVendedorNivel(vendedorId: string, nivel: 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior'): Promise<void> {
