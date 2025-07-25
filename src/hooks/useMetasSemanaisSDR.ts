@@ -20,7 +20,7 @@ export const useMetasSemanaisSDR = () => {
 
   // Buscar meta semanal específica do SDR baseada no nível do usuário
   const getMetaSemanalSDR = (vendedorId: string, ano: number, semana: number): MetaSemanalSDR | undefined => {
-    const userNivel = (currentUser as any)?.nivel || profile?.user_type;
+    const userNivel = (currentUser as any)?.nivel;
     if (!userNivel) return undefined;
     
     const metaAgendamentos = getMetaPadraoSDR(userNivel);
@@ -44,17 +44,22 @@ export const useMetasSemanaisSDR = () => {
     const nivelConfig = niveis.find(n => n.nivel === nivel);
     console.log('⚙️ Configuração do nível encontrada:', nivelConfig);
     
+    if (!nivelConfig) {
+      console.log('❌ Nível não encontrado:', nivel);
+      return 0;
+    }
+    
     let meta = 0;
     
     if (nivel.includes('inbound')) {
-      meta = nivelConfig?.meta_semanal_inbound || 0;
+      meta = nivelConfig.meta_semanal_inbound || 0;
       console.log('📈 Meta inbound encontrada:', meta);
     } else if (nivel.includes('outbound')) {
-      meta = nivelConfig?.meta_semanal_outbound || 0;
+      meta = nivelConfig.meta_semanal_outbound || 0;
       console.log('📈 Meta outbound encontrada:', meta);
     } else {
       // Para vendedores normais, usar meta_semanal_vendedor
-      meta = nivelConfig?.meta_semanal_vendedor || 0;
+      meta = nivelConfig.meta_semanal_vendedor || 0;
       console.log('📈 Meta vendedor encontrada:', meta);
     }
     
