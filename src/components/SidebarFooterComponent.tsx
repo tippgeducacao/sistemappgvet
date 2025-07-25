@@ -48,7 +48,7 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
 
   const getProfileImage = () => {
     // URL da foto do perfil se disponível - usando any para acessar propriedades não tipadas
-    return (profile as any)?.foto_url || null;
+    return (profile as any)?.photo_url || null;
   };
 
   const getUserInitials = () => {
