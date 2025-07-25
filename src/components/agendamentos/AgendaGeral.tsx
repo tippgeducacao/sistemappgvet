@@ -73,6 +73,11 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
         .eq('ativo', true)
         .order('name');
 
+      console.log('🔍 Vendedores carregados:', vendedoresData?.map(v => ({ 
+        name: v.name, 
+        photo_url: v.photo_url 
+      })));
+
       if (vendedoresError) throw vendedoresError;
 
       // Buscar cursos para mapear os IDs para nomes
