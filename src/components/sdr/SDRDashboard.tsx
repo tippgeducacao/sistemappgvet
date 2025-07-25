@@ -8,6 +8,7 @@ import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 import ReunioesCanceladasSDR from './ReunioesCanceladasSDR';
 import SDRMetasDiarias from '@/components/dashboard/SDRMetasDiarias';
+import { ReunioesChart } from '@/components/dashboard/ReunioesChart';
 import { FileText, Users, Calendar, TrendingUp, X } from 'lucide-react';
 
 const SDRDashboard: React.FC = () => {
@@ -127,6 +128,9 @@ const SDRDashboard: React.FC = () => {
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
       />
+
+      {/* Gráfico de Pizza das Reuniões */}
+      <ReunioesChart />
 
       {/* Tabs para diferentes visualizações */}
       <Tabs defaultValue="vendas" className="space-y-4">

@@ -5,7 +5,7 @@ import { useAgendamentosStatsAdmin } from '@/hooks/useAgendamentosStatsAdmin';
 import LoadingState from '@/components/ui/loading-state';
 
 interface ReunioesAdminChartProps {
-  selectedVendedor?: string;
+  selectedSDR?: string;
 }
 
 const COLORS = {
@@ -14,15 +14,15 @@ const COLORS = {
   naoCompareceram: '#ef4444' // Vermelho para não compareceram
 };
 
-export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selectedVendedor }) => {
-  const { statsData, isLoading } = useAgendamentosStatsAdmin(selectedVendedor);
+export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selectedSDR }) => {
+  const { statsData, isLoading } = useAgendamentosStatsAdmin(selectedSDR);
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Resultados das Reuniões por Vendedor</CardTitle>
-          <CardDescription>Performance dos vendedores nas reuniões realizadas</CardDescription>
+          <CardTitle>Resultados das Reuniões por SDR</CardTitle>
+          <CardDescription>Performance dos SDRs nas reuniões agendadas</CardDescription>
         </CardHeader>
         <CardContent>
           <LoadingState message="Carregando estatísticas..." />
@@ -35,14 +35,14 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Resultados das Reuniões por Vendedor</CardTitle>
-          <CardDescription>Performance dos vendedores nas reuniões realizadas</CardDescription>
+          <CardTitle>Resultados das Reuniões por SDR</CardTitle>
+          <CardDescription>Performance dos SDRs nas reuniões agendadas</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-muted-foreground">
             <div className="text-center">
               <p className="text-lg mb-2">Nenhuma reunião finalizada ainda</p>
-              <p className="text-sm">Aguarde os vendedores completarem suas reuniões</p>
+              <p className="text-sm">Aguarde os vendedores completarem as reuniões agendadas</p>
             </div>
           </div>
         </CardContent>
@@ -52,7 +52,7 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
 
   // Preparar dados para o gráfico
   const chartData = statsData.map(stats => ({
-    vendedor: stats.vendedor_name.split(' ')[0], // Apenas primeiro nome
+    sdr: stats.sdr_name.split(' ')[0], // Apenas primeiro nome
     convertidas: stats.convertidas,
     compareceram: stats.compareceram,
     naoCompareceram: stats.naoCompareceram,
@@ -89,10 +89,10 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Resultados das Reuniões por Vendedor</CardTitle>
+        <CardTitle>Resultados das Reuniões por SDR</CardTitle>
         <CardDescription>
-          Performance dos vendedores nas reuniões realizadas
-          {selectedVendedor && selectedVendedor !== 'todos' && ' (filtrado)'}
+          Performance dos SDRs nas reuniões agendadas
+          {selectedSDR && selectedSDR !== 'todos' && ' (filtrado)'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -101,7 +101,7 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
             <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
-                dataKey="vendedor" 
+                dataKey="sdr" 
                 tick={{ fontSize: 12 }}
                 interval={0}
                 angle={-45}
@@ -133,13 +133,13 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
           </ResponsiveContainer>
         </div>
 
-        {/* Resumo por vendedor */}
+        {/* Resumo por SDR */}
         <div className="space-y-3">
           <h4 className="font-semibold text-sm">Resumo Detalhado:</h4>
           <div className="grid gap-3">
             {statsData.map((stats) => (
-              <div key={stats.vendedor_id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <div className="font-medium">{stats.vendedor_name}</div>
+              <div key={stats.sdr_id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div className="font-medium">{stats.sdr_name}</div>
                 <div className="flex gap-4 text-sm">
                   <span className="text-green-600">{stats.convertidas} convertidas</span>
                   <span className="text-yellow-600">{stats.compareceram} compareceram</span>

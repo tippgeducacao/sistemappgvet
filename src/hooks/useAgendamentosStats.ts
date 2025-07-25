@@ -28,7 +28,7 @@ export const useAgendamentosStats = () => {
       const { data, error } = await supabase
         .from('agendamentos')
         .select('resultado_reuniao')
-        .eq('vendedor_id', profile.id)
+        .eq('sdr_id', profile.id) // SDR que fez o agendamento
         .not('resultado_reuniao', 'is', null); // Apenas reuniões com resultado
 
       if (error) {

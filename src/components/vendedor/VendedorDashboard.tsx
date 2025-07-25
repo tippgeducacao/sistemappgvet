@@ -6,7 +6,6 @@ import { useVendas } from '@/hooks/useVendas';
 import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards';
 import VendedorMetas from '@/components/dashboard/VendedorMetas';
 import VendedorMetasDiarias from '@/components/dashboard/VendedorMetasDiarias';
-import { ReunioesChart } from '@/components/dashboard/ReunioesChart';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 import { FileText } from 'lucide-react';
 
@@ -58,8 +57,7 @@ const VendedorDashboard: React.FC = () => {
         selectedYear={selectedYear}
       />
 
-      {/* Gráfico de Pizza das Reuniões */}
-      <ReunioesChart />
+      {/* Lista de vendas recentes */}
       <Card>
         <CardHeader>
           <CardTitle>Minhas Vendas Recentes</CardTitle>

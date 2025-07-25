@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AgendamentosStatsAdmin {
-  vendedor_id: string;
-  vendedor_name: string;
+  sdr_id: string;
+  sdr_name: string;
   convertidas: number;
   compareceram: number;
   naoCompareceram: number;
   total: number;
 }
 
-export const useAgendamentosStatsAdmin = (selectedVendedor?: string) => {
+export const useAgendamentosStatsAdmin = (selectedSDR?: string) => {
   const [statsData, setStatsData] = useState<AgendamentosStatsAdmin[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -21,17 +21,17 @@ export const useAgendamentosStatsAdmin = (selectedVendedor?: string) => {
       let query = supabase
         .from('agendamentos')
         .select(`
-          vendedor_id,
+          sdr_id,
           resultado_reuniao,
-          vendedor:profiles!agendamentos_vendedor_id_fkey (
+          sdr:profiles!agendamentos_sdr_id_fkey (
             name
           )
         `)
         .not('resultado_reuniao', 'is', null);
 
-      // Se um vendedor específico foi selecionado
-      if (selectedVendedor && selectedVendedor !== 'todos') {
-        query = query.eq('vendedor_id', selectedVendedor);
+      // Se um SDR específico foi selecionado
+      if (selectedSDR && selectedSDR !== 'todos') {
+        query = query.eq('sdr_id', selectedSDR);
       }
 
       const { data, error } = await query;
@@ -41,17 +41,17 @@ export const useAgendamentosStatsAdmin = (selectedVendedor?: string) => {
         return;
       }
 
-      // Agrupar dados por vendedor
+      // Agrupar dados por SDR
       const statsMap = new Map<string, AgendamentosStatsAdmin>();
 
       data?.forEach((agendamento: any) => {
-        const vendedorId = agendamento.vendedor_id;
-        const vendedorName = agendamento.vendedor?.name || 'Vendedor Desconhecido';
+        const sdrId = agendamento.sdr_id;
+        const sdrName = agendamento.sdr?.name || 'SDR Desconhecido';
 
-        if (!statsMap.has(vendedorId)) {
-          statsMap.set(vendedorId, {
-            vendedor_id: vendedorId,
-            vendedor_name: vendedorName,
+        if (!statsMap.has(sdrId)) {
+          statsMap.set(sdrId, {
+            sdr_id: sdrId,
+            sdr_name: sdrName,
             convertidas: 0,
             compareceram: 0,
             naoCompareceram: 0,
@@ -59,7 +59,7 @@ export const useAgendamentosStatsAdmin = (selectedVendedor?: string) => {
           });
         }
 
-        const stats = statsMap.get(vendedorId)!;
+        const stats = statsMap.get(sdrId)!;
         stats.total++;
 
         switch (agendamento.resultado_reuniao) {
@@ -85,7 +85,7 @@ export const useAgendamentosStatsAdmin = (selectedVendedor?: string) => {
 
   useEffect(() => {
     fetchStatsAdmin();
-  }, [selectedVendedor]);
+  }, [selectedSDR]);
 
   return {
     statsData,

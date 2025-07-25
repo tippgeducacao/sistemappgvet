@@ -120,7 +120,7 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
           selectedYear={selectedYear}
         />
 
-        <ReunioesAdminChart selectedVendedor={selectedVendedor} />
+        <ReunioesAdminChart selectedSDR={selectedVendedor} />
 
         <VendorsRanking 
           selectedVendedor={selectedVendedor}
