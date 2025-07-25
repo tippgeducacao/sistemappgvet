@@ -4,7 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Calendar as CalendarIcon, User, Clock, Book } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Calendar as CalendarIcon, User, Clock, Book, Filter, X } from 'lucide-react';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -29,9 +32,16 @@ interface AgendaGeralProps {
 const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
+  const [vendedoresFiltrados, setVendedoresFiltrados] = useState<Vendedor[]>([]);
   const [loading, setLoading] = useState(false);
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
   const [cursos, setCursos] = useState<any[]>([]);
+
+  // Filtros
+  const [filtroPosgGraduacao, setFiltroPosgGraduacao] = useState<string>('');
+  const [filtroHorarioInicio, setFiltroHorarioInicio] = useState<string>('');
+  const [filtroHorarioFim, setFiltroHorarioFim] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +54,11 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       carregarAgendamentosData();
     }
   }, [selectedDate]);
+
+  // Aplicar filtros quando houver mudanças
+  useEffect(() => {
+    aplicarFiltros();
+  }, [vendedores, filtroPosgGraduacao, filtroHorarioInicio, filtroHorarioFim, selectedDate, agendamentos]);
 
   const carregarDados = async () => {
     setLoading(true);
@@ -78,6 +93,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       }));
 
       setVendedores(vendedoresComCursos);
+      setVendedoresFiltrados(vendedoresComCursos);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados');
@@ -110,6 +126,130 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const aplicarFiltros = () => {
+    let vendedoresFiltrados = [...vendedores];
+
+    // Filtro por pós-graduação
+    if (filtroPosgGraduacao) {
+      vendedoresFiltrados = vendedoresFiltrados.filter(vendedor => 
+        vendedor.cursos?.some(curso => 
+          curso.toLowerCase().includes(filtroPosgGraduacao.toLowerCase())
+        )
+      );
+    }
+
+    // Filtro por horário de disponibilidade
+    if (filtroHorarioInicio && filtroHorarioFim && selectedDate) {
+      vendedoresFiltrados = vendedoresFiltrados.filter(vendedor => {
+        // Verificar se o vendedor trabalha no dia selecionado
+        if (!verificarDisponibilidade(vendedor, selectedDate)) {
+          return false;
+        }
+
+        // Verificar se tem horário de trabalho que abranja o período solicitado
+        const temHorarioDisponivel = verificarHorarioDisponivel(
+          vendedor, 
+          selectedDate, 
+          filtroHorarioInicio, 
+          filtroHorarioFim
+        );
+
+        if (!temHorarioDisponivel) {
+          return false;
+        }
+
+        // Verificar se não tem agendamentos conflitantes no período
+        const agendamentosVendedor = getAgendamentosVendedor(vendedor.id);
+        const temConflito = agendamentosVendedor.some(agendamento => {
+          const inicioAgendamento = new Date(agendamento.data_agendamento);
+          const fimAgendamento = agendamento.data_fim_agendamento 
+            ? new Date(agendamento.data_fim_agendamento)
+            : new Date(inicioAgendamento.getTime() + 60 * 60 * 1000); // 1 hora padrão
+
+          const inicioFiltro = new Date(selectedDate);
+          inicioFiltro.setHours(parseInt(filtroHorarioInicio.split(':')[0]), parseInt(filtroHorarioInicio.split(':')[1]));
+          
+          const fimFiltro = new Date(selectedDate);
+          fimFiltro.setHours(parseInt(filtroHorarioFim.split(':')[0]), parseInt(filtroHorarioFim.split(':')[1]));
+
+          // Verificar sobreposição de horários
+          return inicioAgendamento < fimFiltro && fimAgendamento > inicioFiltro;
+        });
+
+        return !temConflito;
+      });
+    }
+
+    setVendedoresFiltrados(vendedoresFiltrados);
+  };
+
+  const verificarHorarioDisponivel = (vendedor: Vendedor, data: Date, inicioDesejado: string, fimDesejado: string): boolean => {
+    if (!vendedor.horario_trabalho) return false;
+
+    const diaSemana = data.getDay();
+    const horarioTrabalho = vendedor.horario_trabalho;
+
+    let periodosTrabalho: any[] = [];
+
+    // Verificar formato do horário de trabalho
+    if (horarioTrabalho.manha_inicio) {
+      // Formato antigo
+      periodosTrabalho = [
+        {
+          inicio: horarioTrabalho.manha_inicio,
+          fim: horarioTrabalho.manha_fim
+        },
+        {
+          inicio: horarioTrabalho.tarde_inicio,
+          fim: horarioTrabalho.tarde_fim
+        }
+      ];
+    } else {
+      // Formato novo
+      if (diaSemana >= 1 && diaSemana <= 5 && horarioTrabalho.segunda_sexta) {
+        periodosTrabalho = [
+          {
+            inicio: horarioTrabalho.segunda_sexta.periodo1_inicio,
+            fim: horarioTrabalho.segunda_sexta.periodo1_fim
+          },
+          {
+            inicio: horarioTrabalho.segunda_sexta.periodo2_inicio,
+            fim: horarioTrabalho.segunda_sexta.periodo2_fim
+          }
+        ];
+      } else if (diaSemana === 6 && horarioTrabalho.sabado) {
+        periodosTrabalho = [
+          {
+            inicio: horarioTrabalho.sabado.periodo1_inicio,
+            fim: horarioTrabalho.sabado.periodo1_fim
+          }
+        ];
+        if (horarioTrabalho.sabado.periodo2_inicio && horarioTrabalho.sabado.periodo2_fim) {
+          periodosTrabalho.push({
+            inicio: horarioTrabalho.sabado.periodo2_inicio,
+            fim: horarioTrabalho.sabado.periodo2_fim
+          });
+        }
+      }
+    }
+
+    // Verificar se o período desejado se encaixa em algum período de trabalho
+    return periodosTrabalho.some(periodo => {
+      if (!periodo.inicio || !periodo.fim) return false;
+      return inicioDesejado >= periodo.inicio && fimDesejado <= periodo.fim;
+    });
+  };
+
+  const limparFiltros = () => {
+    setFiltroPosgGraduacao('');
+    setFiltroHorarioInicio('');
+    setFiltroHorarioFim('');
+  };
+
+  const posGraduacoesUnicas = [...new Set(
+    vendedores.flatMap(v => v.cursos || [])
+  )].sort();
+
   const verificarDisponibilidade = (vendedor: Vendedor, data: Date) => {
     if (!vendedor.horario_trabalho) return false;
 
@@ -140,6 +280,38 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     if (!isDisponivel) return 'indisponivel';
     
     const agendamentosDoVendedor = getAgendamentosVendedor(vendedor.id);
+    
+    // Se tem filtro de horário, verificar disponibilidade específica
+    if (filtroHorarioInicio && filtroHorarioFim) {
+      const temHorarioDisponivel = verificarHorarioDisponivel(
+        vendedor, 
+        selectedDate, 
+        filtroHorarioInicio, 
+        filtroHorarioFim
+      );
+      
+      if (!temHorarioDisponivel) return 'indisponivel';
+      
+      // Verificar conflitos de agendamento no período específico
+      const temConflito = agendamentosDoVendedor.some(agendamento => {
+        const inicioAgendamento = new Date(agendamento.data_agendamento);
+        const fimAgendamento = agendamento.data_fim_agendamento 
+          ? new Date(agendamento.data_fim_agendamento)
+          : new Date(inicioAgendamento.getTime() + 60 * 60 * 1000);
+
+        const inicioFiltro = new Date(selectedDate);
+        inicioFiltro.setHours(parseInt(filtroHorarioInicio.split(':')[0]), parseInt(filtroHorarioInicio.split(':')[1]));
+        
+        const fimFiltro = new Date(selectedDate);
+        fimFiltro.setHours(parseInt(filtroHorarioFim.split(':')[0]), parseInt(filtroHorarioFim.split(':')[1]));
+
+        return inicioAgendamento < fimFiltro && fimAgendamento > inicioFiltro;
+      });
+      
+      return temConflito ? 'ocupado' : 'livre';
+    }
+    
+    // Lógica original para quando não há filtro de horário
     if (agendamentosDoVendedor.length === 0) return 'livre';
     
     return 'ocupado';
@@ -167,6 +339,86 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
             Agenda Geral - Disponibilidade dos Vendedores
           </DialogTitle>
         </DialogHeader>
+
+        {/* Filtros */}
+        <Card className="mb-4">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filtros
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  {showFilters ? 'Ocultar' : 'Mostrar'} Filtros
+                </Button>
+                {(filtroPosgGraduacao || filtroHorarioInicio || filtroHorarioFim) && (
+                  <Button variant="outline" size="sm" onClick={limparFiltros}>
+                    <X className="h-3 w-3 mr-1" />
+                    Limpar
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          {showFilters && (
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Filtro por Pós-graduação */}
+                <div>
+                  <Label htmlFor="filtro-pos">Pós-graduação</Label>
+                  <Select value={filtroPosgGraduacao} onValueChange={setFiltroPosgGraduacao}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas as especializações" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todas as especializações</SelectItem>
+                      {posGraduacoesUnicas.map((pos, index) => (
+                        <SelectItem key={index} value={pos}>
+                          {pos}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtro de Horário Início */}
+                <div>
+                  <Label htmlFor="filtro-inicio">Horário Início</Label>
+                  <Input
+                    id="filtro-inicio"
+                    type="time"
+                    value={filtroHorarioInicio}
+                    onChange={(e) => setFiltroHorarioInicio(e.target.value)}
+                    placeholder="HH:mm"
+                  />
+                </div>
+
+                {/* Filtro de Horário Fim */}
+                <div>
+                  <Label htmlFor="filtro-fim">Horário Fim</Label>
+                  <Input
+                    id="filtro-fim"
+                    type="time"
+                    value={filtroHorarioFim}
+                    onChange={(e) => setFiltroHorarioFim(e.target.value)}
+                    placeholder="HH:mm"
+                  />
+                </div>
+              </div>
+              
+              {filtroHorarioInicio && filtroHorarioFim && filtroHorarioInicio >= filtroHorarioFim && (
+                <div className="text-sm text-destructive">
+                  O horário de início deve ser anterior ao horário de fim.
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Calendário */}
@@ -196,9 +448,28 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
               <CardHeader>
                 <CardTitle>
                   Disponibilidade para {selectedDate && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {(filtroPosgGraduacao || (filtroHorarioInicio && filtroHorarioFim)) && (
+                    <div className="text-sm font-normal text-muted-foreground mt-1">
+                      {filtroPosgGraduacao && (
+                        <Badge variant="outline" className="mr-2">
+                          {filtroPosgGraduacao}
+                        </Badge>
+                      )}
+                      {filtroHorarioInicio && filtroHorarioFim && (
+                        <Badge variant="outline">
+                          {filtroHorarioInicio} - {filtroHorarioFim}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                 </CardTitle>
                 <CardDescription>
-                  Vendedores e suas especializações
+                  Vendedores e suas especializações 
+                  {vendedoresFiltrados.length !== vendedores.length && (
+                    <span className="text-primary">
+                      ({vendedoresFiltrados.length} de {vendedores.length} vendedores)
+                    </span>
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -206,9 +477,23 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
+                ) : vendedoresFiltrados.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-muted-foreground">
+                      {vendedores.length === 0 
+                        ? "Nenhum vendedor encontrado"
+                        : "Nenhum vendedor corresponde aos filtros aplicados"
+                      }
+                    </div>
+                    {(filtroPosgGraduacao || filtroHorarioInicio || filtroHorarioFim) && (
+                      <Button variant="outline" size="sm" className="mt-2" onClick={limparFiltros}>
+                        Limpar Filtros
+                      </Button>
+                    )}
+                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {vendedores.map((vendedor) => {
+                    {vendedoresFiltrados.map((vendedor) => {
                       const status = getStatusDisponibilidade(vendedor);
                       const agendamentosDoVendedor = getAgendamentosVendedor(vendedor.id);
                       
