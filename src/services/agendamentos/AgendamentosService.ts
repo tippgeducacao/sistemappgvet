@@ -256,27 +256,24 @@ export class AgendamentosService {
           }
         ];
       } else {
-        // Formato novo
-        const diasValidos = horarioTrabalho.dias_trabalho === 'segunda_sabado' ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5];
+        // Formato novo - verificar com base na configuração de dias de trabalho
+        let trabalhaNesteDia = false;
         
-        if (!diasValidos.includes(diaSemana)) {
+        if (horarioTrabalho.dias_trabalho === 'segunda_sabado') {
+          trabalhaNesteDia = diaSemana >= 1 && diaSemana <= 6; // Segunda a sábado
+        } else if (horarioTrabalho.dias_trabalho === 'personalizado') {
+          const diasMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+          const diaAtual = diasMap[diaSemana];
+          trabalhaNesteDia = horarioTrabalho.dias_personalizados?.includes(diaAtual) || false;
+        }
+        
+        if (!trabalhaNesteDia) {
           return { valido: false, motivo: 'Vendedor não trabalha neste dia da semana' };
         }
 
-        if (diaSemana >= 1 && diaSemana <= 5 && horarioTrabalho.segunda_sexta) {
-          // Segunda a sexta
-          periodosTrabalho = [
-            {
-              inicio: horarioTrabalho.segunda_sexta.periodo1_inicio,
-              fim: horarioTrabalho.segunda_sexta.periodo1_fim
-            },
-            {
-              inicio: horarioTrabalho.segunda_sexta.periodo2_inicio,
-              fim: horarioTrabalho.segunda_sexta.periodo2_fim
-            }
-          ];
-        } else if (diaSemana === 6 && horarioTrabalho.sabado) {
-          // Sábado
+        // Determinar qual configuração de horário usar baseado no dia e configuração
+        if (diaSemana === 6 && horarioTrabalho.sabado) {
+          // Sábado - usar configuração específica do sábado
           periodosTrabalho = [
             {
               inicio: horarioTrabalho.sabado.periodo1_inicio,
@@ -287,6 +284,20 @@ export class AgendamentosService {
             periodosTrabalho.push({
               inicio: horarioTrabalho.sabado.periodo2_inicio,
               fim: horarioTrabalho.sabado.periodo2_fim
+            });
+          }
+        } else if (diaSemana >= 1 && diaSemana <= 5 && horarioTrabalho.segunda_sexta) {
+          // Segunda a sexta - usar configuração de segunda a sexta
+          periodosTrabalho = [
+            {
+              inicio: horarioTrabalho.segunda_sexta.periodo1_inicio,
+              fim: horarioTrabalho.segunda_sexta.periodo1_fim
+            }
+          ];
+          if (horarioTrabalho.segunda_sexta.periodo2_inicio && horarioTrabalho.segunda_sexta.periodo2_fim) {
+            periodosTrabalho.push({
+              inicio: horarioTrabalho.segunda_sexta.periodo2_inicio,
+              fim: horarioTrabalho.segunda_sexta.periodo2_fim
             });
           }
         }
