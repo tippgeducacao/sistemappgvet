@@ -734,9 +734,9 @@ const AgendamentosPage: React.FC = () => {
                     <p className="text-sm font-medium mb-2">Vendedores especializados disponíveis:</p>
                     <div className="space-y-2">
                       {vendedores.map((vendedor) => {
-                        // Contar agendamentos não cancelados do vendedor
+                        // Contar apenas agendamentos ativos do vendedor
                         const contadorAgendamentos = agendamentos.filter(
-                          ag => ag.vendedor_id === vendedor.id && ag.status !== 'cancelado'
+                          ag => ag.vendedor_id === vendedor.id && ag.status === 'agendado'
                         ).length;
                         
                         return (
