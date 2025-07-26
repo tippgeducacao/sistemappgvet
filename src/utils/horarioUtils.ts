@@ -22,6 +22,27 @@ export const verificarDisponibilidadeVendedor = (
   if (!horarioTrabalho) return true;
 
   const diaSemana = dataHora.getDay(); // 0=domingo, 1=segunda, ..., 6=sábado
+  
+  // Verificar se é formato antigo
+  const horarioAny = horarioTrabalho as any;
+  if (horarioAny.manha_inicio) {
+    // Formato antigo - assume segunda a sexta
+    if (diaSemana < 1 || diaSemana > 5) return false;
+    
+    const hora = dataHora.getHours();
+    const minuto = dataHora.getMinutes();
+    const horaCompleta = hora + minuto / 60;
+    
+    const manhaInicio = converterHorarioParaDecimal(horarioAny.manha_inicio);
+    const manhaFim = converterHorarioParaDecimal(horarioAny.manha_fim);
+    const tardeInicio = converterHorarioParaDecimal(horarioAny.tarde_inicio);
+    const tardeFim = converterHorarioParaDecimal(horarioAny.tarde_fim);
+    
+    return (horaCompleta >= manhaInicio && horaCompleta <= manhaFim) ||
+           (horaCompleta >= tardeInicio && horaCompleta <= tardeFim);
+  }
+  
+  // Formato novo
   const diasMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
   const diaAtual = diasMap[diaSemana];
 
@@ -74,15 +95,15 @@ const converterHorarioParaDecimal = (horario: string): number => {
 export const formatarHorarioTrabalho = (horarioTrabalho: HorarioTrabalho | null): string => {
   if (!horarioTrabalho) return 'Horário não definido';
   
-  // Verificar se é formato antigo
+  // Verificar se é formato antigo (tem manha_inicio)
   const horarioAny = horarioTrabalho as any;
   if (horarioAny.manha_inicio) {
     // Formato antigo
     return `Manhã: ${horarioAny.manha_inicio} - ${horarioAny.manha_fim} | Tarde: ${horarioAny.tarde_inicio} - ${horarioAny.tarde_fim}`;
   }
   
-  // Formato novo
-  if (!horarioTrabalho.segunda_sexta || !horarioTrabalho.sabado) {
+  // Formato novo - verificar se tem a estrutura completa
+  if (!horarioTrabalho.dias_trabalho || !horarioTrabalho.segunda_sexta || !horarioTrabalho.sabado) {
     return 'Horário não definido corretamente';
   }
   
