@@ -128,6 +128,17 @@ const ReuniaoAtrasadaModal: React.FC<ReuniaoAtrasadaModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Aviso Importante */}
+          <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-orange-800">
+                <p className="font-medium mb-1">⚠️ Atenção!</p>
+                <p>Reuniões atrasadas prejudicam o agendamento de novas reuniões para este vendedor. É importante marcar o resultado o quanto antes para liberar novos agendamentos.</p>
+              </div>
+            </div>
+          </div>
+
           {/* Informações da Reunião */}
           <Card className="border-destructive/20 bg-destructive/5">
             <CardHeader>
