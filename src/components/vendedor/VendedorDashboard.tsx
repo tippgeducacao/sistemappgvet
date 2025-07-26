@@ -29,7 +29,7 @@ const VendedorDashboard: React.FC = () => {
     if (agendamentosAtrasados.length > 0 && !modalAtrasadaAberto) {
       setModalAtrasadaAberto(true);
     }
-  }, [agendamentosAtrasados, modalAtrasadaAberto]);
+  }, [agendamentosAtrasados.length]); // Remover modalAtrasadaAberto da dependência para permitir fechar
 
   return (
     <div className="space-y-6">
