@@ -93,20 +93,19 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
   fimSemana.setDate(fimSemana.getDate() + 6); // Próxima terça-feira
   fimSemana.setHours(23, 59, 59, 999);
 
-  // Agendamentos da semana (quarta a terça) - apenas com comparecimento
+  // Agendamentos da semana (quarta a terça) - apenas com comparecimento confirmado
   const agendamentosSemana = agendamentos.filter(agendamento => {
     const dataAgendamento = new Date(agendamento.data_agendamento);
     const dentroDoPeriodo = dataAgendamento >= inicioSemana && dataAgendamento <= fimSemana;
     
-    // Contar apenas agendamentos que ainda não tiveram resultado ou que tiveram comparecimento
-    const validoParaMeta = !agendamento.resultado_reuniao || 
-                          agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                          agendamento.resultado_reuniao === 'comprou';
+    // Contar apenas agendamentos onde houve comparecimento confirmado
+    const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                       agendamento.resultado_reuniao === 'comprou';
     
-    return dentroDoPeriodo && validoParaMeta;
+    return dentroDoPeriodo && compareceu;
   });
 
-  // Agendamentos de hoje - apenas com comparecimento
+  // Agendamentos de hoje - apenas com comparecimento confirmado
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
   const amanha = new Date(hoje);
@@ -117,12 +116,11 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
     dataAgendamento.setHours(0, 0, 0, 0);
     const dentroDoPeriodo = dataAgendamento.getTime() === hoje.getTime();
     
-    // Contar apenas agendamentos que ainda não tiveram resultado ou que tiveram comparecimento
-    const validoParaMeta = !agendamento.resultado_reuniao || 
-                          agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                          agendamento.resultado_reuniao === 'comprou';
+    // Contar apenas agendamentos onde houve comparecimento confirmado
+    const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                       agendamento.resultado_reuniao === 'comprou';
     
-    return dentroDoPeriodo && validoParaMeta;
+    return dentroDoPeriodo && compareceu;
   });
 
   // Cálculos
