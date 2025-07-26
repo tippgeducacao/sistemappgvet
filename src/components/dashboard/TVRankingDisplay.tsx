@@ -222,6 +222,14 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return () => clearInterval(interval);
   }, [isOpen]);
 
+  console.log('🔍 TVRankingDisplay - Dados carregados:', {
+    vendas: vendas?.length || 0,
+    vendedores: vendedores?.length || 0,
+    metasSemanais: metasSemanais?.length || 0,
+    allAgendamentos: allAgendamentos?.length || 0,
+    isOpen
+  });
+
   // Bloquear scroll do body quando o modal estiver aberto
   useEffect(() => {
     if (isOpen) {
@@ -294,6 +302,20 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const vendasDiaAtual = vendas.filter(venda => {
     const vendaDate = new Date(venda.enviado_em);
     return vendaDate >= startOfDay && vendaDate <= endOfDay && venda.status === 'matriculado';
+  });
+
+  console.log('📅 TVRankingDisplay - Períodos:', {
+    today: today.toISOString(),
+    startOfWeek: startOfWeek.toISOString(),
+    endOfWeek: endOfWeek.toISOString(),
+    currentWeek,
+    currentYear,
+    currentMonth,
+    totalVendas: vendas.length,
+    vendasMatriculadas: vendas.filter(v => v.status === 'matriculado').length,
+    vendasSemana: vendasSemanaAtual.length,
+    vendasMes: vendasMesAtual.length,
+    vendasDia: vendasDiaAtual.length
   });
 
   // Calcular dados dos vendedores (filtrar apenas vendedores e SDRs, excluir admins)
@@ -379,6 +401,24 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       
       // Meta diária baseada na meta semanal de pontos
       const metaDiaria = metaSemanal / 7;
+
+      console.log(`💰 Vendedor ${vendedor.name}:`, {
+        vendedorId: vendedor.id,
+        vendasSemana: vendasVendedorSemana.length,
+        vendasMes: vendasVendedorMes.length,
+        vendasDia: vendasVendedorDia.length,
+        pontosSemana,
+        pontosDia,
+        pontosMes,
+        metaSemanal,
+        metaDiaria,
+        vendasDetalhes: vendasVendedorSemana.map(v => ({
+          id: v.id,
+          pontuacao_validada: v.pontuacao_validada,
+          status: v.status,
+          enviado_em: v.enviado_em
+        }))
+      });
 
       return {
         id: vendedor.id,
