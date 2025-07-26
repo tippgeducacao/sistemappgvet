@@ -93,13 +93,20 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
   fimSemana.setDate(fimSemana.getDate() + 6); // Próxima terça-feira
   fimSemana.setHours(23, 59, 59, 999);
 
-  // Agendamentos da semana (quarta a terça)
+  // Agendamentos da semana (quarta a terça) - apenas com comparecimento
   const agendamentosSemana = agendamentos.filter(agendamento => {
     const dataAgendamento = new Date(agendamento.data_agendamento);
-    return dataAgendamento >= inicioSemana && dataAgendamento <= fimSemana;
+    const dentroDoPeriodo = dataAgendamento >= inicioSemana && dataAgendamento <= fimSemana;
+    
+    // Contar apenas agendamentos que ainda não tiveram resultado ou que tiveram comparecimento
+    const validoParaMeta = !agendamento.resultado_reuniao || 
+                          agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                          agendamento.resultado_reuniao === 'comprou';
+    
+    return dentroDoPeriodo && validoParaMeta;
   });
 
-  // Agendamentos de hoje
+  // Agendamentos de hoje - apenas com comparecimento
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
   const amanha = new Date(hoje);
@@ -108,7 +115,14 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
   const agendamentosHoje = agendamentos.filter(agendamento => {
     const dataAgendamento = new Date(agendamento.data_agendamento);
     dataAgendamento.setHours(0, 0, 0, 0);
-    return dataAgendamento.getTime() === hoje.getTime();
+    const dentroDoPeriodo = dataAgendamento.getTime() === hoje.getTime();
+    
+    // Contar apenas agendamentos que ainda não tiveram resultado ou que tiveram comparecimento
+    const validoParaMeta = !agendamento.resultado_reuniao || 
+                          agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                          agendamento.resultado_reuniao === 'comprou';
+    
+    return dentroDoPeriodo && validoParaMeta;
   });
 
   // Cálculos
