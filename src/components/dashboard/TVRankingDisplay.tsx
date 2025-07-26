@@ -399,11 +399,25 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const vendedoresOnly = vendedoresData.filter(v => !v.isSDR).sort((a, b) => b.points - a.points);
   const sdrsOnly = vendedoresData.filter(v => v.isSDR).sort((a, b) => b.weeklySales - a.weeklySales);
 
-  // Combinar para o ranking final (vendedores primeiro, depois SDRs)
-  const allRanking = [...vendedoresOnly, ...sdrsOnly];
-  
-  const topThree = vendedoresOnly.slice(0, 3);
-  const remaining = allRanking.slice(3);
+  console.log('📊 TVRankingDisplay - Dados separados:', {
+    vendedores: vendedoresOnly.length,
+    sdrs: sdrsOnly.length,
+    vendedoresData: vendedoresOnly.map(v => ({ 
+      name: v.name, 
+      pontos: v.points, 
+      weeklySales: v.weeklySales,
+      weeklyTarget: v.weeklyTarget 
+    })),
+    sdrsData: sdrsOnly.map(s => ({ 
+      name: s.name, 
+      reunioes: s.weeklySales,
+      weeklyTarget: s.weeklyTarget 
+    }))
+  });
+
+  // NÃO combinar - manter separados
+  const topThreeVendedores = vendedoresOnly.slice(0, 3);
+  const remainingVendedores = vendedoresOnly.slice(3);
 
   const totalWeeklySales = vendedoresOnly.reduce((sum, person) => sum + person.weeklySales, 0);
   const totalMonthlySales = vendedoresOnly.reduce((sum, person) => sum + person.monthlyTotal, 0);
@@ -459,36 +473,56 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         }}
       >
         <div className="max-w-full mx-auto overflow-hidden">
-          {/* Grid de 5 colunas para todos os vendedores */}
-          <div className="grid grid-cols-5 gap-4">
-            {/* Top 3 vendedores */}
-            {allRanking.slice(0, 3).map((person, index) => (
-              <VendedorCard
-                key={person.id}
-                person={person}
-                rank={index + 1}
-                isTopThree={true}
-              />
-            ))}
-            
-            {/* Card de vendas totais no lugar do 4º card */}
-            <div className="col-span-2">
-              <TotalSalesCard 
-                weeklyTotal={totalWeeklySales} 
-                monthlyTotal={totalMonthlySales} 
-              />
+          {/* SEÇÃO DOS VENDEDORES */}
+          <div className="mb-8">
+            {/* Grid de 5 colunas para vendedores */}
+            <div className="grid grid-cols-5 gap-4">
+              {/* Top 3 vendedores */}
+              {topThreeVendedores.map((person, index) => (
+                <VendedorCard
+                  key={person.id}
+                  person={person}
+                  rank={index + 1}
+                  isTopThree={true}
+                />
+              ))}
+              
+              {/* Card de pontos totais no lugar do 4º card */}
+              <div className="col-span-2">
+                <TotalSalesCard 
+                  weeklyTotal={totalWeeklySales} 
+                  monthlyTotal={totalMonthlySales} 
+                />
+              </div>
+              
+              {/* Resto dos vendedores a partir da segunda linha */}
+              {remainingVendedores.map((person, index) => (
+                <VendedorCard
+                  key={person.id}
+                  person={person}
+                  rank={index + 4}
+                  isTopThree={false}
+                />
+              ))}
             </div>
-            
-            {/* Resto dos vendedores a partir da segunda linha */}
-            {allRanking.slice(3).map((person, index) => (
-              <VendedorCard
-                key={person.id}
-                person={person}
-                rank={index + 4}
-                isTopThree={false}
-              />
-            ))}
           </div>
+
+          {/* SEÇÃO DOS SDRs - SEMPRE EMBAIXO E SEPARADA */}
+          {sdrsOnly.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-4 text-center">SDRs - Reuniões</h2>
+              <div className="grid grid-cols-5 gap-4">
+                {sdrsOnly.map((person, index) => (
+                  <VendedorCard
+                    key={person.id}
+                    person={person}
+                    rank={vendedoresOnly.length + index + 1}
+                    isTopThree={false}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
