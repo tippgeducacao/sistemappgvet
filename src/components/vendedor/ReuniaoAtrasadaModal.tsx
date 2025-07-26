@@ -10,6 +10,7 @@ import { Clock, User, Calendar, AlertTriangle } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuthStore } from '@/stores/AuthStore';
+import { useAppStateStore } from '@/stores/AppStateStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -40,6 +41,7 @@ const ReuniaoAtrasadaModal: React.FC<ReuniaoAtrasadaModalProps> = ({
   agendamentos,
   onAtualizarResultado
 }) => {
+  const { showNovaVendaForm } = useAppStateStore();
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<AgendamentoAtrasado | null>(null);
   const [resultado, setResultado] = useState('');
   const [observacoes, setObservacoes] = useState('');
@@ -72,6 +74,13 @@ const ReuniaoAtrasadaModal: React.FC<ReuniaoAtrasadaModalProps> = ({
       if (error) throw error;
 
       toast.success('Resultado da reunião salvo com sucesso!');
+      
+      // Se o resultado for "converteu", abrir o formulário de nova venda
+      if (resultado === 'converteu') {
+        onClose(); // Fechar o modal primeiro
+        showNovaVendaForm(); // Abrir formulário de nova venda
+        return;
+      }
       
       // Se há mais agendamentos atrasados, selecionar o próximo
       const proximoIndex = agendamentos.findIndex(ag => ag.id === agendamentoSelecionado.id) + 1;
