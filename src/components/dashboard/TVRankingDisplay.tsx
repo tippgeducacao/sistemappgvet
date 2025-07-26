@@ -285,12 +285,14 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
 
   const vendasSemanaAtual = vendas.filter(venda => {
     const vendaDate = new Date(venda.enviado_em);
-    return vendaDate >= startOfWeek && vendaDate <= endOfWeek && venda.status === 'matriculado';
+    return vendaDate >= startOfWeek && vendaDate <= endOfWeek && 
+           venda.pontuacao_validada && venda.pontuacao_validada > 0;
   });
 
   const vendasMesAtual = vendas.filter(venda => {
     const vendaDate = new Date(venda.enviado_em);
-    return vendaDate >= startOfMonth && vendaDate <= endOfMonth && venda.status === 'matriculado';
+    return vendaDate >= startOfMonth && vendaDate <= endOfMonth && 
+           venda.pontuacao_validada && venda.pontuacao_validada > 0;
   });
 
   // Filtrar vendas do dia atual
@@ -301,7 +303,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
 
   const vendasDiaAtual = vendas.filter(venda => {
     const vendaDate = new Date(venda.enviado_em);
-    return vendaDate >= startOfDay && vendaDate <= endOfDay && venda.status === 'matriculado';
+    return vendaDate >= startOfDay && vendaDate <= endOfDay && 
+           venda.pontuacao_validada && venda.pontuacao_validada > 0;
   });
 
   console.log('📅 TVRankingDisplay - Períodos:', {
@@ -312,7 +315,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     currentYear,
     currentMonth,
     totalVendas: vendas.length,
-    vendasMatriculadas: vendas.filter(v => v.status === 'matriculado').length,
+    vendasComPontuacao: vendas.filter(v => v.pontuacao_validada && v.pontuacao_validada > 0).length,
     vendasSemana: vendasSemanaAtual.length,
     vendasMes: vendasMesAtual.length,
     vendasDia: vendasDiaAtual.length
