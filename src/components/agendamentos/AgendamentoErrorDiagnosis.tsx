@@ -2,18 +2,21 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Info, Clock, Calendar, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, Info, Clock, Calendar, User, UserCheck } from 'lucide-react';
 
 interface ErrorDiagnosisProps {
   error: string;
   vendedor?: any;
   dataAgendamento?: string;
+  onForcarAgendamento?: () => void;
 }
 
 const AgendamentoErrorDiagnosis: React.FC<ErrorDiagnosisProps> = ({ 
   error, 
   vendedor, 
-  dataAgendamento 
+  dataAgendamento,
+  onForcarAgendamento 
 }) => {
   const getErrorType = (errorMessage: string) => {
     if (errorMessage.includes('horário de trabalho')) return 'horario';
@@ -153,6 +156,32 @@ const AgendamentoErrorDiagnosis: React.FC<ErrorDiagnosisProps> = ({
             )}
           </div>
         </div>
+
+        {/* Botão de Forçar Agendamento para erros de horário */}
+        {(errorType === 'horario' || errorType === 'dia') && onForcarAgendamento && (
+          <div className="border-t pt-4">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <UserCheck className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h4 className="font-medium text-orange-800 mb-1">Forçar Agendamento</h4>
+                  <p className="text-sm text-orange-700 mb-3">
+                    Você pode forçar o agendamento fora do horário normal e selecionar manualmente 
+                    o vendedor especializado na pós-graduação desejada.
+                  </p>
+                  <Button 
+                    onClick={onForcarAgendamento}
+                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                    size="sm"
+                  >
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Forçar Agendamento
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-muted p-3 rounded-lg">
           <p className="text-sm text-muted-foreground">

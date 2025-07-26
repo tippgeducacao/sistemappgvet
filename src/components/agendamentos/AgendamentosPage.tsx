@@ -65,6 +65,18 @@ const AgendamentosPage: React.FC = () => {
   const [lastError, setLastError] = useState<string | null>(null);
   const [showErrorDiagnosis, setShowErrorDiagnosis] = useState(false);
   
+  // Force scheduling state
+  const [showForceScheduleForm, setShowForceScheduleForm] = useState(false);
+  const [forceScheduleData, setForceScheduleData] = useState({
+    vendedor_id: '',
+    lead_id: '',
+    data_agendamento: '',
+    data_fim_agendamento: '',
+    pos_graduacao_interesse: '',
+    link_reuniao: '',
+    observacoes: 'Agendamento forçado fora do horário normal'
+  });
+  
   // SprintHub form fields
   const [sprintHubLead, setSprintHubLead] = useState({
     nome: '',
@@ -278,6 +290,62 @@ const AgendamentosPage: React.FC = () => {
       profissao: ''
     });
     setShowSprintHubForm(false);
+  };
+
+  // Função para iniciar o processo de forçar agendamento
+  const handleForcarAgendamento = () => {
+    // Preencher dados do agendamento forçado com os dados do formulário atual
+    const dataHora = selectedDateForm && selectedTime ? `${selectedDateForm}T${selectedTime}:00` : '';
+    const dataFim = selectedDateForm && selectedEndTime ? `${selectedDateForm}T${selectedEndTime}:00` : '';
+    
+    setForceScheduleData({
+      vendedor_id: '',
+      lead_id: selectedLead,
+      data_agendamento: dataHora,
+      data_fim_agendamento: dataFim,
+      pos_graduacao_interesse: selectedPosGraduacao,
+      link_reuniao: linkReuniao,
+      observacoes: `Agendamento forçado fora do horário normal. ${observacoes}`
+    });
+    
+    setShowErrorDiagnosis(false);
+    setShowForceScheduleForm(true);
+  };
+
+  // Função para criar agendamento forçado
+  const handleCreateForceSchedule = async () => {
+    if (!forceScheduleData.vendedor_id || !forceScheduleData.lead_id) {
+      toast.error('Selecione um vendedor e lead');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const result = await AgendamentosService.criarAgendamento({
+        lead_id: forceScheduleData.lead_id,
+        vendedor_id: forceScheduleData.vendedor_id,
+        data_agendamento: forceScheduleData.data_agendamento,
+        data_fim_agendamento: forceScheduleData.data_fim_agendamento,
+        pos_graduacao_interesse: forceScheduleData.pos_graduacao_interesse,
+        link_reuniao: forceScheduleData.link_reuniao,
+        observacoes: forceScheduleData.observacoes
+      });
+
+      if (result) {
+        toast.success('Agendamento forçado criado com sucesso!');
+        setShowForceScheduleForm(false);
+        resetForm();
+        await carregarDados();
+      } else {
+        toast.error('Erro ao criar agendamento forçado');
+      }
+    } catch (error) {
+      console.error('Erro ao criar agendamento forçado:', error);
+      toast.error('Erro ao criar agendamento forçado');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Extrair profissões únicas dos leads existentes
@@ -1370,6 +1438,7 @@ const AgendamentosPage: React.FC = () => {
               error={lastError}
               vendedor={vendedores.find(v => v.id === selectedVendedor)}
               dataAgendamento={selectedDateForm && selectedTime ? `${selectedDateForm}T${selectedTime}:00` : undefined}
+              onForcarAgendamento={handleForcarAgendamento}
             />
             <div className="flex justify-end mt-4">
               <Button 
@@ -1380,6 +1449,71 @@ const AgendamentosPage: React.FC = () => {
                 }}
               >
                 Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Forçar Agendamento */}
+      {showForceScheduleForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold mb-4 text-orange-600">
+              Forçar Agendamento
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Este agendamento será criado fora do horário normal de trabalho. 
+              Selecione manualmente o vendedor especializado.
+            </p>
+            
+            <div className="space-y-4">
+              {/* Seleção de Vendedor */}
+              <div>
+                <label className="text-sm font-medium">Vendedor Especializado *</label>
+                <select
+                  value={forceScheduleData.vendedor_id}
+                  onChange={(e) => setForceScheduleData(prev => ({ ...prev, vendedor_id: e.target.value }))}
+                  className="w-full mt-1 p-2 border rounded-md"
+                >
+                  <option value="">Selecione um vendedor</option>
+                  {vendedores
+                    .filter(v => {
+                      // Filtrar vendedores que vendem a pós-graduação selecionada
+                      const posGradIds = Array.isArray(v.pos_graduacoes) ? v.pos_graduacoes : [];
+                      const posGradSelecionada = posGraduacoes.find(p => p.nome === selectedPosGraduacao);
+                      return posGradSelecionada && posGradIds.includes(posGradSelecionada.id);
+                    })
+                    .map(vendedor => (
+                      <option key={vendedor.id} value={vendedor.id}>
+                        {vendedor.name} ({vendedor.email})
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+              
+              {/* Informações do Agendamento */}
+              <div className="bg-muted p-3 rounded-lg text-sm">
+                <div><strong>Pós-graduação:</strong> {selectedPosGraduacao}</div>
+                <div><strong>Data/Hora:</strong> {forceScheduleData.data_agendamento ? new Date(forceScheduleData.data_agendamento).toLocaleString('pt-BR') : 'Não definido'}</div>
+                <div><strong>Lead:</strong> {leads.find(l => l.id === selectedLead)?.nome}</div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowForceScheduleForm(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleCreateForceSchedule}
+                className="bg-orange-600 hover:bg-orange-700"
+                disabled={!forceScheduleData.vendedor_id}
+              >
+                Criar Agendamento Forçado
               </Button>
             </div>
           </div>
