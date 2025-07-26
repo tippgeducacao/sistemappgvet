@@ -124,10 +124,10 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
           <div className="flex items-center justify-between mb-0.5">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Target className="w-2 h-2" />
-              {person.isSDR ? 'Meta Reuniões Semanal' : 'Meta Vendas Semanal'}
+              {person.isSDR ? 'Meta Reuniões Semanal' : 'Meta Pontos Semanal'}
             </div>
             <span className="text-xs font-medium">
-              {person.isSDR ? `${person.weeklySales}/${person.weeklyTarget}` : `${person.weeklySales}/${person.weeklyTarget}`} ({weeklyProgress.toFixed(0)}%)
+              {person.isSDR ? `${person.weeklySales}/${person.weeklyTarget}` : `${person.weeklySales.toFixed(1)}/${person.weeklyTarget}`} ({weeklyProgress.toFixed(0)}%)
             </span>
           </div>
           <Progress value={Math.min(weeklyProgress, 100)} className="h-1" />
@@ -137,10 +137,10 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
           <div className="flex items-center justify-between mb-0.5">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Calendar className="w-2 h-2" />
-              {person.isSDR ? 'Meta Reuniões Diária' : 'Meta Vendas Diária'}
+              {person.isSDR ? 'Meta Reuniões Diária' : 'Meta Pontos Diária'}
             </div>
             <span className="text-xs font-medium">
-              {person.isSDR ? `${person.dailySales}/${person.dailyTarget}` : `${person.dailySales}/${person.dailyTarget}`} ({dailyProgress.toFixed(0)}%)
+              {person.isSDR ? `${person.dailySales}/${person.dailyTarget}` : `${person.dailySales.toFixed(1)}/${person.dailyTarget.toFixed(1)}`} ({dailyProgress.toFixed(0)}%)
             </span>
           </div>
           <Progress value={Math.min(dailyProgress, 100)} className="h-1" />
@@ -158,16 +158,16 @@ const TotalSalesCard: React.FC<{ weeklyTotal: number; monthlyTotal: number }> = 
       className="bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 border border-blue-400 dark:border-blue-300 rounded-lg p-4 shadow-xl text-white"
     >
       <div className="text-center">
-        <h3 className="text-lg font-bold mb-2">Vendas Totais</h3>
+        <h3 className="text-lg font-bold mb-2">Pontos Totais</h3>
         <div className="space-y-2">
           <div>
             <div className="text-sm opacity-90">Esta Semana</div>
-            <div className="text-2xl font-bold">{weeklyTotal}</div>
+            <div className="text-2xl font-bold">{weeklyTotal.toFixed(1)}</div>
           </div>
           <div className="h-px bg-white/20"></div>
           <div>
             <div className="text-sm opacity-90">Este Mês</div>
-            <div className="text-2xl font-bold">{monthlyTotal}</div>
+            <div className="text-2xl font-bold">{monthlyTotal.toFixed(1)}</div>
           </div>
         </div>
       </div>
@@ -277,11 +277,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     const isSDR = vendedor.user_type?.includes('sdr') || false;
     
     if (isSDR) {
-      // Para SDRs - usar dados reais das reuniões quando disponível
-      const reunioesSemana = 0; // TODO: buscar reuniões reais da semana
-      const reunioesDia = 0; // TODO: buscar reuniões reais do dia
-      const metaSemanalReunioes = 25; // Meta padrão
-      const metaDiariaReunioes = 4; // Meta padrão
+      // Para SDRs - buscar dados reais das reuniões
+      // TODO: Implementar busca real dos agendamentos por vendedor
+      // Por enquanto, usando valores padrão até implementar o hook correto
+      const reunioesSemana = 0; // Deve buscar agendamentos reais da semana
+      const reunioesDia = 0; // Deve buscar agendamentos reais do dia
+      const metaSemanalReunioes = 25; // Meta padrão - deve buscar da tabela de metas
+      const metaDiariaReunioes = Math.ceil(metaSemanalReunioes / 7);
 
       return {
         id: vendedor.id,
@@ -296,7 +298,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         monthlyTotal: 0 // TODO: buscar reuniões reais do mês
       };
     } else {
-      // Para vendedores - contar vendas e pontuação reais
+      // Para vendedores - usar pontuação em vez de número de vendas
       const vendasVendedorSemana = vendasSemanaAtual.filter(v => v.vendedor_id === vendedor.id);
       const vendasVendedorMes = vendasMesAtual.filter(v => v.vendedor_id === vendedor.id);
       const vendasVendedorDia = vendasDiaAtual.filter(v => v.vendedor_id === vendedor.id);
@@ -307,20 +309,25 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         m.semana === currentWeek
       )?.meta_vendas || 0;
 
-      const points = vendasVendedorSemana.reduce((total, venda) => total + (venda.pontuacao_validada || 0), 0);
-      const metaDiaria = Math.ceil(metaSemanal / 7);
+      // Calcular pontos obtidos (não número de vendas)
+      const pontosSemana = vendasVendedorSemana.reduce((total, venda) => total + (venda.pontuacao_validada || 0), 0);
+      const pontosDia = vendasVendedorDia.reduce((total, venda) => total + (venda.pontuacao_validada || 0), 0);
+      const pontosMes = vendasVendedorMes.reduce((total, venda) => total + (venda.pontuacao_validada || 0), 0);
+      
+      // Meta diária baseada na meta semanal de pontos
+      const metaDiaria = metaSemanal / 7;
 
       return {
         id: vendedor.id,
         name: vendedor.name,
-        weeklySales: vendasVendedorSemana.length,
-        weeklyTarget: metaSemanal,
-        dailySales: vendasVendedorDia.length, // Vendas reais do dia
-        dailyTarget: metaDiaria,
+        weeklySales: pontosSemana, // Pontos da semana, não número de vendas
+        weeklyTarget: metaSemanal, // Meta semanal em pontos
+        dailySales: pontosDia, // Pontos do dia, não número de vendas
+        dailyTarget: metaDiaria, // Meta diária em pontos
         avatar: vendedor.photo_url || '',
-        points,
+        points: pontosSemana, // Pontos para ordenação
         isSDR: false,
-        monthlyTotal: vendasVendedorMes.length
+        monthlyTotal: pontosMes // Pontos do mês, não número de vendas
       };
     }
   });
