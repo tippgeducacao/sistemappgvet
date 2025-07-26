@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useAuthStore } from '@/stores/AuthStore';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VendedorData {
   id: string;
@@ -184,6 +186,30 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const { niveis } = useNiveis();
   const { currentUser } = useAuthStore();
 
+  // Buscar todos os agendamentos para os SDRs
+  const { data: allAgendamentos = [] } = useQuery({
+    queryKey: ['all-agendamentos'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select(`
+          *,
+          sdr:sdr_id(id, name),
+          vendedor:vendedor_id(id, name),
+          lead:lead_id(id, nome)
+        `)
+        .order('data_agendamento', { ascending: false });
+
+      if (error) {
+        console.error('❌ Erro ao buscar agendamentos:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: isOpen, // Só buscar quando o modal estiver aberto
+  });
+
   // Auto-refresh a cada 30 segundos
   useEffect(() => {
     if (!isOpen) return;
@@ -277,25 +303,62 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     const isSDR = vendedor.user_type?.includes('sdr') || false;
     
     if (isSDR) {
-      // Para SDRs - buscar dados reais das reuniões
-      // TODO: Implementar busca real dos agendamentos por vendedor
-      // Por enquanto, usando valores padrão até implementar o hook correto
-      const reunioesSemana = 0; // Deve buscar agendamentos reais da semana
-      const reunioesDia = 0; // Deve buscar agendamentos reais do dia
-      const metaSemanalReunioes = 25; // Meta padrão - deve buscar da tabela de metas
+      // Para SDRs - buscar dados reais das reuniões usando mesma lógica de semana (quarta a terça)
+      // Filtrar agendamentos do SDR para a semana atual
+      const agendamentosSDRSemana = allAgendamentos.filter(agendamento => {
+        const dataAgendamento = new Date(agendamento.data_agendamento);
+        const isDoSDR = agendamento.sdr_id === vendedor.id;
+        const dentroDaSemana = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
+        
+        // Contar apenas agendamentos onde houve comparecimento confirmado
+        const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                           agendamento.resultado_reuniao === 'comprou';
+        
+        return isDoSDR && dentroDaSemana && compareceu;
+      });
+
+      // Filtrar agendamentos do SDR para o dia atual
+      const agendamentosSDRDia = allAgendamentos.filter(agendamento => {
+        const dataAgendamento = new Date(agendamento.data_agendamento);
+        dataAgendamento.setHours(0, 0, 0, 0);
+        const isDoSDR = agendamento.sdr_id === vendedor.id;
+        const dentroDoDia = dataAgendamento.getTime() === startOfDay.getTime();
+        
+        // Contar apenas agendamentos onde houve comparecimento confirmado
+        const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                           agendamento.resultado_reuniao === 'comprou';
+        
+        return isDoSDR && dentroDoDia && compareceu;
+      });
+
+      // Filtrar agendamentos do SDR para o mês atual
+      const agendamentosSDRMes = allAgendamentos.filter(agendamento => {
+        const dataAgendamento = new Date(agendamento.data_agendamento);
+        const isDoSDR = agendamento.sdr_id === vendedor.id;
+        const dentroDoMes = dataAgendamento >= startOfMonth && dataAgendamento <= endOfMonth;
+        
+        // Contar apenas agendamentos onde houve comparecimento confirmado
+        const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                           agendamento.resultado_reuniao === 'comprou';
+        
+        return isDoSDR && dentroDoMes && compareceu;
+      });
+
+      // Buscar meta real do SDR (por enquanto usando padrão)
+      const metaSemanalReunioes = 25; // TODO: buscar da tabela de metas dos SDRs
       const metaDiariaReunioes = Math.ceil(metaSemanalReunioes / 7);
 
       return {
         id: vendedor.id,
         name: vendedor.name,
-        weeklySales: reunioesSemana,
+        weeklySales: agendamentosSDRSemana.length,
         weeklyTarget: metaSemanalReunioes,
-        dailySales: reunioesDia,
+        dailySales: agendamentosSDRDia.length,
         dailyTarget: metaDiariaReunioes,
         avatar: vendedor.photo_url || '',
-        points: 0, // SDRs não têm pontuação
+        points: agendamentosSDRSemana.length, // Para ordenação, usar número de reuniões
         isSDR: true,
-        monthlyTotal: 0 // TODO: buscar reuniões reais do mês
+        monthlyTotal: agendamentosSDRMes.length
       };
     } else {
       // Para vendedores - usar pontuação em vez de número de vendas
