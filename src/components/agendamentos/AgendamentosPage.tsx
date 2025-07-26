@@ -732,12 +732,21 @@ const AgendamentosPage: React.FC = () => {
                   <div>
                     <p className="text-sm font-medium mb-2">Vendedores especializados disponíveis:</p>
                     <div className="space-y-2">
-                      {vendedores.map((vendedor) => (
+                      {vendedores.map((vendedor) => {
+                        // Contar agendamentos não cancelados do vendedor
+                        const contadorAgendamentos = agendamentos.filter(
+                          ag => ag.vendedor_id === vendedor.id && ag.status !== 'cancelado'
+                        ).length;
+                        
+                        return (
                         <div key={vendedor.id} className="flex items-center justify-between p-2 border rounded-lg">
                           <div className="flex items-center gap-2 text-sm">
                             <User className="h-3 w-3" />
                             <span>{vendedor.name}</span>
                             <span className="text-xs text-muted-foreground">({vendedor.email})</span>
+                            <Badge variant={contadorAgendamentos === 0 ? "outline" : "secondary"} className="text-xs">
+                              {contadorAgendamentos} agendamento{contadorAgendamentos !== 1 ? 's' : ''}
+                            </Badge>
                           </div>
                           <Dialog>
                             <DialogTrigger asChild>
@@ -872,7 +881,8 @@ const AgendamentosPage: React.FC = () => {
                             </DialogContent>
                           </Dialog>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
                       O sistema selecionará automaticamente o vendedor com menor número de agendamentos
