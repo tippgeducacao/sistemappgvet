@@ -740,6 +740,10 @@ export type Database = {
         Args: { venda_id: string }
         Returns: undefined
       }
+      update_overdue_appointments: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_venda_status: {
         Args: {
           venda_id_param: string
