@@ -69,6 +69,8 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
         } else {
           return <Badge variant="outline">Pendente</Badge>;
         }
+      case 'atrasado':
+        return <Badge variant="destructive">Atrasado</Badge>;
       case 'cancelado':
         return <Badge variant="destructive">Cancelado</Badge>;
       case 'realizado':

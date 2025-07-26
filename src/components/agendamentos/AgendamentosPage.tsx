@@ -498,6 +498,7 @@ const AgendamentosPage: React.FC = () => {
   const getStatusBadge = (status: string): JSX.Element => {
     const statusConfig = {
       agendado: { label: 'Agendado', variant: 'default' as const },
+      atrasado: { label: 'Atrasado', variant: 'destructive' as const },
       realizado: { label: 'Realizado', variant: 'secondary' as const },
       cancelado: { label: 'Cancelado', variant: 'destructive' as const },
       reagendado: { label: 'Reagendado', variant: 'outline' as const }

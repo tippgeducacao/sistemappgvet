@@ -39,27 +39,12 @@ export const useReuniaoAtrasada = () => {
           lead:leads(nome, email, whatsapp)
         `)
         .eq('vendedor_id', profile.id)
-        .eq('status', 'agendado')
+        .eq('status', 'atrasado') // Buscar apenas agendamentos com status atrasado
         .order('data_agendamento', { ascending: true });
 
       if (error) throw error;
 
-      // Filtrar agendamentos que já passaram do horário
-      const agora = new Date();
-      const atrasados = (data || []).filter(agendamento => {
-        const dataFim = agendamento.data_fim_agendamento 
-          ? new Date(agendamento.data_fim_agendamento)
-          : new Date(new Date(agendamento.data_agendamento).getTime() + 60 * 60 * 1000); // 1 hora depois se não tiver fim
-        
-        return isAfter(agora, dataFim);
-      });
-
-      setAgendamentosAtrasados(atrasados);
-
-      // Se encontrou agendamentos atrasados, atualizar o status no banco
-      if (atrasados.length > 0) {
-        await atualizarStatusParaAtrasado(atrasados.map(ag => ag.id));
-      }
+      setAgendamentosAtrasados(data || []);
 
     } catch (error) {
       console.error('Erro ao verificar agendamentos atrasados:', error);
@@ -68,25 +53,13 @@ export const useReuniaoAtrasada = () => {
     }
   };
 
-  const atualizarStatusParaAtrasado = async (agendamentoIds: string[]) => {
-    try {
-      const { error } = await supabase
-        .from('agendamentos')
-        .update({ status: 'atrasado' })
-        .in('id', agendamentoIds);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Erro ao atualizar status para atrasado:', error);
-    }
-  };
 
   useEffect(() => {
     // Verificar imediatamente
     verificarAgendamentosAtrasados();
 
-    // Verificar a cada 5 minutos
-    const interval = setInterval(verificarAgendamentosAtrasados, 5 * 60 * 1000);
+    // Verificar a cada 2 minutos para detectar novos agendamentos atrasados
+    const interval = setInterval(verificarAgendamentosAtrasados, 2 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [profile?.id]);
