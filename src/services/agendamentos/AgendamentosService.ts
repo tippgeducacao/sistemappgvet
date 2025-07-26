@@ -49,7 +49,7 @@ export class AgendamentosService {
     data_fim_agendamento?: string;
     link_reuniao: string;
     observacoes?: string;
-  }): Promise<Agendamento | null> {
+  }, forcarAgendamento: boolean = false): Promise<Agendamento | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
@@ -68,21 +68,23 @@ export class AgendamentosService {
         throw new Error('Não é possível agendar para uma data/hora que já passou');
       }
 
-      // Verificar horário de trabalho do vendedor
-      const verificacaoHorario = await this.verificarHorarioTrabalho(
-        dados.vendedor_id, 
-        dados.data_agendamento, 
-        dados.data_fim_agendamento
-      );
-      
-      if (!verificacaoHorario.valido) {
-        throw new Error(verificacaoHorario.motivo || 'Horário inválido');
-      }
+      // Verificar horário de trabalho do vendedor (apenas se não for agendamento forçado)
+      if (!forcarAgendamento) {
+        const verificacaoHorario = await this.verificarHorarioTrabalho(
+          dados.vendedor_id, 
+          dados.data_agendamento, 
+          dados.data_fim_agendamento
+        );
+        
+        if (!verificacaoHorario.valido) {
+          throw new Error(verificacaoHorario.motivo || 'Horário inválido');
+        }
 
-      // Verificar conflitos de agenda
-      const temConflito = await this.verificarConflitosAgenda(dados.vendedor_id, dados.data_agendamento);
-      if (temConflito) {
-        throw new Error('Vendedor já possui agendamento neste horário');
+        // Verificar conflitos de agenda
+        const temConflito = await this.verificarConflitosAgenda(dados.vendedor_id, dados.data_agendamento);
+        if (temConflito) {
+          throw new Error('Vendedor já possui agendamento neste horário');
+        }
       }
 
       const { data, error } = await supabase

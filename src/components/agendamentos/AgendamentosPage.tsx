@@ -330,7 +330,7 @@ const AgendamentosPage: React.FC = () => {
         pos_graduacao_interesse: forceScheduleData.pos_graduacao_interesse,
         link_reuniao: forceScheduleData.link_reuniao,
         observacoes: forceScheduleData.observacoes
-      });
+      }, true);
 
       if (result) {
         toast.success('Agendamento forçado criado com sucesso!');
@@ -1459,7 +1459,7 @@ const AgendamentosPage: React.FC = () => {
       {showForceScheduleForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4 text-orange-600">
+            <h2 className="text-lg font-semibold mb-4 text-orange-600 dark:text-orange-400">
               Forçar Agendamento
             </h2>
             <p className="text-sm text-muted-foreground mb-4">
@@ -1470,11 +1470,11 @@ const AgendamentosPage: React.FC = () => {
             <div className="space-y-4">
               {/* Seleção de Vendedor */}
               <div>
-                <label className="text-sm font-medium">Vendedor Especializado *</label>
+                <label className="text-sm font-medium dark:text-foreground">Vendedor Especializado *</label>
                 <select
                   value={forceScheduleData.vendedor_id}
                   onChange={(e) => setForceScheduleData(prev => ({ ...prev, vendedor_id: e.target.value }))}
-                  className="w-full mt-1 p-2 border rounded-md"
+                  className="w-full mt-1 p-2 border rounded-md bg-background dark:bg-background dark:border-border dark:text-foreground"
                 >
                   <option value="">Selecione um vendedor</option>
                   {vendedores
@@ -1494,10 +1494,10 @@ const AgendamentosPage: React.FC = () => {
               </div>
               
               {/* Informações do Agendamento */}
-              <div className="bg-muted p-3 rounded-lg text-sm">
-                <div><strong>Pós-graduação:</strong> {selectedPosGraduacao}</div>
-                <div><strong>Data/Hora:</strong> {forceScheduleData.data_agendamento ? new Date(forceScheduleData.data_agendamento).toLocaleString('pt-BR') : 'Não definido'}</div>
-                <div><strong>Lead:</strong> {leads.find(l => l.id === selectedLead)?.nome}</div>
+              <div className="bg-muted/50 dark:bg-muted/30 p-3 rounded-lg text-sm border dark:border-border">
+                <div className="dark:text-foreground"><strong>Pós-graduação:</strong> {selectedPosGraduacao}</div>
+                <div className="dark:text-foreground"><strong>Data/Hora:</strong> {forceScheduleData.data_agendamento ? new Date(forceScheduleData.data_agendamento).toLocaleString('pt-BR') : 'Não definido'}</div>
+                <div className="dark:text-foreground"><strong>Lead:</strong> {leads.find(l => l.id === selectedLead)?.nome}</div>
               </div>
             </div>
             
@@ -1510,7 +1510,7 @@ const AgendamentosPage: React.FC = () => {
               </Button>
               <Button 
                 onClick={handleCreateForceSchedule}
-                className="bg-orange-600 hover:bg-orange-700"
+                className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
                 disabled={!forceScheduleData.vendedor_id}
               >
                 Criar Agendamento Forçado
