@@ -7,16 +7,29 @@ import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards'
 import VendedorMetas from '@/components/dashboard/VendedorMetas';
 import VendedorMetasDiarias from '@/components/dashboard/VendedorMetasDiarias';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
+import ReuniaoAtrasadaModal from '@/components/vendedor/ReuniaoAtrasadaModal';
+import { useReuniaoAtrasada } from '@/hooks/useReuniaoAtrasada';
 import { FileText } from 'lucide-react';
 
 const VendedorDashboard: React.FC = () => {
   const { profile } = useAuthStore();
   const { vendas } = useVendas();
+  const { agendamentosAtrasados, verificarAgendamentosAtrasados } = useReuniaoAtrasada();
 
   // Estado para filtros de período
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
+  
+  // Estado para o modal de reuniões atrasadas
+  const [modalAtrasadaAberto, setModalAtrasadaAberto] = useState(false);
+
+  // Abrir modal automaticamente se há agendamentos atrasados
+  React.useEffect(() => {
+    if (agendamentosAtrasados.length > 0 && !modalAtrasadaAberto) {
+      setModalAtrasadaAberto(true);
+    }
+  }, [agendamentosAtrasados, modalAtrasadaAberto]);
 
   return (
     <div className="space-y-6">
@@ -104,6 +117,14 @@ const VendedorDashboard: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Reuniões Atrasadas */}
+      <ReuniaoAtrasadaModal
+        isOpen={modalAtrasadaAberto}
+        onClose={() => setModalAtrasadaAberto(false)}
+        agendamentos={agendamentosAtrasados}
+        onAtualizarResultado={verificarAgendamentosAtrasados}
+      />
     </div>
   );
 };
