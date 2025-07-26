@@ -123,7 +123,6 @@ const VendedorDashboard: React.FC = () => {
         isOpen={modalAtrasadaAberto}
         onClose={() => setModalAtrasadaAberto(false)}
         agendamentos={agendamentosAtrasados}
-        onAtualizarResultado={verificarAgendamentosAtrasados}
       />
     </div>
   );

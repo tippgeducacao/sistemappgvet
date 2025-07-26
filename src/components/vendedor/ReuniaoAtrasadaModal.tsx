@@ -3,16 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Clock, User, Calendar, AlertTriangle } from 'lucide-react';
+import { Clock, User, Calendar, AlertTriangle, CalendarDays } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useAuthStore } from '@/stores/AuthStore';
-import { useAppStateStore } from '@/stores/AppStateStore';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useAppNavigation } from '@/hooks/useAppNavigation';
 
 interface AgendamentoAtrasado {
   id: string;
@@ -32,20 +26,15 @@ interface ReuniaoAtrasadaModalProps {
   isOpen: boolean;
   onClose: () => void;
   agendamentos: AgendamentoAtrasado[];
-  onAtualizarResultado: () => void;
 }
 
 const ReuniaoAtrasadaModal: React.FC<ReuniaoAtrasadaModalProps> = ({
   isOpen,
   onClose,
-  agendamentos,
-  onAtualizarResultado
+  agendamentos
 }) => {
-  const { showNovaVendaForm } = useAppStateStore();
+  const { navigateToSection } = useAppNavigation();
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<AgendamentoAtrasado | null>(null);
-  const [resultado, setResultado] = useState('');
-  const [observacoes, setObservacoes] = useState('');
-  const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     if (agendamentos.length > 0) {
@@ -53,61 +42,15 @@ const ReuniaoAtrasadaModal: React.FC<ReuniaoAtrasadaModalProps> = ({
     }
   }, [agendamentos]);
 
-  const handleSalvarResultado = async () => {
-    if (!agendamentoSelecionado || !resultado) {
-      toast.error('Selecione um resultado para a reunião');
-      return;
-    }
-
-    setSalvando(true);
-    try {
-      const { error } = await supabase
-        .from('agendamentos')
-        .update({
-          resultado_reuniao: resultado,
-          observacoes_resultado: observacoes,
-          data_resultado: new Date().toISOString(),
-          status: 'realizado'
-        })
-        .eq('id', agendamentoSelecionado.id);
-
-      if (error) throw error;
-
-      toast.success('Resultado da reunião salvo com sucesso!');
-      
-      // Se o resultado for "converteu", abrir o formulário de nova venda
-      if (resultado === 'converteu') {
-        onClose(); // Fechar o modal primeiro
-        showNovaVendaForm(); // Abrir formulário de nova venda
-        return;
-      }
-      
-      // Se há mais agendamentos atrasados, selecionar o próximo
-      const proximoIndex = agendamentos.findIndex(ag => ag.id === agendamentoSelecionado.id) + 1;
-      if (proximoIndex < agendamentos.length) {
-        setAgendamentoSelecionado(agendamentos[proximoIndex]);
-        setResultado('');
-        setObservacoes('');
-      } else {
-        // Não há mais agendamentos atrasados
-        onClose();
-      }
-      
-      onAtualizarResultado();
-    } catch (error) {
-      console.error('Erro ao salvar resultado:', error);
-      toast.error('Erro ao salvar resultado da reunião');
-    } finally {
-      setSalvando(false);
-    }
+  const handleIrParaReunioes = () => {
+    onClose();
+    navigateToSection('reunioes');
   };
 
-  const handlePularAgendamento = () => {
+  const handleProximoAgendamento = () => {
     const proximoIndex = agendamentos.findIndex(ag => ag.id === agendamentoSelecionado?.id) + 1;
     if (proximoIndex < agendamentos.length) {
       setAgendamentoSelecionado(agendamentos[proximoIndex]);
-      setResultado('');
-      setObservacoes('');
     } else {
       onClose();
     }
@@ -132,7 +75,7 @@ const ReuniaoAtrasadaModal: React.FC<ReuniaoAtrasadaModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />
-            Reunião Atrasada - Marcar Resultado
+            Reunião Atrasada - Aviso
           </DialogTitle>
         </DialogHeader>
 
@@ -143,7 +86,7 @@ const ReuniaoAtrasadaModal: React.FC<ReuniaoAtrasadaModalProps> = ({
               <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-orange-800">
                 <p className="font-medium mb-1">⚠️ Atenção!</p>
-                <p>Reuniões atrasadas prejudicam o agendamento de novas reuniões para este vendedor. É importante marcar o resultado o quanto antes para liberar novos agendamentos.</p>
+                <p>Você possui reuniões atrasadas que precisam ter seu resultado marcado. Acesse a aba "Reuniões" para lançar os resultados e liberar novos agendamentos.</p>
               </div>
             </div>
           </div>
@@ -193,65 +136,37 @@ const ReuniaoAtrasadaModal: React.FC<ReuniaoAtrasadaModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* Resultado da Reunião */}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="resultado">Resultado da Reunião *</Label>
-              <Select value={resultado} onValueChange={setResultado}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o resultado da reunião" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="compareceu">Compareceu</SelectItem>
-                  <SelectItem value="nao_compareceu">Não Compareceu</SelectItem>
-                  <SelectItem value="reagendou">Reagendou</SelectItem>
-                  <SelectItem value="converteu">Converteu em Venda</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="observacoes">Observações sobre o Resultado</Label>
-              <Textarea
-                id="observacoes"
-                placeholder="Adicione observações sobre o resultado da reunião..."
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
-
           {/* Contador de Agendamentos */}
           {agendamentos.length > 1 && (
             <div className="text-center text-sm text-muted-foreground">
-              Agendamento {agendamentos.findIndex(ag => ag.id === agendamentoSelecionado.id) + 1} de {agendamentos.length} atrasados
+              Reunião {agendamentos.findIndex(ag => ag.id === agendamentoSelecionado.id) + 1} de {agendamentos.length} atrasadas
             </div>
           )}
 
           {/* Botões de Ação */}
           <div className="flex justify-between gap-3">
-            <Button 
-              variant="outline" 
-              onClick={handlePularAgendamento}
-              disabled={salvando}
-            >
-              Pular para Próxima
-            </Button>
+            {agendamentos.length > 1 && (
+              <Button 
+                variant="outline" 
+                onClick={handleProximoAgendamento}
+              >
+                Próxima Reunião
+              </Button>
+            )}
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 ml-auto">
               <Button 
                 variant="outline" 
                 onClick={onClose}
-                disabled={salvando}
               >
                 Fechar
               </Button>
               <Button 
-                onClick={handleSalvarResultado}
-                disabled={!resultado || salvando}
+                onClick={handleIrParaReunioes}
+                className="bg-blue-600 hover:bg-blue-700"
               >
-                {salvando ? 'Salvando...' : 'Salvar Resultado'}
+                <CalendarDays className="w-4 h-4 mr-2" />
+                Ir para Reuniões
               </Button>
             </div>
           </div>
