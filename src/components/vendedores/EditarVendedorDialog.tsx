@@ -172,12 +172,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
         <div className="space-y-6">
           {/* Informações do usuário */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">Usuário</Label>
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <Label className="text-sm font-medium text-foreground">Usuário</Label>
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
               <div className="flex-1">
-                <p className="font-medium">{vendedor.name}</p>
-                <p className="text-sm text-gray-600">{vendedor.email}</p>
-                <p className="text-sm text-gray-500">{vendedor.user_type}</p>
+                <p className="font-medium text-foreground">{vendedor.name}</p>
+                <p className="text-sm text-muted-foreground">{vendedor.email}</p>
+                <p className="text-sm text-muted-foreground">{vendedor.user_type}</p>
               </div>
               {vendedor.user_type !== 'admin' && vendedor.nivel && (
                 <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel || 'junior')}>
@@ -191,7 +191,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
           {vendedor.user_type !== 'admin' && (
             <>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
+                <Label className="text-sm font-medium text-foreground">
                   Novo Nível
                 </Label>
                 <Select value={selectedNivel || undefined} onValueChange={setSelectedNivel}>
@@ -215,12 +215,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
               {/* Preview das informações do nível selecionado */}
               {selectedNivel && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Informações do Nível</Label>
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <Label className="text-sm font-medium text-foreground">Informações do Nível</Label>
+                  <div className="p-3 bg-accent/20 rounded-lg border border-accent/30">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <span className="text-gray-600">Fixo Mensal:</span>
-                        <p className="font-medium">R$ {
+                        <span className="text-muted-foreground">Fixo Mensal:</span>
+                        <p className="font-medium text-foreground">R$ {
                           selectedNivel === 'junior' ? '2.200' :
                           selectedNivel === 'pleno' ? '2.600' :
                           selectedNivel === 'senior' ? '3.000' :
@@ -228,12 +228,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                         }</p>
                       </div>
                       <div>
-                        <span className="text-gray-600">Vale:</span>
-                        <p className="font-medium">R$ 400</p>
+                        <span className="text-muted-foreground">Vale:</span>
+                        <p className="font-medium text-foreground">R$ 400</p>
                       </div>
                       <div>
-                        <span className="text-gray-600">Variável Semanal:</span>
-                        <p className="font-medium">R$ {
+                        <span className="text-muted-foreground">Variável Semanal:</span>
+                        <p className="font-medium text-foreground">R$ {
                           selectedNivel === 'junior' ? '450' :
                           selectedNivel === 'pleno' ? '500' :
                           selectedNivel === 'senior' ? '550' :
@@ -243,11 +243,11 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                         }</p>
                       </div>
                       <div>
-                        <span className="text-gray-600">
+                        <span className="text-muted-foreground">
                           {selectedNivel.includes('sdr') ? 'Metas Semanais:' : 'Meta Semanal:'}
                         </span>
                         {selectedNivel.includes('sdr') ? (
-                          <div className="font-medium">
+                          <div className="font-medium text-foreground">
                             {selectedNivel.includes('inbound') && (
                               <p>Inbound: {
                                 selectedNivel.includes('junior') ? '55' :
@@ -264,7 +264,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                             )}
                           </div>
                         ) : (
-                          <p className="font-medium flex items-center gap-1">
+                          <p className="font-medium text-foreground flex items-center gap-1">
                             <TrendingUp className="h-3 w-3" />
                             {
                               selectedNivel === 'junior' ? '6' :
@@ -287,8 +287,8 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
             vendedor.user_type === 'sdr_outbound') && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <GraduationCap className="h-4 w-4" />
-                <Label className="text-sm font-medium text-gray-700">
+                <GraduationCap className="h-4 w-4 text-foreground" />
+                <Label className="text-sm font-medium text-foreground">
                   Pós que pode vender ({selectedPosGraduacoes.length}/5)
                 </Label>
               </div>
@@ -306,8 +306,8 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                         htmlFor={curso.id}
                         className={`text-sm cursor-pointer ${
                           !selectedPosGraduacoes.includes(curso.id) && selectedPosGraduacoes.length >= 5
-                            ? 'text-gray-400' 
-                            : 'text-gray-700'
+                            ? 'text-muted-foreground/50' 
+                            : 'text-foreground'
                         }`}
                       >
                         {curso.nome}
@@ -315,7 +315,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-gray-500 italic">
+                  <p className="text-sm text-muted-foreground italic">
                     Nenhuma pós-graduação disponível
                   </p>
                 )}
@@ -326,15 +326,15 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
           {/* Horário de trabalho (para todos os tipos de usuário) */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <Label className="text-sm font-medium text-gray-700">
+              <Clock className="h-4 w-4 text-foreground" />
+              <Label className="text-sm font-medium text-foreground">
                 Horário de Trabalho
               </Label>
             </div>
             
             {/* Seleção de dias */}
             <div className="space-y-2">
-              <Label className="text-xs text-gray-600">Dias de Trabalho</Label>
+              <Label className="text-xs text-muted-foreground">Dias de Trabalho</Label>
               <Select 
                 value={horarioTrabalho.dias_trabalho} 
                 onValueChange={(value: 'segunda_sabado' | 'personalizado') => 
@@ -354,7 +354,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
             {/* Dias personalizados */}
             {horarioTrabalho.dias_trabalho === 'personalizado' && (
               <div className="space-y-2">
-                <Label className="text-xs text-gray-600">Selecione os dias</Label>
+                <Label className="text-xs text-muted-foreground">Selecione os dias</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'].map((dia) => (
                     <div key={dia} className="flex items-center space-x-2">
@@ -371,7 +371,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                           }));
                         }}
                       />
-                      <label htmlFor={dia} className="text-xs capitalize">
+                      <label htmlFor={dia} className="text-xs capitalize text-foreground">
                         {dia === 'terca' ? 'Ter' : dia === 'quarta' ? 'Qua' : 
                          dia === 'quinta' ? 'Qui' : dia === 'sabado' ? 'Sáb' : dia.slice(0,3)}
                       </label>
@@ -383,10 +383,10 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
 
             {/* Horários Segunda a Sexta */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Segunda a Sexta</Label>
+              <Label className="text-sm font-medium text-foreground">Segunda a Sexta</Label>
               <div className="grid grid-cols-4 gap-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-600">1º - Início</Label>
+                  <Label className="text-xs text-muted-foreground">1º - Início</Label>
                   <Input
                     type="time"
                     value={horarioTrabalho.segunda_sexta.periodo1_inicio}
@@ -397,7 +397,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-600">1º - Fim</Label>
+                  <Label className="text-xs text-muted-foreground">1º - Fim</Label>
                   <Input
                     type="time"
                     value={horarioTrabalho.segunda_sexta.periodo1_fim}
@@ -408,7 +408,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-600">2º - Início</Label>
+                  <Label className="text-xs text-muted-foreground">2º - Início</Label>
                   <Input
                     type="time"
                     value={horarioTrabalho.segunda_sexta.periodo2_inicio}
@@ -419,7 +419,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-600">2º - Fim</Label>
+                  <Label className="text-xs text-muted-foreground">2º - Fim</Label>
                   <Input
                     type="time"
                     value={horarioTrabalho.segunda_sexta.periodo2_fim}
@@ -434,10 +434,10 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
 
             {/* Horários Sábado */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Sábado</Label>
+              <Label className="text-sm font-medium text-foreground">Sábado</Label>
               <div className="grid grid-cols-4 gap-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-600">1º - Início</Label>
+                  <Label className="text-xs text-muted-foreground">1º - Início</Label>
                   <Input
                     type="time"
                     value={horarioTrabalho.sabado.periodo1_inicio}
@@ -448,7 +448,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-600">1º - Fim</Label>
+                  <Label className="text-xs text-muted-foreground">1º - Fim</Label>
                   <Input
                     type="time"
                     value={horarioTrabalho.sabado.periodo1_fim}
@@ -459,7 +459,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-600">2º - Início</Label>
+                  <Label className="text-xs text-muted-foreground">2º - Início</Label>
                   <Input
                     type="time"
                     value={horarioTrabalho.sabado.periodo2_inicio}
@@ -470,7 +470,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-600">2º - Fim</Label>
+                  <Label className="text-xs text-muted-foreground">2º - Fim</Label>
                   <Input
                     type="time"
                     value={horarioTrabalho.sabado.periodo2_fim}
@@ -498,7 +498,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className="flex-1"
             >
               {saving ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
