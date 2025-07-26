@@ -70,19 +70,19 @@ const ReunioesCanceladasSDR: React.FC<ReunioesCanceladasSDRProps> = ({
             {agendamentosCancelados.map(agendamento => (
               <div
                 key={agendamento.id}
-                className="p-4 border border-red-200 rounded-lg bg-red-50"
+                className="p-4 border border-destructive/20 rounded-lg bg-destructive/5 dark:bg-destructive/10"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-red-600" />
-                      <span className="font-medium text-red-900">
+                      <User className="h-4 w-4 text-destructive" />
+                      <span className="font-medium text-foreground">
                         {agendamento.lead?.nome}
                       </span>
                       <Badge variant="destructive">Cancelado</Badge>
                     </div>
                     
-                    <div className="flex items-center gap-2 text-sm text-red-700">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="h-3 w-3" />
                       {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                       {agendamento.data_fim_agendamento && (
@@ -93,25 +93,25 @@ const ReunioesCanceladasSDR: React.FC<ReunioesCanceladasSDRProps> = ({
                       )}
                     </div>
                     
-                    <div className="text-sm text-red-600">
+                    <div className="text-sm text-foreground">
                       <strong>Pós-graduação:</strong> {agendamento.pos_graduacao_interesse}
                     </div>
                     
                     {agendamento.vendedor && (
-                      <div className="text-sm text-red-600">
+                      <div className="text-sm text-foreground">
                         <strong>Vendedor:</strong> {agendamento.vendedor.name}
                       </div>
                     )}
                     
                     {agendamento.observacoes && (
-                      <div className="text-sm text-red-600">
+                      <div className="text-sm text-foreground">
                         <strong>Observações:</strong> {agendamento.observacoes}
                       </div>
                     )}
                   </div>
                 </div>
                 
-                <div className="mt-2 text-xs text-red-500">
+                <div className="mt-2 text-xs text-muted-foreground">
                   Cancelado em: {format(new Date(agendamento.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </div>
               </div>

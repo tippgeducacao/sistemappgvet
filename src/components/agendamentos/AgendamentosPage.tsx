@@ -1279,14 +1279,14 @@ const AgendamentosPage: React.FC = () => {
                 .filter(ag => ag.status === 'cancelado') // Apenas cancelados
                 .map((agendamento) => (
                   <Card key={agendamento.id}>
-                    <CardContent className="p-6 bg-red-50 border-red-200">
+                    <CardContent className="p-6 bg-destructive/5 border-destructive/20 dark:bg-destructive/10">
                       <div className="flex items-start justify-between">
                         <div className="space-y-3 flex-1">
                           <div className="flex items-center gap-3">
-                            <User className="h-5 w-5 text-red-600" />
+                            <User className="h-5 w-5 text-destructive" />
                             <div>
-                              <p className="font-semibold text-red-900">{agendamento.lead?.nome}</p>
-                              <div className="flex items-center gap-4 text-sm text-red-700">
+                              <p className="font-semibold text-foreground">{agendamento.lead?.nome}</p>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 {agendamento.lead?.email && (
                                   <span className="flex items-center gap-1">
                                     <Mail className="h-3 w-3" />
@@ -1305,16 +1305,16 @@ const AgendamentosPage: React.FC = () => {
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div>
-                              <p className="text-red-600">Pós-graduação</p>
-                              <p className="font-medium text-red-900">{agendamento.pos_graduacao_interesse}</p>
+                              <p className="text-muted-foreground">Pós-graduação</p>
+                              <p className="font-medium text-foreground">{agendamento.pos_graduacao_interesse}</p>
                             </div>
                             <div>
-                              <p className="text-red-600">Vendedor</p>
-                              <p className="font-medium text-red-900">{agendamento.vendedor?.name}</p>
+                              <p className="text-muted-foreground">Vendedor</p>
+                              <p className="font-medium text-foreground">{agendamento.vendedor?.name}</p>
                             </div>
                             <div>
-                              <p className="text-red-600">Data/Horário</p>
-                              <p className="font-medium text-red-900">
+                              <p className="text-muted-foreground">Data/Horário</p>
+                              <p className="font-medium text-foreground">
                                 {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })} {' '}
                                 {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
                                 {agendamento.data_fim_agendamento && (
@@ -1329,12 +1329,12 @@ const AgendamentosPage: React.FC = () => {
 
                           {agendamento.observacoes && (
                             <div>
-                              <p className="text-red-600 text-sm">Observações</p>
-                              <p className="text-sm text-red-900">{agendamento.observacoes}</p>
+                              <p className="text-muted-foreground text-sm">Observações</p>
+                              <p className="text-sm text-foreground">{agendamento.observacoes}</p>
                             </div>
                           )}
 
-                          <div className="text-xs text-red-500">
+                          <div className="text-xs text-muted-foreground">
                             Cancelado em: {format(new Date(agendamento.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                           </div>
                         </div>

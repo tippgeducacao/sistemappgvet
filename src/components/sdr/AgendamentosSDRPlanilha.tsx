@@ -209,7 +209,7 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
                   <TableRow 
                     key={agendamento.id}
                     className={`cursor-pointer hover:bg-muted/50 ${
-                      isReuniaoPassada(agendamento) ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : ''
+                      isReuniaoPassada(agendamento) ? 'bg-warning/10 border-l-4 border-l-warning dark:bg-warning/5' : ''
                     }`}
                     onClick={() => abrirDialog(agendamento)}
                   >
