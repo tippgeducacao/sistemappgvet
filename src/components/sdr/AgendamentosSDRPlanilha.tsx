@@ -148,7 +148,7 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
       );
 
       if (success) {
-        toast.success('Agendamento atualizado com sucesso!');
+        toast.success('Agendamento atualizado com sucesso! O vendedor foi notificado.');
         setDialogEdicaoAberto(false);
         setEditandoAgendamento(null);
         onRecarregarDados();
@@ -235,28 +235,14 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
                     </TableCell>
                     <TableCell>
                       {agendamento.link_reuniao && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(
-                              agendamento.link_reuniao.startsWith('http') 
-                                ? agendamento.link_reuniao 
-                                : `https://${agendamento.link_reuniao}`,
-                              '_blank'
-                            );
-                          }}
-                          className="flex items-center gap-1"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Acessar
-                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          Link disponível
+                        </span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center gap-1">
-                        {agendamento.status === 'agendado' && (
+                        {(agendamento.status === 'agendado' || agendamento.status === 'atrasado') && (
                           <>
                             <Button 
                               onClick={(e) => {
@@ -266,6 +252,7 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
                               size="sm"
                               variant="ghost"
                               className="h-8 w-8 p-0"
+                              title="Editar agendamento"
                             >
                               <Edit className="h-3 w-3" />
                             </Button>
@@ -277,6 +264,7 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
                               size="sm"
                               variant="ghost"
                               className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              title="Cancelar agendamento"
                             >
                               <X className="h-3 w-3" />
                             </Button>
