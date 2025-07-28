@@ -438,12 +438,12 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const doc = new jsPDF('l', 'mm', 'a4'); // landscape
     const weeks = getWeeksOfMonth(currentYear, currentMonth);
     
-    // Título
+    // PÁGINA 1: VENDEDORES
     doc.setFontSize(16);
     doc.text(`Ranking de Vendedores - ${mesAtualSelecionado}`, 20, 20);
     
-    // Cabeçalhos da tabela
-    const headers = [
+    // Cabeçalhos da tabela de vendedores
+    const vendedoresHeaders = [
       'Vendedor',
       'Nível',
       'Meta Semanal',
@@ -455,8 +455,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       'Comissão Total'
     ];
     
-    // Dados da tabela
-    const data = await Promise.all(ranking.map(async vendedor => {
+    // Dados da tabela de vendedores
+    const vendedoresTableData = await Promise.all(ranking.map(async vendedor => {
       const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
       const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
       const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
@@ -488,25 +488,117 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     }));
     
     autoTable(doc, {
-      head: [headers],
-      body: data,
+      head: [vendedoresHeaders],
+      body: vendedoresTableData,
       startY: 30,
       styles: { fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 30 }, // Vendedor
-      },
-      didDrawCell: (data) => {
-        // Destacar células onde não bateu a meta
-        if (data.column.index >= 4 && data.column.index < 4 + weeks.length) {
-          const cellValue = data.cell.text[0];
-          if (cellValue && cellValue.includes('Não bateu a meta')) {
-            data.cell.styles.fillColor = [255, 200, 200]; // Vermelho claro
-          }
-        }
       }
     });
+
+    // PÁGINA 2: SDRs
+    const sdrsVendedores = vendedores.filter(v => {
+      const isSDRByType = v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound';
+      const isSDRByNivel = v.nivel && (
+        v.nivel.includes('sdr_inbound') || 
+        v.nivel.includes('sdr_outbound') ||
+        v.nivel.includes('inbound') || 
+        v.nivel.includes('outbound')
+      );
+      return isSDRByType || isSDRByNivel;
+    });
+
+    if (sdrsVendedores.length > 0) {
+      // Nova página para SDRs
+      doc.addPage();
+      doc.setFontSize(16);
+      doc.text(`Ranking de SDRs - ${mesAtualSelecionado}`, 20, 20);
+
+      // Cabeçalhos da tabela de SDRs
+      const sdrsHeaders = [
+        'SDR',
+        'Tipo',
+        'Nível',
+        'Meta Semanal',
+        'Salário Base',
+        'Variável Semanal',
+        ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
+        'Total Reuniões',
+        'Atingimento %'
+      ];
+
+      // Dados da tabela de SDRs
+      const sdrsTableData = sdrsVendedores.map(sdr => {
+        const sdrNivel = sdr.nivel || 'junior';
+        
+        // Determinar o tipo de SDR
+        let sdrType = 'inbound';
+        if (sdr.user_type === 'sdr_inbound' || sdrNivel.includes('inbound')) {
+          sdrType = 'inbound';
+        } else if (sdr.user_type === 'sdr_outbound' || sdrNivel.includes('outbound')) {
+          sdrType = 'outbound';
+        }
+        
+        // Buscar configuração do nível
+        let nivelConfig = niveis.find(n => n.nivel === sdrNivel);
+        if (!nivelConfig) {
+          const nivelCompleto = `sdr_${sdrType}_${sdrNivel.replace(/sdr_(inbound|outbound)_/, '')}`;
+          nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
+        }
+        
+        const metaSemanal = sdrType === 'inbound' 
+          ? (nivelConfig?.meta_semanal_inbound || 0) 
+          : (nivelConfig?.meta_semanal_outbound || 0);
+        const metaMensal = metaSemanal * weeks.length;
+        
+        // Calcular reuniões por semana
+        const reunioesPorSemana = weeks.map(week => {
+          const startDate = new Date(week.startDate);
+          const endDate = new Date(week.endDate);
+          
+          const reunioesNaSemana = agendamentos.filter(agendamento => {
+            if (agendamento.sdr_id !== sdr.id) return false;
+            const dataAgendamento = new Date(agendamento.data_agendamento);
+            return dataAgendamento >= startDate && dataAgendamento <= endDate;
+          });
+          
+          return reunioesNaSemana.length;
+        });
+        
+        const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
+        const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
+        
+        const weeklyMeetingsStrings = reunioesPorSemana.map((reunioes, index) => {
+          const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : '0.0';
+          return `${reunioes} reuniões (${percentage}%)`;
+        });
+        
+        return [
+          sdr.name,
+          sdrType === 'inbound' ? 'Inbound' : 'Outbound',
+          sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
+          metaSemanal,
+          `R$ ${(nivelConfig?.fixo_mensal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          `R$ ${(nivelConfig?.variavel_semanal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          ...weeklyMeetingsStrings,
+          totalReunioes,
+          `${achievementPercentage.toFixed(1)}%`
+        ];
+      });
+
+      autoTable(doc, {
+        head: [sdrsHeaders],
+        body: sdrsTableData,
+        startY: 30,
+        styles: { fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 30 }, // SDR
+        }
+      });
+    }
     
-    doc.save(`ranking-vendedores-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+    doc.save(`ranking-vendedores-sdrs-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.pdf`);
   };
 
   // Função para exportar Excel
@@ -558,14 +650,49 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       return row;
     }));
 
-    // Dados dos SDRs
-    const sdrsVendedores = vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound');
-    console.log('👥 SDRs encontrados:', sdrsVendedores.length, sdrsVendedores.map(s => ({ name: s.name, type: s.user_type })));
+    // Dados dos SDRs - verificar diferentes tipos de identificação
+    const sdrsVendedores = vendedores.filter(v => {
+      const isSDRByType = v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound';
+      const isSDRByNivel = v.nivel && (
+        v.nivel.includes('sdr_inbound') || 
+        v.nivel.includes('sdr_outbound') ||
+        v.nivel.includes('inbound') || 
+        v.nivel.includes('outbound')
+      );
+      return isSDRByType || isSDRByNivel;
+    });
+    console.log('👥 SDRs encontrados:', sdrsVendedores.length, sdrsVendedores.map(s => ({ 
+      name: s.name, 
+      type: s.user_type, 
+      nivel: s.nivel 
+    })));
     
     const sdrsData = sdrsVendedores.map(sdr => {
       const sdrNivel = sdr.nivel || 'junior';
-      const nivelConfig = niveis.find(n => n.nivel === sdrNivel);
-      const metaSemanal = sdr.user_type === 'sdr_inbound' 
+      
+      // Determinar o tipo de SDR baseado no user_type ou nivel
+      let sdrType = 'inbound'; // padrão
+      let metaSemanal = 0;
+      
+      if (sdr.user_type === 'sdr_inbound' || sdrNivel.includes('inbound')) {
+        sdrType = 'inbound';
+      } else if (sdr.user_type === 'sdr_outbound' || sdrNivel.includes('outbound')) {
+        sdrType = 'outbound';
+      }
+      
+      // Buscar configuração do nível - tentar diferentes formatos
+      let nivelConfig = niveis.find(n => n.nivel === sdrNivel);
+      if (!nivelConfig) {
+        // Tentar com o formato completo sdr_tipo_nivel
+        const nivelCompleto = `sdr_${sdrType}_${sdrNivel.replace(/sdr_(inbound|outbound)_/, '')}`;
+        nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
+      }
+      if (!nivelConfig) {
+        // Tentar apenas com o tipo
+        nivelConfig = niveis.find(n => n.nivel.includes(sdrType) && n.nivel.includes(sdrNivel.replace(/sdr_(inbound|outbound)_/, '')));
+      }
+      
+      metaSemanal = sdrType === 'inbound' 
         ? (nivelConfig?.meta_semanal_inbound || 0) 
         : (nivelConfig?.meta_semanal_outbound || 0);
       const metaMensal = metaSemanal * weeks.length;
@@ -589,7 +716,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       
       const row: any = {
         'SDR': sdr.name,
-        'Tipo': sdr.user_type === 'sdr_inbound' ? 'Inbound' : 'Outbound',
+        'Tipo': sdrType === 'inbound' ? 'Inbound' : 'Outbound',
         'Nível': sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
         'Meta Semanal': metaSemanal,
         'Salário Base': nivelConfig?.fixo_mensal || 0,
