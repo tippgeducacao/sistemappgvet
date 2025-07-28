@@ -9,7 +9,7 @@ export class VendedorDataService {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('user_type', 'vendedor')
+      .in('user_type', ['vendedor', 'sdr_inbound', 'sdr_outbound'])
       .eq('ativo', true)
       .order('name');
 
