@@ -72,47 +72,29 @@ const SDRRanking: React.FC = () => {
         nivelConfig = niveis.find(n => n.nivel === `sdr_outbound_${sdr.nivel || 'junior'}` && n.tipo_usuario === 'sdr');
       }
 
-      // Vendas de cursos diretas + vendas originadas pelos agendamentos do SDR
+      // Vendas de cursos diretas do SDR (cada curso = 1 venda)
       const vendasSemana = vendas.filter(v => {
         const dataVenda = new Date(v.enviado_em);
-        return v.status === 'matriculado' &&
+        return v.vendedor_id === sdr.id && 
+               v.status === 'matriculado' &&
                dataVenda >= inicioSemana && 
-               dataVenda <= fimSemana &&
-               (v.vendedor_id === sdr.id || // Vendas diretas do SDR
-                agendamentos.some(a => // Vendas originadas pelos agendamentos do SDR
-                  a.sdr_id === sdr.id && 
-                  a.vendedor_id === v.vendedor_id && 
-                  a.resultado_reuniao === 'comprou' &&
-                  Math.abs(new Date(a.data_agendamento).getTime() - new Date(v.enviado_em).getTime()) < 24 * 60 * 60 * 1000 // Dentro de 24h
-                ));
-      }).length; // Cada venda = 1 ponto
+               dataVenda <= fimSemana;
+      }).length;
 
       const vendasMes = vendas.filter(v => {
         const dataVenda = new Date(v.enviado_em);
-        return v.status === 'matriculado' &&
+        return v.vendedor_id === sdr.id && 
+               v.status === 'matriculado' &&
                dataVenda >= inicioMes && 
-               dataVenda <= fimMes &&
-               (v.vendedor_id === sdr.id || // Vendas diretas do SDR
-                agendamentos.some(a => // Vendas originadas pelos agendamentos do SDR
-                  a.sdr_id === sdr.id && 
-                  a.vendedor_id === v.vendedor_id && 
-                  a.resultado_reuniao === 'comprou' &&
-                  Math.abs(new Date(a.data_agendamento).getTime() - new Date(v.enviado_em).getTime()) < 7 * 24 * 60 * 60 * 1000 // Dentro de 7 dias
-                ));
+               dataVenda <= fimMes;
       }).length;
 
       const vendasAno = vendas.filter(v => {
         const dataVenda = new Date(v.enviado_em);
-        return v.status === 'matriculado' &&
+        return v.vendedor_id === sdr.id && 
+               v.status === 'matriculado' &&
                dataVenda >= inicioAno && 
-               dataVenda <= fimAno &&
-               (v.vendedor_id === sdr.id || // Vendas diretas do SDR
-                agendamentos.some(a => // Vendas originadas pelos agendamentos do SDR
-                  a.sdr_id === sdr.id && 
-                  a.vendedor_id === v.vendedor_id && 
-                  a.resultado_reuniao === 'comprou' &&
-                  Math.abs(new Date(a.data_agendamento).getTime() - new Date(v.enviado_em).getTime()) < 30 * 24 * 60 * 60 * 1000 // Dentro de 30 dias
-                ));
+               dataVenda <= fimAno;
       }).length;
 
       // Agendamentos hoje
@@ -204,7 +186,7 @@ const SDRRanking: React.FC = () => {
               Ranking de SDRs
             </CardTitle>
             <CardDescription>
-              Pontuação por vendas de cursos - {periodLabels[selectedPeriod]}
+              Vendas de cursos - {periodLabels[selectedPeriod]}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -286,10 +268,10 @@ const SDRRanking: React.FC = () => {
                       <span className={`text-2xl font-bold ${getSDRColorText(sdr.tipo as 'inbound' | 'outbound')}`}>
                         {sdr.pontosVendas}
                       </span>
-                      <span className="text-sm text-muted-foreground">pts</span>
+                      <span className="text-sm text-muted-foreground">vendas</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Meta: {selectedPeriod === 'semana' ? sdr.metaVendasSemanal : 
+                      Meta de Vendas: {selectedPeriod === 'semana' ? sdr.metaVendasSemanal : 
                             selectedPeriod === 'mes' ? sdr.metaVendasSemanal * 4 :
                             sdr.metaVendasSemanal * 52}
                     </p>
