@@ -14,6 +14,8 @@ export interface AgendamentoLead {
   created_at: string;
   vendedor_nome?: string;
   sdr_nome?: string;
+  resultado_reuniao?: 'nao_compareceu' | 'compareceu_nao_comprou' | 'comprou' | null;
+  data_resultado?: string;
 }
 
 const fetchAgendamentosLeads = async (): Promise<AgendamentoLead[]> => {
@@ -32,6 +34,8 @@ const fetchAgendamentosLeads = async (): Promise<AgendamentoLead[]> => {
       status,
       observacoes,
       created_at,
+      resultado_reuniao,
+      data_resultado,
       vendedor:profiles!vendedor_id(name),
       sdr:profiles!sdr_id(name)
     `)
@@ -45,7 +49,8 @@ const fetchAgendamentosLeads = async (): Promise<AgendamentoLead[]> => {
   const agendamentos = data?.map(agendamento => ({
     ...agendamento,
     vendedor_nome: agendamento.vendedor?.name,
-    sdr_nome: agendamento.sdr?.name
+    sdr_nome: agendamento.sdr?.name,
+    resultado_reuniao: agendamento.resultado_reuniao as 'nao_compareceu' | 'compareceu_nao_comprou' | 'comprou' | null
   })) || [];
 
   console.log('✅ Agendamentos encontrados:', agendamentos.length);

@@ -15,7 +15,7 @@ import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useMetas } from '@/hooks/useMetas';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
-import { useAgendamentos } from '@/hooks/useAgendamentos';
+import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
@@ -36,7 +36,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   const { vendedores, loading: vendedoresLoading } = useVendedores();
   const { metas, loading: metasLoading } = useMetas();
   const { niveis, loading: niveisLoading } = useNiveis();
-  const { agendamentos } = useAgendamentos();
+  const { data: agendamentos } = useAgendamentosLeads();
   const { currentUser, profile } = useAuthStore();
   
   // Estado interno para o filtro de mês (apenas quando não há filtro externo)
@@ -659,6 +659,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       type: s.user_type, 
       nivel: s.nivel 
     })));
+    console.log('📊 Níveis disponíveis para SDRs:', niveis.filter(n => n.nivel.includes('sdr')).map(n => ({
+      nivel: n.nivel,
+      meta_inbound: n.meta_semanal_inbound,
+      meta_outbound: n.meta_semanal_outbound
+    })));
+    console.log('📅 Total de agendamentos disponíveis:', agendamentos?.length || 0);
+    console.log('📋 Agendamentos com resultado:', agendamentos?.filter(a => a.resultado_reuniao).length || 0);
     
     const sdrsData = sdrsVendedores.map(sdr => {
       const sdrNivel = sdr.nivel || 'junior';
@@ -686,6 +693,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         
         const reunioesNaSemana = agendamentos?.filter(agendamento => {
           if (agendamento.sdr_id !== sdr.id) return false;
+          // Contar apenas reuniões com resultado validado
+          if (!agendamento.resultado_reuniao) return false;
           const dataAgendamento = new Date(agendamento.data_agendamento);
           return dataAgendamento >= startDate && dataAgendamento <= endDate;
         }) || [];
