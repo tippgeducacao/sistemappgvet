@@ -531,22 +531,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       // Dados da tabela de SDRs
       const sdrsTableData = sdrsVendedores.map(sdr => {
         const sdrNivel = sdr.nivel || 'junior';
+        const sdrType = sdr.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
         
-        // Determinar o tipo de SDR
-        let sdrType = 'inbound';
-        if (sdr.user_type === 'sdr_inbound' || sdrNivel.includes('inbound')) {
-          sdrType = 'inbound';
-        } else if (sdr.user_type === 'sdr_outbound' || sdrNivel.includes('outbound')) {
-          sdrType = 'outbound';
-        }
+        // Montar o nível completo exatamente como está na tabela niveis_vendedores
+        const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;
+        const nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
         
-        // Buscar configuração do nível
-        let nivelConfig = niveis.find(n => n.nivel === sdrNivel);
-        if (!nivelConfig) {
-          const nivelCompleto = `sdr_${sdrType}_${sdrNivel.replace(/sdr_(inbound|outbound)_/, '')}`;
-          nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
-        }
-        
+        // Buscar a meta correta baseada no tipo do SDR
         const metaSemanal = sdrType === 'inbound' 
           ? (nivelConfig?.meta_semanal_inbound || 0) 
           : (nivelConfig?.meta_semanal_outbound || 0);
