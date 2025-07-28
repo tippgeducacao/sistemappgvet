@@ -24,8 +24,6 @@ import { NiveisService } from '@/services/niveisService';
 import type { Vendedor } from '@/services/vendedoresService';
 import { formatarHorarioTrabalho, type HorarioTrabalho } from '@/utils/horarioUtils';
 import { ImageCropper } from '@/components/ImageCropper';
-import { useGlobalConfigStore } from '@/stores/GlobalConfigStore';
-import { Switch } from '@/components/ui/switch';
 
 const GerenciarVendedores: React.FC = () => {
   const { vendedores, allUsers, loading, fetchVendedores, fetchAllUsers, uploadPhoto, removePhoto, toggleUserStatus, resetPassword } = useVendedores();
@@ -46,7 +44,7 @@ const GerenciarVendedores: React.FC = () => {
   const [currentVendedorId, setCurrentVendedorId] = useState<string>('');
   const { toast } = useToast();
   const { isAdmin, isSecretaria, isDiretor } = useUserRoles();
-  const { allowAllVendedoresAllCourses, setAllowAllVendedoresAllCourses } = useGlobalConfigStore();
+  
 
   // Verificar se o usuário tem permissão para gerenciar usuários (apenas diretores)
   const canManageUsers = isDiretor;
@@ -175,25 +173,6 @@ const GerenciarVendedores: React.FC = () => {
         </div>
       </div>
 
-      {/* Configuração global para vendedores */}
-      <Card className="border-orange-200 bg-orange-50">
-        <CardContent className="pt-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h3 className="text-sm font-medium text-orange-900">
-                Modo Avaliação - Todas as Pós-Graduações
-              </h3>
-              <p className="text-xs text-orange-700">
-                Quando ativado, todos os vendedores podem vender qualquer pós-graduação (útil durante avaliações)
-              </p>
-            </div>
-            <Switch
-              checked={allowAllVendedoresAllCourses}
-              onCheckedChange={setAllowAllVendedoresAllCourses}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       <Tabs defaultValue="ativos" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
