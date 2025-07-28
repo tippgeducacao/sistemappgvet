@@ -675,20 +675,16 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       const sdrNivel = sdr.nivel || 'junior';
       const sdrType = sdr.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
       
-      console.log(`🔍 Processando SDR ${sdr.name}: tipo=${sdrType}, nivel=${sdrNivel}`);
-      
-      // Buscar configuração do nível completo (sdr_inbound_junior, sdr_outbound_pleno, etc)
+      // Montar o nível completo exatamente como está na tabela niveis_vendedores
       const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;
       const nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
       
-      console.log(`📊 Configuração do nível ${nivelCompleto}:`, nivelConfig);
-      
+      // Buscar a meta correta baseada no tipo do SDR
       const metaSemanal = sdrType === 'inbound' 
         ? (nivelConfig?.meta_semanal_inbound || 0) 
         : (nivelConfig?.meta_semanal_outbound || 0);
-      const metaMensal = metaSemanal * weeks.length;
       
-      console.log(`🎯 Meta semanal ${sdr.name}: ${metaSemanal} (${sdrType})`);
+      const metaMensal = metaSemanal * weeks.length;
       
       // Calcular reuniões agendadas por semana
       const reunioesPorSemana = weeks.map(week => {
