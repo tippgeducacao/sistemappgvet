@@ -3,6 +3,7 @@ import { FormSelectField, FormInputField } from '@/components/ui/form-field';
 import { IES_OPTIONS } from '@/constants/formOptions';
 import { useCourses } from '@/hooks/useCourses';
 import { useAuthStore } from '@/stores/AuthStore';
+import { useGlobalConfigStore } from '@/stores/GlobalConfigStore';
 
 interface CourseInfoSectionVendedorProps {
   formData: any;
@@ -12,6 +13,7 @@ interface CourseInfoSectionVendedorProps {
 const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ formData, updateField }) => {
   const { fetchCoursesByModalidade } = useCourses();
   const { profile } = useAuthStore();
+  const { allowAllVendedoresAllCourses } = useGlobalConfigStore();
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
 
@@ -26,13 +28,17 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
       try {
         const courses = await fetchCoursesByModalidade('Pós-Graduação');
         
-        // Filtrar apenas as pós-graduações que o vendedor é especialista
-        const vendedorPosGraduacoes = (profile as any)?.pos_graduacoes || [];
-        const filteredCourses = courses.filter(curso => 
-          vendedorPosGraduacoes.includes(curso.id)
-        );
-        
-        setAvailableCourses(filteredCourses);
+        // Se o modo "todas as pós-graduações" estiver ativo, mostrar todas
+        // Caso contrário, filtrar apenas as que o vendedor é especialista
+        if (allowAllVendedoresAllCourses) {
+          setAvailableCourses(courses);
+        } else {
+          const vendedorPosGraduacoes = (profile as any)?.pos_graduacoes || [];
+          const filteredCourses = courses.filter(curso => 
+            vendedorPosGraduacoes.includes(curso.id)
+          );
+          setAvailableCourses(filteredCourses);
+        }
       } catch (error) {
         console.error('Erro ao carregar pós-graduações:', error);
       } finally {
@@ -41,7 +47,7 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
     };
 
     loadPosGraduacoes();
-  }, [fetchCoursesByModalidade, (profile as any)?.pos_graduacoes]);
+  }, [fetchCoursesByModalidade, (profile as any)?.pos_graduacoes, allowAllVendedoresAllCourses]);
 
   const courseOptions = availableCourses.map(curso => ({ 
     value: curso.id, 
@@ -113,10 +119,18 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
         />
       </div>
 
-      {availableCourses.length === 0 && !coursesLoading && (
+      {!allowAllVendedoresAllCourses && availableCourses.length === 0 && !coursesLoading && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 col-span-2">
           <p className="text-orange-700 text-sm">
             Você não possui especialização em nenhuma pós-graduação. Entre em contato com a administração para definir suas especializações.
+          </p>
+        </div>
+      )}
+
+      {allowAllVendedoresAllCourses && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 col-span-2">
+          <p className="text-blue-700 text-sm">
+            ℹ️ Modo avaliação ativo: Você pode vender qualquer pós-graduação
           </p>
         </div>
       )}
