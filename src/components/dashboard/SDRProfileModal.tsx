@@ -164,53 +164,6 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({ isOpen, onClose, sdr 
             </Select>
           </div>
 
-          {/* Cards de Estatísticas */}
-          {periodStats && (
-            <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Trophy className="h-4 w-4" />
-                    Vendas de Cursos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold">{periodStats.vendas}</span>
-                      <span className="text-sm text-muted-foreground">de {periodStats.metaVendas}</span>
-                    </div>
-                    <Progress value={(periodStats.vendas / periodStats.metaVendas) * 100} className="h-2" />
-                    <p className="text-xs text-muted-foreground">
-                      {Math.round((periodStats.vendas / periodStats.metaVendas) * 100)}% da meta
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Reuniões Agendadas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold">{periodStats.agendamentos}</span>
-                      <span className="text-sm text-muted-foreground">de {periodStats.metaReunioes}</span>
-                    </div>
-                    <Progress value={(periodStats.agendamentos / periodStats.metaReunioes) * 100} className="h-2" />
-                    <p className="text-xs text-muted-foreground">
-                      {Math.round((periodStats.agendamentos / periodStats.metaReunioes) * 100)}% da meta
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
           {/* Tabs com Histórico */}
           <Tabs defaultValue="vendas" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
