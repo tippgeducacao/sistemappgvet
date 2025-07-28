@@ -19,6 +19,7 @@ import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
+import SDRRanking from './SDRRanking';
 
 
 import jsPDF from 'jspdf';
@@ -984,6 +985,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         />
 
       </CardContent>
+      
+      {/* Ranking de SDRs - Posicionado abaixo do ranking de vendedores */}
+      <div className="mt-6">
+        <SDRRanking />
+      </div>
     </Card>
   );
 };
