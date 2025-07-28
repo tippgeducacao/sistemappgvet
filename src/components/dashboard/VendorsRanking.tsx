@@ -15,6 +15,7 @@ import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useMetas } from '@/hooks/useMetas';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
+import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
@@ -35,6 +36,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   const { vendedores, loading: vendedoresLoading } = useVendedores();
   const { metas, loading: metasLoading } = useMetas();
   const { niveis, loading: niveisLoading } = useNiveis();
+  const { agendamentos } = useAgendamentos();
   const { currentUser, profile } = useAuthStore();
   
   // Estado interno para o filtro de mês (apenas quando não há filtro externo)
@@ -511,7 +513,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   const exportToExcel = async () => {
     const weeks = getWeeksOfMonth(currentYear, currentMonth);
     
-    const data = await Promise.all(ranking.map(async vendedor => {
+    // Dados dos Vendedores
+    const vendedoresData = await Promise.all(ranking.map(async vendedor => {
       const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
       const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
       const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
@@ -547,12 +550,71 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       
       return row;
     }));
+
+    // Dados dos SDRs
+    const sdrsVendedores = vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound');
+    const sdrsData = sdrsVendedores.map(sdr => {
+      const sdrNivel = sdr.nivel || 'junior';
+      const nivelConfig = niveis.find(n => n.nivel === sdrNivel);
+      const metaSemanal = sdr.user_type === 'sdr_inbound' 
+        ? (nivelConfig?.meta_semanal_inbound || 0) 
+        : (nivelConfig?.meta_semanal_outbound || 0);
+      const metaMensal = metaSemanal * weeks.length;
+      
+      // Calcular reuniões agendadas por semana
+      const reunioesPorSemana = weeks.map(week => {
+        const startDate = new Date(week.startDate);
+        const endDate = new Date(week.endDate);
+        
+        const reunioesNaSemana = agendamentos.filter(agendamento => {
+          if (agendamento.sdr_id !== sdr.id) return false;
+          const dataAgendamento = new Date(agendamento.data_agendamento);
+          return dataAgendamento >= startDate && dataAgendamento <= endDate;
+        });
+        
+        return reunioesNaSemana.length;
+      });
+      
+      const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
+      const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
+      
+      const row: any = {
+        'SDR': sdr.name,
+        'Tipo': sdr.user_type === 'sdr_inbound' ? 'Inbound' : 'Outbound',
+        'Nível': sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
+        'Meta Semanal': metaSemanal,
+        'Salário Base': nivelConfig?.fixo_mensal || 0,
+        'Variável Semanal': nivelConfig?.variavel_semanal || 0
+      };
+      
+      // Adicionar colunas das semanas com reuniões e porcentagem
+      for (let i = 0; i < reunioesPorSemana.length; i++) {
+        const reunioes = reunioesPorSemana[i];
+        const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : '0.0';
+        
+        row[`Semana ${weeks[i].week} (${weeks[i].label})`] = `${reunioes} reuniões (${percentage}%)`;
+      }
+      
+      // Adicionar colunas finais
+      row['Total Reuniões'] = totalReunioes;
+      row['Atingimento %'] = parseFloat(achievementPercentage.toFixed(1));
+      
+      return row;
+    });
     
-    const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Ranking');
     
-    XLSX.writeFile(workbook, `ranking-vendedores-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.xlsx`);
+    // Adicionar aba dos Vendedores
+    const vendedoresWorksheet = XLSX.utils.json_to_sheet(vendedoresData);
+    XLSX.utils.book_append_sheet(workbook, vendedoresWorksheet, 'Ranking Vendedores');
+    
+    // Adicionar aba dos SDRs
+    if (sdrsData.length > 0) {
+      const sdrsWorksheet = XLSX.utils.json_to_sheet(sdrsData);
+      XLSX.utils.book_append_sheet(workbook, sdrsWorksheet, 'Ranking SDRs');
+    }
+    
+    XLSX.writeFile(workbook, `ranking-vendedores-sdrs-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.xlsx`);
   };
 
   return (
