@@ -650,16 +650,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       return row;
     }));
 
-    // Dados dos SDRs - verificar diferentes tipos de identificação
+    // Dados dos SDRs - buscar apenas usuários com user_type de SDR
     const sdrsVendedores = vendedores.filter(v => {
-      const isSDRByType = v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound';
-      const isSDRByNivel = v.nivel && (
-        v.nivel.includes('sdr_inbound') || 
-        v.nivel.includes('sdr_outbound') ||
-        v.nivel.includes('inbound') || 
-        v.nivel.includes('outbound')
-      );
-      return isSDRByType || isSDRByNivel;
+      return v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound';
     });
     console.log('👥 SDRs encontrados:', sdrsVendedores.length, sdrsVendedores.map(s => ({ 
       name: s.name, 
@@ -669,50 +662,42 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     
     const sdrsData = sdrsVendedores.map(sdr => {
       const sdrNivel = sdr.nivel || 'junior';
+      const sdrType = sdr.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
       
-      // Determinar o tipo de SDR baseado no user_type ou nivel
-      let sdrType = 'inbound'; // padrão
-      let metaSemanal = 0;
+      console.log(`🔍 Processando SDR ${sdr.name}: tipo=${sdrType}, nivel=${sdrNivel}`);
       
-      if (sdr.user_type === 'sdr_inbound' || sdrNivel.includes('inbound')) {
-        sdrType = 'inbound';
-      } else if (sdr.user_type === 'sdr_outbound' || sdrNivel.includes('outbound')) {
-        sdrType = 'outbound';
-      }
+      // Buscar configuração do nível completo (sdr_inbound_junior, sdr_outbound_pleno, etc)
+      const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;
+      const nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
       
-      // Buscar configuração do nível - tentar diferentes formatos
-      let nivelConfig = niveis.find(n => n.nivel === sdrNivel);
-      if (!nivelConfig) {
-        // Tentar com o formato completo sdr_tipo_nivel
-        const nivelCompleto = `sdr_${sdrType}_${sdrNivel.replace(/sdr_(inbound|outbound)_/, '')}`;
-        nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
-      }
-      if (!nivelConfig) {
-        // Tentar apenas com o tipo
-        nivelConfig = niveis.find(n => n.nivel.includes(sdrType) && n.nivel.includes(sdrNivel.replace(/sdr_(inbound|outbound)_/, '')));
-      }
+      console.log(`📊 Configuração do nível ${nivelCompleto}:`, nivelConfig);
       
-      metaSemanal = sdrType === 'inbound' 
+      const metaSemanal = sdrType === 'inbound' 
         ? (nivelConfig?.meta_semanal_inbound || 0) 
         : (nivelConfig?.meta_semanal_outbound || 0);
       const metaMensal = metaSemanal * weeks.length;
+      
+      console.log(`🎯 Meta semanal ${sdr.name}: ${metaSemanal} (${sdrType})`);
       
       // Calcular reuniões agendadas por semana
       const reunioesPorSemana = weeks.map(week => {
         const startDate = new Date(week.startDate);
         const endDate = new Date(week.endDate);
         
-        const reunioesNaSemana = agendamentos.filter(agendamento => {
+        const reunioesNaSemana = agendamentos?.filter(agendamento => {
           if (agendamento.sdr_id !== sdr.id) return false;
           const dataAgendamento = new Date(agendamento.data_agendamento);
           return dataAgendamento >= startDate && dataAgendamento <= endDate;
-        });
+        }) || [];
         
+        console.log(`📅 Semana ${week.week} ${sdr.name}: ${reunioesNaSemana.length} reuniões`);
         return reunioesNaSemana.length;
       });
       
       const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
       const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
+      
+      console.log(`📈 ${sdr.name}: Total reuniões=${totalReunioes}, Meta mensal=${metaMensal}, Atingimento=${achievementPercentage.toFixed(1)}%`);
       
       const row: any = {
         'SDR': sdr.name,
