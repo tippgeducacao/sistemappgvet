@@ -24,7 +24,6 @@ interface SDRStats {
   agendamentosHoje: number;
   agendamentosSemana: number;
   nivel: string;
-  pontuacaoEvoluicao: number; // Para evolução de carreira (0-120)
 }
 
 const SDRRanking: React.FC = () => {
@@ -59,19 +58,18 @@ const SDRRanking: React.FC = () => {
     const inicioAno = new Date(hoje.getFullYear(), 0, 1);
     const fimAno = new Date(hoje.getFullYear(), 11, 31);
 
-     return sdrs.map(sdr => {
-       // Determinar se é inbound ou outbound baseado no user_type
-       const isInbound = sdr.user_type === 'sdr_inbound';
-       const isOutbound = sdr.user_type === 'sdr_outbound';
-       
-       
-       // Buscar configuração do nível baseado no tipo de SDR
-       let nivelConfig;
-       if (isInbound) {
-         nivelConfig = niveis.find(n => n.nivel === `sdr_inbound_${sdr.nivel || 'junior'}` && n.tipo_usuario === 'sdr');
-       } else if (isOutbound) {
-         nivelConfig = niveis.find(n => n.nivel === `sdr_outbound_${sdr.nivel || 'junior'}` && n.tipo_usuario === 'sdr');
-       }
+    return sdrs.map(sdr => {
+      // Determinar se é inbound ou outbound baseado no user_type
+      const isInbound = sdr.user_type === 'sdr_inbound';
+      const isOutbound = sdr.user_type === 'sdr_outbound';
+      
+      // Buscar configuração do nível baseado no tipo de SDR
+      let nivelConfig;
+      if (isInbound) {
+        nivelConfig = niveis.find(n => n.nivel === `sdr_inbound_${sdr.nivel || 'junior'}` && n.tipo_usuario === 'sdr');
+      } else if (isOutbound) {
+        nivelConfig = niveis.find(n => n.nivel === `sdr_outbound_${sdr.nivel || 'junior'}` && n.tipo_usuario === 'sdr');
+      }
 
       // Vendas de cursos (cada curso = 1 ponto para SDR)
       const vendasSemana = vendas.filter(v => {
@@ -123,27 +121,23 @@ const SDRRanking: React.FC = () => {
       // Meta fixa de pontos por vendas de cursos (sempre 10 pontos por semana)
       const metaSemanaltVendas = 10;
 
-      // Calcular pontuação para evolução (baseada em vendas totais)
-      const pontuacaoEvoluicao = Math.min(vendasAno, 120); // Máximo 120 pontos
-
       // Pontos do período selecionado
       let pontosVendas = vendasSemana;
       if (selectedPeriod === 'mes') pontosVendas = vendasMes;
       if (selectedPeriod === 'ano') pontosVendas = vendasAno;
 
-       return {
-         id: sdr.id,
-         nome: sdr.name,
-         photo_url: sdr.photo_url,
-         tipo: (isInbound ? 'inbound' : 'outbound') as 'inbound' | 'outbound',
+      return {
+        id: sdr.id,
+        nome: sdr.name,
+        photo_url: sdr.photo_url,
+        tipo: (isInbound ? 'inbound' : 'outbound') as 'inbound' | 'outbound',
         pontosVendas,
         metaReunioesSemanal: metaSemanaltReunioes,
         metaReunioesdiaria: metaDiariaReunioes,
         metaVendasSemanal: metaSemanaltVendas,
         agendamentosHoje,
         agendamentosSemana,
-        nivel: sdr.nivel || 'junior',
-        pontuacaoEvoluicao
+        nivel: sdr.nivel || 'junior'
       };
     });
   }, [sdrs, vendas, agendamentos, niveis, selectedPeriod]);
@@ -173,17 +167,6 @@ const SDRRanking: React.FC = () => {
 
   const getSDRColorText = (tipo: 'inbound' | 'outbound') => {
     return tipo === 'inbound' ? 'text-blue-600' : 'text-green-600';
-  };
-
-  const getEvolutionLevel = (pontuacao: number) => {
-    if (pontuacao >= 120) return 'Pronto para Vendedor';
-    if (pontuacao >= 80) return 'Sênior';
-    if (pontuacao >= 40) return 'Pleno';
-    return 'Júnior';
-  };
-
-  const getEvolutionProgress = (pontuacao: number) => {
-    return Math.min((pontuacao / 120) * 100, 100);
   };
 
   const periodLabels = {
@@ -237,7 +220,7 @@ const SDRRanking: React.FC = () => {
           <div className="space-y-4">
             {ranking.map((sdr, index) => {
               const position = index + 1;
-              const progressoMeta = selectedPeriod === 'semana' ? 
+              const progressoVendas = selectedPeriod === 'semana' ? 
                 (sdr.pontosVendas / sdr.metaVendasSemanal) * 100 : 
                 selectedPeriod === 'mes' ?
                 (sdr.pontosVendas / (sdr.metaVendasSemanal * 4)) * 100 :
@@ -250,35 +233,35 @@ const SDRRanking: React.FC = () => {
                     {getPositionIcon(position)}
                   </div>
 
-                    {/* Avatar e Nome - Clicável */}
-                    <div 
-                      className="flex items-center space-x-3 min-w-0 flex-1 cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors"
-                      onClick={() => {
-                        setSelectedSDR(sdr);
-                        setShowHistory(true);
-                      }}
-                    >
-                     <Avatar className="h-10 w-10">
-                       <AvatarImage src={sdr.photo_url} alt={sdr.nome} />
-                       <AvatarFallback>
-                         {sdr.nome.split(' ').map(n => n[0]).join('').toUpperCase()}
-                       </AvatarFallback>
-                     </Avatar>
-                     <div className="min-w-0 flex-1">
-                       <p className="font-medium truncate">{sdr.nome}</p>
-                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                         <Badge 
-                           variant="outline" 
-                           className={`${getSDRColor(sdr.tipo as 'inbound' | 'outbound')} text-white border-0`}
-                         >
-                           {sdr.tipo === 'inbound' ? 'Inbound' : 'Outbound'}
-                         </Badge>
-                         <span className="text-xs">{sdr.nivel}</span>
-                       </div>
-                     </div>
-                   </div>
+                  {/* Avatar e Nome - Clicável */}
+                  <div 
+                    className="flex items-center space-x-3 min-w-0 flex-1 cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors"
+                    onClick={() => {
+                      setSelectedSDR(sdr);
+                      setShowHistory(true);
+                    }}
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={sdr.photo_url} alt={sdr.nome} />
+                      <AvatarFallback>
+                        {sdr.nome.split(' ').map(n => n[0]).join('').toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{sdr.nome}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Badge 
+                          variant="outline" 
+                          className={`${getSDRColor(sdr.tipo as 'inbound' | 'outbound')} text-white border-0`}
+                        >
+                          {sdr.tipo === 'inbound' ? 'Inbound' : 'Outbound'}
+                        </Badge>
+                        <span className="text-xs">{sdr.nivel}</span>
+                      </div>
+                    </div>
+                  </div>
 
-                  {/* Pontuação */}
+                  {/* Pontuação de Vendas */}
                   <div className="text-right">
                     <div className="flex items-center gap-2">
                       <span className={`text-2xl font-bold ${getSDRColorText(sdr.tipo as 'inbound' | 'outbound')}`}>
@@ -287,20 +270,26 @@ const SDRRanking: React.FC = () => {
                       <span className="text-sm text-muted-foreground">pts</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Meta reuniões: {sdr.metaReunioesSemanal}/semana
+                      Meta: {selectedPeriod === 'semana' ? sdr.metaVendasSemanal : 
+                            selectedPeriod === 'mes' ? sdr.metaVendasSemanal * 4 :
+                            sdr.metaVendasSemanal * 52}
                     </p>
                   </div>
 
-          {/* Progresso da Meta de Reuniões */}
-          <div className="w-24">
-            <div className="text-center mb-1">
-              <span className="text-xs font-medium">{sdr.agendamentosSemana}/{sdr.metaReunioesSemanal}</span>
-            </div>
-            <Progress value={Math.min((sdr.agendamentosSemana / sdr.metaReunioesSemanal) * 100, 100)} className="h-2" />
-            <p className="text-xs text-center mt-1 text-muted-foreground">
-              {Math.round((sdr.agendamentosSemana / sdr.metaReunioesSemanal) * 100)}%
-            </p>
-          </div>
+                  {/* Progresso da Meta de Vendas */}
+                  <div className="w-24">
+                    <div className="text-center mb-1">
+                      <span className="text-xs font-medium">
+                        {sdr.pontosVendas}/{selectedPeriod === 'semana' ? sdr.metaVendasSemanal : 
+                                           selectedPeriod === 'mes' ? sdr.metaVendasSemanal * 4 :
+                                           sdr.metaVendasSemanal * 52}
+                      </span>
+                    </div>
+                    <Progress value={Math.min(progressoVendas, 100)} className="h-2" />
+                    <p className="text-xs text-center mt-1 text-muted-foreground">
+                      {Math.round(progressoVendas)}%
+                    </p>
+                  </div>
 
                   {/* Agendamentos */}
                   <div className="text-center">
@@ -319,17 +308,12 @@ const SDRRanking: React.FC = () => {
                     <p className="text-xs text-muted-foreground">semana</p>
                   </div>
 
-                  {/* Evolução de Carreira */}
-                  <div className="text-right min-w-[120px]">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">
-                        {sdr.pontuacaoEvoluicao}/120
-                      </span>
+                  {/* Meta de Reuniões */}
+                  <div className="text-center">
+                    <div className="flex items-center gap-1 text-sm">
+                      <span className="font-medium text-purple-600">{sdr.agendamentosSemana}/{sdr.metaReunioesSemanal}</span>
                     </div>
-                    <Progress value={getEvolutionProgress(sdr.pontuacaoEvoluicao)} className="h-1 mt-1" />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {getEvolutionLevel(sdr.pontuacaoEvoluicao)}
-                    </p>
+                    <p className="text-xs text-muted-foreground">reuniões</p>
                   </div>
                 </div>
               );
