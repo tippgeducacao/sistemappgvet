@@ -23,7 +23,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string) => {
         .select(`
           sdr_id,
           resultado_reuniao,
-          sdr:profiles!sdr_id (
+          profiles!sdr_id (
             name
           )
         `)
@@ -46,7 +46,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string) => {
 
       data?.forEach((agendamento: any) => {
         const sdrId = agendamento.sdr_id;
-        const sdrName = agendamento.sdr?.name || 'SDR Desconhecido';
+        const sdrName = agendamento.profiles?.name || 'SDR Desconhecido';
 
         if (!statsMap.has(sdrId)) {
           statsMap.set(sdrId, {
