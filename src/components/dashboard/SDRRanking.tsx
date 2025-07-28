@@ -71,29 +71,47 @@ const SDRRanking: React.FC = () => {
         nivelConfig = niveis.find(n => n.nivel === `sdr_outbound_${sdr.nivel || 'junior'}` && n.tipo_usuario === 'sdr');
       }
 
-      // Vendas de cursos (cada curso = 1 ponto para SDR)
+      // Vendas de cursos diretas + vendas originadas pelos agendamentos do SDR
       const vendasSemana = vendas.filter(v => {
         const dataVenda = new Date(v.enviado_em);
-        return v.vendedor_id === sdr.id && 
-               v.status === 'matriculado' &&
+        return v.status === 'matriculado' &&
                dataVenda >= inicioSemana && 
-               dataVenda <= fimSemana;
+               dataVenda <= fimSemana &&
+               (v.vendedor_id === sdr.id || // Vendas diretas do SDR
+                agendamentos.some(a => // Vendas originadas pelos agendamentos do SDR
+                  a.sdr_id === sdr.id && 
+                  a.vendedor_id === v.vendedor_id && 
+                  a.resultado_reuniao === 'comprou' &&
+                  Math.abs(new Date(a.data_agendamento).getTime() - new Date(v.enviado_em).getTime()) < 24 * 60 * 60 * 1000 // Dentro de 24h
+                ));
       }).length; // Cada venda = 1 ponto
 
       const vendasMes = vendas.filter(v => {
         const dataVenda = new Date(v.enviado_em);
-        return v.vendedor_id === sdr.id && 
-               v.status === 'matriculado' &&
+        return v.status === 'matriculado' &&
                dataVenda >= inicioMes && 
-               dataVenda <= fimMes;
+               dataVenda <= fimMes &&
+               (v.vendedor_id === sdr.id || // Vendas diretas do SDR
+                agendamentos.some(a => // Vendas originadas pelos agendamentos do SDR
+                  a.sdr_id === sdr.id && 
+                  a.vendedor_id === v.vendedor_id && 
+                  a.resultado_reuniao === 'comprou' &&
+                  Math.abs(new Date(a.data_agendamento).getTime() - new Date(v.enviado_em).getTime()) < 7 * 24 * 60 * 60 * 1000 // Dentro de 7 dias
+                ));
       }).length;
 
       const vendasAno = vendas.filter(v => {
         const dataVenda = new Date(v.enviado_em);
-        return v.vendedor_id === sdr.id && 
-               v.status === 'matriculado' &&
+        return v.status === 'matriculado' &&
                dataVenda >= inicioAno && 
-               dataVenda <= fimAno;
+               dataVenda <= fimAno &&
+               (v.vendedor_id === sdr.id || // Vendas diretas do SDR
+                agendamentos.some(a => // Vendas originadas pelos agendamentos do SDR
+                  a.sdr_id === sdr.id && 
+                  a.vendedor_id === v.vendedor_id && 
+                  a.resultado_reuniao === 'comprou' &&
+                  Math.abs(new Date(a.data_agendamento).getTime() - new Date(v.enviado_em).getTime()) < 30 * 24 * 60 * 60 * 1000 // Dentro de 30 dias
+                ));
       }).length;
 
       // Agendamentos hoje
