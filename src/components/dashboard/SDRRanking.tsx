@@ -8,7 +8,7 @@ import { Trophy, Medal, Award, Calendar, Target, TrendingUp, History } from 'luc
 import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useNiveis } from '@/hooks/useNiveis';
-import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
+import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import SDRProfileModal from './SDRProfileModal';
 
@@ -30,7 +30,8 @@ const SDRRanking: React.FC = () => {
   const { vendas } = useAllVendas();
   const { vendedores } = useVendedores();
   const { niveis } = useNiveis();
-  const { agendamentos = [] } = useAgendamentosSDR();
+  const { data: agendamentosData } = useAgendamentosLeads();
+  const agendamentos = agendamentosData || [];
   
   const [selectedPeriod, setSelectedPeriod] = useState<'semana' | 'mes' | 'ano'>('semana');
   const [showHistory, setShowHistory] = useState(false);
