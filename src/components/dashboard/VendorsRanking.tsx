@@ -448,8 +448,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       'Vendedor',
       'Nível',
       'Meta Semanal',
-      'Salário Base',
-      'Variável Semanal',
       ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
       'Total Pontos',
       'Atingimento %',
@@ -479,8 +477,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         vendedor.nome,
         vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
         nivelConfig?.meta_semanal_vendedor || 6,
-        `R$ ${(nivelConfig?.fixo_mensal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-        `R$ ${(nivelConfig?.variavel_semanal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
         ...weeklyCommissionStrings,
         totalPoints,
         `${achievementPercentage.toFixed(1)}%`,
@@ -522,8 +518,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         'Tipo',
         'Nível',
         'Meta Semanal',
-        'Salário Base',
-        'Variável Semanal',
         ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
         'Total Reuniões',
         'Atingimento %'
@@ -575,8 +569,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           sdrType === 'inbound' ? 'Inbound' : 'Outbound',
           sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
           metaSemanal,
-          `R$ ${(nivelConfig?.fixo_mensal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-          `R$ ${(nivelConfig?.variavel_semanal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
           ...weeklyMeetingsStrings,
           totalReunioes,
           `${achievementPercentage.toFixed(1)}%`
@@ -621,9 +613,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       const row: any = {
         'Vendedor': vendedor.nome,
         'Nível': vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
-        'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 6,
-        'Salário Base': nivelConfig?.fixo_mensal || 0,
-        'Variável Semanal': nivelConfig?.variavel_semanal || 0
+        'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 6
       };
       
       // Adicionar colunas das semanas com pontos, porcentagem, multiplicadores e valores
@@ -706,9 +696,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         'SDR': sdr.name,
         'Tipo': sdrType === 'inbound' ? 'Inbound' : 'Outbound',
         'Nível': sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
-        'Meta Semanal': metaSemanal,
-        'Salário Base': nivelConfig?.fixo_mensal || 0,
-        'Variável Semanal': nivelConfig?.variavel_semanal || 0
+        'Meta Semanal': metaSemanal
       };
       
       // Adicionar colunas das semanas com reuniões e porcentagem
