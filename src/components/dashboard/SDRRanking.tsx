@@ -10,7 +10,7 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import SDRHistoryModal from './SDRHistoryModal';
+import SDRProfileModal from './SDRProfileModal';
 
 interface SDRStats {
   id: string;
@@ -35,6 +35,7 @@ const SDRRanking: React.FC = () => {
   
   const [selectedPeriod, setSelectedPeriod] = useState<'semana' | 'mes' | 'ano'>('semana');
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedSDR, setSelectedSDR] = useState<SDRStats | null>(null);
 
   // Filtrar apenas SDRs ativos
   const sdrs = useMemo(() => {
@@ -124,11 +125,11 @@ const SDRRanking: React.FC = () => {
       if (selectedPeriod === 'mes') pontosVendas = vendasMes;
       if (selectedPeriod === 'ano') pontosVendas = vendasAno;
 
-      return {
-        id: sdr.id,
-        nome: sdr.name,
-        photo_url: sdr.photo_url,
-        tipo: isInbound ? 'inbound' : 'outbound',
+       return {
+         id: sdr.id,
+         nome: sdr.name,
+         photo_url: sdr.photo_url,
+         tipo: (isInbound ? 'inbound' : 'outbound') as 'inbound' | 'outbound',
         pontosVendas,
         metaReunioesSemanal: metaSemanaltReunioes,
         metaReunioesdiaria: metaDiariaReunioes,
@@ -243,27 +244,33 @@ const SDRRanking: React.FC = () => {
                     {getPositionIcon(position)}
                   </div>
 
-                  {/* Avatar e Nome */}
-                  <div className="flex items-center space-x-3 min-w-0 flex-1">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={sdr.photo_url} alt={sdr.nome} />
-                      <AvatarFallback>
-                        {sdr.nome.split(' ').map(n => n[0]).join('').toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{sdr.nome}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Badge 
-                          variant="outline" 
-                          className={`${getSDRColor(sdr.tipo as 'inbound' | 'outbound')} text-white border-0`}
-                        >
-                          {sdr.tipo === 'inbound' ? 'Inbound' : 'Outbound'}
-                        </Badge>
-                        <span className="text-xs">{sdr.nivel}</span>
-                      </div>
-                    </div>
-                  </div>
+                    {/* Avatar e Nome - Clicável */}
+                    <div 
+                      className="flex items-center space-x-3 min-w-0 flex-1 cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors"
+                      onClick={() => {
+                        setSelectedSDR(sdr);
+                        setShowHistory(true);
+                      }}
+                    >
+                     <Avatar className="h-10 w-10">
+                       <AvatarImage src={sdr.photo_url} alt={sdr.nome} />
+                       <AvatarFallback>
+                         {sdr.nome.split(' ').map(n => n[0]).join('').toUpperCase()}
+                       </AvatarFallback>
+                     </Avatar>
+                     <div className="min-w-0 flex-1">
+                       <p className="font-medium truncate">{sdr.nome}</p>
+                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                         <Badge 
+                           variant="outline" 
+                           className={`${getSDRColor(sdr.tipo as 'inbound' | 'outbound')} text-white border-0`}
+                         >
+                           {sdr.tipo === 'inbound' ? 'Inbound' : 'Outbound'}
+                         </Badge>
+                         <span className="text-xs">{sdr.nivel}</span>
+                       </div>
+                     </div>
+                   </div>
 
                   {/* Pontuação */}
                   <div className="text-right">
@@ -280,13 +287,16 @@ const SDRRanking: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Progresso da Meta */}
-                  <div className="w-24">
-                    <Progress value={Math.min(progressoMeta, 100)} className="h-2" />
-                    <p className="text-xs text-center mt-1 text-muted-foreground">
-                      {Math.round(progressoMeta)}%
-                    </p>
-                  </div>
+          {/* Progresso da Meta de Reuniões */}
+          <div className="w-24">
+            <div className="text-center mb-1">
+              <span className="text-xs font-medium">{sdr.agendamentosSemana}/{sdr.metaReunioesSemanal}</span>
+            </div>
+            <Progress value={Math.min((sdr.agendamentosSemana / sdr.metaReunioesSemanal) * 100, 100)} className="h-2" />
+            <p className="text-xs text-center mt-1 text-muted-foreground">
+              {Math.round((sdr.agendamentosSemana / sdr.metaReunioesSemanal) * 100)}%
+            </p>
+          </div>
 
                   {/* Agendamentos */}
                   <div className="text-center">
@@ -323,10 +333,14 @@ const SDRRanking: React.FC = () => {
           </div>
         )}
         
-        {/* Modal de Histórico */}
-        <SDRHistoryModal
+        {/* Modal de Perfil */}
+        <SDRProfileModal
           isOpen={showHistory}
-          onClose={() => setShowHistory(false)}
+          onClose={() => {
+            setShowHistory(false);
+            setSelectedSDR(null);
+          }}
+          sdr={selectedSDR}
         />
       </CardContent>
     </Card>
