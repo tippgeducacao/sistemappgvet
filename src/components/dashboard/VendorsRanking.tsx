@@ -557,11 +557,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           const startDate = new Date(week.startDate);
           const endDate = new Date(week.endDate);
           
-          const reunioesNaSemana = agendamentos.filter(agendamento => {
+          const reunioesNaSemana = agendamentos?.filter(agendamento => {
             if (agendamento.sdr_id !== sdr.id) return false;
+            // Contar apenas reuniões onde houve comparecimento confirmado (mesma lógica do TV)
+            const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                              agendamento.resultado_reuniao === 'comprou';
+            if (!compareceu) return false;
             const dataAgendamento = new Date(agendamento.data_agendamento);
             return dataAgendamento >= startDate && dataAgendamento <= endDate;
-          });
+          }) || [];
           
           return reunioesNaSemana.length;
         });
@@ -693,13 +697,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         
         const reunioesNaSemana = agendamentos?.filter(agendamento => {
           if (agendamento.sdr_id !== sdr.id) return false;
-          // Contar apenas reuniões com resultado validado
-          if (!agendamento.resultado_reuniao) return false;
+          // Contar apenas reuniões onde houve comparecimento confirmado (mesma lógica do TV)
+          const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                            agendamento.resultado_reuniao === 'comprou';
+          if (!compareceu) return false;
           const dataAgendamento = new Date(agendamento.data_agendamento);
           return dataAgendamento >= startDate && dataAgendamento <= endDate;
         }) || [];
         
-        console.log(`📅 Semana ${week.week} ${sdr.name}: ${reunioesNaSemana.length} reuniões`);
+        console.log(`📅 Semana ${week.week} ${sdr.name}: ${reunioesNaSemana.length} reuniões validadas`);
         return reunioesNaSemana.length;
       });
       
