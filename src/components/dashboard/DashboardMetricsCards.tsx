@@ -121,10 +121,10 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
         };
       }
       
-      // APENAS contabilizar vendas aprovadas
+      // APENAS contabilizar vendas aprovadas - 0,3 pontos por curso
       if (venda.status === 'matriculado') {
         acc[vendedorId].vendas++;
-        acc[vendedorId].pontuacao += venda.pontuacao_esperada || 0;
+        acc[vendedorId].pontuacao += 0.3; // 0,3 pontos por curso vendido
       }
       return acc;
     }, {} as Record<string, {

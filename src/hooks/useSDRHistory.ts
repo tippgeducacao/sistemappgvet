@@ -24,7 +24,10 @@ export const useSDRHistory = () => {
 
   // Filtrar apenas SDRs
   const sdrs = useMemo(() => {
-    return vendedores.filter(v => v.user_type === 'sdr' && v.ativo);
+    return vendedores.filter(v => 
+      (v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound') && 
+      v.ativo
+    );
   }, [vendedores]);
 
   // Função para obter o número da semana do ano

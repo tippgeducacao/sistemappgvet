@@ -18,8 +18,9 @@ interface SDRStats {
   photo_url?: string;
   tipo: 'inbound' | 'outbound';
   pontosVendas: number; // 1 ponto por curso vendido
-  metaSemanal: number;
-  metaDiaria: number;
+  metaReunioesSemanal: number; // Meta de reuniões
+  metaReunioesdiaria: number; // Meta diária de reuniões
+  metaVendasSemanal: number; // Sempre 10 pontos
   agendamentosHoje: number;
   agendamentosSemana: number;
   nivel: string;
@@ -105,12 +106,15 @@ const SDRRanking: React.FC = () => {
                dataAgendamento <= fimSemana;
       }).length;
 
-      // Metas baseadas no tipo de SDR
-      const metaSemanal = isInbound ? 
+      // Metas baseadas no tipo de SDR (reuniões, não vendas)
+      const metaSemanaltReunioes = isInbound ? 
         (nivelConfig?.meta_semanal_inbound || 10) : 
         (nivelConfig?.meta_semanal_outbound || 10);
 
-      const metaDiaria = Math.ceil(metaSemanal / 7);
+      const metaDiariaReunioes = Math.ceil(metaSemanaltReunioes / 7);
+
+      // Meta fixa de pontos por vendas de cursos (sempre 10 pontos por semana)
+      const metaSemanaltVendas = 10;
 
       // Calcular pontuação para evolução (baseada em vendas totais)
       const pontuacaoEvoluicao = Math.min(vendasAno, 120); // Máximo 120 pontos
@@ -126,8 +130,9 @@ const SDRRanking: React.FC = () => {
         photo_url: sdr.photo_url,
         tipo: isInbound ? 'inbound' : 'outbound',
         pontosVendas,
-        metaSemanal,
-        metaDiaria,
+        metaReunioesSemanal: metaSemanaltReunioes,
+        metaReunioesdiaria: metaDiariaReunioes,
+        metaVendasSemanal: metaSemanaltVendas,
         agendamentosHoje,
         agendamentosSemana,
         nivel: sdr.nivel || 'junior',
@@ -226,10 +231,10 @@ const SDRRanking: React.FC = () => {
             {ranking.map((sdr, index) => {
               const position = index + 1;
               const progressoMeta = selectedPeriod === 'semana' ? 
-                (sdr.pontosVendas / sdr.metaSemanal) * 100 : 
+                (sdr.pontosVendas / sdr.metaVendasSemanal) * 100 : 
                 selectedPeriod === 'mes' ?
-                (sdr.pontosVendas / (sdr.metaSemanal * 4)) * 100 :
-                (sdr.pontosVendas / (sdr.metaSemanal * 52)) * 100;
+                (sdr.pontosVendas / (sdr.metaVendasSemanal * 4)) * 100 :
+                (sdr.pontosVendas / (sdr.metaVendasSemanal * 52)) * 100;
 
               return (
                 <div key={sdr.id} className="flex items-center space-x-4 p-4 bg-background border rounded-lg">
@@ -269,9 +274,9 @@ const SDRRanking: React.FC = () => {
                       <span className="text-sm text-muted-foreground">pts</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Meta: {selectedPeriod === 'semana' ? sdr.metaSemanal : 
-                            selectedPeriod === 'mes' ? sdr.metaSemanal * 4 :
-                            sdr.metaSemanal * 52}
+                      Meta: {selectedPeriod === 'semana' ? sdr.metaVendasSemanal : 
+                            selectedPeriod === 'mes' ? sdr.metaVendasSemanal * 4 :
+                            sdr.metaVendasSemanal * 52}
                     </p>
                   </div>
 

@@ -397,10 +397,10 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         m.semana === currentWeek
       )?.meta_vendas || 0;
 
-      // Calcular pontos obtidos (não número de vendas)
-      const pontosSemana = vendasVendedorSemana.reduce((total, venda) => total + (venda.pontuacao_validada || 0), 0);
-      const pontosDia = vendasVendedorDia.reduce((total, venda) => total + (venda.pontuacao_validada || 0), 0);
-      const pontosMes = vendasVendedorMes.reduce((total, venda) => total + (venda.pontuacao_validada || 0), 0);
+      // Calcular pontos obtidos - 0,3 pontos por curso vendido (não pontuação do formulário)
+      const pontosSemana = vendasVendedorSemana.length * 0.3; // 0,3 pontos por curso
+      const pontosDia = vendasVendedorDia.length * 0.3; // 0,3 pontos por curso
+      const pontosMes = vendasVendedorMes.length * 0.3; // 0,3 pontos por curso
       
       // Meta diária baseada na meta semanal de pontos
       const metaDiaria = metaSemanal / 7;

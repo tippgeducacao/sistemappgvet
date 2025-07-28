@@ -190,7 +190,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       }
       
       acc[vendedorId].vendas++;
-      acc[vendedorId].pontuacao += venda.pontuacao_esperada || 0;
+      acc[vendedorId].pontuacao += 0.3; // 0,3 pontos por curso vendido (não pontuação do formulário)
     }
     
     return acc;
@@ -229,7 +229,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
     return {
       vendas: vendasSemanaAtual.length,
-      pontos: vendasSemanaAtual.reduce((sum, venda) => sum + (venda.pontuacao_esperada || 0), 0)
+      pontos: vendasSemanaAtual.length * 0.3 // 0,3 pontos por curso vendido
     };
   };
 
