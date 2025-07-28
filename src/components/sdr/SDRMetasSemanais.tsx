@@ -31,6 +31,8 @@ export const SDRMetasSemanais = () => {
     const startDate = getDataInicioSemana(selectedYear, selectedMonth, semana);
     const endDate = getDataFimSemana(selectedYear, selectedMonth, semana);
     
+    console.log(`📅 Semana ${semana}: ${startDate.toLocaleDateString('pt-BR')} - ${endDate.toLocaleDateString('pt-BR')}`);
+    
     return agendamentos?.filter(agendamento => {
       if (agendamento.sdr_id !== profile.id) return false;
       
