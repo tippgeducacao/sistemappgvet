@@ -59,13 +59,19 @@ const SDRRanking: React.FC = () => {
     const inicioAno = new Date(hoje.getFullYear(), 0, 1);
     const fimAno = new Date(hoje.getFullYear(), 11, 31);
 
-    return sdrs.map(sdr => {
-      // Determinar se é inbound ou outbound baseado no nível
-      const isInbound = sdr.nivel?.includes('inbound') || false;
-      const isOutbound = sdr.nivel?.includes('outbound') || false;
-      
-      // Buscar configuração do nível
-      const nivelConfig = niveis.find(n => n.nivel === sdr.nivel);
+     return sdrs.map(sdr => {
+       // Determinar se é inbound ou outbound baseado no user_type
+       const isInbound = sdr.user_type === 'sdr_inbound';
+       const isOutbound = sdr.user_type === 'sdr_outbound';
+       
+       
+       // Buscar configuração do nível baseado no tipo de SDR
+       let nivelConfig;
+       if (isInbound) {
+         nivelConfig = niveis.find(n => n.nivel === `sdr_inbound_${sdr.nivel || 'junior'}` && n.tipo_usuario === 'sdr');
+       } else if (isOutbound) {
+         nivelConfig = niveis.find(n => n.nivel === `sdr_outbound_${sdr.nivel || 'junior'}` && n.tipo_usuario === 'sdr');
+       }
 
       // Vendas de cursos (cada curso = 1 ponto para SDR)
       const vendasSemana = vendas.filter(v => {
@@ -281,9 +287,7 @@ const SDRRanking: React.FC = () => {
                       <span className="text-sm text-muted-foreground">pts</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Meta: {selectedPeriod === 'semana' ? sdr.metaVendasSemanal : 
-                            selectedPeriod === 'mes' ? sdr.metaVendasSemanal * 4 :
-                            sdr.metaVendasSemanal * 52}
+                      Meta reuniões: {sdr.metaReunioesSemanal}/semana
                     </p>
                   </div>
 
