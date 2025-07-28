@@ -683,9 +683,27 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       
       console.log(`📊 Configuração do nível ${nivelCompleto}:`, nivelConfig);
       
-      const metaSemanal = sdrType === 'inbound' 
-        ? (nivelConfig?.meta_semanal_inbound || 0) 
-        : (nivelConfig?.meta_semanal_outbound || 0);
+      // Se não encontrar configuração específica, usar a meta padrão baseada no tipo
+      let metaSemanal = 0;
+      if (nivelConfig) {
+        metaSemanal = sdrType === 'inbound' 
+          ? (nivelConfig.meta_semanal_inbound || 0) 
+          : (nivelConfig.meta_semanal_outbound || 0);
+      } else {
+        // Fallback: buscar qualquer configuração SDR do mesmo tipo
+        const fallbackConfig = niveis.find(n => 
+          n.tipo_usuario === `sdr_${sdrType}` || 
+          (n.nivel && n.nivel.includes(`sdr_${sdrType}`))
+        );
+        if (fallbackConfig) {
+          metaSemanal = sdrType === 'inbound' 
+            ? (fallbackConfig.meta_semanal_inbound || 5) // Meta padrão
+            : (fallbackConfig.meta_semanal_outbound || 8); // Meta padrão
+        } else {
+          // Meta padrão se não encontrar nenhuma configuração
+          metaSemanal = sdrType === 'inbound' ? 5 : 8;
+        }
+      }
       const metaMensal = metaSemanal * weeks.length;
       
       console.log(`🎯 Meta semanal ${sdr.name}: ${metaSemanal} (${sdrType})`);
