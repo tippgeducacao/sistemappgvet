@@ -23,7 +23,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string) => {
         .select(`
           sdr_id,
           resultado_reuniao,
-          sdr:profiles!agendamentos_sdr_id_fkey (
+          sdr:profiles!sdr_id (
             name
           )
         `)
