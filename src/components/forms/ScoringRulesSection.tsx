@@ -77,7 +77,6 @@ const ScoringRulesSection: React.FC = () => {
           <div>
             <Label htmlFor="lotePos">
               Lote da Pós-Graduação
-              {renderPointsBadge(getFieldPoints('Lote da Pós-Graduação', formData.lotePos))}
             </Label>
             <Select value={formData.lotePos} onValueChange={(value) => updateField('lotePos', value)}>
               <SelectTrigger>
@@ -107,7 +106,6 @@ const ScoringRulesSection: React.FC = () => {
           <div>
             <Label htmlFor="matricula">
               Matrícula
-              {renderPointsBadge(getFieldPoints('Matrícula', formData.matricula))}
             </Label>
             <Select value={formData.matricula} onValueChange={(value) => updateField('matricula', value)}>
               <SelectTrigger>
@@ -158,7 +156,6 @@ const ScoringRulesSection: React.FC = () => {
             <div>
               <Label htmlFor="modalidade">
                 Modalidade do Curso
-                {renderPointsBadge(getFieldPoints('Modalidade do Curso', formData.modalidade))}
               </Label>
               <Select value={formData.modalidade} onValueChange={(value) => updateField('modalidade', value)}>
                 <SelectTrigger>
@@ -181,7 +178,6 @@ const ScoringRulesSection: React.FC = () => {
           <div>
             <Label htmlFor="parcelamento">
               Condições de Parcelamento
-              {renderPointsBadge(getFieldPoints('Condições de Parcelamento', formData.parcelamento))}
             </Label>
             <Select value={formData.parcelamento} onValueChange={(value) => updateField('parcelamento', value)}>
               <SelectTrigger>
@@ -219,7 +215,6 @@ const ScoringRulesSection: React.FC = () => {
           <div>
             <Label htmlFor="pagamento">
               Forma de Pagamento
-              {renderPointsBadge(getFieldPoints('Forma de Pagamento', formData.pagamento))}
             </Label>
             <Select value={formData.pagamento} onValueChange={(value) => updateField('pagamento', value)}>
               <SelectTrigger>
@@ -249,7 +244,6 @@ const ScoringRulesSection: React.FC = () => {
           <div>
             <Label htmlFor="formaCaptacao">
               Forma de Captação do Lead
-              {renderPointsBadge(getFieldPoints('Forma de Captação do Lead', formData.formaCaptacao))}
             </Label>
             <Select value={formData.formaCaptacao} onValueChange={(value) => updateField('formaCaptacao', value)}>
               <SelectTrigger>
@@ -286,7 +280,6 @@ const ScoringRulesSection: React.FC = () => {
             <div>
               <Label htmlFor="vendaCasada">
                 Venda Casada *
-                {renderPointsBadge(getFieldPoints('Venda Casada', formData.vendaCasada))}
               </Label>
               <Select 
                 value={formData.vendaCasada} 
