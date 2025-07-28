@@ -308,12 +308,15 @@ const SDRRanking: React.FC = () => {
                     <p className="text-xs text-muted-foreground">semana</p>
                   </div>
 
-                  {/* Meta de Reuniões */}
-                  <div className="text-center">
-                    <div className="flex items-center gap-1 text-sm">
-                      <span className="font-medium text-purple-600">{sdr.agendamentosSemana}/{sdr.metaReunioesSemanal}</span>
+                  {/* Meta de Reuniões com Progresso */}
+                  <div className="w-24">
+                    <div className="text-center mb-1">
+                      <span className="text-xs font-medium text-purple-600">{sdr.agendamentosSemana}/{sdr.metaReunioesSemanal}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">reuniões</p>
+                    <Progress value={Math.min((sdr.agendamentosSemana / sdr.metaReunioesSemanal) * 100, 100)} className="h-2" />
+                    <p className="text-xs text-center mt-1 text-muted-foreground">
+                      {Math.round((sdr.agendamentosSemana / sdr.metaReunioesSemanal) * 100)}%
+                    </p>
                   </div>
                 </div>
               );
