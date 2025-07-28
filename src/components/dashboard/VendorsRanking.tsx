@@ -511,6 +511,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   // Função para exportar Excel
   const exportToExcel = async () => {
+    console.log('🚀 Iniciando exportação...');
+    console.log('📊 Dados disponíveis:', { 
+      ranking: ranking.length, 
+      vendedores: vendedores.length, 
+      agendamentos: agendamentos?.length || 0 
+    });
+    
     const weeks = getWeeksOfMonth(currentYear, currentMonth);
     
     // Dados dos Vendedores
@@ -553,6 +560,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
     // Dados dos SDRs
     const sdrsVendedores = vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound');
+    console.log('👥 SDRs encontrados:', sdrsVendedores.length, sdrsVendedores.map(s => ({ name: s.name, type: s.user_type })));
+    
     const sdrsData = sdrsVendedores.map(sdr => {
       const sdrNivel = sdr.nivel || 'junior';
       const nivelConfig = niveis.find(n => n.nivel === sdrNivel);
@@ -602,19 +611,28 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       return row;
     });
     
+    console.log('📋 Dados dos SDRs processados:', sdrsData.length);
+    
     const workbook = XLSX.utils.book_new();
     
     // Adicionar aba dos Vendedores
+    console.log('📊 Criando aba de vendedores com', vendedoresData.length, 'registros');
     const vendedoresWorksheet = XLSX.utils.json_to_sheet(vendedoresData);
     XLSX.utils.book_append_sheet(workbook, vendedoresWorksheet, 'Ranking Vendedores');
     
     // Adicionar aba dos SDRs
     if (sdrsData.length > 0) {
+      console.log('📊 Criando aba de SDRs com', sdrsData.length, 'registros');
       const sdrsWorksheet = XLSX.utils.json_to_sheet(sdrsData);
       XLSX.utils.book_append_sheet(workbook, sdrsWorksheet, 'Ranking SDRs');
+    } else {
+      console.log('⚠️ Nenhum SDR encontrado, não criando aba de SDRs');
     }
     
-    XLSX.writeFile(workbook, `ranking-vendedores-sdrs-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.xlsx`);
+    const fileName = `ranking-vendedores-sdrs-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.xlsx`;
+    console.log('💾 Salvando arquivo:', fileName);
+    XLSX.writeFile(workbook, fileName);
+    console.log('✅ Exportação concluída!');
   };
 
   return (
