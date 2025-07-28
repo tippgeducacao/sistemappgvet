@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, User, Phone, Mail, ExternalLink, Plus } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -28,6 +29,17 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
   const [observacoes, setObservacoes] = useState('');
   const { updateField, clearForm } = useFormStore();
+
+  // Separar reuniões em agendadas (sem resultado) e histórico (com resultado)
+  const { reunioesAgendadas, reunioesHistorico } = useMemo(() => {
+    const agendadas = agendamentos.filter(agendamento => !agendamento.resultado_reuniao);
+    const historico = agendamentos.filter(agendamento => agendamento.resultado_reuniao);
+    
+    return {
+      reunioesAgendadas: agendadas,
+      reunioesHistorico: historico
+    };
+  }, [agendamentos]);
 
   const getStatusBadge = (agendamento: Agendamento) => {
     if (agendamento.resultado_reuniao) {
@@ -117,71 +129,71 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     setNovaVendaAberto(true);
   };
 
-  return (
-    <div className="space-y-4">
-      {agendamentos.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-muted-foreground">Nenhuma reunião encontrada</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Horário</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reunião</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {agendamentos.map((agendamento) => (
-                  <TableRow 
-                    key={agendamento.id}
-                    className={`cursor-pointer hover:bg-muted/50 ${
-                      isReuniaoPerdida(agendamento) ? 'bg-destructive/10 text-destructive' : ''
-                    }`}
-                    onClick={() => abrirDialog(agendamento)}
-                  >
-                    <TableCell className="font-medium">
-                      {agendamento.lead?.nome}
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
-                    </TableCell>
-                    <TableCell>
-                      {formatarHorario(agendamento)}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(agendamento)}
-                    </TableCell>
-                    <TableCell>
-                      {agendamento.link_reuniao && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(
-                              agendamento.link_reuniao.startsWith('http') 
-                                ? agendamento.link_reuniao 
-                                : `https://${agendamento.link_reuniao}`,
-                              '_blank'
-                            );
-                          }}
-                          className="flex items-center gap-1"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Acessar
-                        </Button>
-                      )}
-                    </TableCell>
+  const renderTabela = (listaAgendamentos: Agendamento[], mostrarAcoes: boolean = true) => (
+    listaAgendamentos.length === 0 ? (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p className="text-muted-foreground">Nenhuma reunião encontrada</p>
+        </CardContent>
+      </Card>
+    ) : (
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Horário</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Reunião</TableHead>
+                {mostrarAcoes && <TableHead className="text-right">Ações</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {listaAgendamentos.map((agendamento) => (
+                <TableRow 
+                  key={agendamento.id}
+                  className={`cursor-pointer hover:bg-muted/50 ${
+                    isReuniaoPerdida(agendamento) ? 'bg-destructive/10 text-destructive' : ''
+                  }`}
+                  onClick={() => abrirDialog(agendamento)}
+                >
+                  <TableCell className="font-medium">
+                    {agendamento.lead?.nome}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
+                  </TableCell>
+                  <TableCell>
+                    {formatarHorario(agendamento)}
+                  </TableCell>
+                  <TableCell>
+                    {getStatusBadge(agendamento)}
+                  </TableCell>
+                  <TableCell>
+                    {agendamento.link_reuniao && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(
+                            agendamento.link_reuniao.startsWith('http') 
+                              ? agendamento.link_reuniao 
+                              : `https://${agendamento.link_reuniao}`,
+                            '_blank'
+                          );
+                        }}
+                        className="flex items-center gap-1"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Acessar
+                      </Button>
+                    )}
+                  </TableCell>
+                  {mostrarAcoes && (
                     <TableCell className="text-right">
                       {!agendamento.resultado_reuniao && (
                         <Button 
@@ -196,13 +208,38 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                         </Button>
                       )}
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    )
+  );
+
+  return (
+    <div className="space-y-4">
+      <Tabs defaultValue="agendadas" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="agendadas" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Agendadas ({reunioesAgendadas.length})
+          </TabsTrigger>
+          <TabsTrigger value="historico" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Histórico ({reunioesHistorico.length})
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="agendadas" className="space-y-4">
+          {renderTabela(reunioesAgendadas, true)}
+        </TabsContent>
+        
+        <TabsContent value="historico" className="space-y-4">
+          {renderTabela(reunioesHistorico, false)}
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={dialogAberto} onOpenChange={setDialogAberto}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
