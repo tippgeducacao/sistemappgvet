@@ -103,33 +103,49 @@ export const useMetasSemanaisSDR = () => {
     return Math.ceil((diasDoAno + primeiroDia.getDay() + 1) / 7);
   };
 
-  // Obter semanas do mês (quarta a terça)
+  // Obter semanas do mês (quarta a terça) - só conta semanas que terminam no mês
   const getSemanasDoMes = (ano: number, mes: number): number[] => {
     const semanas: number[] = [];
-    const primeiroDia = new Date(ano, mes - 1, 1);
-    const ultimoDia = new Date(ano, mes, 0);
+    const ultimoDia = new Date(ano, mes, 0); // Último dia do mês
     
-    // Encontrar a primeira quarta-feira do mês
-    let primeiraQuarta = new Date(primeiroDia);
-    while (primeiraQuarta.getDay() !== 3) { // 3 = quarta-feira
-      primeiraQuarta.setDate(primeiraQuarta.getDate() + 1);
+    console.log(`📅 Calculando semanas para ${mes}/${ano}`);
+    
+    // Encontrar a primeira terça-feira do mês
+    let primeiraSegunda = new Date(ano, mes - 1, 1);
+    while (primeiraSegunda.getDay() !== 1) { // 1 = segunda-feira
+      primeiraSegunda.setDate(primeiraSegunda.getDate() + 1);
     }
     
-    // Se a primeira quarta-feira é depois do dia 7, voltar uma semana
-    if (primeiraQuarta.getDate() > 7) {
-      primeiraQuarta.setDate(primeiraQuarta.getDate() - 7);
-    }
+    // A semana vai da quarta anterior à terça
+    let inicioSemana = new Date(primeiraSegunda);
+    inicioSemana.setDate(inicioSemana.getDate() - 5); // Voltar para a quarta anterior
     
-    let semanaAtual = new Date(primeiraQuarta);
     let numeroSemana = 1;
     
-    while (semanaAtual.getMonth() === mes - 1 || 
-           (semanaAtual.getMonth() === mes && semanaAtual.getDate() <= 6)) {
-      semanas.push(numeroSemana);
+    while (true) {
+      // Calcular o fim da semana (terça-feira)
+      let fimSemana = new Date(inicioSemana);
+      fimSemana.setDate(fimSemana.getDate() + 6); // Terça-feira
+      
+      console.log(`📅 Semana ${numeroSemana}: ${inicioSemana.toLocaleDateString('pt-BR')} - ${fimSemana.toLocaleDateString('pt-BR')} (fim no mês ${fimSemana.getMonth() + 1})`);
+      
+      // A semana só conta se terminar no mês especificado
+      if (fimSemana.getMonth() + 1 === mes && fimSemana.getFullYear() === ano) {
+        semanas.push(numeroSemana);
+        console.log(`✅ Semana ${numeroSemana} incluída (termina em ${mes}/${ano})`);
+      } else if (fimSemana.getMonth() + 1 > mes || fimSemana.getFullYear() > ano) {
+        console.log(`❌ Semana ${numeroSemana} não incluída (termina em ${fimSemana.getMonth() + 1}/${fimSemana.getFullYear()})`);
+        break; // Parar quando a semana terminar em mês posterior
+      }
+      
       numeroSemana++;
-      semanaAtual.setDate(semanaAtual.getDate() + 7);
+      inicioSemana.setDate(inicioSemana.getDate() + 7);
+      
+      // Proteção contra loop infinito
+      if (numeroSemana > 10) break;
     }
     
+    console.log(`📅 Semanas válidas para ${mes}/${ano}:`, semanas);
     return semanas;
   };
 
