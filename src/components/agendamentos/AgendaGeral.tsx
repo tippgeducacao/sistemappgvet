@@ -1,20 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar as CalendarIcon, User, Clock, Book, Filter, X } from 'lucide-react';
-import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { format, isSameDay, isWeekend, startOfDay } from 'date-fns';
+import { format, addDays, subDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { formatarHorarioTrabalho } from '@/utils/horarioUtils';
 
 interface Vendedor {
   id: string;
@@ -22,8 +17,20 @@ interface Vendedor {
   email: string;
   photo_url?: string;
   pos_graduacoes: string[];
-  horario_trabalho: any;
-  cursos?: any[];
+  cursos?: string[];
+}
+
+interface Agendamento {
+  id: string;
+  vendedor_id: string;
+  data_agendamento: string;
+  data_fim_agendamento?: string;
+  pos_graduacao_interesse: string;
+  observacoes?: string;
+  status: string;
+  lead?: {
+    nome: string;
+  };
 }
 
 interface AgendaGeralProps {
@@ -32,18 +39,19 @@ interface AgendaGeralProps {
 }
 
 const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [vendedoresFiltrados, setVendedoresFiltrados] = useState<Vendedor[]>([]);
   const [loading, setLoading] = useState(false);
-  const [agendamentos, setAgendamentos] = useState<any[]>([]);
+  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [cursos, setCursos] = useState<any[]>([]);
-
-  // Filtros
   const [filtroPosgGraduacao, setFiltroPosgGraduacao] = useState<string>('todas');
-  const [filtroHorarioInicio, setFiltroHorarioInicio] = useState<string>('');
-  const [filtroHorarioFim, setFiltroHorarioFim] = useState<string>('');
-  const [showFilters, setShowFilters] = useState(false);
+
+  // Horários da timeline (6:00 às 20:00)
+  const horarios = Array.from({ length: 15 }, (_, i) => {
+    const hour = i + 6;
+    return `${hour.toString().padStart(2, '0')}:00`;
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -57,10 +65,9 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     }
   }, [selectedDate]);
 
-  // Aplicar filtros quando houver mudanças
   useEffect(() => {
     aplicarFiltros();
-  }, [vendedores, filtroPosgGraduacao, filtroHorarioInicio, filtroHorarioFim, selectedDate, agendamentos]);
+  }, [vendedores, filtroPosgGraduacao]);
 
   const carregarDados = async () => {
     setLoading(true);
@@ -68,15 +75,10 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       // Buscar apenas vendedores ativos
       const { data: vendedoresData, error: vendedoresError } = await supabase
         .from('profiles')
-        .select('id, name, email, photo_url, pos_graduacoes, horario_trabalho')
+        .select('id, name, email, photo_url, pos_graduacoes')
         .eq('user_type', 'vendedor')
         .eq('ativo', true)
         .order('name');
-
-      console.log('🔍 Vendedores carregados:', vendedoresData?.map(v => ({ 
-        name: v.name, 
-        photo_url: v.photo_url 
-      })));
 
       if (vendedoresError) throw vendedoresError;
 
@@ -145,462 +147,227 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       );
     }
 
-    // Filtro por horário de disponibilidade
-    if (filtroHorarioInicio && filtroHorarioFim && selectedDate) {
-      vendedoresFiltrados = vendedoresFiltrados.filter(vendedor => {
-        // Verificar se o vendedor trabalha no dia selecionado
-        if (!verificarDisponibilidade(vendedor, selectedDate)) {
-          return false;
-        }
-
-        // Verificar se tem horário de trabalho que abranja o período solicitado
-        const temHorarioDisponivel = verificarHorarioDisponivel(
-          vendedor, 
-          selectedDate, 
-          filtroHorarioInicio, 
-          filtroHorarioFim
-        );
-
-        if (!temHorarioDisponivel) {
-          return false;
-        }
-
-        // Verificar se não tem agendamentos conflitantes no período
-        const agendamentosVendedor = getAgendamentosVendedor(vendedor.id);
-        const temConflito = agendamentosVendedor.some(agendamento => {
-          const inicioAgendamento = new Date(agendamento.data_agendamento);
-          const fimAgendamento = agendamento.data_fim_agendamento 
-            ? new Date(agendamento.data_fim_agendamento)
-            : new Date(inicioAgendamento.getTime() + 60 * 60 * 1000); // 1 hora padrão
-
-          const inicioFiltro = new Date(selectedDate);
-          inicioFiltro.setHours(parseInt(filtroHorarioInicio.split(':')[0]), parseInt(filtroHorarioInicio.split(':')[1]));
-          
-          const fimFiltro = new Date(selectedDate);
-          fimFiltro.setHours(parseInt(filtroHorarioFim.split(':')[0]), parseInt(filtroHorarioFim.split(':')[1]));
-
-          // Verificar sobreposição de horários
-          return inicioAgendamento < fimFiltro && fimAgendamento > inicioFiltro;
-        });
-
-        return !temConflito;
-      });
-    }
-
     setVendedoresFiltrados(vendedoresFiltrados);
-  };
-
-  const verificarHorarioDisponivel = (vendedor: Vendedor, data: Date, inicioDesejado: string, fimDesejado: string): boolean => {
-    if (!vendedor.horario_trabalho) return false;
-
-    const diaSemana = data.getDay();
-    const horarioTrabalho = vendedor.horario_trabalho;
-
-    let periodosTrabalho: any[] = [];
-
-    // Verificar formato do horário de trabalho
-    if (horarioTrabalho.manha_inicio) {
-      // Formato antigo
-      periodosTrabalho = [
-        {
-          inicio: horarioTrabalho.manha_inicio,
-          fim: horarioTrabalho.manha_fim
-        },
-        {
-          inicio: horarioTrabalho.tarde_inicio,
-          fim: horarioTrabalho.tarde_fim
-        }
-      ];
-    } else {
-      // Formato novo - verificar com base na configuração de dias de trabalho
-      let trabalhaNesteDia = false;
-      
-      if (horarioTrabalho.dias_trabalho === 'segunda_sabado') {
-        trabalhaNesteDia = diaSemana >= 1 && diaSemana <= 6; // Segunda a sábado
-      } else if (horarioTrabalho.dias_trabalho === 'personalizado') {
-        const diasMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-        const diaAtual = diasMap[diaSemana];
-        trabalhaNesteDia = horarioTrabalho.dias_personalizados?.includes(diaAtual) || false;
-      }
-      
-      if (!trabalhaNesteDia) return false;
-
-      // Determinar qual configuração de horário usar baseado no dia
-      if (diaSemana === 6 && horarioTrabalho.sabado) {
-        // Sábado - usar configuração específica do sábado
-        periodosTrabalho = [
-          {
-            inicio: horarioTrabalho.sabado.periodo1_inicio,
-            fim: horarioTrabalho.sabado.periodo1_fim
-          }
-        ];
-        if (horarioTrabalho.sabado.periodo2_inicio && horarioTrabalho.sabado.periodo2_fim) {
-          periodosTrabalho.push({
-            inicio: horarioTrabalho.sabado.periodo2_inicio,
-            fim: horarioTrabalho.sabado.periodo2_fim
-          });
-        }
-      } else if (diaSemana >= 1 && diaSemana <= 5 && horarioTrabalho.segunda_sexta) {
-        // Segunda a sexta - usar configuração de segunda a sexta
-        periodosTrabalho = [
-          {
-            inicio: horarioTrabalho.segunda_sexta.periodo1_inicio,
-            fim: horarioTrabalho.segunda_sexta.periodo1_fim
-          }
-        ];
-        if (horarioTrabalho.segunda_sexta.periodo2_inicio && horarioTrabalho.segunda_sexta.periodo2_fim) {
-          periodosTrabalho.push({
-            inicio: horarioTrabalho.segunda_sexta.periodo2_inicio,
-            fim: horarioTrabalho.segunda_sexta.periodo2_fim
-          });
-        }
-      }
-    }
-
-    // Verificar se o período desejado se encaixa em algum período de trabalho
-    return periodosTrabalho.some(periodo => {
-      if (!periodo.inicio || !periodo.fim) return false;
-      return inicioDesejado >= periodo.inicio && fimDesejado <= periodo.fim;
-    });
-  };
-
-  const limparFiltros = () => {
-    setFiltroPosgGraduacao('todas');
-    setFiltroHorarioInicio('');
-    setFiltroHorarioFim('');
   };
 
   const posGraduacoesUnicas = [...new Set(
     vendedores.flatMap(v => v.cursos || [])
   )].sort();
 
-  const verificarDisponibilidade = (vendedor: Vendedor, data: Date) => {
-    if (!vendedor.horario_trabalho) return false;
-
-    const diaSemana = data.getDay(); // 0 = domingo, 1 = segunda, ..., 6 = sábado
-    const horarioTrabalho = vendedor.horario_trabalho;
-
-    // Verificar formato novo do horário
-    if (horarioTrabalho.dias_trabalho) {
-      if (horarioTrabalho.dias_trabalho === 'segunda_sabado') {
-        return diaSemana >= 1 && diaSemana <= 6; // Segunda a sábado
-      } else if (horarioTrabalho.dias_trabalho === 'personalizado') {
-        const diasMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-        const diaAtual = diasMap[diaSemana];
-        return horarioTrabalho.dias_personalizados?.includes(diaAtual) || false;
-      }
-    }
-
-    // Formato antigo - assumir segunda a sexta
-    return diaSemana >= 1 && diaSemana <= 5;
+  const getAgendamentosParaVendedorEHorario = (vendedorId: string, horario: string) => {
+    return agendamentos.filter(ag => {
+      if (ag.vendedor_id !== vendedorId) return false;
+      
+      const dataAgendamento = new Date(ag.data_agendamento);
+      const horaAgendamento = dataAgendamento.getHours();
+      const horaTimeline = parseInt(horario.split(':')[0]);
+      
+      return horaAgendamento === horaTimeline;
+    });
   };
 
-  const getAgendamentosVendedor = (vendedorId: string) => {
-    return agendamentos.filter(ag => ag.vendedor_id === vendedorId);
+  const getCorAgendamento = (agendamento: Agendamento) => {
+    const cores = [
+      'bg-blue-200 border-blue-400',
+      'bg-green-200 border-green-400',
+      'bg-yellow-200 border-yellow-400',
+      'bg-purple-200 border-purple-400',
+      'bg-pink-200 border-pink-400',
+      'bg-indigo-200 border-indigo-400',
+    ];
+    
+    // Usar hash simples baseado no ID para consistência de cores
+    const hash = agendamento.id.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    
+    return cores[Math.abs(hash) % cores.length];
   };
 
-  const getStatusDisponibilidade = (vendedor: Vendedor) => {
-    if (!selectedDate) return 'indefinido';
-    
-    const isDisponivel = verificarDisponibilidade(vendedor, selectedDate);
-    if (!isDisponivel) return 'indisponivel';
-    
-    const agendamentosDoVendedor = getAgendamentosVendedor(vendedor.id);
-    
-    // Se tem filtro de horário, verificar disponibilidade específica
-    if (filtroHorarioInicio && filtroHorarioFim) {
-      const temHorarioDisponivel = verificarHorarioDisponivel(
-        vendedor, 
-        selectedDate, 
-        filtroHorarioInicio, 
-        filtroHorarioFim
-      );
-      
-      if (!temHorarioDisponivel) return 'indisponivel';
-      
-      // Verificar conflitos de agendamento no período específico
-      const temConflito = agendamentosDoVendedor.some(agendamento => {
-        const inicioAgendamento = new Date(agendamento.data_agendamento);
-        const fimAgendamento = agendamento.data_fim_agendamento 
-          ? new Date(agendamento.data_fim_agendamento)
-          : new Date(inicioAgendamento.getTime() + 60 * 60 * 1000);
-
-        const inicioFiltro = new Date(selectedDate);
-        inicioFiltro.setHours(parseInt(filtroHorarioInicio.split(':')[0]), parseInt(filtroHorarioInicio.split(':')[1]));
-        
-        const fimFiltro = new Date(selectedDate);
-        fimFiltro.setHours(parseInt(filtroHorarioFim.split(':')[0]), parseInt(filtroHorarioFim.split(':')[1]));
-
-        return inicioAgendamento < fimFiltro && fimAgendamento > inicioFiltro;
-      });
-      
-      return temConflito ? 'ocupado' : 'livre';
-    }
-    
-    // Lógica original para quando não há filtro de horário
-    if (agendamentosDoVendedor.length === 0) return 'livre';
-    
-    return 'ocupado';
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'livre':
-        return <Badge variant="default" className="bg-green-500">Livre</Badge>;
-      case 'ocupado':
-        return <Badge variant="secondary">Ocupado</Badge>;
-      case 'indisponivel':
-        return <Badge variant="destructive">Indisponível</Badge>;
-      default:
-        return <Badge variant="outline">-</Badge>;
+  const navegarData = (direcao: 'anterior' | 'proximo') => {
+    if (direcao === 'anterior') {
+      setSelectedDate(subDays(selectedDate, 1));
+    } else {
+      setSelectedDate(addDays(selectedDate, 1));
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
-            Agenda Geral - Disponibilidade dos Vendedores
+            Agenda Geral - Timeline dos Vendedores
           </DialogTitle>
         </DialogHeader>
 
-        {/* Filtros */}
-        <Card className="mb-4">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                Filtros
-              </CardTitle>
-              <div className="flex gap-2">
+        <div className="flex flex-col h-[calc(95vh-120px)]">
+          {/* Header com navegação e filtros */}
+          <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center gap-4">
+              {/* Navegação de data */}
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
+                  onClick={() => navegarData('anterior')}
                 >
-                  {showFilters ? 'Ocultar' : 'Mostrar'} Filtros
+                  <ChevronLeft className="h-4 w-4" />
                 </Button>
-                {((filtroPosgGraduacao && filtroPosgGraduacao !== 'todas') || filtroHorarioInicio || filtroHorarioFim) && (
-                  <Button variant="outline" size="sm" onClick={limparFiltros}>
-                    <X className="h-3 w-3 mr-1" />
-                    Limpar
-                  </Button>
-                )}
+                
+                <div className="min-w-[200px] text-center">
+                  <span className="font-medium text-lg">
+                    {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </span>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navegarData('proximo')}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Filtro de Pós-graduação */}
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                <Select value={filtroPosgGraduacao} onValueChange={setFiltroPosgGraduacao}>
+                  <SelectTrigger className="w-[250px]">
+                    <SelectValue placeholder="Todas as especializações" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as especializações</SelectItem>
+                    {posGraduacoesUnicas.map((pos, index) => (
+                      <SelectItem key={index} value={pos}>
+                        {pos}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </CardHeader>
-          {showFilters && (
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Filtro por Pós-graduação */}
-                <div>
-                  <Label htmlFor="filtro-pos">Pós-graduação</Label>
-                  <Select value={filtroPosgGraduacao} onValueChange={setFiltroPosgGraduacao}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas as especializações" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todas">Todas as especializações</SelectItem>
-                      {posGraduacoesUnicas.map((pos, index) => (
-                        <SelectItem key={index} value={pos}>
-                          {pos}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          </div>
 
-                {/* Filtro de Horário Início */}
-                <div>
-                  <Label htmlFor="filtro-inicio">Horário Início</Label>
-                  <Input
-                    id="filtro-inicio"
-                    type="time"
-                    value={filtroHorarioInicio}
-                    onChange={(e) => setFiltroHorarioInicio(e.target.value)}
-                    placeholder="HH:mm"
-                  />
-                </div>
-
-                {/* Filtro de Horário Fim */}
-                <div>
-                  <Label htmlFor="filtro-fim">Horário Fim</Label>
-                  <Input
-                    id="filtro-fim"
-                    type="time"
-                    value={filtroHorarioFim}
-                    onChange={(e) => setFiltroHorarioFim(e.target.value)}
-                    placeholder="HH:mm"
-                  />
+          {/* Timeline Container */}
+          <div className="flex-1 overflow-auto">
+            {loading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : vendedoresFiltrados.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <p className="text-muted-foreground">
+                    {vendedores.length === 0 
+                      ? "Nenhum vendedor encontrado"
+                      : "Nenhum vendedor corresponde ao filtro aplicado"
+                    }
+                  </p>
+                  {filtroPosgGraduacao !== 'todas' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2" 
+                      onClick={() => setFiltroPosgGraduacao('todas')}
+                    >
+                      Limpar Filtro
+                    </Button>
+                  )}
                 </div>
               </div>
-              
-              {filtroHorarioInicio && filtroHorarioFim && filtroHorarioInicio >= filtroHorarioFim && (
-                <div className="text-sm text-destructive">
-                  O horário de início deve ser anterior ao horário de fim.
-                </div>
-              )}
-            </CardContent>
-          )}
-        </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendário */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Selecione uma Data</CardTitle>
-                <CardDescription>
-                  Clique em uma data para ver a disponibilidade dos vendedores
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  disabled={(date) => date < startOfDay(new Date())}
-                  className="rounded-md border"
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Lista de Vendedores */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  Disponibilidade para {selectedDate && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                  {((filtroPosgGraduacao && filtroPosgGraduacao !== 'todas') || (filtroHorarioInicio && filtroHorarioFim)) && (
-                    <div className="text-sm font-normal text-muted-foreground mt-1">
-                      {filtroPosgGraduacao && filtroPosgGraduacao !== 'todas' && (
-                        <Badge variant="outline" className="mr-2">
-                          {filtroPosgGraduacao}
-                        </Badge>
-                      )}
-                      {filtroHorarioInicio && filtroHorarioFim && (
-                        <Badge variant="outline">
-                          {filtroHorarioInicio} - {filtroHorarioFim}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  Vendedores e suas especializações 
-                  {vendedoresFiltrados.length !== vendedores.length && (
-                    <span className="text-primary">
-                      ({vendedoresFiltrados.length} de {vendedores.length} vendedores)
-                    </span>
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            ) : (
+              <div className="relative">
+                {/* Grid da Timeline */}
+                <div className="grid" style={{ 
+                  gridTemplateColumns: `80px repeat(${vendedoresFiltrados.length}, 1fr)`,
+                  minWidth: `${80 + (vendedoresFiltrados.length * 200)}px`
+                }}>
+                  {/* Header com vendedores */}
+                  <div className="sticky top-0 bg-background border-b p-2 text-center font-medium text-sm">
+                    Horário
                   </div>
-                ) : vendedoresFiltrados.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="text-muted-foreground">
-                      {vendedores.length === 0 
-                        ? "Nenhum vendedor encontrado"
-                        : "Nenhum vendedor corresponde aos filtros aplicados"
-                      }
-                    </div>
-                    {((filtroPosgGraduacao && filtroPosgGraduacao !== 'todas') || filtroHorarioInicio || filtroHorarioFim) && (
-                      <Button variant="outline" size="sm" className="mt-2" onClick={limparFiltros}>
-                        Limpar Filtros
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {vendedoresFiltrados.map((vendedor) => {
-                      const status = getStatusDisponibilidade(vendedor);
-                      const agendamentosDoVendedor = getAgendamentosVendedor(vendedor.id);
-                      
-                      return (
-                        <div key={vendedor.id} className="border rounded-lg p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage src={vendedor.photo_url} />
-                                <AvatarFallback>
-                                  {vendedor.name?.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <h4 className="font-semibold">{vendedor.name}</h4>
-                                <p className="text-sm text-muted-foreground">{vendedor.email}</p>
-                              </div>
-                            </div>
-                            {getStatusBadge(status)}
-                          </div>
-
-                          {/* Horário de Trabalho */}
-                          {vendedor.horario_trabalho && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>{formatarHorarioTrabalho(vendedor.horario_trabalho)}</span>
-                            </div>
-                          )}
-
-                          {/* Especializações */}
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Book className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">Especializações:</span>
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {vendedor.cursos && vendedor.cursos.length > 0 ? (
-                                vendedor.cursos.map((curso, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs">
-                                    {curso}
-                                  </Badge>
-                                ))
-                              ) : (
-                                <span className="text-xs text-muted-foreground">Nenhuma especialização definida</span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Agendamentos do dia */}
-                          {agendamentosDoVendedor.length > 0 && (
-                            <div className="border-t pt-3">
-                              <h5 className="text-sm font-medium mb-2">Agendamentos do dia:</h5>
-                              <div className="space-y-1">
-                                {agendamentosDoVendedor.map((agendamento) => (
-                                  <div key={agendamento.id} className="text-xs bg-muted p-2 rounded">
-                                    <div className="flex justify-between">
-                                      <span>{format(new Date(agendamento.data_agendamento), 'HH:mm')}</span>
-                                      <span>{agendamento.lead?.nome}</span>
-                                    </div>
-                                    <div className="text-muted-foreground">
-                                      {agendamento.pos_graduacao_interesse}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
+                  {vendedoresFiltrados.map((vendedor) => (
+                    <div key={vendedor.id} className="sticky top-0 bg-background border-b border-l p-3 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={vendedor.photo_url} />
+                          <AvatarFallback className="text-xs">
+                            {vendedor.name?.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="text-xs font-medium">{vendedor.name}</div>
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          {vendedor.cursos?.slice(0, 2).map((curso, index) => (
+                            <Badge key={index} variant="outline" className="text-[10px] px-1 py-0">
+                              {curso.length > 15 ? `${curso.substring(0, 15)}...` : curso}
+                            </Badge>
+                          ))}
+                          {vendedor.cursos && vendedor.cursos.length > 2 && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">
+                              +{vendedor.cursos.length - 2}
+                            </Badge>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                      </div>
+                    </div>
+                  ))}
 
-        <div className="flex justify-end">
-          <Button variant="outline" onClick={onClose}>
-            Fechar
-          </Button>
+                  {/* Linhas de horário */}
+                  {horarios.map((horario) => (
+                    <React.Fragment key={horario}>
+                      {/* Coluna de horário */}
+                      <div className="border-b border-r p-3 text-center text-sm font-medium bg-muted/30">
+                        {horario}
+                      </div>
+                      
+                      {/* Colunas dos vendedores */}
+                      {vendedoresFiltrados.map((vendedor) => {
+                        const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
+                        
+                        return (
+                          <div key={`${vendedor.id}-${horario}`} className="border-b border-l p-1 min-h-[60px] relative">
+                            {agendamentosHorario.map((agendamento, index) => (
+                              <div
+                                key={agendamento.id}
+                                className={`
+                                  absolute inset-1 rounded-sm border-l-4 p-2 text-xs
+                                  ${getCorAgendamento(agendamento)}
+                                  ${index > 0 ? 'mt-1' : ''}
+                                `}
+                                style={{
+                                  top: `${4 + (index * 20)}px`,
+                                  height: '16px'
+                                }}
+                                title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')} - ${agendamento.lead?.nome} - ${agendamento.pos_graduacao_interesse}`}
+                              >
+                                <div className="truncate font-medium">
+                                  {agendamento.lead?.nome}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-between items-center p-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              {vendedoresFiltrados.length} vendedor(es) • {agendamentos.length} agendamento(s)
+            </div>
+            <Button variant="outline" onClick={onClose}>
+              Fechar
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
