@@ -409,62 +409,61 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                   ))}
 
                   {/* Linhas de horário */}
-                  {horarios.map((horario) => (
-                    <React.Fragment key={horario}>
-                      {/* Coluna de horário */}
-                      <div className="border-b border-r p-3 text-center text-sm font-medium bg-muted/30">
-                        {horario}
-                      </div>
-                      
-                      {/* Colunas dos vendedores */}
-                      {vendedoresFiltrados.map((vendedor) => {
-                        const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
+                  {horarios.map((horario) => {
+                    const horarioKey = `horario-${horario}`;
+                    
+                    return (
+                      <div key={horarioKey} className="contents">
+                        {/* Coluna de horário */}
+                        <div className="border-b border-r p-3 text-center text-sm font-medium bg-muted/30">
+                          {horario}
+                        </div>
                         
-                        return (
-                          <div key={`${vendedor.id}-${horario}`} className="border-b border-l min-h-[80px] relative">
-                            {agendamentosHorario.map((agendamento, index) => {
-                              const { top, height } = calcularPosicaoEAltura(agendamento, horario);
-                              
-                              return (
-                                <div
-                                  key={`${agendamento.id}-${horario}`}
-                                  className={`
-                                    absolute left-1 right-1 rounded-sm border-l-4 p-2 text-xs
-                                    ${getCorAgendamento(agendamento)}
-                                    animate-fade-in
-                                  `}
-                                  style={{
-                                    top: `${top + 2}px`,
-                                    height: `${Math.max(height - 4, 20)}px`
-                                  }}
-                                  title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}`}
-                                >
-                                  <div className="h-full flex flex-col justify-start">
-                                    <div className="font-semibold text-xs leading-tight">
-                                      {format(new Date(agendamento.data_agendamento), 'HH:mm')}
-                                      {agendamento.data_fim_agendamento && ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`}
+                        {/* Colunas dos vendedores */}
+                        {vendedoresFiltrados.map((vendedor) => {
+                          const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
+                          
+                          return (
+                            <div key={`${vendedor.id}-${horario}`} className="border-b border-l min-h-[80px] relative">
+                              {agendamentosHorario.map((agendamento, index) => {
+                                const { top, height } = calcularPosicaoEAltura(agendamento, horario);
+                                
+                                return (
+                                  <div
+                                    key={`${agendamento.id}-${horario}-${index}`}
+                                    className={`
+                                      absolute left-1 right-1 rounded-sm border-l-4 p-2 text-xs
+                                      ${getCorAgendamento(agendamento)}
+                                      animate-fade-in
+                                    `}
+                                    style={{
+                                      top: `${top + 2}px`,
+                                      height: `${Math.max(height - 4, 24)}px`,
+                                      zIndex: 10
+                                    }}
+                                    title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}`}
+                                  >
+                                    <div className="h-full flex flex-col justify-start">
+                                      <div className="font-semibold text-xs leading-tight">
+                                        {format(new Date(agendamento.data_agendamento), 'HH:mm')}
+                                        {agendamento.data_fim_agendamento && ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`}
+                                      </div>
+                                      <div className="font-medium text-xs truncate leading-tight mt-1">
+                                        {agendamento.lead?.nome || 'Lead não encontrado'}
+                                      </div>
+                                      <div className="text-[10px] truncate opacity-80 leading-tight">
+                                        {agendamento.pos_graduacao_interesse.replace('Pós-graduação: ', '')}
+                                      </div>
                                     </div>
-                                    {height > 30 && (
-                                      <>
-                                        <div className="font-medium text-xs truncate leading-tight mt-1">
-                                          {agendamento.lead?.nome}
-                                        </div>
-                                        {height > 50 && (
-                                          <div className="text-[10px] truncate opacity-80 leading-tight">
-                                            {agendamento.pos_graduacao_interesse.replace('Pós-graduação: ', '')}
-                                          </div>
-                                        )}
-                                      </>
-                                    )}
                                   </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </React.Fragment>
-                  ))}
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
