@@ -300,12 +300,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                         id={curso.id}
                         checked={selectedPosGraduacoes.includes(curso.id)}
                         onCheckedChange={() => togglePosGraduacao(curso.id)}
-                        disabled={!selectedPosGraduacoes.includes(curso.id) && selectedPosGraduacoes.length >= 5}
+                        disabled={!selectedPosGraduacoes.includes(curso.id) && selectedPosGraduacoes.length >= 20}
                       />
                       <Label
                         htmlFor={curso.id}
                         className={`text-sm cursor-pointer ${
-                          !selectedPosGraduacoes.includes(curso.id) && selectedPosGraduacoes.length >= 5
+                          !selectedPosGraduacoes.includes(curso.id) && selectedPosGraduacoes.length >= 20
                             ? 'text-muted-foreground/50' 
                             : 'text-foreground'
                         }`}
