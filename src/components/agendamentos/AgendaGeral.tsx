@@ -135,14 +135,24 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
         .select(`
           *,
           vendedor:profiles!agendamentos_vendedor_id_fkey(name),
-          lead:leads(nome)
+          leads!inner(nome)
         `)
         .gte('data_agendamento', `${dataFormatada}T00:00:00`)
         .lt('data_agendamento', `${dataFormatada}T23:59:59`)
         .eq('status', 'agendado');
 
       if (error) throw error;
-      setAgendamentos(data || []);
+      
+      // Mapear os dados para incluir o nome do lead corretamente
+      const agendamentosFormatados = (data || []).map(agendamento => ({
+        ...agendamento,
+        lead: {
+          nome: agendamento.leads?.nome || 'Lead não encontrado'
+        }
+      }));
+      
+      setAgendamentos(agendamentosFormatados);
+      console.log('📅 Agendamentos carregados:', agendamentosFormatados);
     } catch (error) {
       console.error('Erro ao carregar agendamentos da data:', error);
     }
