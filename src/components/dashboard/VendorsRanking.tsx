@@ -20,6 +20,7 @@ import { DataFormattingService } from '@/services/formatting/DataFormattingServi
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
 import SDRRanking from './SDRRanking';
+import VendedorProfileModal from './VendedorProfileModal';
 
 
 import jsPDF from 'jspdf';
@@ -56,6 +57,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     id: string;
     name: string;
     photo_url?: string;
+  } | null>(null);
+
+  // Estado para modal de perfil do vendedor
+  const [selectedVendedorForProfile, setSelectedVendedorForProfile] = useState<{
+    id: string;
+    nome: string;
+    photo_url?: string;
+    nivel?: string;
+    user_type: string;
   } | null>(null);
 
   // Estado para modo TV
@@ -840,11 +850,26 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="font-bold text-foreground">{vendedor.nome}</h4>
-                              <Badge className={`${index === 0 ? 'bg-ppgvet-teal' : index === 1 ? 'bg-muted-foreground' : 'bg-ppgvet-magenta'} text-white text-xs`}>
-                                {positions[index]}
-                              </Badge>
-                            </div>
+                               <h4 
+                                 className="font-bold text-foreground cursor-pointer hover:text-ppgvet-teal transition-colors"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   const vendedorCompleto = vendedores.find(v => v.id === vendedor.id);
+                                   setSelectedVendedorForProfile({
+                                     id: vendedor.id,
+                                     nome: vendedor.nome,
+                                     photo_url: vendedor.photo_url,
+                                     nivel: vendedorCompleto?.nivel,
+                                     user_type: vendedorCompleto?.user_type || 'vendedor'
+                                   });
+                                 }}
+                               >
+                                 {vendedor.nome}
+                               </h4>
+                               <Badge className={`${index === 0 ? 'bg-ppgvet-teal' : index === 1 ? 'bg-muted-foreground' : 'bg-ppgvet-magenta'} text-white text-xs`}>
+                                 {positions[index]}
+                               </Badge>
+                             </div>
                             <Avatar className="h-12 w-12 mt-2 border-2 border-ppgvet-teal/50">
                               <AvatarImage src={vendedor.photo_url} alt={vendedor.nome} />
                               <AvatarFallback className="text-sm">
@@ -913,7 +938,22 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                   </Avatar>
                   <div className="flex items-center justify-between flex-1">
                     <div>
-                      <p className="font-medium">{vendedor.nome}</p>
+                      <p 
+                        className="font-medium cursor-pointer hover:text-ppgvet-teal transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const vendedorCompleto = vendedores.find(v => v.id === vendedor.id);
+                          setSelectedVendedorForProfile({
+                            id: vendedor.id,
+                            nome: vendedor.nome,
+                            photo_url: vendedor.photo_url,
+                            nivel: vendedorCompleto?.nivel,
+                            user_type: vendedorCompleto?.user_type || 'vendedor'
+                          });
+                        }}
+                      >
+                        {vendedor.nome}
+                      </p>
                       <p className="text-sm text-ppgvet-magenta font-semibold">
                         {DataFormattingService.formatPoints(vendedor.pontuacao)} pontos
                       </p>
@@ -970,6 +1010,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         <TVRankingDisplay 
           isOpen={isTVMode}
           onClose={() => setIsTVMode(false)}
+        />
+
+        {/* Modal de Perfil do Vendedor */}
+        <VendedorProfileModal
+          isOpen={!!selectedVendedorForProfile}
+          onClose={() => setSelectedVendedorForProfile(null)}
+          vendedor={selectedVendedorForProfile}
+          selectedMonth={propSelectedMonth || parseInt(selectedMonth.split('-')[1])}
+          selectedYear={propSelectedYear || parseInt(selectedMonth.split('-')[0])}
         />
 
       </CardContent>
