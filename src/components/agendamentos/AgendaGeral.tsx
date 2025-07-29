@@ -179,82 +179,41 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
   const getAgendamentosParaVendedorEHorario = (vendedorId: string, horario: string) => {
     const horaTimeline = parseInt(horario.split(':')[0]);
-    const proximaHora = horaTimeline + 1;
     
     return agendamentos.filter(ag => {
       if (ag.vendedor_id !== vendedorId) return false;
       
       const dataAgendamento = new Date(ag.data_agendamento);
       const horaAgendamento = dataAgendamento.getHours();
-      const dataFim = ag.data_fim_agendamento ? new Date(ag.data_fim_agendamento) : null;
       
-      // Verifica se o agendamento se sobrepõe com essa linha de horário
-      if (dataFim) {
-        const horaFim = dataFim.getHours();
-        const minutoFim = dataFim.getMinutes();
-        
-        // Se termina exatamente no início da próxima hora (ex: 16:00), não incluir na linha da hora seguinte
-        if (horaFim === proximaHora && minutoFim === 0) {
-          return horaAgendamento <= horaTimeline;
-        }
-        
-        return horaAgendamento <= horaTimeline && horaFim >= horaTimeline;
-      } else {
-        // Se não tem hora fim, assume 1 hora de duração
-        return horaAgendamento === horaTimeline;
-      }
+      // Só mostrar o agendamento na linha da hora de INÍCIO
+      // Isso evita duplicação nas células subsequentes
+      return horaAgendamento === horaTimeline;
     });
   };
 
   const calcularPosicaoEAltura = (agendamento: Agendamento, horario: string) => {
     const dataInicio = new Date(agendamento.data_agendamento);
     const dataFim = agendamento.data_fim_agendamento ? new Date(agendamento.data_fim_agendamento) : null;
-    const horaTimeline = parseInt(horario.split(':')[0]);
     
     const minutosInicio = dataInicio.getMinutes();
     const horaInicio = dataInicio.getHours();
     
-    // Altura da célula aumentada para 80px
+    // Altura da célula
     const ALTURA_CELULA = 80;
     
-    // Calcular posição vertical baseada nos minutos (0-60 minutos = 0-80px da célula)
-    let topOffset = 0;
-    if (horaInicio === horaTimeline) {
-      // Se começa nesta hora, calcular posição baseada nos minutos
-      topOffset = (minutosInicio / 60) * ALTURA_CELULA;
-    }
+    // Calcular posição vertical baseada nos minutos
+    const topOffset = (minutosInicio / 60) * ALTURA_CELULA;
     
     // Calcular altura baseada na duração
-    let altura = ALTURA_CELULA; // altura padrão se não tiver fim
+    let altura = ALTURA_CELULA; // altura padrão de 1 hora
     if (dataFim) {
       const duracaoMinutos = (dataFim.getTime() - dataInicio.getTime()) / (1000 * 60);
-      const horaFim = dataFim.getHours();
-      const minutoFim = dataFim.getMinutes();
-      
-      if (horaInicio === horaTimeline) {
-        // Se começa nesta hora
-        if (horaFim === horaTimeline) {
-          // Se termina na mesma hora
-          altura = ((minutoFim - minutosInicio) / 60) * ALTURA_CELULA;
-        } else {
-          // Se termina em outra hora, vai até o final desta célula
-          altura = ((60 - minutosInicio) / 60) * ALTURA_CELULA;
-        }
-      } else {
-        // Se não começa nesta hora mas passa por ela
-        if (horaFim === horaTimeline) {
-          // Se termina nesta hora
-          altura = (minutoFim / 60) * ALTURA_CELULA;
-          topOffset = 0;
-        } else if (horaFim > horaTimeline) {
-          // Se passa por esta hora inteira
-          altura = ALTURA_CELULA;
-          topOffset = 0;
-        }
-      }
+      // Converter duração em minutos para pixels
+      altura = (duracaoMinutos / 60) * ALTURA_CELULA;
     }
     
-    return { top: topOffset, height: altura };
+    return { top: topOffset, height: Math.max(altura, 24) }; // altura mínima de 24px
   };
 
   const getCorAgendamento = (agendamento: Agendamento) => {
