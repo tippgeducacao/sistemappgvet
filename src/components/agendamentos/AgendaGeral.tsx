@@ -343,12 +343,25 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                                 `}
                                 style={{
                                   top: `${4 + (index * 20)}px`,
-                                  height: '16px'
+                                  height: agendamentosHorario.length > 1 ? '16px' : '52px'
                                 }}
                                 title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}`}
                               >
-                                <div className="truncate font-medium">
-                                  {agendamento.lead?.nome}
+                                <div className="space-y-1">
+                                  <div className="font-semibold text-xs">
+                                    {format(new Date(agendamento.data_agendamento), 'HH:mm')}
+                                    {agendamento.data_fim_agendamento && ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`}
+                                  </div>
+                                  {agendamentosHorario.length === 1 && (
+                                    <>
+                                      <div className="font-medium text-xs truncate">
+                                        {agendamento.lead?.nome}
+                                      </div>
+                                      <div className="text-[10px] truncate opacity-80">
+                                        {agendamento.pos_graduacao_interesse}
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             ))}
