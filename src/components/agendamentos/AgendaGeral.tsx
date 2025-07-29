@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, addDays, subDays, isSameDay } from 'date-fns';
@@ -18,6 +18,7 @@ interface Vendedor {
   photo_url?: string;
   pos_graduacoes: string[];
   cursos?: string[];
+  horario_trabalho?: any;
 }
 
 interface Agendamento {
@@ -46,6 +47,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [cursos, setCursos] = useState<any[]>([]);
   const [filtroPosgGraduacao, setFiltroPosgGraduacao] = useState<string>('todas');
+  const [vendedorHorarioModal, setVendedorHorarioModal] = useState<Vendedor | null>(null);
 
   // Horários da timeline (6:00 às 00:00)
   const horarios = Array.from({ length: 19 }, (_, i) => {
@@ -78,7 +80,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       // Buscar apenas vendedores ativos
       const { data: vendedoresData, error: vendedoresError } = await supabase
         .from('profiles')
-        .select('id, name, email, photo_url, pos_graduacoes')
+        .select('id, name, email, photo_url, pos_graduacoes, horario_trabalho')
         .eq('user_type', 'vendedor')
         .eq('ativo', true)
         .order('name');
@@ -302,7 +304,18 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                             {vendedor.name?.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="text-xs font-medium">{vendedor.name}</div>
+                        <div className="flex items-center gap-1">
+                          <div className="text-xs font-medium">{vendedor.name}</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            onClick={() => setVendedorHorarioModal(vendedor)}
+                            title="Ver horário de expediente"
+                          >
+                            <Clock className="h-3 w-3" />
+                          </Button>
+                        </div>
                         <div className="flex flex-wrap gap-1 justify-center">
                           {vendedor.cursos?.slice(0, 2).map((curso, index) => (
                             <Badge key={index} variant="outline" className="text-[10px] px-1 py-0">
@@ -385,6 +398,65 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
             </Button>
           </div>
         </div>
+
+        {/* Modal de Horário de Expediente */}
+        {vendedorHorarioModal && (
+          <Dialog open={!!vendedorHorarioModal} onOpenChange={() => setVendedorHorarioModal(null)}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Horário de Expediente - {vendedorHorarioModal.name}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={vendedorHorarioModal.photo_url} />
+                    <AvatarFallback>
+                      {vendedorHorarioModal.name?.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium">{vendedorHorarioModal.name}</div>
+                    <div className="text-sm text-muted-foreground">{vendedorHorarioModal.email}</div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <h4 className="font-medium">Horários de Trabalho</h4>
+                  {vendedorHorarioModal.horario_trabalho ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-muted-foreground">Manhã</div>
+                        <div className="text-lg">
+                          {vendedorHorarioModal.horario_trabalho.manha_inicio || '09:00'} - {vendedorHorarioModal.horario_trabalho.manha_fim || '12:00'}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-muted-foreground">Tarde</div>
+                        <div className="text-lg">
+                          {vendedorHorarioModal.horario_trabalho.tarde_inicio || '13:00'} - {vendedorHorarioModal.horario_trabalho.tarde_fim || '18:00'}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground">
+                      Horário padrão: 09:00 - 12:00 / 13:00 - 18:00
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => setVendedorHorarioModal(null)}>
+                    Fechar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </DialogContent>
     </Dialog>
   );
