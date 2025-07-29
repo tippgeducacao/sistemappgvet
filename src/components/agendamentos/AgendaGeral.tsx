@@ -47,9 +47,12 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const [cursos, setCursos] = useState<any[]>([]);
   const [filtroPosgGraduacao, setFiltroPosgGraduacao] = useState<string>('todas');
 
-  // Horários da timeline (6:00 às 20:00)
-  const horarios = Array.from({ length: 15 }, (_, i) => {
+  // Horários da timeline (6:00 às 00:00)
+  const horarios = Array.from({ length: 19 }, (_, i) => {
     const hour = i + 6;
+    if (hour >= 24) {
+      return '00:00';
+    }
     return `${hour.toString().padStart(2, '0')}:00`;
   });
 
@@ -342,7 +345,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                                   top: `${4 + (index * 20)}px`,
                                   height: '16px'
                                 }}
-                                title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')} - ${agendamento.lead?.nome} - ${agendamento.pos_graduacao_interesse}`}
+                                title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}`}
                               >
                                 <div className="truncate font-medium">
                                   {agendamento.lead?.nome}
