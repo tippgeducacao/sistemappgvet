@@ -27,34 +27,66 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
   const formatFieldName = (fieldName: string) => {
     const fieldLabels: Record<string, string> = {
       'Data de Chegada': 'Data de Chegada do Lead',
+      'dataChegada': 'Data de Chegada do Lead',
       'Nome do Aluno': 'Nome Completo',
+      'nomeAluno': 'Nome Completo',
       'Email do Aluno': 'Email',
+      'emailAluno': 'Email',
       'Telefone do Aluno': 'Telefone',
+      'telefone': 'Telefone',
       'CRMV': 'Número do CRMV',
+      'crmv': 'Número do CRMV',
       'Formação do Aluno': 'Formação Acadêmica',
+      'formacaoAluno': 'Formação Acadêmica',
       'Data de Matrícula': 'Data de Matrícula',
+      'dataMatricula': 'Data de Matrícula',
       'IES': 'Instituição de Ensino Superior',
+      'ies': 'Instituição de Ensino Superior',
       'Vendedor': 'Vendedor Responsável',
+      'vendedor': 'Vendedor Responsável',
       'Curso ID': 'Curso Selecionado',
+      'cursoId': 'Curso Selecionado',
       'Modalidade Selecionada': 'Modalidade do Curso',
+      'modalidadeCurso': 'Modalidade do Curso',
+      'modalidade': 'Modalidade do Curso',
+      'Turma': 'Turma',
+      'turma': 'Turma',
+      'Abertura': 'Abertura',
+      'abertura': 'Abertura',
       'Valor do Contrato': 'Valor Total do Contrato',
+      'valorContrato': 'Valor Total do Contrato',
       'Percentual de Desconto': 'Desconto Aplicado (%)',
+      'percentualDesconto': 'Desconto Aplicado (%)',
       'Data do Primeiro Pagamento': 'Data do 1º Pagamento',
+      'dataPrimeiroPagamento': 'Data do 1º Pagamento',
       'Carência da Primeira Cobrança': 'Carência para 1ª Cobrança',
+      'carenciaPrimeiraCobranca': 'Carência para 1ª Cobrança',
       'Detalhes da Carência': 'Detalhes da Carência',
+      'detalhesCarencia': 'Detalhes da Carência',
       'Reembolso da Matrícula': 'Reembolso de Matrícula',
+      'reembolsoMatricula': 'Reembolso de Matrícula',
       'Indicação': 'Foi Indicado?',
+      'indicacao': 'Foi Indicado?',
       'Nome do Indicador': 'Nome de Quem Indicou',
+      'nomeIndicador': 'Nome de Quem Indicou',
       'Lote da Pós-Graduação': 'Lote da Pós',
-      'Matrícula': 'Número da Matrícula',
-      'Modalidade do Curso': 'Modalidade',
+      'lotePos': 'Lote da Pós',
+      'Matrícula': 'Tipo de Matrícula',
+      'matricula': 'Tipo de Matrícula',
       'Condições de Parcelamento': 'Parcelamento',
+      'parcelamento': 'Parcelamento',
       'Forma de Pagamento': 'Forma de Pagamento',
+      'pagamento': 'Forma de Pagamento',
       'Forma de Captação do Lead': 'Como Chegou o Lead',
+      'formaCaptacao': 'Como Chegou o Lead',
       'Tipo de Venda': 'Tipo da Venda',
+      'tipoVenda': 'Tipo da Venda',
       'Venda Casada': 'É Venda Casada?',
+      'vendaCasada': 'É Venda Casada?',
       'Detalhes da Venda Casada': 'Detalhes da Venda Casada',
+      'detalhesVendaCasada': 'Detalhes da Venda Casada',
       'Observações Gerais': 'Observações',
+      'observacoes': 'Observações',
     };
     
     return fieldLabels[fieldName] || fieldName;
@@ -65,23 +97,27 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
     
     const categories = {
       'Informações Básicas': [
-        'Data de Chegada', 'Nome do Aluno', 'Email do Aluno', 'Telefone do Aluno',
-        'Formação do Aluno', 'Data de Matrícula', 'IES', 'Vendedor', 'CRMV'
+        'Data de Chegada', 'dataChegada', 'Nome do Aluno', 'nomeAluno', 'Email do Aluno', 'emailAluno', 
+        'Telefone do Aluno', 'telefone', 'Formação do Aluno', 'formacaoAluno', 'Data de Matrícula', 
+        'dataMatricula', 'IES', 'ies', 'Vendedor', 'vendedor', 'CRMV', 'crmv'
       ],
       'Informações do Curso': [
-        'Curso ID', 'Modalidade do Curso', 'Modalidade Selecionada', 'Lote da Pós-Graduação', 'Matrícula'
+        'Curso ID', 'cursoId', 'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada', 
+        'Lote da Pós-Graduação', 'lotePos', 'Matrícula', 'matricula', 'Turma', 'turma', 'Abertura', 'abertura'
       ],
       'Condições Comerciais': [
-        'Valor do Contrato', 'Percentual de Desconto', 'Data do Primeiro Pagamento',
-        'Carência da Primeira Cobrança', 'Detalhes da Carência', 'Reembolso da Matrícula', 
-        'Condições de Parcelamento', 'Forma de Pagamento'
+        'Valor do Contrato', 'valorContrato', 'Percentual de Desconto', 'percentualDesconto', 
+        'Data do Primeiro Pagamento', 'dataPrimeiroPagamento', 'Carência da Primeira Cobrança', 
+        'carenciaPrimeiraCobranca', 'Detalhes da Carência', 'detalhesCarencia', 'Reembolso da Matrícula', 
+        'reembolsoMatricula', 'Condições de Parcelamento', 'parcelamento', 'Forma de Pagamento', 'pagamento'
       ],
       'Origem e Captação': [
-        'Forma de Captação do Lead', 'Tipo de Venda', 'Venda Casada',
-        'Indicação', 'Nome do Indicador', 'Detalhes da Venda Casada'
+        'Forma de Captação do Lead', 'formaCaptacao', 'Tipo de Venda', 'tipoVenda', 'Venda Casada', 
+        'vendaCasada', 'Indicação', 'indicacao', 'Nome do Indicador', 'nomeIndicador', 
+        'Detalhes da Venda Casada', 'detalhesVendaCasada'
       ],
       'Observações': [
-        'Observações Gerais'
+        'Observações Gerais', 'observacoes'
       ]
     };
 
