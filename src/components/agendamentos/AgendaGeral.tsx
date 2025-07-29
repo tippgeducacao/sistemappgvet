@@ -65,11 +65,11 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const carregarDados = async () => {
     setLoading(true);
     try {
-      // Buscar vendedores ativos (incluindo SDRs)
+      // Buscar apenas vendedores ativos
       const { data: vendedoresData, error: vendedoresError } = await supabase
         .from('profiles')
         .select('id, name, email, photo_url, pos_graduacoes, horario_trabalho')
-        .in('user_type', ['vendedor', 'sdr_inbound', 'sdr_outbound'])
+        .eq('user_type', 'vendedor')
         .eq('ativo', true)
         .order('name');
 
