@@ -18,7 +18,14 @@ interface Vendedor {
   photo_url?: string;
   pos_graduacoes: string[];
   cursos?: string[];
-  horario_trabalho?: any;
+  horario_trabalho?: {
+    manha_inicio?: string;
+    manha_fim?: string;
+    tarde_inicio?: string;
+    tarde_fim?: string;
+    sabado_inicio?: string;
+    sabado_fim?: string;
+  };
 }
 
 interface Agendamento {
@@ -100,11 +107,12 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       // Mapear cursos para vendedores
       const vendedoresComCursos = (vendedoresData || []).map(vendedor => ({
         ...vendedor,
+        horario_trabalho: vendedor.horario_trabalho as any,
         cursos: (vendedor.pos_graduacoes || []).map((cursoId: string) => {
           const curso = cursosData?.find(c => c.id === cursoId);
           return curso ? curso.nome : 'Curso não encontrado';
         })
-      }));
+      })) as Vendedor[];
 
       setVendedores(vendedoresComCursos);
       setVendedoresFiltrados(vendedoresComCursos);
@@ -427,23 +435,43 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                 <div className="space-y-3">
                   <h4 className="font-medium">Horários de Trabalho</h4>
                   {vendedorHorarioModal.horario_trabalho ? (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-muted-foreground">Manhã</div>
-                        <div className="text-lg">
-                          {vendedorHorarioModal.horario_trabalho.manha_inicio || '09:00'} - {vendedorHorarioModal.horario_trabalho.manha_fim || '12:00'}
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium text-muted-foreground">Manhã</div>
+                          <div className="text-lg">
+                            {vendedorHorarioModal.horario_trabalho.manha_inicio || '09:00'} - {vendedorHorarioModal.horario_trabalho.manha_fim || '12:00'}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium text-muted-foreground">Tarde</div>
+                          <div className="text-lg">
+                            {vendedorHorarioModal.horario_trabalho.tarde_inicio || '13:00'} - {vendedorHorarioModal.horario_trabalho.tarde_fim || '18:00'}
+                          </div>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-muted-foreground">Tarde</div>
-                        <div className="text-lg">
-                          {vendedorHorarioModal.horario_trabalho.tarde_inicio || '13:00'} - {vendedorHorarioModal.horario_trabalho.tarde_fim || '18:00'}
+                      
+                      <div className="border-t pt-3">
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium text-muted-foreground">Sábado</div>
+                          <div className="text-lg">
+                            {vendedorHorarioModal.horario_trabalho.sabado_inicio && vendedorHorarioModal.horario_trabalho.sabado_fim
+                              ? `${vendedorHorarioModal.horario_trabalho.sabado_inicio} - ${vendedorHorarioModal.horario_trabalho.sabado_fim}`
+                              : 'Não trabalha aos sábados'
+                            }
+                          </div>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-muted-foreground">
-                      Horário padrão: 09:00 - 12:00 / 13:00 - 18:00
+                    <div className="space-y-4">
+                      <div className="text-muted-foreground">
+                        Horário padrão: 09:00 - 12:00 / 13:00 - 18:00
+                      </div>
+                      <div className="border-t pt-3">
+                        <div className="text-sm font-medium text-muted-foreground">Sábado</div>
+                        <div className="text-muted-foreground">08:00 - 12:00</div>
+                      </div>
                     </div>
                   )}
                 </div>
