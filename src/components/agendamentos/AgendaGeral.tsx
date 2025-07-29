@@ -424,7 +424,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                               
                               return (
                                 <div
-                                  key={agendamento.id}
+                                  key={`${agendamento.id}-${horario}`}
                                   className={`
                                     absolute left-1 right-1 rounded-sm border-l-4 p-2 text-xs
                                     ${getCorAgendamento(agendamento)}
