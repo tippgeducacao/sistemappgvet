@@ -168,15 +168,80 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   )].sort();
 
   const getAgendamentosParaVendedorEHorario = (vendedorId: string, horario: string) => {
+    const horaTimeline = parseInt(horario.split(':')[0]);
+    const proximaHora = horaTimeline + 1;
+    
     return agendamentos.filter(ag => {
       if (ag.vendedor_id !== vendedorId) return false;
       
       const dataAgendamento = new Date(ag.data_agendamento);
       const horaAgendamento = dataAgendamento.getHours();
-      const horaTimeline = parseInt(horario.split(':')[0]);
+      const dataFim = ag.data_fim_agendamento ? new Date(ag.data_fim_agendamento) : null;
       
-      return horaAgendamento === horaTimeline;
+      // Verifica se o agendamento se sobrepõe com essa linha de horário
+      if (dataFim) {
+        const horaFim = dataFim.getHours();
+        const minutoFim = dataFim.getMinutes();
+        
+        // Se termina exatamente no início da próxima hora (ex: 16:00), não incluir na linha da hora seguinte
+        if (horaFim === proximaHora && minutoFim === 0) {
+          return horaAgendamento <= horaTimeline;
+        }
+        
+        return horaAgendamento <= horaTimeline && horaFim >= horaTimeline;
+      } else {
+        // Se não tem hora fim, assume 1 hora de duração
+        return horaAgendamento === horaTimeline;
+      }
     });
+  };
+
+  const calcularPosicaoEAltura = (agendamento: Agendamento, horario: string) => {
+    const dataInicio = new Date(agendamento.data_agendamento);
+    const dataFim = agendamento.data_fim_agendamento ? new Date(agendamento.data_fim_agendamento) : null;
+    const horaTimeline = parseInt(horario.split(':')[0]);
+    
+    const minutosInicio = dataInicio.getMinutes();
+    const horaInicio = dataInicio.getHours();
+    
+    // Calcular posição vertical baseada nos minutos (0-60 minutos = 0-60px da célula)
+    let topOffset = 0;
+    if (horaInicio === horaTimeline) {
+      // Se começa nesta hora, calcular posição baseada nos minutos
+      topOffset = (minutosInicio / 60) * 60; // 60px é a altura da célula
+    }
+    
+    // Calcular altura baseada na duração
+    let altura = 60; // altura padrão se não tiver fim
+    if (dataFim) {
+      const duracaoMinutos = (dataFim.getTime() - dataInicio.getTime()) / (1000 * 60);
+      const horaFim = dataFim.getHours();
+      const minutoFim = dataFim.getMinutes();
+      
+      if (horaInicio === horaTimeline) {
+        // Se começa nesta hora
+        if (horaFim === horaTimeline) {
+          // Se termina na mesma hora
+          altura = ((minutoFim - minutosInicio) / 60) * 60;
+        } else {
+          // Se termina em outra hora, vai até o final desta célula
+          altura = ((60 - minutosInicio) / 60) * 60;
+        }
+      } else {
+        // Se não começa nesta hora mas passa por ela
+        if (horaFim === horaTimeline) {
+          // Se termina nesta hora
+          altura = (minutoFim / 60) * 60;
+          topOffset = 0;
+        } else if (horaFim > horaTimeline) {
+          // Se passa por esta hora inteira
+          altura = 60;
+          topOffset = 0;
+        }
+      }
+    }
+    
+    return { top: topOffset, height: altura };
   };
 
   const getCorAgendamento = (agendamento: Agendamento) => {
@@ -353,39 +418,45 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                         const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
                         
                         return (
-                          <div key={`${vendedor.id}-${horario}`} className="border-b border-l p-1 min-h-[60px] relative">
-                            {agendamentosHorario.map((agendamento, index) => (
-                              <div
-                                key={agendamento.id}
-                                className={`
-                                  absolute inset-1 rounded-sm border-l-4 p-2 text-xs
-                                  ${getCorAgendamento(agendamento)}
-                                  ${index > 0 ? 'mt-1' : ''}
-                                `}
-                                style={{
-                                  top: `${4 + (index * 20)}px`,
-                                  height: agendamentosHorario.length > 1 ? '16px' : '52px'
-                                }}
-                                title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}`}
-                              >
-                                <div className="space-y-1">
-                                  <div className="font-semibold text-xs">
-                                    {format(new Date(agendamento.data_agendamento), 'HH:mm')}
-                                    {agendamento.data_fim_agendamento && ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`}
+                          <div key={`${vendedor.id}-${horario}`} className="border-b border-l min-h-[60px] relative">
+                            {agendamentosHorario.map((agendamento, index) => {
+                              const { top, height } = calcularPosicaoEAltura(agendamento, horario);
+                              
+                              return (
+                                <div
+                                  key={agendamento.id}
+                                  className={`
+                                    absolute left-1 right-1 rounded-sm border-l-4 p-2 text-xs
+                                    ${getCorAgendamento(agendamento)}
+                                    animate-fade-in
+                                  `}
+                                  style={{
+                                    top: `${top + 2}px`,
+                                    height: `${Math.max(height - 2, 16)}px`
+                                  }}
+                                  title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}`}
+                                >
+                                  <div className="h-full flex flex-col justify-start">
+                                    <div className="font-semibold text-xs leading-tight">
+                                      {format(new Date(agendamento.data_agendamento), 'HH:mm')}
+                                      {agendamento.data_fim_agendamento && ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`}
+                                    </div>
+                                    {height > 25 && (
+                                      <>
+                                        <div className="font-medium text-xs truncate leading-tight mt-1">
+                                          {agendamento.lead?.nome}
+                                        </div>
+                                        {height > 40 && (
+                                          <div className="text-[10px] truncate opacity-80 leading-tight">
+                                            {agendamento.pos_graduacao_interesse.replace('Pós-graduação: ', '')}
+                                          </div>
+                                        )}
+                                      </>
+                                    )}
                                   </div>
-                                  {agendamentosHorario.length === 1 && (
-                                    <>
-                                      <div className="font-medium text-xs truncate">
-                                        {agendamento.lead?.nome}
-                                      </div>
-                                      <div className="text-[10px] truncate opacity-80">
-                                        {agendamento.pos_graduacao_interesse}
-                                      </div>
-                                    </>
-                                  )}
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         );
                       })}
