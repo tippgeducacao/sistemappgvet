@@ -144,12 +144,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
     setSelectedPosGraduacoes(prev => {
       if (prev.includes(cursoId)) {
         return prev.filter(id => id !== cursoId);
-      } else if (prev.length < 5) {
+      } else if (prev.length < 20) {
         return [...prev, cursoId];
       } else {
         toast({
           title: "Limite atingido",
-          description: "Máximo de 5 pós-graduações por vendedor",
+          description: "Máximo de 20 pós-graduações por vendedor",
           variant: "destructive",
         });
         return prev;
@@ -289,7 +289,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-foreground" />
                 <Label className="text-sm font-medium text-foreground">
-                  Pós que pode vender ({selectedPosGraduacoes.length}/5)
+                  Pós que pode vender ({selectedPosGraduacoes.length}/20)
                 </Label>
               </div>
               <div className="space-y-2 max-h-32 overflow-y-auto">
