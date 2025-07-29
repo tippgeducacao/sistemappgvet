@@ -152,8 +152,8 @@ const GerenciarVendedores: React.FC = () => {
       <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gerenciar Usuários</h2>
-          <p className="text-gray-600">Cadastre e gerencie usuários do sistema</p>
+          <h2 className="text-2xl font-bold text-foreground">Gerenciar Usuários</h2>
+          <p className="text-muted-foreground">Cadastre e gerencie usuários do sistema</p>
         </div>
         
         <div className="flex gap-3">
