@@ -572,7 +572,16 @@ const AgendamentosPage: React.FC = () => {
       reagendado: { label: 'Reagendado', variant: 'outline' as const }
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.agendado;
+    // Validação e padronização de status
+    const normalizedStatus = status?.toLowerCase().trim();
+    
+    // Se receber "pendente" ou status inválido, corrigir para "agendado"
+    if (!normalizedStatus || normalizedStatus === 'pendente' || !statusConfig[normalizedStatus as keyof typeof statusConfig]) {
+      console.warn(`Status inválido detectado: "${status}". Corrigindo para "agendado".`);
+      return <Badge variant="default">Agendado</Badge>;
+    }
+
+    const config = statusConfig[normalizedStatus as keyof typeof statusConfig];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
