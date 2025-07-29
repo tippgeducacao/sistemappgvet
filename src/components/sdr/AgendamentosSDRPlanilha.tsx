@@ -62,21 +62,30 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
     const dataReuniao = new Date(agendamento.data_agendamento);
     const agora = new Date();
     
-    switch (agendamento.status) {
+    // Validação de status - garantir que apenas status válidos sejam exibidos
+    const statusValidos = ['agendado', 'atrasado', 'cancelado', 'realizado', 'reagendado'];
+    const status = agendamento.status?.toLowerCase().trim();
+    
+    // Se status inválido, considerar como agendado
+    if (!status || !statusValidos.includes(status)) {
+      console.warn(`Status inválido detectado: "${agendamento.status}". Tratando como "agendado".`);
+      return <Badge variant="default">Agendado</Badge>;
+    }
+    
+    switch (status) {
       case 'agendado':
-        if (dataReuniao > agora) {
-          return <Badge variant="default">Agendado</Badge>;
-        } else {
-          return <Badge variant="outline">Pendente</Badge>;
-        }
+        // Não criar status "pendente" visual - manter sempre como "agendado" mesmo se passou do horário
+        return <Badge variant="default">Agendado</Badge>;
       case 'atrasado':
         return <Badge variant="destructive">Atrasado</Badge>;
       case 'cancelado':
         return <Badge variant="destructive">Cancelado</Badge>;
       case 'realizado':
         return <Badge variant="secondary">Realizado</Badge>;
+      case 'reagendado':
+        return <Badge variant="outline">Reagendado</Badge>;
       default:
-        return <Badge variant="outline">Agendado</Badge>;
+        return <Badge variant="default">Agendado</Badge>;
     }
   };
 

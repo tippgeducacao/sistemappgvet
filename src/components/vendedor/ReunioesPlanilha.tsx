@@ -53,14 +53,29 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       }
     }
     
-    const dataReuniao = new Date(agendamento.data_agendamento);
-    const agora = new Date();
+    // Não criar status "pendente" visual - usar apenas status válidos do banco
+    const statusValidos = ['agendado', 'atrasado', 'cancelado', 'realizado', 'reagendado'];
+    const status = agendamento.status?.toLowerCase().trim();
     
-    if (dataReuniao > agora) {
+    if (!status || !statusValidos.includes(status)) {
+      console.warn(`Status inválido detectado: "${agendamento.status}". Tratando como "agendado".`);
       return <Badge variant="outline">Agendado</Badge>;
-    } else {
-      return <Badge variant="outline">Pendente</Badge>;
     }
+    
+    switch (status) {
+      case 'agendado':
+        return <Badge variant="outline">Agendado</Badge>;
+      case 'atrasado':
+        return <Badge variant="destructive">Atrasado</Badge>;
+      case 'cancelado':
+        return <Badge variant="destructive">Cancelado</Badge>;
+      case 'realizado':
+        return <Badge variant="secondary">Realizado</Badge>;
+      case 'reagendado':
+        return <Badge variant="outline">Reagendado</Badge>;
+      default:
+        return <Badge variant="outline">Agendado</Badge>;
+  };
   };
 
   const isReuniaoPerdida = (agendamento: Agendamento) => {
