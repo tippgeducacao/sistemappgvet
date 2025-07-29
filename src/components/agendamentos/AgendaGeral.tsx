@@ -56,7 +56,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const [filtroPosgGraduacao, setFiltroPosgGraduacao] = useState<string>('todas');
   const [vendedorHorarioModal, setVendedorHorarioModal] = useState<Vendedor | null>(null);
 
-  // Horários da timeline (6:00 às 00:00)
+  // Horários da timeline (6:00 às 00:00) - Aumentando altura das células para 80px
   const horarios = Array.from({ length: 19 }, (_, i) => {
     const hour = i + 6;
     if (hour >= 24) {
@@ -204,15 +204,18 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     const minutosInicio = dataInicio.getMinutes();
     const horaInicio = dataInicio.getHours();
     
-    // Calcular posição vertical baseada nos minutos (0-60 minutos = 0-60px da célula)
+    // Altura da célula aumentada para 80px
+    const ALTURA_CELULA = 80;
+    
+    // Calcular posição vertical baseada nos minutos (0-60 minutos = 0-80px da célula)
     let topOffset = 0;
     if (horaInicio === horaTimeline) {
       // Se começa nesta hora, calcular posição baseada nos minutos
-      topOffset = (minutosInicio / 60) * 60; // 60px é a altura da célula
+      topOffset = (minutosInicio / 60) * ALTURA_CELULA;
     }
     
     // Calcular altura baseada na duração
-    let altura = 60; // altura padrão se não tiver fim
+    let altura = ALTURA_CELULA; // altura padrão se não tiver fim
     if (dataFim) {
       const duracaoMinutos = (dataFim.getTime() - dataInicio.getTime()) / (1000 * 60);
       const horaFim = dataFim.getHours();
@@ -222,20 +225,20 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
         // Se começa nesta hora
         if (horaFim === horaTimeline) {
           // Se termina na mesma hora
-          altura = ((minutoFim - minutosInicio) / 60) * 60;
+          altura = ((minutoFim - minutosInicio) / 60) * ALTURA_CELULA;
         } else {
           // Se termina em outra hora, vai até o final desta célula
-          altura = ((60 - minutosInicio) / 60) * 60;
+          altura = ((60 - minutosInicio) / 60) * ALTURA_CELULA;
         }
       } else {
         // Se não começa nesta hora mas passa por ela
         if (horaFim === horaTimeline) {
           // Se termina nesta hora
-          altura = (minutoFim / 60) * 60;
+          altura = (minutoFim / 60) * ALTURA_CELULA;
           topOffset = 0;
         } else if (horaFim > horaTimeline) {
           // Se passa por esta hora inteira
-          altura = 60;
+          altura = ALTURA_CELULA;
           topOffset = 0;
         }
       }
@@ -418,7 +421,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                         const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
                         
                         return (
-                          <div key={`${vendedor.id}-${horario}`} className="border-b border-l min-h-[60px] relative">
+                          <div key={`${vendedor.id}-${horario}`} className="border-b border-l min-h-[80px] relative">
                             {agendamentosHorario.map((agendamento, index) => {
                               const { top, height } = calcularPosicaoEAltura(agendamento, horario);
                               
@@ -432,7 +435,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                                   `}
                                   style={{
                                     top: `${top + 2}px`,
-                                    height: `${Math.max(height - 2, 16)}px`
+                                    height: `${Math.max(height - 4, 20)}px`
                                   }}
                                   title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}`}
                                 >
@@ -441,12 +444,12 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                                       {format(new Date(agendamento.data_agendamento), 'HH:mm')}
                                       {agendamento.data_fim_agendamento && ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`}
                                     </div>
-                                    {height > 25 && (
+                                    {height > 30 && (
                                       <>
                                         <div className="font-medium text-xs truncate leading-tight mt-1">
                                           {agendamento.lead?.nome}
                                         </div>
-                                        {height > 40 && (
+                                        {height > 50 && (
                                           <div className="text-[10px] truncate opacity-80 leading-tight">
                                             {agendamento.pos_graduacao_interesse.replace('Pós-graduação: ', '')}
                                           </div>
