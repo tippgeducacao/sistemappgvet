@@ -17,6 +17,7 @@ import { useNiveis } from '@/hooks/useNiveis';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
+import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
 import SDRRanking from './SDRRanking';
@@ -115,25 +116,25 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         return false;
       }
       
-      // Filtro por período - USAR DATA DE APROVAÇÃO (data_aprovacao) para vendas matriculadas
+      // Filtro por período usando a regra de semana (quarta a terça)
       if ((propSelectedMonth && propSelectedYear) || internalSelectedMonth) {
-        // Para vendas matriculadas, usar data de aprovação (data_aprovacao) se disponível
-        // Senão, usar data de atualização (atualizado_em) ou data de envio (enviado_em)
+        // Para vendas matriculadas, usar data de aprovação se disponível, senão data de envio
         const dataParaFiltro = venda.status === 'matriculado' && venda.data_aprovacao 
           ? new Date(venda.data_aprovacao)
-          : venda.status === 'matriculado' && venda.atualizado_em 
-            ? new Date(venda.atualizado_em) 
-            : new Date(venda.enviado_em);
+          : new Date(venda.enviado_em);
         
         if (propSelectedMonth && propSelectedYear) {
-          // Usar filtros externos do dashboard
-          if (dataParaFiltro.getMonth() + 1 !== propSelectedMonth || dataParaFiltro.getFullYear() !== propSelectedYear) {
+          // Usar filtros externos do dashboard com regra de semana
+          if (!isVendaInPeriod(dataParaFiltro, propSelectedMonth, propSelectedYear)) {
             return false;
           }
         } else {
-          // Usar filtro interno mensal
-          const vendaMonth = `${dataParaFiltro.getFullYear()}-${String(dataParaFiltro.getMonth() + 1).padStart(2, '0')}`;
-          if (vendaMonth !== internalSelectedMonth) {
+          // Usar filtro interno mensal com regra de semana
+          const { mes: vendaMes, ano: vendaAno } = getVendaPeriod(dataParaFiltro);
+          const filterMonth = parseInt(internalSelectedMonth.split('-')[1]);
+          const filterYear = parseInt(internalSelectedMonth.split('-')[0]);
+          
+          if (vendaMes !== filterMonth || vendaAno !== filterYear) {
             return false;
           }
         }
@@ -143,18 +144,19 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     });
   }, [vendas, selectedVendedor, propSelectedMonth, propSelectedYear, internalSelectedMonth]);
 
-  // Gerar lista de meses disponíveis
+  // Gerar lista de meses disponíveis usando a regra de semana
   const mesesDisponiveis = useMemo(() => {
     const meses = new Set<string>();
     
     vendas.forEach(venda => {
-      // Para vendas matriculadas, usar data de aprovação; para outras, usar data de envio
+      // Para vendas matriculadas, usar data de aprovação se disponível, senão data de envio
       const dataParaGrupar = venda.status === 'matriculado' && venda.data_aprovacao 
         ? new Date(venda.data_aprovacao)
-        : venda.status === 'matriculado' && venda.atualizado_em
-          ? new Date(venda.atualizado_em) 
-          : new Date(venda.enviado_em);
-      const mesAno = `${dataParaGrupar.getFullYear()}-${String(dataParaGrupar.getMonth() + 1).padStart(2, '0')}`;
+        : new Date(venda.enviado_em);
+      
+      // Usar a regra de semana para categorizar o mês correto
+      const { mes, ano } = getVendaPeriod(dataParaGrupar);
+      const mesAno = `${ano}-${String(mes).padStart(2, '0')}`;
       meses.add(mesAno);
     });
 
@@ -173,7 +175,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         });
         return { value: mesAno, label: mesNome.charAt(0).toUpperCase() + mesNome.slice(1) };
       });
-  }, [vendas]);
+  }, [vendas, getMesAnoSemanaAtual]);
 
   if (isLoading) {
     return (
