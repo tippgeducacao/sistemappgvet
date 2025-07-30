@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardMetricsCards from './DashboardMetricsCards';
 import SalesChart from './SalesChart';
 import StatusDistributionChart from './StatusDistributionChart';
@@ -30,8 +30,18 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   
   // Estados para filtro por período - usar o mês/ano da semana atual baseado na regra de terça-feira
   const { mes: mesAtual, ano: anoAtual } = getMesAnoSemanaAtual();
+  console.log('🗓️ DashboardContainer - Mês/Ano da semana atual:', mesAtual, '/', anoAtual);
+  
   const [selectedMonth, setSelectedMonth] = useState(mesAtual);
   const [selectedYear, setSelectedYear] = useState(anoAtual);
+  
+  // Atualizar os estados quando o mês/ano da semana atual for carregado
+  useEffect(() => {
+    const { mes: novoMes, ano: novoAno } = getMesAnoSemanaAtual();
+    console.log('🔄 DashboardContainer useEffect - Atualizando para:', novoMes, '/', novoAno);
+    setSelectedMonth(novoMes);
+    setSelectedYear(novoAno);
+  }, [getMesAnoSemanaAtual]);
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
