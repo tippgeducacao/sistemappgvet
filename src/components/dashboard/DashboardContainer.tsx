@@ -16,6 +16,7 @@ import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useVendedores } from '@/hooks/useVendedores';
+import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import type { UserType } from '@/types/user';
 
 interface DashboardContainerProps {
@@ -25,11 +26,12 @@ interface DashboardContainerProps {
 const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => {
   const { isDiretor, isAdmin, isSecretaria } = useUserRoles();
   const { vendedores } = useVendedores();
+  const { getMesAnoSemanaAtual } = useMetasSemanais();
   
-  // Estados para filtro por período
-  const currentDate = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  // Estados para filtro por período - usar o mês/ano da semana atual baseado na regra de terça-feira
+  const { mes: mesAtual, ano: anoAtual } = getMesAnoSemanaAtual();
+  const [selectedMonth, setSelectedMonth] = useState(mesAtual);
+  const [selectedYear, setSelectedYear] = useState(anoAtual);
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
