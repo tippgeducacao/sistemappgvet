@@ -1184,6 +1184,11 @@ const AgendamentosPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-blue-600 font-medium">🎯 Vendedor Selecionado:</span>
                   {(() => {
+                    // Verificar se temos dados necessários
+                    if (!vendedores || vendedores.length === 0 || !selectedDateForm || !selectedTime) {
+                      return <span className="text-gray-500">Aguardando seleção de data e horário</span>;
+                    }
+
                     // Encontrar o vendedor com menos agendamentos E sem conflito de horário
                     const dataHoraForm = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
                     
@@ -1214,12 +1219,14 @@ const AgendamentosPage: React.FC = () => {
                     const menorCount = Math.min(...vendedoresSemConflito.map(v => v.count));
                     const vendedorSelecionado = vendedoresSemConflito.find(v => v.count === menorCount);
                     
-                    return vendedorSelecionado ? (
+                    if (!vendedorSelecionado) {
+                      return <span className="text-gray-500">Erro na seleção do vendedor</span>;
+                    }
+                    
+                    return (
                       <span className="text-blue-800 font-semibold">
                         {vendedorSelecionado.name} ({vendedorSelecionado.count} agendamentos)
                       </span>
-                    ) : (
-                      <span className="text-gray-500">Nenhum vendedor disponível</span>
                     );
                   })()}
                 </div>
