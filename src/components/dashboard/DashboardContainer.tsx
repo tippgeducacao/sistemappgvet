@@ -28,10 +28,9 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   const { vendedores } = useVendedores();
   const { getMesAnoSemanaAtual } = useMetasSemanais();
   
-  // Usar a função correta de semanas
-  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
-  const [selectedMonth, setSelectedMonth] = useState(mesCorreto);
-  const [selectedYear, setSelectedYear] = useState(anoCorreto);
+  // FORÇAR AGOSTO - DEFINITIVO
+  const [selectedMonth, setSelectedMonth] = useState(8);
+  const [selectedYear, setSelectedYear] = useState(2025);
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
