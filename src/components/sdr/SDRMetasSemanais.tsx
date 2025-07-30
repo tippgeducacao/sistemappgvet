@@ -4,14 +4,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanaisSDR } from '@/hooks/useMetasSemanaisSDR';
+import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { useComissionamento } from '@/hooks/useComissionamento';
 import { Calendar } from 'lucide-react';
 
 export const SDRMetasSemanais = () => {
   const { profile } = useAuthStore();
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const { getMesAnoSemanaAtual } = useMetasSemanais();
+  
+  // Usar a lógica de semanas também no SDR
+  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
+  const [selectedMonth, setSelectedMonth] = useState(mesCorreto);
+  const [selectedYear, setSelectedYear] = useState(anoCorreto);
   
   const { 
     getMetaSemanalSDR, 
