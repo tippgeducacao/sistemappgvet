@@ -1184,15 +1184,35 @@ const AgendamentosPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-blue-600 font-medium">🎯 Vendedor Selecionado:</span>
                   {(() => {
-                    // Encontrar o vendedor com menos agendamentos
+                    // Encontrar o vendedor com menos agendamentos E sem conflito de horário
+                    const dataHoraForm = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
+                    
                     const agendamentosPorVendedor = vendedores.map(v => ({
                       id: v.id,
                       name: v.name,
-                      count: agendamentos.filter(ag => ag.vendedor_id === v.id && ['agendado', 'atrasado'].includes(ag.status)).length
+                      count: agendamentos.filter(ag => ag.vendedor_id === v.id && ['agendado', 'atrasado'].includes(ag.status)).length,
+                      temConflito: agendamentos.some(ag => {
+                        if (ag.vendedor_id !== v.id || !['agendado', 'atrasado'].includes(ag.status)) return false;
+                        
+                        const agendamentoInicio = new Date(ag.data_agendamento);
+                        const agendamentoFim = new Date(ag.data_fim_agendamento || ag.data_agendamento);
+                        const novoAgendamento = new Date(dataHoraForm);
+                        const novoAgendamentoFim = selectedEndTime ? new Date(`${selectedDateForm}T${selectedEndTime}:00.000-03:00`) : novoAgendamento;
+                        
+                        // Verificar se há sobreposição de horários
+                        return (novoAgendamento < agendamentoFim && novoAgendamentoFim > agendamentoInicio);
+                      })
                     }));
                     
-                    const menorCount = Math.min(...agendamentosPorVendedor.map(v => v.count));
-                    const vendedorSelecionado = agendamentosPorVendedor.find(v => v.count === menorCount);
+                    // Filtrar apenas vendedores sem conflito
+                    const vendedoresSemConflito = agendamentosPorVendedor.filter(v => !v.temConflito);
+                    
+                    if (vendedoresSemConflito.length === 0) {
+                      return <span className="text-red-500">Nenhum vendedor disponível neste horário</span>;
+                    }
+                    
+                    const menorCount = Math.min(...vendedoresSemConflito.map(v => v.count));
+                    const vendedorSelecionado = vendedoresSemConflito.find(v => v.count === menorCount);
                     
                     return vendedorSelecionado ? (
                       <span className="text-blue-800 font-semibold">
@@ -1716,7 +1736,7 @@ const AgendamentosPage: React.FC = () => {
                   {confirmationData.vendedor.name}
                 </p>
                 <p className="text-xs text-green-600 mt-1">
-                  * Vendedor com menor número de agendamentos
+                  * Vendedor disponível com menor número de agendamentos
                 </p>
               </div>
 
