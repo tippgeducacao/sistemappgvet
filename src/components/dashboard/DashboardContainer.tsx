@@ -12,6 +12,7 @@ import GoalsAchievementChart from './GoalsAchievementChart';
 import { ReunioesAdminChart } from './ReunioesAdminChart';
 
 import MonthYearFilter from '@/components/common/MonthYearFilter';
+import ForceAugustFilter from '@/components/common/ForceAugustFilter';
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -138,13 +139,7 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   // Dashboard do Vendedor
   return (
     <div className="space-y-6">
-      <MonthYearFilter
-        key={`filter-vendedor-${selectedMonth}-${selectedYear}-${Date.now()}`}
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
-        onMonthChange={handleMonthChange}
-        onYearChange={handleYearChange}
-      />
+      <ForceAugustFilter />
       
       <DashboardMetricsCards 
         userType="vendedor" 
