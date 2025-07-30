@@ -1147,6 +1147,37 @@ const AgendamentosPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Vendedor Selecionado Automaticamente */}
+            {selectedDateForm && selectedTime && (
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-600 font-medium">🎯 Vendedor Selecionado:</span>
+                  {(() => {
+                    // Encontrar o vendedor com menos agendamentos
+                    const agendamentosPorVendedor = vendedores.map(v => ({
+                      id: v.id,
+                      name: v.name,
+                      count: agendamentos.filter(ag => ag.vendedor_id === v.id && ['agendado', 'atrasado'].includes(ag.status)).length
+                    }));
+                    
+                    const menorCount = Math.min(...agendamentosPorVendedor.map(v => v.count));
+                    const vendedorSelecionado = agendamentosPorVendedor.find(v => v.count === menorCount);
+                    
+                    return vendedorSelecionado ? (
+                      <span className="text-blue-800 font-semibold">
+                        {vendedorSelecionado.name} ({vendedorSelecionado.count} agendamentos)
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">Nenhum vendedor disponível</span>
+                    );
+                  })()}
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  * Sistema selecionou automaticamente o vendedor com menor número de agendamentos
+                </p>
+              </div>
+            )}
+
             {/* Link da Reunião */}
             <div className="space-y-2">
               <Label htmlFor="linkReuniao">Link da Reunião *</Label>
