@@ -1038,32 +1038,37 @@ const AgendamentosPage: React.FC = () => {
                           ag => ag.vendedor_id === vendedor.id && ['agendado', 'atrasado'].includes(ag.status)
                         ).length;
                         
-                         const isIndicado = vendedorIndicado?.id === vendedor.id;
-                         
-                         return (
-                         <div 
-                           key={vendedor.id} 
-                           className={`flex items-center justify-between p-3 border rounded-lg transition-all duration-200 ${
-                             isIndicado ? 'border-primary bg-primary/10 shadow-md' : 'border-border'
-                           }`}
-                         >
-                           <div className="flex items-center gap-2 text-sm">
-                             {isIndicado && <span className="text-primary text-lg">🎯</span>}
-                             <User className="h-3 w-3" />
-                             <span className={isIndicado ? 'font-bold text-primary' : ''}>{vendedor.name}</span>
-                             <span className="text-xs text-muted-foreground">({vendedor.email})</span>
-                             <Badge variant={contadorAgendamentos === 0 ? "outline" : "secondary"} className="text-xs">
-                               {contadorAgendamentos} agendamento{contadorAgendamentos !== 1 ? 's' : ''}
-                             </Badge>
-                             {isIndicado && (
-                               <Badge variant="default" className="text-xs bg-primary font-semibold animate-pulse">
-                                 SELECIONADO
-                               </Badge>
-                             )}
-                          </div>
-                        </div>
-                        );
-                      })}
+                        // Encontrar o vendedor com menos agendamentos para destacar (quando data e horário estão preenchidos)
+                        const shouldHighlight = selectedDateForm && selectedTime && vendedores.length > 0;
+                        const menorNumeroAgendamentos = Math.min(...vendedores.map(v => 
+                          agendamentos.filter(ag => ag.vendedor_id === v.id && ['agendado', 'atrasado'].includes(ag.status)).length
+                        ));
+                        const isIndicado = shouldHighlight && contadorAgendamentos === menorNumeroAgendamentos;
+                        
+                        return (
+                        <div 
+                          key={vendedor.id} 
+                          className={`flex items-center justify-between p-3 border rounded-lg transition-all duration-200 ${
+                            isIndicado ? 'border-primary bg-primary/10 shadow-md ring-2 ring-primary/20' : 'border-border'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 text-sm">
+                            {isIndicado && <span className="text-primary text-xl animate-pulse">🎯</span>}
+                            <User className="h-3 w-3" />
+                            <span className={isIndicado ? 'font-bold text-primary' : ''}>{vendedor.name}</span>
+                            <span className="text-xs text-muted-foreground">({vendedor.email})</span>
+                            <Badge variant={contadorAgendamentos === 0 ? "outline" : "secondary"} className="text-xs">
+                              {contadorAgendamentos} agendamento{contadorAgendamentos !== 1 ? 's' : ''}
+                            </Badge>
+                            {isIndicado && (
+                              <Badge variant="default" className="text-xs bg-primary font-semibold animate-pulse">
+                                SELECIONADO
+                              </Badge>
+                            )}
+                         </div>
+                       </div>
+                       );
+                     })}
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
                       O sistema selecionará automaticamente o vendedor com menor número de agendamentos
