@@ -8,6 +8,7 @@ import { Trophy, Medal, Award, Calendar, Target, TrendingUp, History } from 'luc
 import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useNiveis } from '@/hooks/useNiveis';
+import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import SDRProfileModal from './SDRProfileModal';
@@ -45,16 +46,20 @@ const SDRRanking: React.FC = () => {
     );
   }, [vendedores]);
 
-  // Calcular estatísticas de cada SDR
+  // Calcular estatísticas de cada SDR usando a regra de semanas
+  const { getMesAnoSemanaAtual } = useMetasSemanais();
   const sdrStats = useMemo(() => {
+    const { mes: mesAtual, ano: anoAtual } = getMesAnoSemanaAtual();
     const hoje = new Date();
+    
     const inicioSemana = new Date(hoje);
     inicioSemana.setDate(hoje.getDate() - ((hoje.getDay() + 4) % 7)); // Quarta-feira
     const fimSemana = new Date(inicioSemana);
     fimSemana.setDate(inicioSemana.getDate() + 6); // Terça-feira
 
-    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    // Usar o mês/ano baseado na regra de semanas
+    const inicioMes = new Date(anoAtual, mesAtual - 1, 1);
+    const fimMes = new Date(anoAtual, mesAtual, 0);
 
     const inicioAno = new Date(hoje.getFullYear(), 0, 1);
     const fimAno = new Date(hoje.getFullYear(), 11, 31);

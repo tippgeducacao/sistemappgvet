@@ -267,11 +267,11 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Calcular dados para ranking
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth() + 1;
+  // Calcular dados para ranking usando a regra de semanas
+  const { getMesAnoSemanaAtual } = useMetasSemanais();
+  const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
   const currentWeek = getSemanaAtual();
+  const today = new Date();
 
   // Filtrar vendas da semana atual
   const startOfWeek = new Date(today);

@@ -101,16 +101,13 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   const { mes: mesCorretoSemana, ano: anoCorretoSemana } = getMesAnoSemanaAtual();
   
   // Decidir qual mês/ano usar para exibir - priorizar a semana atual se estiver selecionada
-  const dataAtual = new Date();
-  const mesAtual = dataAtual.getMonth() + 1;
-  const anoAtual = dataAtual.getFullYear();
+  // Usar diretamente a lógica de semanas, sem usar new Date().getMonth()
   const semanaAtual = getSemanaAtual();
   
   // Se o mês/ano selecionado corresponde ao mês/ano da semana atual, mostrar o mês da semana
   // Senão, mostrar o mês selecionado normalmente
   const { mesParaExibir, anoParaExibir, isSemanaAtual } = 
-    (selectedMonth === mesCorretoSemana && selectedYear === anoCorretoSemana) ||
-    (selectedMonth === mesAtual && selectedYear === anoAtual && mesCorretoSemana !== mesAtual)
+    (selectedMonth === mesCorretoSemana && selectedYear === anoCorretoSemana)
     ? { 
         mesParaExibir: mesCorretoSemana, 
         anoParaExibir: anoCorretoSemana, 

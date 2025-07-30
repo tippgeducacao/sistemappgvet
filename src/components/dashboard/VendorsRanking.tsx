@@ -41,10 +41,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   const { data: agendamentos } = useAgendamentosLeads();
   const { currentUser, profile } = useAuthStore();
   
-  // Estado interno para o filtro de mês (apenas quando não há filtro externo)
+  // Estado interno para o filtro de mês (apenas quando não há filtro externo) - usar regra de semanas
+  const { getMesAnoSemanaAtual } = useMetasSemanais();
   const [internalSelectedMonth, setInternalSelectedMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const { mes, ano } = getMesAnoSemanaAtual();
+    return `${ano}-${String(mes).padStart(2, '0')}`;
   });
   
   // Hook para metas semanais
@@ -157,9 +158,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       meses.add(mesAno);
     });
 
-    // Adicionar mês atual se não existir
-    const mesAtual = new Date();
-    const mesAtualString = `${mesAtual.getFullYear()}-${String(mesAtual.getMonth() + 1).padStart(2, '0')}`;
+    // Adicionar mês atual baseado na regra de semanas se não existir
+    const { mes: mesAtualSemana, ano: anoAtualSemana } = getMesAnoSemanaAtual();
+    const mesAtualString = `${anoAtualSemana}-${String(mesAtualSemana).padStart(2, '0')}`;
     meses.add(mesAtualString);
 
     return Array.from(meses)

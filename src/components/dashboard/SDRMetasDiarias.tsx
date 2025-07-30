@@ -36,10 +36,10 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
     metasLoading 
   });
 
-  // Verificar se é mês/ano atual para mostrar metas diárias
-  const currentDate = new Date();
-  const isCurrentMonth = selectedMonth === currentDate.getMonth() + 1 && 
-                        selectedYear === currentDate.getFullYear();
+  // Verificar se é mês/ano atual para mostrar metas diárias (baseado na regra de semanas)
+  const { getMesAnoSemanaAtual } = useMetasSemanais();
+  const { mes: mesAtualSemana, ano: anoAtualSemana } = getMesAnoSemanaAtual();
+  const isCurrentMonth = selectedMonth === mesAtualSemana && selectedYear === anoAtualSemana;
 
   if (metasLoading) {
     return (
