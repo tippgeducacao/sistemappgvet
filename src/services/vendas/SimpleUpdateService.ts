@@ -15,6 +15,11 @@ export class SimpleUpdateService {
       atualizado_em: new Date().toISOString()
     };
 
+    // Se está aprovando (matriculando), registrar data de aprovação
+    if (status === 'matriculado') {
+      updateData.data_aprovacao = new Date().toISOString();
+    }
+
     if (pontuacaoValidada !== undefined) {
       updateData.pontuacao_validada = pontuacaoValidada;
     }

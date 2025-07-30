@@ -189,6 +189,7 @@ export type Database = {
           atualizado_em: string | null
           created_at: string | null
           curso_id: string | null
+          data_aprovacao: string | null
           documento_comprobatorio: string | null
           enviado_em: string | null
           id: string
@@ -206,6 +207,7 @@ export type Database = {
           atualizado_em?: string | null
           created_at?: string | null
           curso_id?: string | null
+          data_aprovacao?: string | null
           documento_comprobatorio?: string | null
           enviado_em?: string | null
           id?: string
@@ -223,6 +225,7 @@ export type Database = {
           atualizado_em?: string | null
           created_at?: string | null
           curso_id?: string | null
+          data_aprovacao?: string | null
           documento_comprobatorio?: string | null
           enviado_em?: string | null
           id?: string
