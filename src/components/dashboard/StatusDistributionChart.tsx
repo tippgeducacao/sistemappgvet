@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useAllVendas } from '@/hooks/useVendas';
+import { getVendaPeriod } from '@/utils/semanaUtils';
 
 interface StatusDistributionChartProps {
   selectedVendedor?: string;
@@ -35,10 +36,11 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ selec
       return false;
     }
     
-    // Filtro por período
+    // Filtro por período usando regra de semana
     if (selectedMonth && selectedYear && venda.enviado_em) {
-      const dataVenda = new Date(venda.enviado_em);
-      if (dataVenda.getMonth() + 1 !== selectedMonth || dataVenda.getFullYear() !== selectedYear) {
+      const vendaDate = new Date(venda.enviado_em);
+      const { mes: vendaMes, ano: vendaAno } = getVendaPeriod(vendaDate);
+      if (vendaMes !== selectedMonth || vendaAno !== selectedYear) {
         return false;
       }
     }

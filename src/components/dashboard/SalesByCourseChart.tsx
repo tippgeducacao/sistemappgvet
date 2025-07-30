@@ -4,6 +4,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { useAllVendas } from '@/hooks/useVendas';
+import { getVendaPeriod } from '@/utils/semanaUtils';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface SalesByCourseChartProps {
@@ -75,10 +76,11 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
         return false;
       }
       
-      // Filtro por período
+      // Filtro por período usando regra de semana
       if (selectedMonth && selectedYear && venda.enviado_em) {
-        const dataVenda = new Date(venda.enviado_em);
-        if (dataVenda.getMonth() + 1 !== selectedMonth || dataVenda.getFullYear() !== selectedYear) {
+        const vendaDate = new Date(venda.enviado_em);
+        const { mes: vendaMes, ano: vendaAno } = getVendaPeriod(vendaDate);
+        if (vendaMes !== selectedMonth || vendaAno !== selectedYear) {
           return false;
         }
       }
