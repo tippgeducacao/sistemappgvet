@@ -44,6 +44,9 @@ const AgendamentosPage: React.FC = () => {
   const [linkReuniao, setLinkReuniao] = useState('');
   const [observacoes, setObservacoes] = useState('');
   
+  // Estado para indicar vendedor que será selecionado automaticamente
+  const [vendedorIndicado, setVendedorIndicado] = useState<any>(null);
+  
   // Edit form state
   const [editingAgendamento, setEditingAgendamento] = useState<any>(null);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -108,8 +111,24 @@ const AgendamentosPage: React.FC = () => {
     } else {
       setVendedores([]);
       setSelectedVendedor('');
+      setVendedorIndicado(null);
     }
   }, [selectedPosGraduacao]);
+
+  // Calcular vendedor indicado automaticamente quando dados mudam
+  useEffect(() => {
+    const calcularVendedorIndicado = async () => {
+      if (vendedores.length > 0 && selectedDateForm && selectedTime) {
+        const dataHora = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
+        const vendedor = await selecionarVendedorAutomatico(vendedores, dataHora);
+        setVendedorIndicado(vendedor);
+      } else {
+        setVendedorIndicado(null);
+      }
+    };
+
+    calcularVendedorIndicado();
+  }, [vendedores, selectedDateForm, selectedTime, agendamentos]);
 
   const carregarDados = async (): Promise<void> => {
     setLoading(true);
@@ -806,12 +825,12 @@ const AgendamentosPage: React.FC = () => {
                   <p className="text-sm text-muted-foreground">Selecione primeiro a pós-graduação</p>
                 ) : vendedores.length === 0 ? (
                   <p className="text-sm text-destructive">Nenhum vendedor disponível para esta pós-graduação</p>
-                ) : (
+                ) : !selectedDateForm || !selectedTime ? (
                   <div>
                     <p className="text-sm font-medium mb-2">Vendedores especializados disponíveis:</p>
+                    <p className="text-sm text-muted-foreground mb-2">Selecione data e horário para ver quem será selecionado automaticamente</p>
                     <div className="space-y-2">
                       {vendedores.map((vendedor) => {
-                        // Contar agendamentos ativos e atrasados do vendedor
                         const contadorAgendamentos = agendamentos.filter(
                           ag => ag.vendedor_id === vendedor.id && ['agendado', 'atrasado'].includes(ag.status)
                         ).length;
@@ -825,6 +844,191 @@ const AgendamentosPage: React.FC = () => {
                             <Badge variant={contadorAgendamentos === 0 ? "outline" : "secondary"} className="text-xs">
                               {contadorAgendamentos} agendamento{contadorAgendamentos !== 1 ? 's' : ''}
                             </Badge>
+                          </div>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => verAgendaVendedor(vendedor)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Ver Agenda
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                  <User className="h-5 w-5" />
+                                  Agenda de {vendedor.name}
+                                </DialogTitle>
+                              </DialogHeader>
+                              
+                              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'calendar')}>
+                                <TabsList className="grid w-full grid-cols-2">
+                                  <TabsTrigger value="list" className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    Lista
+                                  </TabsTrigger>
+                                  <TabsTrigger value="calendar" className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    Calendário
+                                  </TabsTrigger>
+                                </TabsList>
+                                
+                                <TabsContent value="list" className="mt-4 max-h-[50vh] overflow-y-auto">
+                                  <div className="space-y-2">
+                                    {agendamentosVendedor.length === 0 ? (
+                                      <p className="text-center text-muted-foreground py-4">
+                                        Nenhum agendamento encontrado para este vendedor
+                                      </p>
+                                    ) : (
+                                      agendamentosVendedor.map((agendamento) => (
+                                        <div key={agendamento.id} className="p-3 border rounded-lg">
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                                              <span className="font-medium">
+                                                {new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR')}
+                                              </span>
+                                              <span className="text-muted-foreground">
+                                                às {new Date(agendamento.data_agendamento).toLocaleTimeString('pt-BR', { 
+                                                  hour: '2-digit', 
+                                                  minute: '2-digit' 
+                                                })}
+                                              </span>
+                                            </div>
+                                            <Badge variant={
+                                              agendamento.status === 'agendado' ? 'default' :
+                                              agendamento.status === 'realizado' ? 'secondary' :
+                                              agendamento.status === 'cancelado' ? 'destructive' :
+                                              agendamento.status === 'atrasado' ? 'destructive' : 'outline'
+                                            }>
+                                              {agendamento.status}
+                                            </Badge>
+                                          </div>
+                                          <p className="text-sm text-muted-foreground mt-1">
+                                            {agendamento.pos_graduacao_interesse}
+                                          </p>
+                                          {agendamento.observacoes && (
+                                            <p className="text-sm text-muted-foreground mt-2">
+                                              <strong>Observações:</strong> {agendamento.observacoes}
+                                            </p>
+                                          )}
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                </TabsContent>
+                                
+                                <TabsContent value="calendar" className="mt-4">
+                                  <div className="space-y-4">
+                                    <CalendarComponent
+                                      mode="single"
+                                      selected={selectedDate}
+                                      onSelect={setSelectedDate}
+                                      className="rounded-md border w-full"
+                                      modifiers={{
+                                        agendado: agendamentosVendedor.map(a => new Date(a.data_agendamento))
+                                      }}
+                                      modifiersStyles={{
+                                        agendado: {
+                                          backgroundColor: 'hsl(var(--primary))',
+                                          color: 'white'
+                                        }
+                                      }}
+                                    />
+                                    
+                                    {selectedDate && (
+                                      <div className="space-y-2">
+                                        <h4 className="font-medium">
+                                          Agendamentos para {selectedDate.toLocaleDateString('pt-BR')}:
+                                        </h4>
+                                        {agendamentosVendedor
+                                          .filter(a => {
+                                            const agendamentoDate = new Date(a.data_agendamento);
+                                            return agendamentoDate.toDateString() === selectedDate.toDateString();
+                                          })
+                                          .map((agendamento) => (
+                                            <div key={agendamento.id} className="p-2 border rounded">
+                                              <div className="flex items-center justify-between">
+                                                <span className="text-sm">
+                                                  {new Date(agendamento.data_agendamento).toLocaleTimeString('pt-BR', { 
+                                                    hour: '2-digit', 
+                                                    minute: '2-digit' 
+                                                  })} - {agendamento.pos_graduacao_interesse}
+                                                </span>
+                                                <Badge variant={
+                                                  agendamento.status === 'agendado' ? 'default' :
+                                                  agendamento.status === 'realizado' ? 'secondary' :
+                                                  'destructive'
+                                                }>
+                                                  {agendamento.status}
+                                                </Badge>
+                                              </div>
+                                            </div>
+                                          ))
+                                        }
+                                        {agendamentosVendedor.filter(a => {
+                                          const agendamentoDate = new Date(a.data_agendamento);
+                                          return agendamentoDate.toDateString() === selectedDate.toDateString();
+                                        }).length === 0 && (
+                                          <p className="text-sm text-muted-foreground">
+                                            Nenhum agendamento para esta data
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </TabsContent>
+                              </Tabs>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium">Vendedores especializados disponíveis:</p>
+                      {vendedorIndicado && (
+                        <div className="flex items-center gap-1 text-xs text-primary font-medium">
+                          <span>🎯</span>
+                          <span>Será agendado com: {vendedorIndicado.name}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {vendedores.map((vendedor) => {
+                        // Contar agendamentos ativos e atrasados do vendedor
+                        const contadorAgendamentos = agendamentos.filter(
+                          ag => ag.vendedor_id === vendedor.id && ['agendado', 'atrasado'].includes(ag.status)
+                        ).length;
+                        
+                        const isIndicado = vendedorIndicado?.id === vendedor.id;
+                        
+                        return (
+                        <div 
+                          key={vendedor.id} 
+                          className={`flex items-center justify-between p-2 border rounded-lg transition-colors ${
+                            isIndicado ? 'border-primary bg-primary/5' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 text-sm">
+                            {isIndicado && <span className="text-primary">🎯</span>}
+                            <User className="h-3 w-3" />
+                            <span className={isIndicado ? 'font-medium text-primary' : ''}>{vendedor.name}</span>
+                            <span className="text-xs text-muted-foreground">({vendedor.email})</span>
+                            <Badge variant={contadorAgendamentos === 0 ? "outline" : "secondary"} className="text-xs">
+                              {contadorAgendamentos} agendamento{contadorAgendamentos !== 1 ? 's' : ''}
+                            </Badge>
+                            {isIndicado && (
+                              <Badge variant="default" className="text-xs bg-primary">
+                                SELECIONADO
+                              </Badge>
+                            )}
                           </div>
                           <Dialog>
                             <DialogTrigger asChild>
