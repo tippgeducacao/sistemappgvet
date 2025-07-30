@@ -243,24 +243,29 @@ export const useMetasSemanais = () => {
     const now = new Date();
     console.log(`🗓️ getMesAnoSemanaAtual - Data atual: ${now.toLocaleDateString('pt-BR')}`);
     
-    // USAR A MESMA LÓGICA CORRIGIDA: sempre usar terça anterior ou atual
-    let tercaAtual = new Date(now);
+    // Encontrar a terça-feira que encerra a semana atual
+    let tercaQueEncerra = new Date(now);
     
-    if (tercaAtual.getDay() === 2) {
+    if (tercaQueEncerra.getDay() === 2) {
       // Hoje é terça-feira - a semana termina hoje
-      console.log(`📅 getMesAnoSemanaAtual - Hoje é terça-feira: ${tercaAtual.toLocaleDateString('pt-BR')}`);
+      console.log(`📅 getMesAnoSemanaAtual - Hoje é terça-feira: ${tercaQueEncerra.toLocaleDateString('pt-BR')}`);
     } else {
-      // Encontrar a terça-feira anterior (da semana atual em andamento)
-      const diasDesdeTerca = (tercaAtual.getDay() - 2 + 7) % 7;
-      tercaAtual.setDate(tercaAtual.getDate() - diasDesdeTerca);
-      console.log(`📅 getMesAnoSemanaAtual - Terça anterior: ${tercaAtual.toLocaleDateString('pt-BR')}`);
+      // Encontrar a próxima terça-feira (que encerra a semana atual)
+      const diasAteTerca = (2 - tercaQueEncerra.getDay() + 7) % 7;
+      if (diasAteTerca === 0) {
+        // Se diasAteTerca for 0, significa que hoje é terça, mas já tratamos isso acima
+        tercaQueEncerra.setDate(tercaQueEncerra.getDate() + 7);
+      } else {
+        tercaQueEncerra.setDate(tercaQueEncerra.getDate() + diasAteTerca);
+      }
+      console.log(`📅 getMesAnoSemanaAtual - Próxima terça que encerra semana: ${tercaQueEncerra.toLocaleDateString('pt-BR')}`);
     }
     
     // O mês/ano da semana é determinado pela terça-feira (fim da semana)
-    const mesReferencia = tercaAtual.getMonth() + 1;
-    const anoReferencia = tercaAtual.getFullYear();
+    const mesReferencia = tercaQueEncerra.getMonth() + 1;
+    const anoReferencia = tercaQueEncerra.getFullYear();
     
-    console.log(`📅 getMesAnoSemanaAtual - Mês/Ano baseado na terça: ${mesReferencia}/${anoReferencia}`);
+    console.log(`📅 getMesAnoSemanaAtual - Mês/Ano baseado na terça que encerra: ${mesReferencia}/${anoReferencia}`);
     
     return {
       mes: mesReferencia,
