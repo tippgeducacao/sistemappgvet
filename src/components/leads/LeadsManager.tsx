@@ -362,13 +362,12 @@ const LeadsManager: React.FC = () => {
                   {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Data inicial"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 z-50" align="start">
                 <Calendar
                   mode="single"
                   selected={dateFrom}
                   onSelect={setDateFrom}
                   initialFocus
-                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
@@ -387,13 +386,12 @@ const LeadsManager: React.FC = () => {
                   {dateTo ? format(dateTo, "dd/MM/yyyy") : "Data final"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 z-50" align="start">
                 <Calendar
                   mode="single"
                   selected={dateTo}
                   onSelect={setDateTo}
                   initialFocus
-                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
