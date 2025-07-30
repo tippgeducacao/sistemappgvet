@@ -1080,7 +1080,10 @@ const AgendamentosPage: React.FC = () => {
                 <Input
                   type="date"
                   value={selectedDateForm}
-                  onChange={(e) => setSelectedDateForm(e.target.value)}
+                  onChange={(e) => {
+                    console.log('🎯 Data alterada:', e.target.value);
+                    setSelectedDateForm(e.target.value);
+                  }}
                   min={new Date().toISOString().split('T')[0]}
                 />
               </div>
@@ -1094,18 +1097,20 @@ const AgendamentosPage: React.FC = () => {
                        id="horario-inicio"
                        type="time"
                        value={selectedTime}
-                       onChange={(e) => {
-                         setSelectedTime(e.target.value);
-                         // Automaticamente definir horário final com 1 hora de diferença
-                         if (e.target.value) {
-                           const [hours, minutes] = e.target.value.split(':');
-                           const startTime = new Date();
-                           startTime.setHours(parseInt(hours), parseInt(minutes));
-                           const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Adicionar 1 hora
-                           const endTimeString = endTime.toTimeString().slice(0, 5);
-                           setSelectedEndTime(endTimeString);
-                         }
-                       }}
+                        onChange={(e) => {
+                          console.log('🎯 Horário alterado:', e.target.value);
+                          setSelectedTime(e.target.value);
+                          // Automaticamente definir horário final com 1 hora de diferença
+                          if (e.target.value) {
+                            const [hours, minutes] = e.target.value.split(':');
+                            const startTime = new Date();
+                            startTime.setHours(parseInt(hours), parseInt(minutes));
+                            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Adicionar 1 hora
+                            const endTimeString = endTime.toTimeString().slice(0, 5);
+                            console.log('🎯 Definindo horário final:', endTimeString);
+                            setSelectedEndTime(endTimeString);
+                          }
+                        }}
                        className="pl-10"
                      />
                   </div>
