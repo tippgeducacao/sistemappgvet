@@ -32,6 +32,8 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   const [selectedMonth, setSelectedMonth] = useState(8);
   const [selectedYear, setSelectedYear] = useState(2025);
   
+  console.log('🚨 DASHBOARD FINAL - Estados:', { selectedMonth, selectedYear });
+  
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
 

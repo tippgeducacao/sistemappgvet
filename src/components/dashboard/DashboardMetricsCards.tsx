@@ -25,6 +25,7 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
   selectedYear,
   selectedVendedor
 }) => {
+  console.log('🚨 DASHBOARD METRICS - Props recebidas:', { selectedMonth, selectedYear, selectedVendedor });
   const {
     isAdmin,
     isSecretaria

@@ -19,6 +19,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   selectedMonth,
   selectedYear
 }) => {
+  console.log('🚨 VENDEDOR METAS - Props recebidas:', { selectedMonth, selectedYear });
   const { metasSemanais, getSemanaAtual, getMesAnoSemanaAtual, getSemanasDoMes, getDataInicioSemana, getDataFimSemana, loading: metasSemanaisLoading } = useMetasSemanais();
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { profile } = useAuthStore();

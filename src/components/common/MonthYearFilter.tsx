@@ -56,7 +56,7 @@ const MonthYearFilter: React.FC<MonthYearFilterProps> = ({
           <div className="flex items-center gap-3">
             <div className="flex flex-col">
               <label className="text-xs text-gray-500 mb-1">Mês</label>
-              <Select value="8" onValueChange={(value) => onMonthChange(parseInt(value))}>
+              <Select value={selectedMonth.toString()} onValueChange={(value) => onMonthChange(parseInt(value))}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
