@@ -100,15 +100,15 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
   const pontosSemanaAtual = vendas.filter(venda => {
     if (venda.vendedor_id !== profile.id) return false;
     if (venda.status !== 'matriculado') return false;
-    if (!venda.enviado_em) return false;
     
-    const vendaDate = new Date(venda.enviado_em);
-    const vendaSemHora = new Date(vendaDate.getFullYear(), vendaDate.getMonth(), vendaDate.getDate());
+    // USAR DATA DE APROVAÇÃO (atualizado_em) em vez de data de envio
+    const dataVenda = venda.atualizado_em ? new Date(venda.atualizado_em) : new Date(venda.enviado_em);
+    const vendaSemHora = new Date(dataVenda.getFullYear(), dataVenda.getMonth(), dataVenda.getDate());
     
     const isInRange = vendaSemHora >= inicioSemana && vendaSemHora <= fimSemana;
     
     if (isInRange) {
-      console.log(`    ✅ Venda incluída: ${venda.aluno?.nome}, Data: ${vendaDate.toLocaleDateString('pt-BR')}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
+      console.log(`    ✅ Venda incluída: ${venda.aluno?.nome}, Data Aprovação: ${dataVenda.toLocaleDateString('pt-BR')}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
     }
     
     return isInRange;

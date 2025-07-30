@@ -114,18 +114,22 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         return false;
       }
       
-      // Filtro por período
+      // Filtro por período - USAR DATA DE APROVAÇÃO (atualizado_em) para vendas matriculadas
       if ((propSelectedMonth && propSelectedYear) || internalSelectedMonth) {
-        const dataVenda = new Date(venda.enviado_em);
+        // Para vendas matriculadas, usar data de aprovação (atualizado_em)
+        // Para outras vendas, usar data de envio (enviado_em)
+        const dataParaFiltro = venda.status === 'matriculado' && venda.atualizado_em 
+          ? new Date(venda.atualizado_em) 
+          : new Date(venda.enviado_em);
         
         if (propSelectedMonth && propSelectedYear) {
           // Usar filtros externos do dashboard
-          if (dataVenda.getMonth() + 1 !== propSelectedMonth || dataVenda.getFullYear() !== propSelectedYear) {
+          if (dataParaFiltro.getMonth() + 1 !== propSelectedMonth || dataParaFiltro.getFullYear() !== propSelectedYear) {
             return false;
           }
         } else {
           // Usar filtro interno mensal
-          const vendaMonth = `${dataVenda.getFullYear()}-${String(dataVenda.getMonth() + 1).padStart(2, '0')}`;
+          const vendaMonth = `${dataParaFiltro.getFullYear()}-${String(dataParaFiltro.getMonth() + 1).padStart(2, '0')}`;
           if (vendaMonth !== internalSelectedMonth) {
             return false;
           }
@@ -141,8 +145,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const meses = new Set<string>();
     
     vendas.forEach(venda => {
-      const vendaDate = new Date(venda.enviado_em);
-      const mesAno = `${vendaDate.getFullYear()}-${String(vendaDate.getMonth() + 1).padStart(2, '0')}`;
+      // Para vendas matriculadas, usar data de aprovação; para outras, usar data de envio
+      const dataParaGrupar = venda.status === 'matriculado' && venda.atualizado_em 
+        ? new Date(venda.atualizado_em) 
+        : new Date(venda.enviado_em);
+      const mesAno = `${dataParaGrupar.getFullYear()}-${String(dataParaGrupar.getMonth() + 1).padStart(2, '0')}`;
       meses.add(mesAno);
     });
 

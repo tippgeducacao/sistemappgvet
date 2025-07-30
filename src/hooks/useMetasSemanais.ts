@@ -99,25 +99,33 @@ export const useMetasSemanais = () => {
   // Função para obter a semana atual do mês baseada no término da semana (terça-feira)
   const getSemanaAtual = () => {
     const now = new Date();
-    const currentMonth = now.getMonth() + 1;
+    console.log(`🗓️ Data atual: ${now.toLocaleDateString('pt-BR')} (${now.toISOString()})`);
+    
+    const currentMonth = now.getMonth() + 1; // Janeiro = 1
     const currentYear = now.getFullYear();
+    
+    console.log(`📅 Calculando semana para: ${currentMonth}/${currentYear}`);
     
     // Encontrar a primeira terça-feira do mês
     let primeiraTerca = new Date(currentYear, currentMonth - 1, 1);
-    while (primeiraTerca.getDay() !== 2) {
+    while (primeiraTerca.getDay() !== 2) { // 2 = Tuesday
       primeiraTerca.setDate(primeiraTerca.getDate() + 1);
     }
+    
+    console.log(`🎯 Primeira terça do mês ${currentMonth}: ${primeiraTerca.toLocaleDateString('pt-BR')}`);
     
     // Se a primeira terça-feira é muito tarde no mês (depois do dia 7),
     // verificar se existe uma semana anterior que termina neste mês
     if (primeiraTerca.getDate() > 7) {
       const tercaAnterior = new Date(primeiraTerca);
       tercaAnterior.setDate(tercaAnterior.getDate() - 7);
+      console.log(`⏪ Primeira terça está tarde (dia ${primeiraTerca.getDate()}), verificando terça anterior: ${tercaAnterior.toLocaleDateString('pt-BR')}`);
       
-      // Se a terça anterior não está no mês atual, usá-la
+      // Verificar se a terça anterior está no mês anterior (é válida)
       if (tercaAnterior.getMonth() !== currentMonth - 1 || tercaAnterior.getFullYear() !== currentYear) {
-        // Se não está no mês atual, mantém a primeira terça do mês
+        console.log(`✅ Terça anterior não está no mês atual, mantendo primeira terça: ${primeiraTerca.toLocaleDateString('pt-BR')}`);
       } else {
+        console.log(`⭐ Usando terça anterior como primeira terça: ${tercaAnterior.toLocaleDateString('pt-BR')}`);
         primeiraTerca = tercaAnterior;
       }
     }
@@ -126,37 +134,58 @@ export const useMetasSemanais = () => {
     let currentTuesday = new Date(primeiraTerca);
     let weekNumber = 1;
     
-    while (currentTuesday.getMonth() === currentMonth - 1 && currentTuesday.getFullYear() === currentYear) {
+    console.log(`🔍 Procurando semana atual a partir da primeira terça: ${currentTuesday.toLocaleDateString('pt-BR')}`);
+    
+    while (true) {
       const inicioSemana = new Date(currentTuesday);
       inicioSemana.setDate(inicioSemana.getDate() - 6); // Quarta-feira anterior
       const fimSemana = new Date(currentTuesday);
       fimSemana.setHours(23, 59, 59, 999); // Final do dia da terça-feira
       
-      console.log(`🔍 Semana ${weekNumber}: ${inicioSemana.toLocaleDateString('pt-BR')} - ${currentTuesday.toLocaleDateString('pt-BR')}, Data atual: ${now.toLocaleDateString('pt-BR')}`);
+      console.log(`🔍 Semana ${weekNumber}: ${inicioSemana.toLocaleDateString('pt-BR')} - ${currentTuesday.toLocaleDateString('pt-BR')}`);
+      console.log(`   📊 Período completo: ${inicioSemana.toISOString()} até ${fimSemana.toISOString()}`);
+      console.log(`   📋 Data atual está no período? ${now >= inicioSemana && now <= fimSemana}`);
       
       if (now >= inicioSemana && now <= fimSemana) {
         console.log(`✅ Data atual está na semana ${weekNumber}`);
         return weekNumber;
       }
       
-      weekNumber++;
+      // Avançar para próxima terça-feira
       currentTuesday.setDate(currentTuesday.getDate() + 7);
-    }
-    
-    // Se chegou até aqui, verificar se estamos numa semana que vai para o próximo mês
-    // Mas a terça ainda termina no mês atual
-    const ultimoDiaMes = new Date(currentYear, currentMonth, 0);
-    if (now.getDate() > ultimoDiaMes.getDate() - 6) {
-      // Estamos possivelmente numa semana que termina no próximo mês
-      // Voltar uma semana e verificar
-      currentTuesday.setDate(currentTuesday.getDate() - 7);
-      const inicioSemana = new Date(currentTuesday);
-      inicioSemana.setDate(inicioSemana.getDate() - 6);
-      const fimSemana = new Date(currentTuesday);
-      fimSemana.setHours(23, 59, 59, 999);
+      weekNumber++;
       
-      if (now >= inicioSemana && now <= fimSemana) {
-        return weekNumber - 1;
+      // Verificar se ainda está no mês correto ou se avançou muito
+      if (currentTuesday.getMonth() !== currentMonth - 1 || currentTuesday.getFullYear() !== currentYear) {
+        console.log(`⚠️ Terça saiu do mês atual: ${currentTuesday.toLocaleDateString('pt-BR')}`);
+        
+        // Se saiu do mês, verificar se estamos numa semana que vai do mês atual para o próximo
+        // mas ainda estamos no mês atual
+        if (now.getMonth() === currentMonth - 1 && now.getFullYear() === currentYear) {
+          console.log(`🔄 Ainda estamos no mês ${currentMonth}, verificando se é semana que vai para próximo mês...`);
+          
+          // Voltar uma semana e verificar
+          const tercaAnterior = new Date(currentTuesday);
+          tercaAnterior.setDate(tercaAnterior.getDate() - 7);
+          const inicioSemanaAnterior = new Date(tercaAnterior);
+          inicioSemanaAnterior.setDate(inicioSemanaAnterior.getDate() - 6);
+          const fimSemanaAnterior = new Date(tercaAnterior);
+          fimSemanaAnterior.setHours(23, 59, 59, 999);
+          
+          console.log(`   🔍 Verificando semana anterior ${weekNumber - 1}: ${inicioSemanaAnterior.toLocaleDateString('pt-BR')} - ${tercaAnterior.toLocaleDateString('pt-BR')}`);
+          
+          if (now >= inicioSemanaAnterior && now <= fimSemanaAnterior) {
+            console.log(`✅ Data atual está na semana anterior ${weekNumber - 1}`);
+            return weekNumber - 1;
+          }
+        }
+        break;
+      }
+      
+      // Limitar a 10 semanas para evitar loop infinito
+      if (weekNumber > 10) {
+        console.log(`⚠️ Limitação de segurança atingida (10 semanas)`);
+        break;
       }
     }
     
