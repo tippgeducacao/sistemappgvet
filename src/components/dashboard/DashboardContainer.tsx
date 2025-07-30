@@ -59,6 +59,7 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <MonthYearFilter
+            key={`filter-${selectedMonth}-${selectedYear}-${Date.now()}`}
             selectedMonth={selectedMonth}
             selectedYear={selectedYear}
             onMonthChange={handleMonthChange}
@@ -136,6 +137,7 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   return (
     <div className="space-y-6">
       <MonthYearFilter
+        key={`filter-vendedor-${selectedMonth}-${selectedYear}-${Date.now()}`}
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
         onMonthChange={handleMonthChange}
