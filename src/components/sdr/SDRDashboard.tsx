@@ -6,6 +6,7 @@ import { useVendas } from '@/hooks/useVendas';
 import { useAllLeads } from '@/hooks/useLeads';
 import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
+import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import ReunioesCanceladasSDR from './ReunioesCanceladasSDR';
 import HistoricoReunioes from './HistoricoReunioes';
 import SDRMetasDiarias from '@/components/dashboard/SDRMetasDiarias';
@@ -21,10 +22,11 @@ const SDRDashboard: React.FC = () => {
 
   const leads = leadsQuery.data || [];
 
-  // Estado para filtros de período
-  const currentDate = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
+  // Usar lógica de semanas consistente
+  const { getMesAnoSemanaAtual } = useMetasSemanais();
+  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
+  const [selectedMonth, setSelectedMonth] = useState(mesCorreto);
+  const [selectedYear, setSelectedYear] = useState(anoCorreto);
 
   // Filtrar dados do mês/ano selecionado
   const vendasDoMes = vendas.filter(venda => {

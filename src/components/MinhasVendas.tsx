@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useVendas } from '@/hooks/useVendas';
+import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useDeleteVenda } from '@/hooks/useDeleteVenda';
 import { useAuthStore } from '@/stores/AuthStore';
@@ -30,10 +31,11 @@ const MinhasVendas: React.FC = () => {
   const [vendaToDelete, setVendaToDelete] = useState<VendaCompleta | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   
-  // Estados para filtro por período
-  const currentDate = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  // Estados para filtro por período - usar lógica de semanas consistente
+  const { getMesAnoSemanaAtual } = useMetasSemanais();
+  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
+  const [selectedMonth, setSelectedMonth] = useState(mesCorreto);
+  const [selectedYear, setSelectedYear] = useState(anoCorreto);
 
   // Filtrar vendas por mês e ano
   const filteredVendas = useMemo(() => {

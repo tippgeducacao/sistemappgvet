@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/AuthStore';
+import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useVendas } from '@/hooks/useVendas';
 import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards';
 import VendedorMetas from '@/components/dashboard/VendedorMetas';

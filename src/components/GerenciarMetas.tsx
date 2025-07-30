@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useVendedores } from '@/hooks/useVendedores';
+import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Target, Calendar, RotateCcw } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,9 +24,11 @@ const GerenciarMetas = () => {
   const { niveis, loading: loadingNiveis } = useNiveis();
   const { toast } = useToast();
   
-  const currentDate = new Date();
-  const [selectedMes, setSelectedMes] = useState<number>(currentDate.getMonth() + 1);
-  const [selectedAno, setSelectedAno] = useState<number>(currentDate.getFullYear());
+  // Estados para filtro - usar lógica de semanas consistente
+  const { getMesAnoSemanaAtual } = useMetasSemanais();
+  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
+  const [selectedMes, setSelectedMes] = useState<number>(mesCorreto);
+  const [selectedAno, setSelectedAno] = useState<number>(anoCorreto);
   const [vendedoresInfo, setVendedoresInfo] = useState<VendedorInfo[]>([]);
   const [generating, setGenerating] = useState(false);
 
@@ -44,7 +47,7 @@ const GerenciarMetas = () => {
     { value: 12, label: 'Dezembro' }
   ];
 
-  const anos = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i);
+  const anos = Array.from({ length: 5 }, (_, i) => anoCorreto - 2 + i);
 
   // Função para gerar iniciais do nome
   const getInitials = (name: string): string => {
