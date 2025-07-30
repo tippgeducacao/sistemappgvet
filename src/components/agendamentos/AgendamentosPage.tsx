@@ -1184,50 +1184,85 @@ const AgendamentosPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-blue-600 font-medium">🎯 Vendedor Selecionado:</span>
                   {(() => {
-                    // Verificar se temos dados necessários
-                    if (!vendedores || vendedores.length === 0 || !selectedDateForm || !selectedTime) {
-                      return <span className="text-gray-500">Aguardando seleção de data e horário</span>;
-                    }
+                    try {
+                      console.log('🔍 Debug vendedor selecionado:', {
+                        vendedores: vendedores?.length,
+                        selectedDateForm,
+                        selectedTime,
+                        agendamentos: agendamentos?.length
+                      });
 
-                    // Encontrar o vendedor com menos agendamentos E sem conflito de horário
-                    const dataHoraForm = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
-                    
-                    const agendamentosPorVendedor = vendedores.map(v => ({
-                      id: v.id,
-                      name: v.name,
-                      count: agendamentos.filter(ag => ag.vendedor_id === v.id && ['agendado', 'atrasado'].includes(ag.status)).length,
-                      temConflito: agendamentos.some(ag => {
-                        if (ag.vendedor_id !== v.id || !['agendado', 'atrasado'].includes(ag.status)) return false;
+                      // Verificar se temos dados necessários
+                      if (!vendedores || vendedores.length === 0 || !selectedDateForm || !selectedTime) {
+                        console.log('⚠️ Dados insuficientes para seleção');
+                        return <span className="text-gray-500">Aguardando seleção de data e horário</span>;
+                      }
+
+                      // Encontrar o vendedor com menos agendamentos E sem conflito de horário
+                      const dataHoraForm = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
+                      
+                      console.log('🔍 Processando vendedores:', vendedores.map(v => ({ id: v.id, name: v.name })));
+                      
+                      const agendamentosPorVendedor = vendedores.map(v => {
+                        if (!v || !v.id || !v.name) {
+                          console.error('❌ Vendedor inválido:', v);
+                          return null;
+                        }
                         
-                        const agendamentoInicio = new Date(ag.data_agendamento);
-                        const agendamentoFim = new Date(ag.data_fim_agendamento || ag.data_agendamento);
-                        const novoAgendamento = new Date(dataHoraForm);
-                        const novoAgendamentoFim = selectedEndTime ? new Date(`${selectedDateForm}T${selectedEndTime}:00.000-03:00`) : novoAgendamento;
-                        
-                        // Verificar se há sobreposição de horários
-                        return (novoAgendamento < agendamentoFim && novoAgendamentoFim > agendamentoInicio);
-                      })
-                    }));
-                    
-                    // Filtrar apenas vendedores sem conflito
-                    const vendedoresSemConflito = agendamentosPorVendedor.filter(v => !v.temConflito);
-                    
-                    if (vendedoresSemConflito.length === 0) {
-                      return <span className="text-red-500">Nenhum vendedor disponível neste horário</span>;
+                        return {
+                          id: v.id,
+                          name: v.name,
+                          count: agendamentos?.filter(ag => ag?.vendedor_id === v.id && ['agendado', 'atrasado'].includes(ag?.status))?.length || 0,
+                          temConflito: agendamentos?.some(ag => {
+                            if (!ag || ag.vendedor_id !== v.id || !['agendado', 'atrasado'].includes(ag.status)) return false;
+                            
+                            try {
+                              const agendamentoInicio = new Date(ag.data_agendamento);
+                              const agendamentoFim = new Date(ag.data_fim_agendamento || ag.data_agendamento);
+                              const novoAgendamento = new Date(dataHoraForm);
+                              const novoAgendamentoFim = selectedEndTime ? new Date(`${selectedDateForm}T${selectedEndTime}:00.000-03:00`) : novoAgendamento;
+                              
+                              // Verificar se há sobreposição de horários
+                              return (novoAgendamento < agendamentoFim && novoAgendamentoFim > agendamentoInicio);
+                            } catch (e) {
+                              console.error('❌ Erro ao verificar conflito:', e);
+                              return false;
+                            }
+                          }) || false
+                        };
+                      }).filter(Boolean); // Remove items null/undefined
+                      
+                      console.log('🔍 Vendedores processados:', agendamentosPorVendedor);
+                      
+                      // Filtrar apenas vendedores sem conflito
+                      const vendedoresSemConflito = agendamentosPorVendedor.filter(v => v && !v.temConflito);
+                      
+                      console.log('🔍 Vendedores sem conflito:', vendedoresSemConflito);
+                      
+                      if (vendedoresSemConflito.length === 0) {
+                        console.log('⚠️ Nenhum vendedor disponível');
+                        return <span className="text-red-500">Nenhum vendedor disponível neste horário</span>;
+                      }
+                      
+                      const menorCount = Math.min(...vendedoresSemConflito.map(v => v.count));
+                      const vendedorSelecionado = vendedoresSemConflito.find(v => v && v.count === menorCount);
+                      
+                      console.log('🎯 Vendedor final selecionado:', vendedorSelecionado);
+                      
+                      if (!vendedorSelecionado || !vendedorSelecionado.name) {
+                        console.error('❌ Vendedor selecionado inválido:', vendedorSelecionado);
+                        return <span className="text-gray-500">Erro na seleção do vendedor</span>;
+                      }
+                      
+                      return (
+                        <span className="text-blue-800 font-semibold">
+                          {vendedorSelecionado.name} ({vendedorSelecionado.count} agendamentos)
+                        </span>
+                      );
+                    } catch (error) {
+                      console.error('❌ Erro crítico na seleção do vendedor:', error);
+                      return <span className="text-red-500">Erro na seleção do vendedor</span>;
                     }
-                    
-                    const menorCount = Math.min(...vendedoresSemConflito.map(v => v.count));
-                    const vendedorSelecionado = vendedoresSemConflito.find(v => v.count === menorCount);
-                    
-                    if (!vendedorSelecionado) {
-                      return <span className="text-gray-500">Erro na seleção do vendedor</span>;
-                    }
-                    
-                    return (
-                      <span className="text-blue-800 font-semibold">
-                        {vendedorSelecionado.name} ({vendedorSelecionado.count} agendamentos)
-                      </span>
-                    );
                   })()}
                 </div>
                 <p className="text-xs text-blue-600 mt-1">
