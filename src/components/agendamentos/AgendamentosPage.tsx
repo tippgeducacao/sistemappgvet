@@ -278,7 +278,18 @@ const AgendamentosPage: React.FC = () => {
       console.log('👤 VENDEDOR SELECIONADO:', vendedorSelecionado);
       
       if (!vendedorSelecionado) {
-        toast.error('Nenhum vendedor disponível neste horário. Tente outro horário.');
+        toast.error('Nenhum vendedor disponível neste horário. Todos os vendedores já possuem reuniões marcadas neste horário.');
+        return;
+      }
+
+      // Verificar novamente se há conflito antes de criar o agendamento
+      const temConflito = await AgendamentosService.verificarConflitosAgenda(
+        vendedorSelecionado.id,
+        dataHoraAgendamento
+      );
+      
+      if (temConflito) {
+        toast.error(`${vendedorSelecionado.name} já possui agendamento neste horário. Tente outro horário.`);
         return;
       }
 
