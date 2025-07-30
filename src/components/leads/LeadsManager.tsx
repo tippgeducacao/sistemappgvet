@@ -86,36 +86,40 @@ const LeadsManager: React.FC = () => {
     dateTo,
   };
 
-  // Buscar TODOS os leads quando há busca ativa, ou paginados quando não há busca
+  // Buscar leads paginados sempre para melhor performance
   const { data: leadsData, isLoading } = useLeads(
-    debouncedSearchTerm ? 1 : currentPage, 
-    debouncedSearchTerm ? 10000 : 100, // Se há busca, pega todos (limite alto)
+    currentPage, 
+    50, // Reduzir quantidade por página para melhor performance
     filtersForTable
   );
   const { data: totalLeadsCount = 0 } = useLeadsCount();
   const { data: filterData } = useLeadsFilterData();
-  const { data: allLeadsForStats = [] } = useAllLeads(); // Para estatísticas e dashboard
+  
+  // Usar React.useMemo para otimizar carregamento de dados pesados
+  const { data: allLeadsForStats = [], isLoading: isLoadingStats } = useAllLeads(); // Para estatísticas e dashboard
   const { data: agendamentosData = [] } = useAgendamentosLeads(); // Dados de agendamentos
 
   // Dados para filtros e estatísticas
   const allLeads = leadsData?.leads || [];
   
-  // Filtrar leads localmente com busca em tempo real
-  const filteredLeads = allLeads.filter(lead => {
-    if (!tableSearchTerm) return true;
+  // Usar React.useMemo para otimizar filtragem
+  const filteredLeads = React.useMemo(() => {
+    if (!tableSearchTerm || !allLeads) return allLeads;
     
     const searchLower = tableSearchTerm.toLowerCase();
-    return (
-      lead.nome.toLowerCase().includes(searchLower) ||
-      lead.email?.toLowerCase().includes(searchLower) ||
-      lead.whatsapp?.includes(tableSearchTerm)
-    );
-  });
+    return allLeads.filter(lead => {
+      return (
+        lead.nome.toLowerCase().includes(searchLower) ||
+        lead.email?.toLowerCase().includes(searchLower) ||
+        lead.whatsapp?.includes(tableSearchTerm)
+      );
+    });
+  }, [allLeads, tableSearchTerm]);
 
-  // Se há busca ativa, usar dados filtrados; senão usar dados normais
-  const leads = tableSearchTerm ? filteredLeads : allLeads;
-  const totalCount = tableSearchTerm ? filteredLeads.length : (leadsData?.totalCount || 0);
-  const totalPages = tableSearchTerm ? 1 : (leadsData?.totalPages || 0);
+  // Usar dados paginados sempre para melhor performance
+  const leads = allLeads;
+  const totalCount = leadsData?.totalCount || 0;
+  const totalPages = leadsData?.totalPages || 0;
   
   const profissoes = filterData?.profissoes || [];
   const paginasCaptura = filterData?.paginasCaptura || [];
@@ -161,28 +165,32 @@ const LeadsManager: React.FC = () => {
     return `https://wa.me/${formattedNumber}`;
   };
 
-  // Filtrar leads para estatísticas (usar allLeadsForStats) - SEM busca por texto
-  const filteredLeadsForStats = allLeadsForStats.filter(lead => {
-    const matchesStatus = statusFilter === 'todos' || lead.status === statusFilter;
+  // Usar React.useMemo para otimizar filtragem de estatísticas
+  const filteredLeadsForStats = React.useMemo(() => {
+    if (!allLeadsForStats || allLeadsForStats.length === 0) return [];
     
-    const profissao = extractProfissao(lead.observacoes);
-    const matchesProfissao = profissaoFilter === 'todos' || profissao === profissaoFilter;
-    
-    const paginaSubdominio = extractPaginaSubdominio(lead.pagina_nome);
-    const matchesPagina = paginaFilter === 'todos' || paginaSubdominio === paginaFilter;
-    
-    const matchesFonte = fonteFilter === 'todos' || lead.utm_source === fonteFilter;
-    
-    // Filtro por data
-    const leadDate = new Date(lead.created_at);
-    const matchesDateFrom = !dateFrom || leadDate >= dateFrom;
-    const matchesDateTo = !dateTo || leadDate <= dateTo;
-    
-    return matchesStatus && matchesProfissao && matchesPagina && matchesFonte && matchesDateFrom && matchesDateTo;
-  });
+    return allLeadsForStats.filter(lead => {
+      const matchesStatus = statusFilter === 'todos' || lead.status === statusFilter;
+      
+      const profissao = extractProfissao(lead.observacoes);
+      const matchesProfissao = profissaoFilter === 'todos' || profissao === profissaoFilter;
+      
+      const paginaSubdominio = extractPaginaSubdominio(lead.pagina_nome);
+      const matchesPagina = paginaFilter === 'todos' || paginaSubdominio === paginaFilter;
+      
+      const matchesFonte = fonteFilter === 'todos' || lead.utm_source === fonteFilter;
+      
+      // Filtro por data
+      const leadDate = new Date(lead.created_at);
+      const matchesDateFrom = !dateFrom || leadDate >= dateFrom;
+      const matchesDateTo = !dateTo || leadDate <= dateTo;
+      
+      return matchesStatus && matchesProfissao && matchesPagina && matchesFonte && matchesDateFrom && matchesDateTo;
+    });
+  }, [allLeadsForStats, statusFilter, profissaoFilter, paginaFilter, fonteFilter, dateFrom, dateTo]);
 
-  // Estatísticas baseadas nos leads filtrados
-  const stats = {
+  // Usar React.useMemo para otimizar cálculo de estatísticas
+  const stats = React.useMemo(() => ({
     total: filteredLeadsForStats.length,
     novos: filteredLeadsForStats.filter(l => l.status === 'novo').length,
     contatados: filteredLeadsForStats.filter(l => l.status === 'contatado').length,
@@ -191,7 +199,7 @@ const LeadsManager: React.FC = () => {
     convertidos: filteredLeadsForStats.filter(l => l.convertido_em_venda).length,
     sprinthub: filteredLeadsForStats.filter(l => l.utm_source === 'SprintHub').length,
     greatpages: filteredLeadsForStats.filter(l => l.utm_source === 'GreatPages').length,
-  };
+  }), [filteredLeadsForStats]);
 
   // Função para obter o ícone da fonte
   const getFonteIcon = (fonte?: string) => {
@@ -234,12 +242,14 @@ const LeadsManager: React.FC = () => {
     return agendamentosData.find(agendamento => agendamento.lead_id === leadId);
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingStats) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando leads...</p>
+          <p className="text-muted-foreground">
+            {isLoading ? 'Carregando leads...' : 'Carregando estatísticas...'}
+          </p>
         </div>
       </div>
     );
