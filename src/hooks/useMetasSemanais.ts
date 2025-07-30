@@ -101,96 +101,75 @@ export const useMetasSemanais = () => {
     const now = new Date();
     console.log(`🗓️ Data atual: ${now.toLocaleDateString('pt-BR')} (${now.toISOString()})`);
     
-    const currentMonth = now.getMonth() + 1; // Janeiro = 1
-    const currentYear = now.getFullYear();
+    // ESTRATÉGIA: Primeiro encontrar a qual semana a data atual pertence,
+    // depois determinar o mês/ano dessa semana baseado na terça-feira (fim da semana)
     
-    console.log(`📅 Calculando semana para: ${currentMonth}/${currentYear}`);
+    // Encontrar a terça-feira mais próxima (pode ser anterior ou posterior à data atual)
+    let tercaAtual = new Date(now);
+    const diasParaTerca = (2 - tercaAtual.getDay() + 7) % 7; // Dias para próxima terça
+    const diasDesdeTerca = (tercaAtual.getDay() - 2 + 7) % 7; // Dias desde última terça
     
-    // Encontrar a primeira terça-feira do mês
-    let primeiraTerca = new Date(currentYear, currentMonth - 1, 1);
-    while (primeiraTerca.getDay() !== 2) { // 2 = Tuesday
+    // Se hoje é terça-feira, usar hoje. Senão, encontrar a terça mais próxima
+    if (tercaAtual.getDay() === 2) {
+      // Hoje é terça-feira - usar hoje
+      console.log(`📅 Hoje é terça-feira: ${tercaAtual.toLocaleDateString('pt-BR')}`);
+    } else if (diasDesdeTerca <= diasParaTerca) {
+      // Última terça está mais próxima
+      tercaAtual.setDate(tercaAtual.getDate() - diasDesdeTerca);
+      console.log(`📅 Terça da semana atual (anterior): ${tercaAtual.toLocaleDateString('pt-BR')}`);
+    } else {
+      // Próxima terça está mais próxima
+      tercaAtual.setDate(tercaAtual.getDate() + diasParaTerca);
+      console.log(`📅 Terça da semana atual (posterior): ${tercaAtual.toLocaleDateString('pt-BR')}`);
+    }
+    
+    // Determinar o mês/ano baseado na terça-feira (fim da semana)
+    const mesReferencia = tercaAtual.getMonth() + 1;
+    const anoReferencia = tercaAtual.getFullYear();
+    
+    console.log(`📅 Mês/Ano de referência baseado na terça: ${mesReferencia}/${anoReferencia}`);
+    
+    // Agora calcular qual semana do mês esta terça representa
+    // Encontrar a primeira terça-feira do mês de referência
+    let primeiraTerca = new Date(anoReferencia, mesReferencia - 1, 1);
+    while (primeiraTerca.getDay() !== 2) {
       primeiraTerca.setDate(primeiraTerca.getDate() + 1);
     }
     
-    console.log(`🎯 Primeira terça do mês ${currentMonth}: ${primeiraTerca.toLocaleDateString('pt-BR')}`);
+    console.log(`🎯 Primeira terça do mês ${mesReferencia}: ${primeiraTerca.toLocaleDateString('pt-BR')}`);
     
     // Se a primeira terça-feira é muito tarde no mês (depois do dia 7),
-    // verificar se existe uma semana anterior que termina neste mês
+    // incluir a semana anterior que termina neste mês
     if (primeiraTerca.getDate() > 7) {
       const tercaAnterior = new Date(primeiraTerca);
       tercaAnterior.setDate(tercaAnterior.getDate() - 7);
-      console.log(`⏪ Primeira terça está tarde (dia ${primeiraTerca.getDate()}), verificando terça anterior: ${tercaAnterior.toLocaleDateString('pt-BR')}`);
-      
-      // Verificar se a terça anterior está no mês anterior (é válida)
-      if (tercaAnterior.getMonth() !== currentMonth - 1 || tercaAnterior.getFullYear() !== currentYear) {
-        console.log(`✅ Terça anterior não está no mês atual, mantendo primeira terça: ${primeiraTerca.toLocaleDateString('pt-BR')}`);
-      } else {
-        console.log(`⭐ Usando terça anterior como primeira terça: ${tercaAnterior.toLocaleDateString('pt-BR')}`);
-        primeiraTerca = tercaAnterior;
-      }
+      console.log(`⏪ Primeira terça está tarde (dia ${primeiraTerca.getDate()}), incluindo terça anterior: ${tercaAnterior.toLocaleDateString('pt-BR')}`);
+      primeiraTerca = tercaAnterior;
     }
     
-    // Encontrar em qual semana estamos baseado na terça-feira
-    let currentTuesday = new Date(primeiraTerca);
-    let weekNumber = 1;
+    // Calcular qual semana é a terça atual
+    const diffTime = tercaAtual.getTime() - primeiraTerca.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const semanaNumero = Math.floor(diffDays / 7) + 1;
     
-    console.log(`🔍 Procurando semana atual a partir da primeira terça: ${currentTuesday.toLocaleDateString('pt-BR')}`);
+    console.log(`🔢 Diferença em dias: ${diffDays}, Semana calculada: ${semanaNumero}`);
     
-    while (true) {
-      const inicioSemana = new Date(currentTuesday);
-      inicioSemana.setDate(inicioSemana.getDate() - 6); // Quarta-feira anterior
-      const fimSemana = new Date(currentTuesday);
-      fimSemana.setHours(23, 59, 59, 999); // Final do dia da terça-feira
-      
-      console.log(`🔍 Semana ${weekNumber}: ${inicioSemana.toLocaleDateString('pt-BR')} - ${currentTuesday.toLocaleDateString('pt-BR')}`);
-      console.log(`   📊 Período completo: ${inicioSemana.toISOString()} até ${fimSemana.toISOString()}`);
-      console.log(`   📋 Data atual está no período? ${now >= inicioSemana && now <= fimSemana}`);
-      
-      if (now >= inicioSemana && now <= fimSemana) {
-        console.log(`✅ Data atual está na semana ${weekNumber}`);
-        return weekNumber;
-      }
-      
-      // Avançar para próxima terça-feira
-      currentTuesday.setDate(currentTuesday.getDate() + 7);
-      weekNumber++;
-      
-      // Verificar se ainda está no mês correto ou se avançou muito
-      if (currentTuesday.getMonth() !== currentMonth - 1 || currentTuesday.getFullYear() !== currentYear) {
-        console.log(`⚠️ Terça saiu do mês atual: ${currentTuesday.toLocaleDateString('pt-BR')}`);
-        
-        // Se saiu do mês, verificar se estamos numa semana que vai do mês atual para o próximo
-        // mas ainda estamos no mês atual
-        if (now.getMonth() === currentMonth - 1 && now.getFullYear() === currentYear) {
-          console.log(`🔄 Ainda estamos no mês ${currentMonth}, verificando se é semana que vai para próximo mês...`);
-          
-          // Voltar uma semana e verificar
-          const tercaAnterior = new Date(currentTuesday);
-          tercaAnterior.setDate(tercaAnterior.getDate() - 7);
-          const inicioSemanaAnterior = new Date(tercaAnterior);
-          inicioSemanaAnterior.setDate(inicioSemanaAnterior.getDate() - 6);
-          const fimSemanaAnterior = new Date(tercaAnterior);
-          fimSemanaAnterior.setHours(23, 59, 59, 999);
-          
-          console.log(`   🔍 Verificando semana anterior ${weekNumber - 1}: ${inicioSemanaAnterior.toLocaleDateString('pt-BR')} - ${tercaAnterior.toLocaleDateString('pt-BR')}`);
-          
-          if (now >= inicioSemanaAnterior && now <= fimSemanaAnterior) {
-            console.log(`✅ Data atual está na semana anterior ${weekNumber - 1}`);
-            return weekNumber - 1;
-          }
-        }
-        break;
-      }
-      
-      // Limitar a 10 semanas para evitar loop infinito
-      if (weekNumber > 10) {
-        console.log(`⚠️ Limitação de segurança atingida (10 semanas)`);
-        break;
-      }
+    // Validar o período da semana
+    const inicioSemana = new Date(tercaAtual);
+    inicioSemana.setDate(inicioSemana.getDate() - 6); // Quarta-feira anterior
+    const fimSemana = new Date(tercaAtual);
+    fimSemana.setHours(23, 59, 59, 999);
+    
+    console.log(`🔍 Validação - Semana ${semanaNumero}: ${inicioSemana.toLocaleDateString('pt-BR')} - ${tercaAtual.toLocaleDateString('pt-BR')}`);
+    console.log(`   📋 Data atual (${now.toLocaleDateString('pt-BR')}) está no período? ${now >= inicioSemana && now <= fimSemana}`);
+    
+    if (now >= inicioSemana && now <= fimSemana) {
+      console.log(`✅ Confirmado: Data atual está na semana ${semanaNumero} do mês ${mesReferencia}/${anoReferencia}`);
+      return semanaNumero;
     }
     
-    console.log(`⚠️ Fallback para semana 1`);
-    return 1; // fallback para primeira semana
+    console.log(`⚠️ Erro na validação, usando fallback para semana 1`);
+    return 1;
   };
 
   // Função para obter todas as semanas de um mês (baseado no término da semana - terça-feira)
@@ -273,31 +252,36 @@ export const useMetasSemanais = () => {
   // Função para obter o mês e ano da semana atual (baseado na terça-feira que encerra a semana)
   const getMesAnoSemanaAtual = () => {
     const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
+    console.log(`🗓️ getMesAnoSemanaAtual - Data atual: ${now.toLocaleDateString('pt-BR')}`);
     
-    // Encontrar a primeira terça-feira do mês
-    let primeiraTerca = new Date(currentYear, currentMonth - 1, 1);
-    while (primeiraTerca.getDay() !== 2) {
-      primeiraTerca.setDate(primeiraTerca.getDate() + 1);
+    // Usar a mesma lógica da getSemanaAtual para encontrar a terça-feira de referência
+    let tercaAtual = new Date(now);
+    const diasParaTerca = (2 - tercaAtual.getDay() + 7) % 7; // Dias para próxima terça
+    const diasDesdeTerca = (tercaAtual.getDay() - 2 + 7) % 7; // Dias desde última terça
+    
+    // Se hoje é terça-feira, usar hoje. Senão, encontrar a terça mais próxima
+    if (tercaAtual.getDay() === 2) {
+      // Hoje é terça-feira - usar hoje
+      console.log(`📅 getMesAnoSemanaAtual - Hoje é terça-feira: ${tercaAtual.toLocaleDateString('pt-BR')}`);
+    } else if (diasDesdeTerca <= diasParaTerca) {
+      // Última terça está mais próxima
+      tercaAtual.setDate(tercaAtual.getDate() - diasDesdeTerca);
+      console.log(`📅 getMesAnoSemanaAtual - Terça da semana atual (anterior): ${tercaAtual.toLocaleDateString('pt-BR')}`);
+    } else {
+      // Próxima terça está mais próxima
+      tercaAtual.setDate(tercaAtual.getDate() + diasParaTerca);
+      console.log(`📅 getMesAnoSemanaAtual - Terça da semana atual (posterior): ${tercaAtual.toLocaleDateString('pt-BR')}`);
     }
     
-    // Se a primeira terça-feira é muito tarde no mês, usar a anterior
-    if (primeiraTerca.getDate() > 7) {
-      primeiraTerca.setDate(primeiraTerca.getDate() - 7);
-    }
+    // O mês/ano da semana é determinado pela terça-feira (fim da semana)
+    const mesReferencia = tercaAtual.getMonth() + 1;
+    const anoReferencia = tercaAtual.getFullYear();
     
-    // Encontrar a terça-feira da semana atual
-    const semanaAtual = getSemanaAtual();
-    const tercaSemanaAtual = new Date(primeiraTerca);
-    tercaSemanaAtual.setDate(tercaSemanaAtual.getDate() + (semanaAtual - 1) * 7);
-    
-    console.log(`📅 Terça-feira da semana atual (${semanaAtual}): ${tercaSemanaAtual.toLocaleDateString('pt-BR')}`);
-    console.log(`📅 Mês/Ano da terça: ${tercaSemanaAtual.getMonth() + 1}/${tercaSemanaAtual.getFullYear()}`);
+    console.log(`📅 getMesAnoSemanaAtual - Mês/Ano baseado na terça: ${mesReferencia}/${anoReferencia}`);
     
     return {
-      mes: tercaSemanaAtual.getMonth() + 1,
-      ano: tercaSemanaAtual.getFullYear()
+      mes: mesReferencia,
+      ano: anoReferencia
     };
   };
 
