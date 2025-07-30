@@ -100,34 +100,37 @@ export const useMetasSemanais = () => {
   const getSemanaAtual = () => {
     const now = new Date();
     console.log(`🗓️ Data atual: ${now.toLocaleDateString('pt-BR')} (${now.toISOString()})`);
+    console.log(`🗓️ Dia da semana: ${now.getDay()} (0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab)`);
     
-    // ESTRATÉGIA: Primeiro encontrar a qual semana a data atual pertence,
-    // depois determinar o mês/ano dessa semana baseado na terça-feira (fim da semana)
-    
-    // Encontrar a terça-feira mais próxima (pode ser anterior ou posterior à data atual)
+    // CORREÇÃO: Sempre usar a terça-feira anterior ou a atual se for terça
+    // Uma semana vai de quarta a terça, então se não é terça, a semana ainda não terminou
     let tercaAtual = new Date(now);
-    const diasParaTerca = (2 - tercaAtual.getDay() + 7) % 7; // Dias para próxima terça
-    const diasDesdeTerca = (tercaAtual.getDay() - 2 + 7) % 7; // Dias desde última terça
     
-    // Se hoje é terça-feira, usar hoje. Senão, encontrar a terça mais próxima
     if (tercaAtual.getDay() === 2) {
-      // Hoje é terça-feira - usar hoje
-      console.log(`📅 Hoje é terça-feira: ${tercaAtual.toLocaleDateString('pt-BR')}`);
-    } else if (diasDesdeTerca <= diasParaTerca) {
-      // Última terça está mais próxima
+      // Hoje é terça-feira - a semana termina hoje
+      console.log(`📅 Hoje é terça-feira (fim da semana): ${tercaAtual.toLocaleDateString('pt-BR')}`);
+    } else {
+      // Encontrar a terça-feira anterior (da semana atual em andamento)
+      const diasDesdeTerca = (tercaAtual.getDay() - 2 + 7) % 7;
       tercaAtual.setDate(tercaAtual.getDate() - diasDesdeTerca);
       console.log(`📅 Terça da semana atual (anterior): ${tercaAtual.toLocaleDateString('pt-BR')}`);
-    } else {
-      // Próxima terça está mais próxima
-      tercaAtual.setDate(tercaAtual.getDate() + diasParaTerca);
-      console.log(`📅 Terça da semana atual (posterior): ${tercaAtual.toLocaleDateString('pt-BR')}`);
+      console.log(`📅 Dias desde a terça: ${diasDesdeTerca}`);
     }
     
-    // Determinar o mês/ano baseado na terça-feira (fim da semana)
+    // O mês/ano da semana é baseado na terça-feira que encerra a semana
     const mesReferencia = tercaAtual.getMonth() + 1;
     const anoReferencia = tercaAtual.getFullYear();
     
     console.log(`📅 Mês/Ano de referência baseado na terça: ${mesReferencia}/${anoReferencia}`);
+    
+    // Verificar período da semana para validação
+    const inicioSemana = new Date(tercaAtual);
+    inicioSemana.setDate(inicioSemana.getDate() - 6); // Quarta-feira anterior
+    const fimSemana = new Date(tercaAtual);
+    fimSemana.setHours(23, 59, 59, 999);
+    
+    console.log(`🔍 Período da semana: ${inicioSemana.toLocaleDateString('pt-BR')} até ${tercaAtual.toLocaleDateString('pt-BR')}`);
+    console.log(`🔍 Data atual está no período? ${now >= inicioSemana && now <= fimSemana}`);
     
     // Agora calcular qual semana do mês esta terça representa
     // Encontrar a primeira terça-feira do mês de referência
@@ -153,23 +156,9 @@ export const useMetasSemanais = () => {
     const semanaNumero = Math.floor(diffDays / 7) + 1;
     
     console.log(`🔢 Diferença em dias: ${diffDays}, Semana calculada: ${semanaNumero}`);
+    console.log(`✅ Semana ${semanaNumero} do mês ${mesReferencia}/${anoReferencia}`);
     
-    // Validar o período da semana
-    const inicioSemana = new Date(tercaAtual);
-    inicioSemana.setDate(inicioSemana.getDate() - 6); // Quarta-feira anterior
-    const fimSemana = new Date(tercaAtual);
-    fimSemana.setHours(23, 59, 59, 999);
-    
-    console.log(`🔍 Validação - Semana ${semanaNumero}: ${inicioSemana.toLocaleDateString('pt-BR')} - ${tercaAtual.toLocaleDateString('pt-BR')}`);
-    console.log(`   📋 Data atual (${now.toLocaleDateString('pt-BR')}) está no período? ${now >= inicioSemana && now <= fimSemana}`);
-    
-    if (now >= inicioSemana && now <= fimSemana) {
-      console.log(`✅ Confirmado: Data atual está na semana ${semanaNumero} do mês ${mesReferencia}/${anoReferencia}`);
-      return semanaNumero;
-    }
-    
-    console.log(`⚠️ Erro na validação, usando fallback para semana 1`);
-    return 1;
+    return semanaNumero;
   };
 
   // Função para obter todas as semanas de um mês (baseado no término da semana - terça-feira)
@@ -254,23 +243,17 @@ export const useMetasSemanais = () => {
     const now = new Date();
     console.log(`🗓️ getMesAnoSemanaAtual - Data atual: ${now.toLocaleDateString('pt-BR')}`);
     
-    // Usar a mesma lógica da getSemanaAtual para encontrar a terça-feira de referência
+    // USAR A MESMA LÓGICA CORRIGIDA: sempre usar terça anterior ou atual
     let tercaAtual = new Date(now);
-    const diasParaTerca = (2 - tercaAtual.getDay() + 7) % 7; // Dias para próxima terça
-    const diasDesdeTerca = (tercaAtual.getDay() - 2 + 7) % 7; // Dias desde última terça
     
-    // Se hoje é terça-feira, usar hoje. Senão, encontrar a terça mais próxima
     if (tercaAtual.getDay() === 2) {
-      // Hoje é terça-feira - usar hoje
+      // Hoje é terça-feira - a semana termina hoje
       console.log(`📅 getMesAnoSemanaAtual - Hoje é terça-feira: ${tercaAtual.toLocaleDateString('pt-BR')}`);
-    } else if (diasDesdeTerca <= diasParaTerca) {
-      // Última terça está mais próxima
-      tercaAtual.setDate(tercaAtual.getDate() - diasDesdeTerca);
-      console.log(`📅 getMesAnoSemanaAtual - Terça da semana atual (anterior): ${tercaAtual.toLocaleDateString('pt-BR')}`);
     } else {
-      // Próxima terça está mais próxima
-      tercaAtual.setDate(tercaAtual.getDate() + diasParaTerca);
-      console.log(`📅 getMesAnoSemanaAtual - Terça da semana atual (posterior): ${tercaAtual.toLocaleDateString('pt-BR')}`);
+      // Encontrar a terça-feira anterior (da semana atual em andamento)
+      const diasDesdeTerca = (tercaAtual.getDay() - 2 + 7) % 7;
+      tercaAtual.setDate(tercaAtual.getDate() - diasDesdeTerca);
+      console.log(`📅 getMesAnoSemanaAtual - Terça anterior: ${tercaAtual.toLocaleDateString('pt-BR')}`);
     }
     
     // O mês/ano da semana é determinado pela terça-feira (fim da semana)
