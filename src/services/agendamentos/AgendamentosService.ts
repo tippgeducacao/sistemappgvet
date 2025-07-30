@@ -465,4 +465,22 @@ export class AgendamentosService {
       return false;
     }
   }
+
+  static async atualizarLinkReuniao(id: string, linkReuniao: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({ 
+          link_reuniao: linkReuniao,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar link da reunião:', error);
+      return false;
+    }
+  }
 }

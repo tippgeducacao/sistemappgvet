@@ -47,8 +47,14 @@ const AgendamentosPage: React.FC = () => {
   // Estado para indicar vendedor que será selecionado automaticamente
   const [vendedorIndicado, setVendedorIndicado] = useState<any>(null);
   
-  // Edit form state
+  // Edit link form state
   const [editingAgendamento, setEditingAgendamento] = useState<any>(null);
+  const [showEditLinkForm, setShowEditLinkForm] = useState(false);
+  const [editLinkData, setEditLinkData] = useState({
+    link_reuniao: ''
+  });
+  
+  // Edit form state (mantido para compatibilidade)
   const [showEditForm, setShowEditForm] = useState(false);
   const [editFormData, setEditFormData] = useState({
     data: '',
@@ -492,65 +498,38 @@ const AgendamentosPage: React.FC = () => {
 
   const handleEditAgendamento = (agendamento: any) => {
     setEditingAgendamento(agendamento);
-    const dataInicio = new Date(agendamento.data_agendamento);
-    const dataFim = agendamento.data_fim_agendamento ? new Date(agendamento.data_fim_agendamento) : null;
-    
-    setEditFormData({
-      data: dataInicio.toISOString().split('T')[0],
-      horario_inicio: dataInicio.toTimeString().slice(0, 5),
-      horario_fim: dataFim ? dataFim.toTimeString().slice(0, 5) : '',
-      pos_graduacao_interesse: agendamento.pos_graduacao_interesse,
-      observacoes: agendamento.observacoes || ''
+    setEditLinkData({
+      link_reuniao: agendamento.link_reuniao || ''
     });
-    setShowEditForm(true);
+    setShowEditLinkForm(true);
   };
 
-  const handleUpdateAgendamento = async () => {
-    if (!editingAgendamento || !editFormData.data || !editFormData.horario_inicio) {
-      toast.error('Preencha todos os campos obrigatórios');
-      return;
-    }
-
-    // Validar se horário final é posterior ao inicial
-    if (editFormData.horario_fim && editFormData.horario_fim <= editFormData.horario_inicio) {
-      toast.error('O horário final deve ser posterior ao horário inicial');
+  const handleUpdateLink = async () => {
+    if (!editingAgendamento || !editLinkData.link_reuniao.trim()) {
+      toast.error('O link da reunião é obrigatório');
       return;
     }
 
     try {
-      const dataAgendamento = `${editFormData.data}T${editFormData.horario_inicio}:00.000-03:00`;
-      const dataFimAgendamento = editFormData.horario_fim ? `${editFormData.data}T${editFormData.horario_fim}:00.000-03:00` : undefined;
-
-      const success = await AgendamentosService.atualizarAgendamentoSDR(
+      const success = await AgendamentosService.atualizarLinkReuniao(
         editingAgendamento.id,
-        {
-          data_agendamento: dataAgendamento,
-          data_fim_agendamento: dataFimAgendamento,
-          observacoes: editFormData.observacoes
-        }
+        editLinkData.link_reuniao
       );
 
       if (success) {
-        toast.success('Agendamento atualizado com sucesso!');
-        setShowEditForm(false);
+        toast.success('Link da reunião atualizado com sucesso!');
+        setShowEditLinkForm(false);
         setEditingAgendamento(null);
         carregarDados();
       } else {
-        toast.error('Erro ao atualizar agendamento');
+        toast.error('Erro ao atualizar link da reunião');
       }
     } catch (error) {
-      console.error('Erro ao atualizar agendamento:', error);
-      
-      // Mostrar mensagem de erro mais específica e diagnóstico
-      if (error instanceof Error) {
-        setLastError(error.message);
-        setShowErrorDiagnosis(true);
-        toast.error(error.message);
-      } else {
-        toast.error('Erro ao atualizar agendamento');
-      }
+      console.error('Erro ao atualizar link:', error);
+      toast.error('Erro ao atualizar link da reunião');
     }
   };
+
 
   const handleCancelAgendamento = async (agendamentoId: string) => {
     if (!confirm('Tem certeza que deseja cancelar este agendamento?')) {
@@ -1197,16 +1176,28 @@ const AgendamentosPage: React.FC = () => {
                       for (const vendedor of vendedores) {
                         const numAgendamentos = agendamentosVendedores.get(vendedor.id) || 0;
                         
-                        // Verificar conflito simples (mesma lógica do backend seria ideal)
+                        // Verificar conflito com mais precisão
                         const temConflito = agendamentos.some(ag => {
                           if (ag.vendedor_id !== vendedor.id || !['agendado', 'atrasado'].includes(ag.status)) return false;
                           
-                          const agendamentoInicio = new Date(ag.data_agendamento);
-                          const agendamentoFim = new Date(ag.data_fim_agendamento || ag.data_agendamento);
-                          const novoAgendamento = new Date(dataHoraForm);
-                          const novoAgendamentoFim = selectedEndTime ? new Date(`${selectedDateForm}T${selectedEndTime}:00.000-03:00`) : novoAgendamento;
-                          
-                          return (novoAgendamento < agendamentoFim && novoAgendamentoFim > agendamentoInicio);
+                          try {
+                            const agendamentoInicio = new Date(ag.data_agendamento);
+                            const agendamentoFim = new Date(ag.data_fim_agendamento || ag.data_agendamento);
+                            const novoAgendamento = new Date(dataHoraForm);
+                            const novoAgendamentoFim = selectedEndTime ? new Date(`${selectedDateForm}T${selectedEndTime}:00.000-03:00`) : novoAgendamento;
+                            
+                            console.log(`🔍 Verificando conflito ${vendedor.name}:`, {
+                              agendamentoExistente: `${agendamentoInicio.toLocaleString()} - ${agendamentoFim.toLocaleString()}`,
+                              novoAgendamento: `${novoAgendamento.toLocaleString()} - ${novoAgendamentoFim.toLocaleString()}`,
+                              temSobreposicao: (novoAgendamento < agendamentoFim && novoAgendamentoFim > agendamentoInicio)
+                            });
+                            
+                            // Verificar se há sobreposição de horários - condição mais rigorosa
+                            return (novoAgendamento < agendamentoFim && novoAgendamentoFim > agendamentoInicio);
+                          } catch (e) {
+                            console.error('❌ Erro ao verificar conflito:', e);
+                            return false;
+                          }
                         });
                         
                         console.log(`🔍 Vendedor ${vendedor.name}: ${numAgendamentos} agendamentos, conflito: ${temConflito}`);
@@ -1282,95 +1273,46 @@ const AgendamentosPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Edit Agendamento Modal */}
-      {showEditForm && editingAgendamento && (
-        <Card className="w-full max-w-2xl mx-auto">
+      {/* Edit Link Modal */}
+      {showEditLinkForm && editingAgendamento && (
+        <Card className="w-full max-w-md mx-auto">
           <CardHeader>
-            <CardTitle>Editar Agendamento</CardTitle>
+            <CardTitle>Editar Link da Reunião</CardTitle>
             <CardDescription>
-              Atualize as informações do agendamento com {editingAgendamento.lead?.nome}
+              Atualize o link da reunião com {editingAgendamento.lead?.nome}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Data */}
             <div className="space-y-2">
-              <Label>Data *</Label>
+              <Label htmlFor="editLinkReuniao">Link da Reunião *</Label>
               <Input
-                type="date"
-                value={editFormData.data}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, data: e.target.value }))}
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
-
-            {/* Horário Início */}
-            <div className="space-y-2">
-              <Label>Horário de Início *</Label>
-              <Input
-                type="time"
-                value={editFormData.horario_inicio}
-                onChange={(e) => {
-                  setEditFormData(prev => ({ ...prev, horario_inicio: e.target.value }));
-                  // Automaticamente definir horário final com 1 hora de diferença
-                  if (e.target.value) {
-                    const [hours, minutes] = e.target.value.split(':');
-                    const startTime = new Date();
-                    startTime.setHours(parseInt(hours), parseInt(minutes));
-                    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Adicionar 1 hora
-                    const endTimeString = endTime.toTimeString().slice(0, 5);
-                    setEditFormData(prev => ({ ...prev, horario_fim: endTimeString }));
-                  }
-                }}
-              />
-            </div>
-
-            {/* Horário Final */}
-            <div className="space-y-2">
-              <Label>Horário Final</Label>
-              <Input
-                type="time"
-                value={editFormData.horario_fim}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, horario_fim: e.target.value }))}
-              />
-            </div>
-
-            {/* Pós-graduação Selection - DESABILITADA */}
-            <div className="space-y-2">
-              <Label>Pós-graduação de Interesse</Label>
-              <Input
-                value={editFormData.pos_graduacao_interesse}
-                disabled
-                className="bg-muted text-muted-foreground"
+                id="editLinkReuniao"
+                type="url"
+                placeholder="https://zoom.us/j/123456789 ou https://meet.google.com/abc-def-ghi"
+                value={editLinkData.link_reuniao}
+                onChange={(e) => setEditLinkData({ link_reuniao: e.target.value })}
+                required
               />
               <p className="text-xs text-muted-foreground">
-                A pós-graduação de interesse não pode ser alterada após o agendamento ser criado.
+                Insira o link da reunião online (Zoom, Google Meet, Teams, etc.)
               </p>
-            </div>
-
-            {/* Observações */}
-            <div className="space-y-2">
-              <Label>Observações</Label>
-              <Textarea
-                placeholder="Adicione observações sobre o agendamento..."
-                value={editFormData.observacoes}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, observacoes: e.target.value }))}
-                rows={3}
-              />
             </div>
 
             <div className="p-3 bg-muted/50 rounded-lg">
               <p className="text-sm text-muted-foreground">
-                <strong>Nota:</strong> O vendedor não pode ser alterado após o agendamento ser criado.
+                <strong>Data:</strong> {format(new Date(editingAgendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <strong>Vendedor:</strong> {editingAgendamento.vendedor?.name}
               </p>
             </div>
 
-            {/* Actions */}
             <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowEditForm(false)}>
+              <Button variant="outline" onClick={() => setShowEditLinkForm(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleUpdateAgendamento}>
-                Atualizar Agendamento
+              <Button onClick={handleUpdateLink}>
+                Atualizar Link
               </Button>
             </div>
           </CardContent>
