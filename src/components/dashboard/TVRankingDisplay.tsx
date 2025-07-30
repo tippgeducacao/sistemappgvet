@@ -9,6 +9,7 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useAuthStore } from '@/stores/AuthStore';
+import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import { supabase } from '@/integrations/supabase/client';
 
 interface VendedorData {
@@ -267,32 +268,44 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Calcular dados para ranking usando a regra de semanas
+  // Calcular dados para ranking usando a regra de semanas (quarta a terça)
   const { getMesAnoSemanaAtual } = useMetasSemanais();
   const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
   const currentWeek = getSemanaAtual();
   const today = new Date();
 
-  // Filtrar vendas da semana atual
+  // Calcular período da semana atual (quarta-feira a terça-feira)
+  const getDaysUntilWednesday = (date: Date) => {
+    const day = date.getDay(); // 0=domingo, 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado
+    if (day >= 3) { // Quinta, sexta, sábado ou quarta
+      return day - 3;
+    } else { // Domingo, segunda, terça
+      return day + 4; // Volta para quarta anterior
+    }
+  };
+
   const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - ((today.getDay() + 4) % 7)); // Quarta-feira atual
+  const daysToWednesday = getDaysUntilWednesday(today);
+  startOfWeek.setDate(today.getDate() - daysToWednesday);
+  startOfWeek.setHours(0, 0, 0, 0);
+  
   const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6); // Terça-feira
+  endOfWeek.setDate(startOfWeek.getDate() + 6); // 6 dias depois (quarta + 6 = terça)
+  endOfWeek.setHours(23, 59, 59, 999);
 
-  // Filtrar vendas do mês atual
-  const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
-  const endOfMonth = new Date(currentYear, currentMonth, 0);
-
+  // Filtrar vendas usando a regra de semana (quarta a terça) para a semana atual
   const vendasSemanaAtual = vendas.filter(venda => {
+    if (venda.status !== 'matriculado') return false;
     const vendaDate = new Date(venda.enviado_em);
-    return vendaDate >= startOfWeek && vendaDate <= endOfWeek && 
-           venda.status === 'matriculado';
+    return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
   });
 
+  // Filtrar vendas do mês atual usando a regra de semana
   const vendasMesAtual = vendas.filter(venda => {
+    if (venda.status !== 'matriculado') return false;
     const vendaDate = new Date(venda.enviado_em);
-    return vendaDate >= startOfMonth && vendaDate <= endOfMonth && 
-           venda.status === 'matriculado';
+    const { mes, ano } = getVendaPeriod(vendaDate);
+    return mes === currentMonth && ano === currentYear;
   });
 
   // Filtrar vendas do dia atual
@@ -307,15 +320,16 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
            venda.status === 'matriculado';
   });
 
-  console.log('📅 TVRankingDisplay - Períodos:', {
+  console.log('📅 TVRankingDisplay - Períodos (regra de semana):', {
     today: today.toISOString(),
     startOfWeek: startOfWeek.toISOString(),
     endOfWeek: endOfWeek.toISOString(),
     currentWeek,
     currentYear,
     currentMonth,
+    daysToWednesday,
     totalVendas: vendas.length,
-    vendasComPontuacao: vendas.filter(v => v.pontuacao_validada && v.pontuacao_validada > 0).length,
+    vendasMatriculadas: vendas.filter(v => v.status === 'matriculado').length,
     vendasSemana: vendasSemanaAtual.length,
     vendasMes: vendasMesAtual.length,
     vendasDia: vendasDiaAtual.length
@@ -356,11 +370,14 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         return isDoSDR && dentroDoDia && compareceu;
       });
 
-      // Filtrar agendamentos do SDR para o mês atual
+      // Filtrar agendamentos do SDR para o mês atual usando regra de semana
       const agendamentosSDRMes = allAgendamentos.filter(agendamento => {
         const dataAgendamento = new Date(agendamento.data_agendamento);
         const isDoSDR = agendamento.sdr_id === vendedor.id;
-        const dentroDoMes = dataAgendamento >= startOfMonth && dataAgendamento <= endOfMonth;
+        
+        // Usar regra de semana para determinar se está no mês atual
+        const { mes, ano } = getVendaPeriod(dataAgendamento);
+        const dentroDoMes = mes === currentMonth && ano === currentYear;
         
         // Contar apenas agendamentos onde houve comparecimento confirmado
         const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
@@ -391,11 +408,10 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       const vendasVendedorMes = vendasMesAtual.filter(v => v.vendedor_id === vendedor.id);
       const vendasVendedorDia = vendasDiaAtual.filter(v => v.vendedor_id === vendedor.id);
       
-      const metaSemanal = metasSemanais.find(m => 
-        m.vendedor_id === vendedor.id && 
-        m.ano === currentYear && 
-        m.semana === currentWeek
-      )?.meta_vendas || 0;
+      // Buscar meta semanal baseada no nível do vendedor (da tabela niveis_vendedores)
+      const vendedorNivel = vendedor.nivel || 'junior';
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
+      const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
 
       // Calcular pontos obtidos usando a pontuação real das vendas (validada ou esperada)
       const pontosSemana = vendasVendedorSemana.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
