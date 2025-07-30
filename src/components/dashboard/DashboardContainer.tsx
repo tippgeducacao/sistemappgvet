@@ -28,21 +28,13 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   const { vendedores } = useVendedores();
   const { getMesAnoSemanaAtual } = useMetasSemanais();
   
-  // Obter o mês/ano correto da semana atual apenas uma vez para inicialização
-  const mesAnoSemanaAtual = getMesAnoSemanaAtual();
-  console.log('🗓️ DashboardContainer - Mês/Ano da semana atual para inicialização:', mesAnoSemanaAtual.mes, '/', mesAnoSemanaAtual.ano);
+  // Sempre usar o mês/ano atual correto baseado na lógica de semanas
+  const { mes: mesAtual, ano: anoAtual } = getMesAnoSemanaAtual();
+  console.log('🗓️ DashboardContainer - Mês/Ano ATUAL baseado na semana:', mesAtual, '/', anoAtual);
   
-  // Estados para filtro por período - inicializar com os valores corretos
-  const [selectedMonth, setSelectedMonth] = useState(mesAnoSemanaAtual.mes);
-  const [selectedYear, setSelectedYear] = useState(mesAnoSemanaAtual.ano);
-  
-  // Apenas inicializar uma vez quando o componente monta
-  useEffect(() => {
-    const { mes: mesInicializacao, ano: anoInicializacao } = getMesAnoSemanaAtual();
-    console.log('🔄 DashboardContainer useEffect - Inicializando uma vez com:', mesInicializacao, '/', anoInicializacao);
-    setSelectedMonth(mesInicializacao);
-    setSelectedYear(anoInicializacao);
-  }, []); // Array vazio para executar apenas uma vez
+  // Estados para filtro por período - sempre refletir o mês atual da semana
+  const [selectedMonth, setSelectedMonth] = useState(mesAtual);
+  const [selectedYear, setSelectedYear] = useState(anoAtual);
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
