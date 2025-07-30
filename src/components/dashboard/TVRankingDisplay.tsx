@@ -286,13 +286,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const vendasSemanaAtual = vendas.filter(venda => {
     const vendaDate = new Date(venda.enviado_em);
     return vendaDate >= startOfWeek && vendaDate <= endOfWeek && 
-           venda.pontuacao_validada && venda.pontuacao_validada > 0;
+           venda.status === 'matriculado';
   });
 
   const vendasMesAtual = vendas.filter(venda => {
     const vendaDate = new Date(venda.enviado_em);
     return vendaDate >= startOfMonth && vendaDate <= endOfMonth && 
-           venda.pontuacao_validada && venda.pontuacao_validada > 0;
+           venda.status === 'matriculado';
   });
 
   // Filtrar vendas do dia atual
@@ -304,7 +304,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const vendasDiaAtual = vendas.filter(venda => {
     const vendaDate = new Date(venda.enviado_em);
     return vendaDate >= startOfDay && vendaDate <= endOfDay && 
-           venda.pontuacao_validada && venda.pontuacao_validada > 0;
+           venda.status === 'matriculado';
   });
 
   console.log('📅 TVRankingDisplay - Períodos:', {
@@ -397,10 +397,10 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         m.semana === currentWeek
       )?.meta_vendas || 0;
 
-      // Calcular pontos obtidos - 0,3 pontos por curso vendido (não pontuação do formulário)
-      const pontosSemana = vendasVendedorSemana.length * 0.3; // 0,3 pontos por curso
-      const pontosDia = vendasVendedorDia.length * 0.3; // 0,3 pontos por curso
-      const pontosMes = vendasVendedorMes.length * 0.3; // 0,3 pontos por curso
+      // Calcular pontos obtidos usando a pontuação real das vendas (validada ou esperada)
+      const pontosSemana = vendasVendedorSemana.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+      const pontosDia = vendasVendedorDia.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+      const pontosMes = vendasVendedorMes.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       
       // Meta diária baseada na meta semanal de pontos
       const metaDiaria = metaSemanal / 7;
