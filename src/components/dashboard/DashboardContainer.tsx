@@ -27,13 +27,14 @@ interface DashboardContainerProps {
 const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => {
   const { isDiretor, isAdmin, isSecretaria } = useUserRoles();
   const { vendedores } = useVendedores();
+  
+  // Usar lógica de semanas consistente - igual aos SDRs
   const { getMesAnoSemanaAtual } = useMetasSemanais();
+  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
+  const [selectedMonth, setSelectedMonth] = useState(mesCorreto);
+  const [selectedYear, setSelectedYear] = useState(anoCorreto);
   
-  // FORÇAR AGOSTO - DEFINITIVO
-  const [selectedMonth, setSelectedMonth] = useState(8);
-  const [selectedYear, setSelectedYear] = useState(2025);
-  
-  console.log('🚨 DASHBOARD FINAL - Estados:', { selectedMonth, selectedYear });
+  console.log('🚨 DASHBOARD FINAL - Usando lógica de semanas:', { selectedMonth, selectedYear, mesCorreto, anoCorreto });
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
