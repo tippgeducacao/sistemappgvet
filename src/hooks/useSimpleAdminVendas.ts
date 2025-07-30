@@ -44,8 +44,12 @@ export const useSimpleAdminVendas = () => {
     onSuccess: async (data) => {
       console.log('✅ Mutation concluída, invalidando cache...');
       
-      // Invalidar o cache e aguardar
-      await queryClient.invalidateQueries({ queryKey: ['simple-admin-vendas'] });
+      // Invalidar TODOS os caches relacionados a vendas
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['simple-admin-vendas'] }),
+        queryClient.invalidateQueries({ queryKey: ['all-vendas'] }),
+        queryClient.invalidateQueries({ queryKey: ['vendas'] })
+      ]);
       
       // Forçar refetch imediato
       refetch();
