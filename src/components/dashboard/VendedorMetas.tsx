@@ -19,7 +19,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   selectedMonth,
   selectedYear
 }) => {
-  const { metasSemanais, getSemanaAtual, getSemanasDoMes, getDataInicioSemana, getDataFimSemana, loading: metasSemanaisLoading } = useMetasSemanais();
+  const { metasSemanais, getSemanaAtual, getMesAnoSemanaAtual, getSemanasDoMes, getDataInicioSemana, getDataFimSemana, loading: metasSemanaisLoading } = useMetasSemanais();
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { profile } = useAuthStore();
   const { niveis } = useNiveis();
@@ -97,25 +97,50 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     );
   }
 
-  // Usar a mesma lógica do admin para calcular semanas
-  const semanasDoMes = getSemanasDoMes(selectedYear, selectedMonth);
+  // Obter o mês e ano corretos baseados na semana atual
+  const { mes: mesCorretoSemana, ano: anoCorretoSemana } = getMesAnoSemanaAtual();
+  
+  // Decidir qual mês/ano usar para exibir - priorizar a semana atual se estiver selecionada
+  const dataAtual = new Date();
+  const mesAtual = dataAtual.getMonth() + 1;
+  const anoAtual = dataAtual.getFullYear();
+  const semanaAtual = getSemanaAtual();
+  
+  // Se o mês/ano selecionado corresponde ao mês/ano da semana atual, mostrar o mês da semana
+  // Senão, mostrar o mês selecionado normalmente
+  const { mesParaExibir, anoParaExibir, isSemanaAtual } = 
+    (selectedMonth === mesCorretoSemana && selectedYear === anoCorretoSemana) ||
+    (selectedMonth === mesAtual && selectedYear === anoAtual && mesCorretoSemana !== mesAtual)
+    ? { 
+        mesParaExibir: mesCorretoSemana, 
+        anoParaExibir: anoCorretoSemana, 
+        isSemanaAtual: true 
+      }
+    : { 
+        mesParaExibir: selectedMonth, 
+        anoParaExibir: selectedYear, 
+        isSemanaAtual: false 
+      };
 
-  const mesNome = new Date(selectedYear, selectedMonth - 1).toLocaleDateString('pt-BR', { 
+  // Usar a mesma lógica do admin para calcular semanas
+  const semanasDoMes = getSemanasDoMes(anoParaExibir, mesParaExibir);
+
+  const mesNome = new Date(anoParaExibir, mesParaExibir - 1).toLocaleDateString('pt-BR', { 
     month: 'long', 
     year: 'numeric' 
   });
 
-  // Dados para metas semanais  
-  const semanaAtual = getSemanaAtual();
-  const dataAtual = new Date();
-  const mesAtual = dataAtual.getMonth() + 1;
-  const anoAtual = dataAtual.getFullYear();
+  console.log('🔍 DEBUG VendedorMetas:');
+  console.log('  📅 Selecionado:', selectedMonth, '/', selectedYear);
+  console.log('  📅 Semana atual pertence a:', mesCorretoSemana, '/', anoCorretoSemana);
+  console.log('  📅 Exibindo:', mesParaExibir, '/', anoParaExibir);
+  console.log('  📅 É semana atual?', isSemanaAtual);
   
-  // Só buscar meta da semana atual se estivermos no mês correto
-  const metaSemanaAtual = (selectedMonth === mesAtual && selectedYear === anoAtual) 
+  // Só buscar meta da semana atual se estivermos no mês correto da semana
+  const metaSemanaAtual = isSemanaAtual
     ? metasSemanais.find(meta => 
         meta.vendedor_id === profile.id && 
-        meta.ano === selectedYear && 
+        meta.ano === anoCorretoSemana && 
         meta.semana === semanaAtual
       )
     : null;
@@ -129,6 +154,11 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Metas Semanais - {mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}
+            {isSemanaAtual && (
+              <Badge variant="default" className="text-xs">
+                Semana Atual
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -148,23 +178,19 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             
             {/* Linhas das semanas */}
             {semanasDoMes.map((numeroSemana) => {
-              // Buscar meta semanal para o mês e semana específicos
+              // Buscar meta semanal para o mês e semana específicos (usando os valores corretos)
               const metaSemanal = metasSemanais.find(meta => 
                 meta.vendedor_id === profile.id && 
-                meta.ano === selectedYear && 
+                meta.ano === anoParaExibir && 
                 meta.semana === numeroSemana
               );
               
-              // Só considerar como atual se estivermos no mês e ano corretos
-              const dataAtual = new Date();
-              const mesAtual = dataAtual.getMonth() + 1;
-              const anoAtual = dataAtual.getFullYear();
-              const semanaAtual = getSemanaAtual();
-              const isAtual = numeroSemana === semanaAtual && selectedMonth === mesAtual && selectedYear === anoAtual;
+              // Verificar se é a semana atual (apenas se estivermos vendo o mês da semana atual)
+              const isAtual = isSemanaAtual && numeroSemana === semanaAtual;
               
               // Usar as funções auxiliares do hook para obter as datas corretas
-              const startSemana = getDataInicioSemana(selectedYear, selectedMonth, numeroSemana);
-              const endSemana = getDataFimSemana(selectedYear, selectedMonth, numeroSemana);
+              const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
+              const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
 
               // Formatar datas para exibição (DD/MM)
               const formatDate = (date: Date) => {
@@ -176,14 +202,17 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
               const periodoSemana = `${formatDate(startSemana)} - ${formatDate(endSemana)}`;
 
-              // Calcular pontos da semana
+              // Calcular pontos da semana usando data de aprovação quando aplicável
               const pontosDaSemana = vendas.filter(venda => {
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
                 
-                const vendaDate = new Date(venda.enviado_em);
+                // Usar data de aprovação para vendas matriculadas
+                const dataVenda = venda.status === 'matriculado' && venda.atualizado_em 
+                  ? new Date(venda.atualizado_em) 
+                  : new Date(venda.enviado_em);
                 // Ajustar para considerar a zona de tempo corretamente
-                vendaDate.setHours(0, 0, 0, 0);
+                dataVenda.setHours(0, 0, 0, 0);
                 
                 const startSemanaUTC = new Date(startSemana);
                 startSemanaUTC.setHours(0, 0, 0, 0);
@@ -191,10 +220,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 const endSemanaUTC = new Date(endSemana);
                 endSemanaUTC.setHours(23, 59, 59, 999);
                 
-                const isInRange = vendaDate >= startSemanaUTC && vendaDate <= endSemanaUTC;
+                const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
                 
                 // Debug para entender melhor
-                console.log(`📅 Semana ${numeroSemana}: ${formatDate(startSemana)} - ${formatDate(endSemana)}, Venda: ${venda.aluno?.nome}, Data: ${vendaDate.toLocaleDateString('pt-BR')}, InRange: ${isInRange}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
+                if (isInRange) {
+                  console.log(`📅 Semana ${numeroSemana}: ${formatDate(startSemana)} - ${formatDate(endSemana)}, Venda: ${venda.aluno?.nome}, Data Aprovação: ${dataVenda.toLocaleDateString('pt-BR')}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
+                }
                 
                 return isInRange;
               }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
@@ -306,7 +337,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   {semanasDoMes.reduce((total, numeroSemana) => {
                     const metaSemanal = metasSemanais.find(meta => 
                       meta.vendedor_id === profile.id && 
-                      meta.ano === selectedYear && 
+                      meta.ano === anoParaExibir && 
                       meta.semana === numeroSemana
                     );
                     return total + (metaSemanal?.meta_vendas || 0);
@@ -314,13 +345,16 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 </div>
                 <div className="font-bold text-primary">
                   {semanasDoMes.reduce((total, numeroSemana) => {
-                    const startSemana = getDataInicioSemana(selectedYear, selectedMonth, numeroSemana);
-                    const endSemana = getDataFimSemana(selectedYear, selectedMonth, numeroSemana);
+                    const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
+                    const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
                     const pontosDaSemana = vendas.filter(venda => {
                       if (venda.vendedor_id !== profile.id) return false;
                       if (venda.status !== 'matriculado') return false;
-                      const vendaDate = new Date(venda.enviado_em);
-                      return vendaDate >= startSemana && vendaDate <= endSemana;
+                      // Usar data de aprovação para vendas matriculadas
+                      const dataVenda = venda.status === 'matriculado' && venda.atualizado_em 
+                        ? new Date(venda.atualizado_em) 
+                        : new Date(venda.enviado_em);
+                      return dataVenda >= startSemana && dataVenda <= endSemana;
                     }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
                     return total + pontosDaSemana;
                   }, 0).toFixed(1)}
@@ -330,19 +364,22 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                     const totalMeta = semanasDoMes.reduce((total, numeroSemana) => {
                       const metaSemanal = metasSemanais.find(meta => 
                         meta.vendedor_id === profile.id && 
-                        meta.ano === selectedYear && 
+                        meta.ano === anoParaExibir && 
                         meta.semana === numeroSemana
                       );
                       return total + (metaSemanal?.meta_vendas || 0);
                     }, 0);
                     const totalPontos = semanasDoMes.reduce((total, numeroSemana) => {
-                      const startSemana = getDataInicioSemana(selectedYear, selectedMonth, numeroSemana);
-                      const endSemana = getDataFimSemana(selectedYear, selectedMonth, numeroSemana);
+                      const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
+                      const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
                       const pontosDaSemana = vendas.filter(venda => {
                         if (venda.vendedor_id !== profile.id) return false;
                         if (venda.status !== 'matriculado') return false;
-                        const vendaDate = new Date(venda.enviado_em);
-                        return vendaDate >= startSemana && vendaDate <= endSemana;
+                        // Usar data de aprovação para vendas matriculadas
+                        const dataVenda = venda.status === 'matriculado' && venda.atualizado_em 
+                          ? new Date(venda.atualizado_em) 
+                          : new Date(venda.enviado_em);
+                        return dataVenda >= startSemana && dataVenda <= endSemana;
                       }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
                       return total + pontosDaSemana;
                     }, 0);
