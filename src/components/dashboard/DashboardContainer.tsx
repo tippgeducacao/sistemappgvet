@@ -28,23 +28,26 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   const { vendedores } = useVendedores();
   const { getMesAnoSemanaAtual } = useMetasSemanais();
   
-  // Estados para filtro por período - usar o mês/ano da semana atual baseado na regra de terça-feira
-  const { mes: mesAtual, ano: anoAtual } = getMesAnoSemanaAtual();
-  console.log('🗓️ DashboardContainer - Mês/Ano da semana atual:', mesAtual, '/', anoAtual);
+  // Obter o mês/ano correto da semana atual
+  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
+  console.log('🗓️ DashboardContainer - Mês/Ano CORRETO da semana atual:', mesCorreto, '/', anoCorreto);
   
-  const [selectedMonth, setSelectedMonth] = useState(mesAtual);
-  const [selectedYear, setSelectedYear] = useState(anoAtual);
+  // Estados para filtro por período - inicializar com os valores corretos
+  const [selectedMonth, setSelectedMonth] = useState(mesCorreto);
+  const [selectedYear, setSelectedYear] = useState(anoCorreto);
   
-  // Atualizar os estados quando o mês/ano da semana atual for carregado
+  // Forçar atualização sempre que a função retornar valores diferentes
   useEffect(() => {
     const { mes: novoMes, ano: novoAno } = getMesAnoSemanaAtual();
-    console.log('🔄 DashboardContainer useEffect - Atualizando para:', novoMes, '/', novoAno);
+    console.log('🔄 DashboardContainer useEffect - Valores atuais do hook:', novoMes, '/', novoAno);
+    console.log('🔄 DashboardContainer useEffect - Estados atuais:', selectedMonth, '/', selectedYear);
+    
     if (novoMes !== selectedMonth || novoAno !== selectedYear) {
-      console.log('📅 DashboardContainer - Valores diferentes, atualizando estados...');
+      console.log('📅 DashboardContainer - ATUALIZANDO estados de', selectedMonth, '/', selectedYear, 'para', novoMes, '/', novoAno);
       setSelectedMonth(novoMes);
       setSelectedYear(novoAno);
     }
-  }, [getMesAnoSemanaAtual, selectedMonth, selectedYear]);
+  }, [mesCorreto, anoCorreto, selectedMonth, selectedYear]);
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
