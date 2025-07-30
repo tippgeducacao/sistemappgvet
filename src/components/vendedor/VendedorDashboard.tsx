@@ -1,16 +1,16 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useVendas } from '@/hooks/useVendas';
 import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards';
 import VendedorMetas from '@/components/dashboard/VendedorMetas';
 import VendedorMetasDiarias from '@/components/dashboard/VendedorMetasDiarias';
-
 import ReuniaoAtrasadaModal from '@/components/vendedor/ReuniaoAtrasadaModal';
 import { useReuniaoAtrasada } from '@/hooks/useReuniaoAtrasada';
-import { FileText } from 'lucide-react';
+import { FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const VendedorDashboard: React.FC = () => {
   const { profile } = useAuthStore();
@@ -20,8 +20,32 @@ const VendedorDashboard: React.FC = () => {
   // Usar lógica de semanas consistente
   const { getMesAnoSemanaAtual } = useMetasSemanais();
   const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
-  const [selectedMonth] = useState<number>(mesCorreto);
-  const [selectedYear] = useState<number>(anoCorreto);
+  const [selectedMonth, setSelectedMonth] = useState<number>(mesCorreto);
+  const [selectedYear, setSelectedYear] = useState<number>(anoCorreto);
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      if (selectedMonth === 1) {
+        setSelectedMonth(12);
+        setSelectedYear(selectedYear - 1);
+      } else {
+        setSelectedMonth(selectedMonth - 1);
+      }
+    } else {
+      if (selectedMonth === 12) {
+        setSelectedMonth(1);
+        setSelectedYear(selectedYear + 1);
+      } else {
+        setSelectedMonth(selectedMonth + 1);
+      }
+    }
+  };
+
+  const getMonthName = (month: number) => {
+    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    return months[month - 1];
+  };
   
   // Estado para o modal de reuniões atrasadas
   const [modalAtrasadaAberto, setModalAtrasadaAberto] = useState(false);
@@ -35,14 +59,38 @@ const VendedorDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header sem botão Nova Venda */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">
-          Olá, {profile?.name || 'Vendedor'}!
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Gerencie suas vendas e acompanhe seu desempenho
-        </p>
+      {/* Header com navegação de mês */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Olá, {profile?.name || 'Vendedor'}!
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie suas vendas e acompanhe seu desempenho
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigateMonth('prev')}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <div className="text-center min-w-[140px]">
+            <p className="font-medium">{getMonthName(selectedMonth)} {selectedYear}</p>
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigateMonth('next')}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
 
