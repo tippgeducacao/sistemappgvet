@@ -1038,12 +1038,22 @@ const AgendamentosPage: React.FC = () => {
                           ag => ag.vendedor_id === vendedor.id && ['agendado', 'atrasado'].includes(ag.status)
                         ).length;
                         
-                        // Encontrar o vendedor com menos agendamentos para destacar (quando data e horário estão preenchidos)
-                        const shouldHighlight = selectedDateForm && selectedTime && vendedores.length > 0;
-                        const menorNumeroAgendamentos = Math.min(...vendedores.map(v => 
-                          agendamentos.filter(ag => ag.vendedor_id === v.id && ['agendado', 'atrasado'].includes(ag.status)).length
-                        ));
-                        const isIndicado = shouldHighlight && contadorAgendamentos === menorNumeroAgendamentos;
+                        // Quando data e horário estão preenchidos, destacar o vendedor com menos agendamentos
+                        let isIndicado = false;
+                        if (selectedDateForm && selectedTime && vendedores.length > 0) {
+                          // Encontrar o menor número de agendamentos
+                          const agendamentosPorVendedor = vendedores.map(v => ({
+                            id: v.id,
+                            count: agendamentos.filter(ag => ag.vendedor_id === v.id && ['agendado', 'atrasado'].includes(ag.status)).length
+                          }));
+                          
+                          const menorCount = Math.min(...agendamentosPorVendedor.map(v => v.count));
+                          
+                          // Se este vendedor tem o menor número de agendamentos, destacar
+                          isIndicado = contadorAgendamentos === menorCount;
+                        }
+                        
+                        console.log(`Vendedor ${vendedor.name}: ${contadorAgendamentos} agendamentos, indicado: ${isIndicado}`);
                         
                         return (
                         <div 
