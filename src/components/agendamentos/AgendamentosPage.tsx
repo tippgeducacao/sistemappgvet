@@ -991,15 +991,23 @@ const AgendamentosPage: React.FC = () => {
                   </div>
                 ) : (
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium">Vendedores especializados disponíveis:</p>
-                      {vendedorIndicado && (
-                        <div className="flex items-center gap-1 text-xs text-primary font-medium">
-                          <span>🎯</span>
-                          <span>Será agendado com: {vendedorIndicado.name}</span>
-                        </div>
-                      )}
-                    </div>
+                     <div className="flex items-center justify-between mb-2">
+                       <p className="text-sm font-medium">Vendedores especializados disponíveis:</p>
+                       {vendedorIndicado ? (
+                         <div className="flex items-center gap-1 text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded">
+                           <span>🎯</span>
+                           <span>Será agendado com: {vendedorIndicado.name}</span>
+                         </div>
+                       ) : selectedDateForm && selectedTime ? (
+                         <div className="text-xs text-muted-foreground">
+                           Calculando vendedor disponível...
+                         </div>
+                       ) : (
+                         <div className="text-xs text-muted-foreground">
+                           Selecione data e horário para ver indicação
+                         </div>
+                       )}
+                     </div>
                     <div className="space-y-2">
                       {vendedores.map((vendedor) => {
                         // Contar agendamentos ativos e atrasados do vendedor
@@ -1007,28 +1015,28 @@ const AgendamentosPage: React.FC = () => {
                           ag => ag.vendedor_id === vendedor.id && ['agendado', 'atrasado'].includes(ag.status)
                         ).length;
                         
-                        const isIndicado = vendedorIndicado?.id === vendedor.id;
-                        
-                        return (
-                        <div 
-                          key={vendedor.id} 
-                          className={`flex items-center justify-between p-2 border rounded-lg transition-colors ${
-                            isIndicado ? 'border-primary bg-primary/5' : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 text-sm">
-                            {isIndicado && <span className="text-primary">🎯</span>}
-                            <User className="h-3 w-3" />
-                            <span className={isIndicado ? 'font-medium text-primary' : ''}>{vendedor.name}</span>
-                            <span className="text-xs text-muted-foreground">({vendedor.email})</span>
-                            <Badge variant={contadorAgendamentos === 0 ? "outline" : "secondary"} className="text-xs">
-                              {contadorAgendamentos} agendamento{contadorAgendamentos !== 1 ? 's' : ''}
-                            </Badge>
-                            {isIndicado && (
-                              <Badge variant="default" className="text-xs bg-primary">
-                                SELECIONADO
-                              </Badge>
-                            )}
+                         const isIndicado = vendedorIndicado?.id === vendedor.id;
+                         
+                         return (
+                         <div 
+                           key={vendedor.id} 
+                           className={`flex items-center justify-between p-3 border rounded-lg transition-all duration-200 ${
+                             isIndicado ? 'border-primary bg-primary/10 shadow-md' : 'border-border'
+                           }`}
+                         >
+                           <div className="flex items-center gap-2 text-sm">
+                             {isIndicado && <span className="text-primary text-lg">🎯</span>}
+                             <User className="h-3 w-3" />
+                             <span className={isIndicado ? 'font-bold text-primary' : ''}>{vendedor.name}</span>
+                             <span className="text-xs text-muted-foreground">({vendedor.email})</span>
+                             <Badge variant={contadorAgendamentos === 0 ? "outline" : "secondary"} className="text-xs">
+                               {contadorAgendamentos} agendamento{contadorAgendamentos !== 1 ? 's' : ''}
+                             </Badge>
+                             {isIndicado && (
+                               <Badge variant="default" className="text-xs bg-primary font-semibold animate-pulse">
+                                 SELECIONADO
+                               </Badge>
+                             )}
                           </div>
                           <Dialog>
                             <DialogTrigger asChild>
