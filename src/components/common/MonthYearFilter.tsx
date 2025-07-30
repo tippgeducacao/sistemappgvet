@@ -19,6 +19,9 @@ const MonthYearFilter: React.FC<MonthYearFilterProps> = ({
   onYearChange,
   className = ""
 }) => {
+  // Debug: verificar os valores recebidos
+  console.log('🔍 DEBUG MonthYearFilter - Props recebidas:', { selectedMonth, selectedYear });
+  console.log('🔍 DEBUG MonthYearFilter - Tipos:', { selectedMonth: typeof selectedMonth, selectedYear: typeof selectedYear });
   const months = [
     { value: 1, label: 'Janeiro' },
     { value: 2, label: 'Fevereiro' },

@@ -28,13 +28,19 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   const { vendedores } = useVendedores();
   const { getMesAnoSemanaAtual } = useMetasSemanais();
   
+  // Debug: vamos ver exatamente o que está acontecendo
+  console.log('🔍 DEBUG - Função getMesAnoSemanaAtual disponível?', typeof getMesAnoSemanaAtual);
+  
   // Sempre usar o mês/ano atual correto baseado na lógica de semanas
   const { mes: mesAtual, ano: anoAtual } = getMesAnoSemanaAtual();
-  console.log('🗓️ DashboardContainer - Mês/Ano ATUAL baseado na semana:', mesAtual, '/', anoAtual);
+  console.log('🗓️ DEBUG - DashboardContainer - getMesAnoSemanaAtual() retornou:', { mes: mesAtual, ano: anoAtual });
+  console.log('🗓️ DEBUG - Tipo dos valores:', { mes: typeof mesAtual, ano: typeof anoAtual });
   
   // Estados para filtro por período - sempre refletir o mês atual da semana
   const [selectedMonth, setSelectedMonth] = useState(mesAtual);
   const [selectedYear, setSelectedYear] = useState(anoAtual);
+  
+  console.log('🎯 DEBUG - Estados inicializados:', { selectedMonth, selectedYear });
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');

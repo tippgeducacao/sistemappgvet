@@ -241,7 +241,9 @@ export const useMetasSemanais = () => {
   const getMesAnoSemanaAtual = () => {
     const now = new Date();
     const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    console.log(`🗓️ getMesAnoSemanaAtual - Data atual: ${now.toLocaleDateString('pt-BR')} (${diasSemana[now.getDay()]})`);
+    console.log(`🗓️ TESTE MANUAL - Data atual: ${now.toLocaleDateString('pt-BR')} (${diasSemana[now.getDay()]})`);
+    console.log(`🗓️ TESTE MANUAL - Data atual completa:`, now);
+    console.log(`🗓️ TESTE MANUAL - Dia da semana (getDay):`, now.getDay());
     
     // Encontrar a terça-feira que encerra a semana atual
     let tercaQueEncerra = new Date(now);
