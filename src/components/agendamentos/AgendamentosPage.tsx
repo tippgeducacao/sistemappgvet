@@ -118,11 +118,21 @@ const AgendamentosPage: React.FC = () => {
   // Calcular vendedor indicado automaticamente quando dados mudam
   useEffect(() => {
     const calcularVendedorIndicado = async () => {
+      console.log('🎯 Calculando vendedor indicado:', {
+        vendedoresLength: vendedores.length,
+        selectedDateForm,
+        selectedTime,
+        vendedores: vendedores.map(v => ({ id: v.id, name: v.name }))
+      });
+      
       if (vendedores.length > 0 && selectedDateForm && selectedTime) {
         const dataHora = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
+        console.log('🎯 DataHora formatada:', dataHora);
         const vendedor = await selecionarVendedorAutomatico(vendedores, dataHora);
+        console.log('🎯 Vendedor selecionado:', vendedor);
         setVendedorIndicado(vendedor);
       } else {
+        console.log('🎯 Condições não atendidas, limpando vendedor indicado');
         setVendedorIndicado(null);
       }
     };
@@ -170,6 +180,8 @@ const AgendamentosPage: React.FC = () => {
 
   // Função para selecionar vendedor automaticamente
   const selecionarVendedorAutomatico = async (vendedoresList: any[], dataHora: string) => {
+    console.log('🎯 selecionarVendedorAutomatico chamada:', { vendedoresList: vendedoresList.length, dataHora });
+    
     // Buscar agendamentos existentes para contar distribuição
     const agendamentosVendedores = new Map();
     
@@ -188,6 +200,8 @@ const AgendamentosPage: React.FC = () => {
       }
     });
     
+    console.log('🎯 Contadores de agendamentos:', Array.from(agendamentosVendedores.entries()));
+    
     // Encontrar vendedor com menor número de agendamentos e sem conflito de horário
     let vendedorSelecionado = null;
     let menorNumeroAgendamentos = Infinity;
@@ -195,18 +209,27 @@ const AgendamentosPage: React.FC = () => {
     for (const vendedor of vendedoresList) {
       const numAgendamentos = agendamentosVendedores.get(vendedor.id);
       
+      console.log(`🎯 Verificando vendedor ${vendedor.name} (${vendedor.id}):`, {
+        numAgendamentos,
+        menorNumeroAgendamentos
+      });
+      
       // Verificar conflito de agenda
       const temConflito = await AgendamentosService.verificarConflitosAgenda(
         vendedor.id,
         dataHora
       );
       
+      console.log(`🎯 Conflito para ${vendedor.name}:`, temConflito);
+      
       if (!temConflito && numAgendamentos < menorNumeroAgendamentos) {
         menorNumeroAgendamentos = numAgendamentos;
         vendedorSelecionado = vendedor;
+        console.log(`🎯 Novo vendedor selecionado: ${vendedor.name}`);
       }
     }
     
+    console.log('🎯 Vendedor final selecionado:', vendedorSelecionado);
     return vendedorSelecionado;
   };
 
