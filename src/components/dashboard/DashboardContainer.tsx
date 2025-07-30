@@ -28,22 +28,11 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   const { vendedores } = useVendedores();
   const { getMesAnoSemanaAtual } = useMetasSemanais();
   
-  // Estados - inicializar com valores que serão atualizados pelo useEffect
-  const [selectedMonth, setSelectedMonth] = useState(8); // Padrão agosto
-  const [selectedYear, setSelectedYear] = useState(2025);
+  // Simples: sempre pegar o mês correto baseado na semana
+  const mesAnoCorreto = getMesAnoSemanaAtual();
   
-  // Atualizar sempre que o componente montar ou a função mudar
-  useEffect(() => {
-    const { mes, ano } = getMesAnoSemanaAtual();
-    console.log('🚨 DASHBOARD useEffect EXECUTANDO - Valores da função:', mes, ano);
-    console.log('🚨 DASHBOARD useEffect - Estados atuais:', selectedMonth, selectedYear);
-    
-    // Sempre atualizar, mesmo que sejam iguais
-    setSelectedMonth(mes);
-    setSelectedYear(ano);
-    
-    console.log('🚨 DASHBOARD useEffect - Estados atualizados para:', mes, ano);
-  }, []);
+  const [selectedMonth, setSelectedMonth] = useState(mesAnoCorreto.mes);
+  const [selectedYear, setSelectedYear] = useState(mesAnoCorreto.ano);
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
