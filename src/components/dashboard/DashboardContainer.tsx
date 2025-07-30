@@ -11,8 +11,6 @@ import WeeklyApprovedSalesChart from './WeeklyApprovedSalesChart';
 import GoalsAchievementChart from './GoalsAchievementChart';
 import { ReunioesAdminChart } from './ReunioesAdminChart';
 
-import MonthYearFilter from '@/components/common/MonthYearFilter';
-import ForceAugustFilter from '@/components/common/ForceAugustFilter';
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -62,14 +60,6 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
     return (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <MonthYearFilter
-            key={`filter-${selectedMonth}-${selectedYear}-${Date.now()}`}
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            onMonthChange={handleMonthChange}
-            onYearChange={handleYearChange}
-          />
-          
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Vendedor:</span>
             <Select value={selectedVendedor} onValueChange={setSelectedVendedor}>
@@ -140,8 +130,6 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   // Dashboard do Vendedor
   return (
     <div className="space-y-6">
-      <ForceAugustFilter />
-      
       <DashboardMetricsCards 
         userType="vendedor" 
         selectedMonth={selectedMonth}
