@@ -270,6 +270,37 @@ export const useMetasSemanais = () => {
     return fimSemana;
   };
 
+  // Função para obter o mês e ano da semana atual (baseado na terça-feira que encerra a semana)
+  const getMesAnoSemanaAtual = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    
+    // Encontrar a primeira terça-feira do mês
+    let primeiraTerca = new Date(currentYear, currentMonth - 1, 1);
+    while (primeiraTerca.getDay() !== 2) {
+      primeiraTerca.setDate(primeiraTerca.getDate() + 1);
+    }
+    
+    // Se a primeira terça-feira é muito tarde no mês, usar a anterior
+    if (primeiraTerca.getDate() > 7) {
+      primeiraTerca.setDate(primeiraTerca.getDate() - 7);
+    }
+    
+    // Encontrar a terça-feira da semana atual
+    const semanaAtual = getSemanaAtual();
+    const tercaSemanaAtual = new Date(primeiraTerca);
+    tercaSemanaAtual.setDate(tercaSemanaAtual.getDate() + (semanaAtual - 1) * 7);
+    
+    console.log(`📅 Terça-feira da semana atual (${semanaAtual}): ${tercaSemanaAtual.toLocaleDateString('pt-BR')}`);
+    console.log(`📅 Mês/Ano da terça: ${tercaSemanaAtual.getMonth() + 1}/${tercaSemanaAtual.getFullYear()}`);
+    
+    return {
+      mes: tercaSemanaAtual.getMonth() + 1,
+      ano: tercaSemanaAtual.getFullYear()
+    };
+  };
+
   useEffect(() => {
     fetchMetasSemanais();
   }, []);
@@ -282,6 +313,7 @@ export const useMetasSemanais = () => {
     updateMetaSemanal,
     getMetaSemanalVendedor,
     getSemanaAtual,
+    getMesAnoSemanaAtual,
     getSemanasDoMes,
     getDataInicioSemana,
     getDataFimSemana

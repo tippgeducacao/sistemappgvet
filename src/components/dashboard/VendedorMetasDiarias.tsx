@@ -17,7 +17,7 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
   selectedMonth,
   selectedYear
 }) => {
-  const { metasSemanais, getSemanaAtual, getDataInicioSemana, getDataFimSemana, loading: metasLoading } = useMetasSemanais();
+  const { metasSemanais, getSemanaAtual, getMesAnoSemanaAtual, getDataInicioSemana, getDataFimSemana, loading: metasLoading } = useMetasSemanais();
   const { vendas, isLoading: vendasLoading } = useVendas();
   const { profile } = useAuthStore();
 
@@ -31,13 +31,19 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
     );
   }
 
-  // Verificar se estamos no mês atual
-  const dataAtual = new Date();
-  const mesAtual = dataAtual.getMonth() + 1;
-  const anoAtual = dataAtual.getFullYear();
-  const isCurrentMonth = selectedMonth === mesAtual && selectedYear === anoAtual;
+  // Obter o mês e ano corretos baseados na semana atual (terça-feira que encerra)
+  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
+  const semanaAtual = getSemanaAtual();
+  
+  console.log('🔍 DEBUG Metas Diárias:');
+  console.log('  📅 Mês/Ano selecionado no dashboard:', selectedMonth, '/', selectedYear);
+  console.log('  📅 Mês/Ano correto da semana atual:', mesCorreto, '/', anoCorreto);
+  console.log('  📅 Semana atual:', semanaAtual);
 
-  if (!isCurrentMonth) {
+  // Verificar se estamos consultando o mês/ano correto da semana atual
+  const isCurrentWeekMonth = selectedMonth === mesCorreto && selectedYear === anoCorreto;
+
+  if (!isCurrentWeekMonth) {
     return (
       <Card>
         <CardHeader>
@@ -49,25 +55,21 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
         <CardContent>
           <div className="text-center py-4 text-muted-foreground">
             <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>Metas diárias disponíveis apenas para o mês atual</p>
+            <p>Metas diárias disponíveis apenas para a semana atual</p>
+            <p className="text-xs mt-1">Semana atual: {mesCorreto}/{anoCorreto}</p>
           </div>
         </CardContent>
       </Card>
     );
   }
-
-  const semanaAtual = getSemanaAtual();
   
-  // Buscar meta da semana atual
+  // Buscar meta da semana atual usando o mês/ano corretos
   const metaSemanaAtual = metasSemanais.find(meta => 
     meta.vendedor_id === profile.id && 
-    meta.ano === selectedYear && 
+    meta.ano === anoCorreto && 
     meta.semana === semanaAtual
   );
-
-  console.log('🔍 DEBUG Metas Diárias:');
   console.log('  👤 Vendedor ID:', profile.id);
-  console.log('  📅 Semana atual:', semanaAtual);
   console.log('  📊 Meta semanal encontrada:', metaSemanaAtual);
   console.log('  📊 Total vendas carregadas:', vendas.length);
   console.log('  📊 Vendas do vendedor:', vendas.filter(v => v.vendedor_id === profile.id).length);
@@ -79,19 +81,19 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
   const vendasHoje = vendas.filter(venda => {
     if (venda.vendedor_id !== profile.id) return false;
     if (venda.status !== 'matriculado') return false;
-    if (!venda.enviado_em) return false;
     
-    const vendaDate = new Date(venda.enviado_em);
-    const vendaSemHora = new Date(vendaDate.getFullYear(), vendaDate.getMonth(), vendaDate.getDate());
+    // Usar data de aprovação se disponível
+    const dataVenda = venda.atualizado_em ? new Date(venda.atualizado_em) : new Date(venda.enviado_em);
+    const vendaSemHora = new Date(dataVenda.getFullYear(), dataVenda.getMonth(), dataVenda.getDate());
     
     return vendaSemHora.getTime() === hojeSemHora.getTime();
   });
 
   const pontosHoje = vendasHoje.reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
 
-  // Usar as funções do hook para calcular o período da semana
-  const inicioSemana = getDataInicioSemana(selectedYear, selectedMonth, semanaAtual);
-  const fimSemana = getDataFimSemana(selectedYear, selectedMonth, semanaAtual);
+  // Usar as funções do hook para calcular o período da semana - MAS usando o mês/ano corretos
+  const inicioSemana = getDataInicioSemana(anoCorreto, mesCorreto, semanaAtual);
+  const fimSemana = getDataFimSemana(anoCorreto, mesCorreto, semanaAtual);
 
   console.log('  📅 Início da semana (quarta):', inicioSemana.toLocaleDateString('pt-BR'));
   console.log('  📅 Fim da semana (terça):', fimSemana.toLocaleDateString('pt-BR'));
@@ -182,7 +184,7 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
         <CardContent>
           <div className="text-2xl font-bold">{metaSemanaAtual?.meta_vendas || 0}</div>
           <p className="text-xs text-muted-foreground">
-            Semana {semanaAtual} de {selectedYear}
+            Semana {semanaAtual} de {anoCorreto} (referente a {mesCorreto}/{anoCorreto})
           </p>
           <div className="mt-3 space-y-2">
             <div className="flex justify-between text-xs">
