@@ -7,7 +7,7 @@ import { useVendas } from '@/hooks/useVendas';
 import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards';
 import VendedorMetas from '@/components/dashboard/VendedorMetas';
 import VendedorMetasDiarias from '@/components/dashboard/VendedorMetasDiarias';
-import MonthYearFilter from '@/components/common/MonthYearFilter';
+
 import ReuniaoAtrasadaModal from '@/components/vendedor/ReuniaoAtrasadaModal';
 import { useReuniaoAtrasada } from '@/hooks/useReuniaoAtrasada';
 import { FileText } from 'lucide-react';
@@ -17,10 +17,11 @@ const VendedorDashboard: React.FC = () => {
   const { vendas } = useVendas();
   const { agendamentosAtrasados, verificarAgendamentosAtrasados } = useReuniaoAtrasada();
 
-  // Estado para filtros de período
-  const currentDate = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
+  // Usar lógica de semanas consistente
+  const { getMesAnoSemanaAtual } = useMetasSemanais();
+  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
+  const [selectedMonth] = useState<number>(mesCorreto);
+  const [selectedYear] = useState<number>(anoCorreto);
   
   // Estado para o modal de reuniões atrasadas
   const [modalAtrasadaAberto, setModalAtrasadaAberto] = useState(false);
@@ -44,13 +45,6 @@ const VendedorDashboard: React.FC = () => {
         </p>
       </div>
 
-      {/* Filtro por período */}
-      <MonthYearFilter
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
-        onMonthChange={setSelectedMonth}
-        onYearChange={setSelectedYear}
-      />
 
       {/* Cards de métricas */}
       <DashboardMetricsCards
