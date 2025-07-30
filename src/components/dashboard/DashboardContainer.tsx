@@ -28,23 +28,22 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   const { vendedores } = useVendedores();
   const { getMesAnoSemanaAtual } = useMetasSemanais();
   
-  // FORÇAR EXECUÇÃO A CADA RENDER - sem cache
-  const { mes: mesCorreto, ano: anoCorreto } = useMemo(() => {
-    const resultado = getMesAnoSemanaAtual();
-    console.log('🚨 DASHBOARD useMemo - Resultado:', resultado);
-    return resultado;
-  }, [getMesAnoSemanaAtual]);
+  // Estados - inicializar com valores que serão atualizados pelo useEffect
+  const [selectedMonth, setSelectedMonth] = useState(8); // Padrão agosto
+  const [selectedYear, setSelectedYear] = useState(2025);
   
-  // Estados sempre atualizados
-  const [selectedMonth, setSelectedMonth] = useState(mesCorreto);
-  const [selectedYear, setSelectedYear] = useState(anoCorreto);
-  
-  // Force update quando valores mudarem
+  // Atualizar sempre que o componente montar ou a função mudar
   useEffect(() => {
-    console.log('🚨 DASHBOARD useEffect - Atualizando estados para:', mesCorreto, anoCorreto);
-    setSelectedMonth(mesCorreto);
-    setSelectedYear(anoCorreto);
-  }, [mesCorreto, anoCorreto]);
+    const { mes, ano } = getMesAnoSemanaAtual();
+    console.log('🚨 DASHBOARD useEffect EXECUTANDO - Valores da função:', mes, ano);
+    console.log('🚨 DASHBOARD useEffect - Estados atuais:', selectedMonth, selectedYear);
+    
+    // Sempre atualizar, mesmo que sejam iguais
+    setSelectedMonth(mes);
+    setSelectedYear(ano);
+    
+    console.log('🚨 DASHBOARD useEffect - Estados atualizados para:', mes, ano);
+  }, []);
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
