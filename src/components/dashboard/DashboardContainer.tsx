@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardMetricsCards from './DashboardMetricsCards';
 import SalesChart from './SalesChart';
 import StatusDistributionChart from './StatusDistributionChart';
@@ -28,15 +28,23 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   const { vendedores } = useVendedores();
   const { getMesAnoSemanaAtual } = useMetasSemanais();
   
-  // TESTE CRÍTICO: Executar função diretamente no render
-  const resultadoFuncao = getMesAnoSemanaAtual();
-  console.log('🚨 DASHBOARD CONTAINER - Resultado direto da função:', resultadoFuncao);
+  // FORÇAR EXECUÇÃO A CADA RENDER - sem cache
+  const { mes: mesCorreto, ano: anoCorreto } = useMemo(() => {
+    const resultado = getMesAnoSemanaAtual();
+    console.log('🚨 DASHBOARD useMemo - Resultado:', resultado);
+    return resultado;
+  }, [getMesAnoSemanaAtual]);
   
-  // Estados para filtro por período
-  const [selectedMonth, setSelectedMonth] = useState(resultadoFuncao.mes);
-  const [selectedYear, setSelectedYear] = useState(resultadoFuncao.ano);
+  // Estados sempre atualizados
+  const [selectedMonth, setSelectedMonth] = useState(mesCorreto);
+  const [selectedYear, setSelectedYear] = useState(anoCorreto);
   
-  console.log('🚨 DASHBOARD CONTAINER - Estados após useState:', { selectedMonth, selectedYear });
+  // Force update quando valores mudarem
+  useEffect(() => {
+    console.log('🚨 DASHBOARD useEffect - Atualizando estados para:', mesCorreto, anoCorreto);
+    setSelectedMonth(mesCorreto);
+    setSelectedYear(anoCorreto);
+  }, [mesCorreto, anoCorreto]);
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
