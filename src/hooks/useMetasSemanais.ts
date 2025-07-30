@@ -102,34 +102,33 @@ export const useMetasSemanais = () => {
     console.log(`🗓️ Data atual: ${now.toLocaleDateString('pt-BR')} (${now.toISOString()})`);
     console.log(`🗓️ Dia da semana: ${now.getDay()} (0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab)`);
     
-    // CORREÇÃO: Sempre usar a terça-feira anterior ou a atual se for terça
-    // Uma semana vai de quarta a terça, então se não é terça, a semana ainda não terminou
-    let tercaAtual = new Date(now);
+    // USAR A MESMA LÓGICA DE getMesAnoSemanaAtual: próxima terça que encerra a semana
+    let tercaQueEncerra = new Date(now);
     
-    if (tercaAtual.getDay() === 2) {
+    if (tercaQueEncerra.getDay() === 2) {
       // Hoje é terça-feira - a semana termina hoje
-      console.log(`📅 Hoje é terça-feira (fim da semana): ${tercaAtual.toLocaleDateString('pt-BR')}`);
+      console.log(`📅 Hoje é terça-feira, semana termina hoje: ${tercaQueEncerra.toLocaleDateString('pt-BR')}`);
     } else {
-      // Encontrar a terça-feira anterior (da semana atual em andamento)
-      const diasDesdeTerca = (tercaAtual.getDay() - 2 + 7) % 7;
-      tercaAtual.setDate(tercaAtual.getDate() - diasDesdeTerca);
-      console.log(`📅 Terça da semana atual (anterior): ${tercaAtual.toLocaleDateString('pt-BR')}`);
-      console.log(`📅 Dias desde a terça: ${diasDesdeTerca}`);
+      // Encontrar a próxima terça-feira (que encerra a semana atual)
+      const diasAteTerca = (2 - tercaQueEncerra.getDay() + 7) % 7;
+      const diasParaSomar = diasAteTerca === 0 ? 7 : diasAteTerca;
+      tercaQueEncerra.setDate(tercaQueEncerra.getDate() + diasParaSomar);
+      console.log(`📅 Próxima terça que encerra semana: ${tercaQueEncerra.toLocaleDateString('pt-BR')}`);
     }
     
     // O mês/ano da semana é baseado na terça-feira que encerra a semana
-    const mesReferencia = tercaAtual.getMonth() + 1;
-    const anoReferencia = tercaAtual.getFullYear();
+    const mesReferencia = tercaQueEncerra.getMonth() + 1;
+    const anoReferencia = tercaQueEncerra.getFullYear();
     
-    console.log(`📅 Mês/Ano de referência baseado na terça: ${mesReferencia}/${anoReferencia}`);
+    console.log(`📅 Mês/Ano de referência baseado na terça que encerra: ${mesReferencia}/${anoReferencia}`);
     
     // Verificar período da semana para validação
-    const inicioSemana = new Date(tercaAtual);
+    const inicioSemana = new Date(tercaQueEncerra);
     inicioSemana.setDate(inicioSemana.getDate() - 6); // Quarta-feira anterior
-    const fimSemana = new Date(tercaAtual);
+    const fimSemana = new Date(tercaQueEncerra);
     fimSemana.setHours(23, 59, 59, 999);
     
-    console.log(`🔍 Período da semana: ${inicioSemana.toLocaleDateString('pt-BR')} até ${tercaAtual.toLocaleDateString('pt-BR')}`);
+    console.log(`🔍 Período da semana: ${inicioSemana.toLocaleDateString('pt-BR')} até ${tercaQueEncerra.toLocaleDateString('pt-BR')}`);
     console.log(`🔍 Data atual está no período? ${now >= inicioSemana && now <= fimSemana}`);
     
     // Agora calcular qual semana do mês esta terça representa
@@ -151,7 +150,7 @@ export const useMetasSemanais = () => {
     }
     
     // Calcular qual semana é a terça atual
-    const diffTime = tercaAtual.getTime() - primeiraTerca.getTime();
+    const diffTime = tercaQueEncerra.getTime() - primeiraTerca.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     const semanaNumero = Math.floor(diffDays / 7) + 1;
     

@@ -28,26 +28,21 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   const { vendedores } = useVendedores();
   const { getMesAnoSemanaAtual } = useMetasSemanais();
   
-  // Obter o mês/ano correto da semana atual
-  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
-  console.log('🗓️ DashboardContainer - Mês/Ano CORRETO da semana atual:', mesCorreto, '/', anoCorreto);
+  // Obter o mês/ano correto da semana atual apenas uma vez para inicialização
+  const mesAnoSemanaAtual = getMesAnoSemanaAtual();
+  console.log('🗓️ DashboardContainer - Mês/Ano da semana atual para inicialização:', mesAnoSemanaAtual.mes, '/', mesAnoSemanaAtual.ano);
   
   // Estados para filtro por período - inicializar com os valores corretos
-  const [selectedMonth, setSelectedMonth] = useState(mesCorreto);
-  const [selectedYear, setSelectedYear] = useState(anoCorreto);
+  const [selectedMonth, setSelectedMonth] = useState(mesAnoSemanaAtual.mes);
+  const [selectedYear, setSelectedYear] = useState(mesAnoSemanaAtual.ano);
   
-  // Forçar atualização sempre que a função retornar valores diferentes
+  // Apenas inicializar uma vez quando o componente monta
   useEffect(() => {
-    const { mes: novoMes, ano: novoAno } = getMesAnoSemanaAtual();
-    console.log('🔄 DashboardContainer useEffect - Valores atuais do hook:', novoMes, '/', novoAno);
-    console.log('🔄 DashboardContainer useEffect - Estados atuais:', selectedMonth, '/', selectedYear);
-    
-    if (novoMes !== selectedMonth || novoAno !== selectedYear) {
-      console.log('📅 DashboardContainer - ATUALIZANDO estados de', selectedMonth, '/', selectedYear, 'para', novoMes, '/', novoAno);
-      setSelectedMonth(novoMes);
-      setSelectedYear(novoAno);
-    }
-  }, [mesCorreto, anoCorreto, selectedMonth, selectedYear]);
+    const { mes: mesInicializacao, ano: anoInicializacao } = getMesAnoSemanaAtual();
+    console.log('🔄 DashboardContainer useEffect - Inicializando uma vez com:', mesInicializacao, '/', anoInicializacao);
+    setSelectedMonth(mesInicializacao);
+    setSelectedYear(anoInicializacao);
+  }, []); // Array vazio para executar apenas uma vez
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
