@@ -207,10 +207,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
                 
-                // Usar data de aprovação para vendas matriculadas
-                const dataVenda = venda.status === 'matriculado' && venda.atualizado_em 
-                  ? new Date(venda.atualizado_em) 
-                  : new Date(venda.enviado_em);
+                // Usar data de aprovação (data_aprovacao) se disponível para vendas matriculadas
+                const dataVenda = venda.data_aprovacao 
+                  ? new Date(venda.data_aprovacao)
+                  : venda.atualizado_em 
+                    ? new Date(venda.atualizado_em) 
+                    : new Date(venda.enviado_em);
                 // Ajustar para considerar a zona de tempo corretamente
                 dataVenda.setHours(0, 0, 0, 0);
                 

@@ -114,13 +114,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         return false;
       }
       
-      // Filtro por período - USAR DATA DE APROVAÇÃO (atualizado_em) para vendas matriculadas
+      // Filtro por período - USAR DATA DE APROVAÇÃO (data_aprovacao) para vendas matriculadas
       if ((propSelectedMonth && propSelectedYear) || internalSelectedMonth) {
-        // Para vendas matriculadas, usar data de aprovação (atualizado_em)
-        // Para outras vendas, usar data de envio (enviado_em)
-        const dataParaFiltro = venda.status === 'matriculado' && venda.atualizado_em 
-          ? new Date(venda.atualizado_em) 
-          : new Date(venda.enviado_em);
+        // Para vendas matriculadas, usar data de aprovação (data_aprovacao) se disponível
+        // Senão, usar data de atualização (atualizado_em) ou data de envio (enviado_em)
+        const dataParaFiltro = venda.status === 'matriculado' && venda.data_aprovacao 
+          ? new Date(venda.data_aprovacao)
+          : venda.status === 'matriculado' && venda.atualizado_em 
+            ? new Date(venda.atualizado_em) 
+            : new Date(venda.enviado_em);
         
         if (propSelectedMonth && propSelectedYear) {
           // Usar filtros externos do dashboard
@@ -146,9 +148,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     
     vendas.forEach(venda => {
       // Para vendas matriculadas, usar data de aprovação; para outras, usar data de envio
-      const dataParaGrupar = venda.status === 'matriculado' && venda.atualizado_em 
-        ? new Date(venda.atualizado_em) 
-        : new Date(venda.enviado_em);
+      const dataParaGrupar = venda.status === 'matriculado' && venda.data_aprovacao 
+        ? new Date(venda.data_aprovacao)
+        : venda.status === 'matriculado' && venda.atualizado_em
+          ? new Date(venda.atualizado_em) 
+          : new Date(venda.enviado_em);
       const mesAno = `${dataParaGrupar.getFullYear()}-${String(dataParaGrupar.getMonth() + 1).padStart(2, '0')}`;
       meses.add(mesAno);
     });

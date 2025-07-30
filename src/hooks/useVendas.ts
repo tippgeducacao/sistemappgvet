@@ -13,6 +13,7 @@ export interface VendaCompleta {
   pontuacao_validada: number | null;
   enviado_em: string;
   atualizado_em: string;
+  data_aprovacao?: string | null; // Nova propriedade para data de aprovação
   motivo_pendencia?: string | null;
   documento_comprobatorio?: string | null;
   aluno: {

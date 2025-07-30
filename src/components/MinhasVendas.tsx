@@ -256,8 +256,13 @@ const MinhasVendas: React.FC = () => {
                               <span className="font-medium">Curso:</span> {venda.curso?.nome || 'Não informado'}
                             </div>
                             <div>
-                              <span className="font-medium">Enviado:</span> {venda.enviado_em ? DataFormattingService.formatDateTime(venda.enviado_em) : 'Não informada'}
+                               <span className="font-medium">Enviado:</span> {venda.enviado_em ? DataFormattingService.formatDateTime(venda.enviado_em) : 'Não informada'}
                             </div>
+                            {venda.data_aprovacao && (
+                              <div>
+                                <span className="font-medium">Aprovado:</span> {DataFormattingService.formatDateTime(venda.data_aprovacao)}
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-6 text-sm">

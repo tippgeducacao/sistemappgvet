@@ -82,9 +82,9 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
     if (venda.vendedor_id !== profile.id) return false;
     if (venda.status !== 'matriculado') return false;
     
-    // Usar data de aprovação se disponível
-    const dataVenda = venda.atualizado_em ? new Date(venda.atualizado_em) : new Date(venda.enviado_em);
-    const vendaSemHora = new Date(dataVenda.getFullYear(), dataVenda.getMonth(), dataVenda.getDate());
+    // Usar data de aprovação se disponível (prioritária), senão data de envio
+    const dataParaComparar = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
+    const vendaSemHora = new Date(dataParaComparar.getFullYear(), dataParaComparar.getMonth(), dataParaComparar.getDate());
     
     return vendaSemHora.getTime() === hojeSemHora.getTime();
   });
@@ -103,14 +103,18 @@ const VendedorMetasDiarias: React.FC<VendedorMetasDiariasProps> = ({
     if (venda.vendedor_id !== profile.id) return false;
     if (venda.status !== 'matriculado') return false;
     
-    // USAR DATA DE APROVAÇÃO (atualizado_em) em vez de data de envio
-    const dataVenda = venda.atualizado_em ? new Date(venda.atualizado_em) : new Date(venda.enviado_em);
-    const vendaSemHora = new Date(dataVenda.getFullYear(), dataVenda.getMonth(), dataVenda.getDate());
+    // USAR DATA DE APROVAÇÃO (data_aprovacao) se disponível, senão usar atualizado_em
+    const dataParaFiltro = venda.data_aprovacao 
+      ? new Date(venda.data_aprovacao) 
+      : venda.atualizado_em 
+        ? new Date(venda.atualizado_em) 
+        : new Date(venda.enviado_em);
+    const vendaSemHora = new Date(dataParaFiltro.getFullYear(), dataParaFiltro.getMonth(), dataParaFiltro.getDate());
     
     const isInRange = vendaSemHora >= inicioSemana && vendaSemHora <= fimSemana;
     
     if (isInRange) {
-      console.log(`    ✅ Venda incluída: ${venda.aluno?.nome}, Data Aprovação: ${dataVenda.toLocaleDateString('pt-BR')}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
+      console.log(`    ✅ Venda incluída: ${venda.aluno?.nome}, Data Aprovação: ${dataParaFiltro.toLocaleDateString('pt-BR')}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
     }
     
     return isInRange;

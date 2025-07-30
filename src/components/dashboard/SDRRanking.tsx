@@ -74,10 +74,12 @@ const SDRRanking: React.FC = () => {
 
       // Vendas de cursos diretas do SDR (cada curso = 1 venda)
       const vendasSemana = vendas.filter(v => {
-        // Usar data de aprovação para vendas matriculadas
-        const dataVenda = v.status === 'matriculado' && v.atualizado_em 
-          ? new Date(v.atualizado_em) 
-          : new Date(v.enviado_em);
+        // Usar data de aprovação para vendas matriculadas, senão data de envio
+        const dataVenda = v.status === 'matriculado' && v.data_aprovacao 
+          ? new Date(v.data_aprovacao)
+          : v.status === 'matriculado' && v.atualizado_em 
+            ? new Date(v.atualizado_em) 
+            : new Date(v.enviado_em);
         return v.vendedor_id === sdr.id && 
                v.status === 'matriculado' &&
                dataVenda >= inicioSemana && 
@@ -85,10 +87,12 @@ const SDRRanking: React.FC = () => {
       }).length;
 
       const vendasMes = vendas.filter(v => {
-        // Usar data de aprovação para vendas matriculadas
-        const dataVenda = v.status === 'matriculado' && v.atualizado_em 
-          ? new Date(v.atualizado_em) 
-          : new Date(v.enviado_em);
+        // Usar data de aprovação para vendas matriculadas, senão data de envio
+        const dataVenda = v.status === 'matriculado' && v.data_aprovacao 
+          ? new Date(v.data_aprovacao)
+          : v.status === 'matriculado' && v.atualizado_em 
+            ? new Date(v.atualizado_em) 
+            : new Date(v.enviado_em);
         return v.vendedor_id === sdr.id && 
                v.status === 'matriculado' &&
                dataVenda >= inicioMes && 
@@ -96,10 +100,12 @@ const SDRRanking: React.FC = () => {
       }).length;
 
       const vendasAno = vendas.filter(v => {
-        // Usar data de aprovação para vendas matriculadas
-        const dataVenda = v.status === 'matriculado' && v.atualizado_em 
-          ? new Date(v.atualizado_em) 
-          : new Date(v.enviado_em);
+        // Usar data de aprovação para vendas matriculadas, senão data de envio
+        const dataVenda = v.status === 'matriculado' && v.data_aprovacao 
+          ? new Date(v.data_aprovacao)
+          : v.status === 'matriculado' && v.atualizado_em 
+            ? new Date(v.atualizado_em) 
+            : new Date(v.enviado_em);
         return v.vendedor_id === sdr.id && 
                v.status === 'matriculado' &&
                dataVenda >= inicioAno && 
