@@ -39,9 +39,12 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   useEffect(() => {
     const { mes: novoMes, ano: novoAno } = getMesAnoSemanaAtual();
     console.log('🔄 DashboardContainer useEffect - Atualizando para:', novoMes, '/', novoAno);
-    setSelectedMonth(novoMes);
-    setSelectedYear(novoAno);
-  }, [getMesAnoSemanaAtual]);
+    if (novoMes !== selectedMonth || novoAno !== selectedYear) {
+      console.log('📅 DashboardContainer - Valores diferentes, atualizando estados...');
+      setSelectedMonth(novoMes);
+      setSelectedYear(novoAno);
+    }
+  }, [getMesAnoSemanaAtual, selectedMonth, selectedYear]);
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');

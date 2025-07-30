@@ -241,31 +241,28 @@ export const useMetasSemanais = () => {
   // Função para obter o mês e ano da semana atual (baseado na terça-feira que encerra a semana)
   const getMesAnoSemanaAtual = () => {
     const now = new Date();
-    console.log(`🗓️ getMesAnoSemanaAtual - Data atual: ${now.toLocaleDateString('pt-BR')}`);
+    const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    console.log(`🗓️ getMesAnoSemanaAtual - Data atual: ${now.toLocaleDateString('pt-BR')} (${diasSemana[now.getDay()]})`);
     
     // Encontrar a terça-feira que encerra a semana atual
     let tercaQueEncerra = new Date(now);
     
     if (tercaQueEncerra.getDay() === 2) {
       // Hoje é terça-feira - a semana termina hoje
-      console.log(`📅 getMesAnoSemanaAtual - Hoje é terça-feira: ${tercaQueEncerra.toLocaleDateString('pt-BR')}`);
+      console.log(`📅 getMesAnoSemanaAtual - Hoje é terça-feira, semana termina hoje: ${tercaQueEncerra.toLocaleDateString('pt-BR')}`);
     } else {
       // Encontrar a próxima terça-feira (que encerra a semana atual)
       const diasAteTerca = (2 - tercaQueEncerra.getDay() + 7) % 7;
-      if (diasAteTerca === 0) {
-        // Se diasAteTerca for 0, significa que hoje é terça, mas já tratamos isso acima
-        tercaQueEncerra.setDate(tercaQueEncerra.getDate() + 7);
-      } else {
-        tercaQueEncerra.setDate(tercaQueEncerra.getDate() + diasAteTerca);
-      }
-      console.log(`📅 getMesAnoSemanaAtual - Próxima terça que encerra semana: ${tercaQueEncerra.toLocaleDateString('pt-BR')}`);
+      const diasParaSomar = diasAteTerca === 0 ? 7 : diasAteTerca;
+      tercaQueEncerra.setDate(tercaQueEncerra.getDate() + diasParaSomar);
+      console.log(`📅 getMesAnoSemanaAtual - Próxima terça que encerra semana: ${tercaQueEncerra.toLocaleDateString('pt-BR')} (${diasSemana[tercaQueEncerra.getDay()]})`);
     }
     
     // O mês/ano da semana é determinado pela terça-feira (fim da semana)
     const mesReferencia = tercaQueEncerra.getMonth() + 1;
     const anoReferencia = tercaQueEncerra.getFullYear();
     
-    console.log(`📅 getMesAnoSemanaAtual - Mês/Ano baseado na terça que encerra: ${mesReferencia}/${anoReferencia}`);
+    console.log(`📅 getMesAnoSemanaAtual - RESULTADO FINAL: Mês/Ano baseado na terça que encerra: ${mesReferencia}/${anoReferencia}`);
     
     return {
       mes: mesReferencia,
