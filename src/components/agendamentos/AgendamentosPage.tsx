@@ -1148,7 +1148,7 @@ const AgendamentosPage: React.FC = () => {
             </div>
 
             {/* Vendedor Selecionado Automaticamente */}
-            {selectedDateForm && selectedTime && (
+            {selectedDateForm && (
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-2">
                   <span className="text-blue-600 font-medium">🎯 Vendedor Selecionado:</span>
