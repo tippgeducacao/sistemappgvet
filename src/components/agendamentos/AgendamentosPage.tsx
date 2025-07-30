@@ -41,7 +41,7 @@ const AgendamentosPage: React.FC = () => {
   const [selectedDateForm, setSelectedDateForm] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedEndTime, setSelectedEndTime] = useState('');
-  
+  const [linkReuniao, setLinkReuniao] = useState('');
   const [observacoes, setObservacoes] = useState('');
   
   // Estado para indicar vendedor que será selecionado automaticamente
@@ -99,9 +99,6 @@ const AgendamentosPage: React.FC = () => {
     status: 'novo'
   });
 
-  // Confirmation modal state
-  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [confirmationData, setConfirmationData] = useState<any>(null);
 
   const { mutate: createLead, isPending: isCreatingLead } = useCreateLead();
 
@@ -238,7 +235,7 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const handleSubmit = async (): Promise<void> => {
-    if (!selectedLead || !selectedPosGraduacao || !selectedDateForm || !selectedTime || !selectedEndTime) {
+    if (!selectedLead || !selectedPosGraduacao || !selectedDateForm || !selectedTime || !selectedEndTime || !linkReuniao.trim()) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -279,29 +276,27 @@ const AgendamentosPage: React.FC = () => {
         return;
       }
 
-      // Preparar dados para o modal de confirmação
-      const leadSelecionado = leads.find(lead => lead.id === selectedLead);
-      const posGraduacaoSelecionada = posGraduacoes.find(pos => pos.id === selectedPosGraduacao);
-      
-      setConfirmationData({
-        lead: leadSelecionado,
-        vendedor: vendedorSelecionado,
-        posGraduacao: posGraduacaoSelecionada,
-        data: selectedDateForm,
-        horarioInicio: selectedTime,
-        horarioFim: selectedEndTime,
-        observacoes,
-        agendamentoData: {
-          lead_id: selectedLead,
-          vendedor_id: vendedorSelecionado.id,
-          pos_graduacao_interesse: selectedPosGraduacao,
-          data_agendamento: dataHoraAgendamento,
-          data_fim_agendamento: dataHoraFim,
-          observacoes
-        }
+      const agendamento = await AgendamentosService.criarAgendamento({
+        lead_id: selectedLead,
+        vendedor_id: vendedorSelecionado.id,
+        pos_graduacao_interesse: selectedPosGraduacao,
+        data_agendamento: dataHoraAgendamento,
+        data_fim_agendamento: dataHoraFim,
+        link_reuniao: linkReuniao,
+        observacoes
       });
-      
-      setShowConfirmationModal(true);
+
+      if (agendamento) {
+        // Atualizar status do lead para "reuniao_marcada"
+        await AgendamentosService.atualizarStatusLead(selectedLead, 'reuniao_marcada');
+        
+        toast.success(`Agendamento criado com ${vendedorSelecionado.name}!`);
+        resetForm();
+        setShowForm(false);
+        carregarDados();
+      } else {
+        throw new Error('Erro ao criar agendamento');
+      }
     } catch (error) {
       console.error('Erro ao criar agendamento:', error);
       
@@ -316,30 +311,6 @@ const AgendamentosPage: React.FC = () => {
     }
   };
 
-  const handleConfirmAgendamento = async () => {
-    if (!confirmationData) return;
-
-    try {
-      const agendamento = await AgendamentosService.criarAgendamento(confirmationData.agendamentoData);
-
-      if (agendamento) {
-        // Atualizar status do lead para "reuniao_marcada"
-        await AgendamentosService.atualizarStatusLead(confirmationData.agendamentoData.lead_id, 'reuniao_marcada');
-        
-        toast.success(`Agendamento criado com ${confirmationData.vendedor.name}!`);
-        resetForm();
-        setShowForm(false);
-        setShowConfirmationModal(false);
-        setConfirmationData(null);
-        carregarDados();
-      } else {
-        throw new Error('Erro ao criar agendamento');
-      }
-    } catch (error) {
-      console.error('Erro ao confirmar agendamento:', error);
-      toast.error('Erro ao criar agendamento');
-    }
-  };
 
   const resetForm = () => {
     setSearchType('nome');
@@ -350,7 +321,7 @@ const AgendamentosPage: React.FC = () => {
     setSelectedDateForm('');
     setSelectedTime('');
     setSelectedEndTime('');
-    
+    setLinkReuniao('');
     setObservacoes('');
     setShowForm(false);
   };
@@ -1271,6 +1242,22 @@ const AgendamentosPage: React.FC = () => {
               </div>
             )}
 
+            {/* Link da Reunião */}
+            <div className="space-y-2">
+              <Label htmlFor="linkReuniao">Link da Reunião *</Label>
+              <Input
+                id="linkReuniao"
+                type="url"
+                placeholder="https://zoom.us/j/123456789 ou https://meet.google.com/abc-def-ghi"
+                value={linkReuniao}
+                onChange={(e) => setLinkReuniao(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Insira o link da reunião online (Zoom, Google Meet, Teams, etc.)
+              </p>
+            </div>
+
 
             {/* Observações */}
             <div className="space-y-2">
@@ -1761,79 +1748,6 @@ const AgendamentosPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Confirmação do Agendamento */}
-      <Dialog open={showConfirmationModal} onOpenChange={setShowConfirmationModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirmar Agendamento</DialogTitle>
-          </DialogHeader>
-          
-          {confirmationData && (
-            <div className="space-y-4">
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-green-600 font-medium">🎯 Vendedor Selecionado:</span>
-                </div>
-                <p className="text-green-800 font-semibold text-lg">
-                  {confirmationData.vendedor.name}
-                </p>
-                <p className="text-xs text-green-600 mt-1">
-                  * Vendedor disponível com menor número de agendamentos
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Lead:</Label>
-                  <p className="text-sm">{confirmationData.lead.nome}</p>
-                  <p className="text-xs text-muted-foreground">{confirmationData.lead.email}</p>
-                </div>
-                
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Pós-graduação:</Label>
-                  <p className="text-sm">{confirmationData.posGraduacao.name}</p>
-                </div>
-                
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Data e Horário:</Label>
-                  <p className="text-sm">
-                    {format(new Date(confirmationData.data), "dd/MM/yyyy", { locale: ptBR })} 
-                    {' '}das {confirmationData.horarioInicio} às {confirmationData.horarioFim}
-                  </p>
-                </div>
-                
-                {confirmationData.observacoes && (
-                  <div>
-                    <Label className="text-sm font-medium text-gray-600">Observações:</Label>
-                    <p className="text-sm">{confirmationData.observacoes}</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-xs text-blue-600">
-                  <strong>Próximo passo:</strong> Crie o link da reunião no Google Agenda para o vendedor <strong>{confirmationData.vendedor.name}</strong>
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowConfirmationModal(false);
-                    setConfirmationData(null);
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleConfirmAgendamento}>
-                  Confirmar Agendamento
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Agenda Geral Modal */}
       <AgendaGeral 
