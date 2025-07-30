@@ -562,8 +562,7 @@ const LeadsManager: React.FC = () => {
                      <TableHead className="w-[80px] py-2 text-xs font-medium">Status</TableHead>
                      <TableHead className="w-[80px] py-2 text-xs font-medium hidden lg:table-cell">Fonte</TableHead>
                      <TableHead className="w-[90px] py-2 text-xs font-medium hidden xl:table-cell">Profissão</TableHead>
-                     <TableHead className="w-[200px] py-2 text-xs font-medium hidden xl:table-cell">Agendamento</TableHead>
-                     <TableHead className="w-[50px] py-2 text-xs font-medium text-right">Ações</TableHead>
+                      <TableHead className="w-[50px] py-2 text-xs font-medium text-right">Ações</TableHead>
                    </TableRow>
                 </TableHeader>
                  <TableBody>
@@ -629,25 +628,6 @@ const LeadsManager: React.FC = () => {
                               {(extractProfissao(lead.observacoes) || '-').substring(0, 10)}
                             </span>
                           </TableCell>
-                          {/* Nova coluna de Agendamento */}
-                          <TableCell className="py-2 hidden xl:table-cell">
-                            {agendamento ? (
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1 text-xs">
-                                  <Calendar className="h-3 w-3 text-orange-600" />
-                                  <span className="font-medium text-orange-700">
-                                    {format(new Date(agendamento.data_agendamento), 'dd/MM HH:mm')}
-                                  </span>
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  <div>SDR: {agendamento.sdr_nome || 'N/A'}</div>
-                                  <div>Vendedor: {agendamento.vendedor_nome || 'N/A'}</div>
-                                </div>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">-</span>
-                            )}
-                           </TableCell>
                            <TableCell className="py-2 text-right">
                             <Button
                               variant="ghost"
