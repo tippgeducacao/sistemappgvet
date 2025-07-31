@@ -34,6 +34,10 @@ interface AgendamentoSDR {
     name: string;
     email: string;
   };
+  sdr?: {
+    name: string;
+    email: string;
+  };
 }
 
 interface AgendamentosSDRPlanilhaProps {
@@ -208,6 +212,7 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
                   <TableHead>Lead</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Horário</TableHead>
+                  <TableHead>SDR</TableHead>
                   <TableHead>Vendedor</TableHead>
                   <TableHead>Pós-Graduação</TableHead>
                   <TableHead>Status</TableHead>
@@ -232,6 +237,9 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
                     </TableCell>
                     <TableCell>
                       {formatarHorario(agendamento)}
+                    </TableCell>
+                    <TableCell>
+                      {agendamento.sdr?.name || 'SDR não informado'}
                     </TableCell>
                     <TableCell>
                       {agendamento.vendedor?.name}
@@ -341,6 +349,9 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
                   </div>
                   <div>
                     <strong>Vendedor:</strong> {agendamentoSelecionado.vendedor?.name}
+                  </div>
+                  <div>
+                    <strong>SDR Responsável:</strong> {agendamentoSelecionado.sdr?.name || 'Não informado'}
                   </div>
                   <div>
                     <strong>Status:</strong> {getStatusBadge(agendamentoSelecionado)}
