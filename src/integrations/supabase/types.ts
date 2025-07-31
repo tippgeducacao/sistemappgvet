@@ -688,6 +688,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_update_overdue_appointments: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_weekly_goals_for_vendor: {
         Args: { p_vendedor_id: string; p_ano: number; p_mes: number }
         Returns: undefined

@@ -18,6 +18,7 @@ import { ptBR } from 'date-fns/locale';
 import AgendamentosSDRPlanilha from '@/components/sdr/AgendamentosSDRPlanilha';
 import AgendaGeral from './AgendaGeral';
 import AgendamentoErrorDiagnosis from './AgendamentoErrorDiagnosis';
+import { useOverdueAppointments } from '@/hooks/useOverdueAppointments';
 
 const AgendamentosPage: React.FC = () => {
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
@@ -107,6 +108,9 @@ const AgendamentosPage: React.FC = () => {
 
 
   const { mutate: createLead, isPending: isCreatingLead } = useCreateLead();
+
+  // Hook para verificar agendamentos atrasados automaticamente
+  useOverdueAppointments();
 
   useEffect(() => {
     carregarDados();
