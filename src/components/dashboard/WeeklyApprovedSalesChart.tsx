@@ -82,7 +82,7 @@ const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ sel
       // Filtrar vendas aprovadas (matriculadas) e por período se especificado
       const vendasAprovadas = vendas.filter(venda => {
         // Filtro por status
-        if (venda.status?.toLowerCase() !== 'matriculado') {
+        if (venda.status !== 'matriculado') {
           return false;
         }
         
