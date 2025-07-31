@@ -7,6 +7,7 @@ import { Calendar, Users, MapPin, Filter, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
+import AgendamentoDetailsModal from './AgendamentoDetailsModal';
 
 interface TodosAgendamentosTabProps {
   agendamentos: AgendamentoSDR[];
@@ -16,6 +17,8 @@ interface TodosAgendamentosTabProps {
 const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamentos, sdrs }) => {
   const [filtroSDR, setFiltroSDR] = useState<string>('todos');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [selectedAgendamento, setSelectedAgendamento] = useState<AgendamentoSDR | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Aplicar filtros
   const agendamentosFiltrados = agendamentos.filter(agendamento => {
@@ -210,8 +213,8 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        console.log('Visualizando agendamento:', agendamento);
-                        // TODO: Implementar modal de visualização detalhada
+                        setSelectedAgendamento(agendamento);
+                        setModalOpen(true);
                       }}
                       title="Visualizar detalhes do agendamento"
                     >
@@ -224,6 +227,12 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
           ))}
         </div>
       )}
+
+      <AgendamentoDetailsModal
+        agendamento={selectedAgendamento}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 };

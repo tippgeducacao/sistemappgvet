@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuthStore } from '@/stores/AuthStore';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
+import AgendamentoDetailsModal from './AgendamentoDetailsModal';
 
 interface MeusAgendamentosTabProps {
   agendamentos: AgendamentoSDR[];
@@ -18,6 +19,8 @@ interface MeusAgendamentosTabProps {
 
 const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos, onRefresh }) => {
   const { profile } = useAuthStore();
+  const [selectedAgendamento, setSelectedAgendamento] = useState<AgendamentoSDR | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
 
   // Filtrar apenas os agendamentos do SDR logado
@@ -140,8 +143,8 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        console.log('Visualizando agendamento:', agendamento);
-                        // TODO: Implementar modal de visualização detalhada
+                        setSelectedAgendamento(agendamento);
+                        setModalOpen(true);
                       }}
                       title="Visualizar detalhes do agendamento"
                     >
@@ -163,6 +166,12 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
           ))}
         </div>
       )}
+
+      <AgendamentoDetailsModal
+        agendamento={selectedAgendamento}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 };
