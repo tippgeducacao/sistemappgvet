@@ -12,6 +12,7 @@ import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useSemanasConsecutivas } from '@/hooks/useSemanasConsecutivas';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
+import { getVendaPeriod } from '@/utils/semanaUtils';
 
 interface VendedorProfileModalProps {
   isOpen: boolean;
@@ -51,10 +52,17 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
   const vendasHistory = useMemo(() => {
     if (!vendedor) return [];
     return vendas
-      .filter(venda => 
-        venda.vendedor_id === vendedor.id &&
-        venda.enviado_em
-      )
+      .filter(venda => {
+        if (venda.vendedor_id !== vendedor.id || !venda.enviado_em) {
+          return false;
+        }
+        
+        // Usar a lógica de semana (quarta a terça) para determinar o período
+        const vendaDate = new Date(venda.enviado_em);
+        const { mes, ano } = getVendaPeriod(vendaDate);
+        
+        return mes === filterMonth && ano === filterYear;
+      })
       .map(venda => {
         const createdDate = new Date(venda.enviado_em);
         return {
@@ -66,7 +74,7 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
         };
       })
       .sort((a, b) => new Date(b.enviado_em).getTime() - new Date(a.enviado_em).getTime());
-  }, [vendas, vendedor]);
+  }, [vendas, vendedor, filterMonth, filterYear]);
 
   // Filtrar agendamentos para o período
   const agendamentosHistory = useMemo(() => {
