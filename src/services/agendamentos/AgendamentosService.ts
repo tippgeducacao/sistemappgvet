@@ -79,14 +79,14 @@ export class AgendamentosService {
         if (!verificacaoHorario.valido) {
           throw new Error(verificacaoHorario.motivo || 'Horário inválido');
         }
-
-        // Verificar conflitos de agenda
-        const temConflito = await this.verificarConflitosAgenda(dados.vendedor_id, dados.data_agendamento);
-        if (temConflito) {
-          throw new Error('Vendedor já possui agendamento neste horário');
-        }
       } else {
-        console.log('🚀 AGENDAMENTO FORÇADO - Pulando validações de horário e conflitos');
+        console.log('🚀 AGENDAMENTO FORÇADO - Pulando validação de horário de trabalho');
+      }
+
+      // Sempre verificar conflitos de agenda, mesmo em agendamentos forçados
+      const temConflito = await this.verificarConflitosAgenda(dados.vendedor_id, dados.data_agendamento);
+      if (temConflito) {
+        throw new Error('Vendedor já possui agendamento neste horário');
       }
 
       const { data, error } = await supabase
