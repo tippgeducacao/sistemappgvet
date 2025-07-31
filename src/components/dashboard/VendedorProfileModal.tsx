@@ -41,15 +41,15 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
   const { vendas = [] } = useAllVendas();
   const { semanasConsecutivas, loading: loadingSemanas } = useSemanasConsecutivas(vendedor?.id);
 
-  if (!vendedor) return null;
-
   // Filtrar agendamentos do vendedor
   const vendedorAgendamentos = useMemo(() => {
+    if (!vendedor) return [];
     return agendamentos.filter(ag => ag.vendedor_id === vendedor.id);
-  }, [agendamentos, vendedor.id]);
+  }, [agendamentos, vendedor]);
 
   // Filtrar vendas do vendedor para o período
   const vendasHistory = useMemo(() => {
+    if (!vendedor) return [];
     return vendas
       .filter(venda => 
         venda.vendedor_id === vendedor.id &&
@@ -66,7 +66,7 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
         };
       })
       .sort((a, b) => new Date(b.enviado_em).getTime() - new Date(a.enviado_em).getTime());
-  }, [vendas, vendedor.id]);
+  }, [vendas, vendedor]);
 
   // Filtrar agendamentos para o período
   const agendamentosHistory = useMemo(() => {
@@ -81,6 +81,8 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
       })
       .sort((a, b) => new Date(b.data_agendamento).getTime() - new Date(a.data_agendamento).getTime());
   }, [vendedorAgendamentos]);
+
+  if (!vendedor) return null;
 
   const getVendedorColor = (nivel: string) => {
     switch (nivel?.toLowerCase()) {
