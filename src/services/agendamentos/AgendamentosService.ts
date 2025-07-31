@@ -202,17 +202,35 @@ export class AgendamentosService {
       const dataFim = new Date(dataAgendamento);
       dataFim.setHours(dataFim.getHours() + 1); // Assumindo reuniões de 1 hora
 
+      // Buscar TODOS os agendamentos do vendedor para detectar conflitos
       const { data, error } = await supabase
         .from('agendamentos')
-        .select('id, data_agendamento')
+        .select('id, data_agendamento, data_fim_agendamento')
         .eq('vendedor_id', vendedorId)
-        .eq('status', 'agendado')
-        .gte('data_agendamento', dataInicio.toISOString())
-        .lt('data_agendamento', dataFim.toISOString());
+        .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda'])
+        .gte('data_agendamento', dataInicio.toISOString().split('T')[0] + 'T00:00:00') // Dia todo
+        .lt('data_agendamento', dataInicio.toISOString().split('T')[0] + 'T23:59:59');
 
       if (error) throw error;
       
-      return (data || []).length > 0; // Retorna true se há conflitos
+      // Verificar sobreposição de horários
+      for (const agendamento of data || []) {
+        const agendamentoInicio = new Date(agendamento.data_agendamento);
+        const agendamentoFim = agendamento.data_fim_agendamento 
+          ? new Date(agendamento.data_fim_agendamento)
+          : new Date(agendamentoInicio.getTime() + 60 * 60 * 1000); // +1 hora se não tem fim definido
+        
+        // Verificar se há sobreposição
+        if (dataInicio < agendamentoFim && dataFim > agendamentoInicio) {
+          console.log('⚠️ Conflito detectado:', {
+            novoAgendamento: { inicio: dataInicio, fim: dataFim },
+            agendamentoExistente: { inicio: agendamentoInicio, fim: agendamentoFim }
+          });
+          return true;
+        }
+      }
+      
+      return false; // Sem conflitos
     } catch (error) {
       console.error('Erro ao verificar conflitos de agenda:', error);
       return false;

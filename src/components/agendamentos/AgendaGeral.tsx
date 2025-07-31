@@ -67,7 +67,9 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   // Verificar se o usuário tem permissão para ver a agenda geral
   const temPermissao = profile?.user_type === 'admin' || 
                       profile?.user_type === 'secretaria' || 
-                      profile?.user_type === 'diretor';
+                      profile?.user_type === 'diretor' ||
+                      profile?.user_type === 'sdr_inbound' ||
+                      profile?.user_type === 'sdr_outbound';
 
   // Horários da timeline (6:00 às 00:00) - Aumentando altura das células para 80px
   const horarios = Array.from({ length: 19 }, (_, i) => {
@@ -308,7 +310,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
-            Agenda Geral - Timeline dos Vendedores
+            Agenda Geral - Todos os Agendamentos
           </DialogTitle>
         </DialogHeader>
 
