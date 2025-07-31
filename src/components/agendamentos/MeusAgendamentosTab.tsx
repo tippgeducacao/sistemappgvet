@@ -3,10 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Edit2, Trash2, Clock, Users, MapPin } from 'lucide-react';
+import { Calendar, CalendarDays, Trash2, Clock, Users, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -21,81 +19,56 @@ interface MeusAgendamentosTabProps {
 
 const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos, onRefresh }) => {
   const { profile } = useAuthStore();
-  const [editandoAgendamento, setEditandoAgendamento] = useState<AgendamentoSDR | null>(null);
-  const [dadosEdicao, setDadosEdicao] = useState({
+  const [reagendandoAgendamento, setReagendandoAgendamento] = useState<AgendamentoSDR | null>(null);
+  const [dadosReagendamento, setDadosReagendamento] = useState({
     data_agendamento: '',
-    data_fim_agendamento: '',
-    pos_graduacao_interesse: '',
-    observacoes: ''
+    data_fim_agendamento: ''
   });
-  const [cursos, setCursos] = useState<any[]>([]);
   const [salvando, setSalvando] = useState(false);
 
-  useEffect(() => {
-    carregarCursos();
-  }, []);
-
-  const carregarCursos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cursos')
-        .select('id, nome')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (error) throw error;
-      setCursos(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar cursos:', error);
-    }
-  };
 
   // Filtrar apenas os agendamentos do SDR logado
   const meusAgendamentos = agendamentos.filter(ag => ag.sdr_id === profile?.id);
 
-  const iniciarEdicao = (agendamento: AgendamentoSDR) => {
-    setEditandoAgendamento(agendamento);
+  const iniciarReagendamento = (agendamento: AgendamentoSDR) => {
+    setReagendandoAgendamento(agendamento);
     
     const dataInicio = new Date(agendamento.data_agendamento);
     const dataFim = agendamento.data_fim_agendamento ? new Date(agendamento.data_fim_agendamento) : null;
     
-    setDadosEdicao({
+    setDadosReagendamento({
       data_agendamento: format(dataInicio, "yyyy-MM-dd'T'HH:mm"),
-      data_fim_agendamento: dataFim ? format(dataFim, "yyyy-MM-dd'T'HH:mm") : '',
-      pos_graduacao_interesse: agendamento.pos_graduacao_interesse,
-      observacoes: agendamento.observacoes || ''
+      data_fim_agendamento: dataFim ? format(dataFim, "yyyy-MM-dd'T'HH:mm") : ''
     });
   };
 
-  const salvarEdicao = async () => {
-    if (!editandoAgendamento) return;
+  const salvarReagendamento = async () => {
+    if (!reagendandoAgendamento) return;
 
     setSalvando(true);
     try {
       const dadosAtualizacao: any = {
-        data_agendamento: dadosEdicao.data_agendamento,
-        pos_graduacao_interesse: dadosEdicao.pos_graduacao_interesse,
-        observacoes: dadosEdicao.observacoes
+        data_agendamento: dadosReagendamento.data_agendamento
       };
 
-      if (dadosEdicao.data_fim_agendamento) {
-        dadosAtualizacao.data_fim_agendamento = dadosEdicao.data_fim_agendamento;
+      if (dadosReagendamento.data_fim_agendamento) {
+        dadosAtualizacao.data_fim_agendamento = dadosReagendamento.data_fim_agendamento;
       }
 
       const { error } = await supabase
         .from('agendamentos')
         .update(dadosAtualizacao)
-        .eq('id', editandoAgendamento.id)
-        .eq('sdr_id', profile?.id); // Garantir que só pode editar seus próprios
+        .eq('id', reagendandoAgendamento.id)
+        .eq('sdr_id', profile?.id); // Garantir que só pode reagendar seus próprios
 
       if (error) throw error;
 
-      toast.success('Agendamento atualizado com sucesso!');
-      setEditandoAgendamento(null);
+      toast.success('Agendamento reagendado com sucesso!');
+      setReagendandoAgendamento(null);
       onRefresh();
     } catch (error) {
-      console.error('Erro ao atualizar agendamento:', error);
-      toast.error('Erro ao atualizar agendamento');
+      console.error('Erro ao reagendar agendamento:', error);
+      toast.error('Erro ao reagendar agendamento');
     } finally {
       setSalvando(false);
     }
@@ -148,7 +121,7 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
         <div>
           <h3 className="text-lg font-semibold">Meus Agendamentos</h3>
           <p className="text-sm text-muted-foreground">
-            Agendamentos que você criou - você pode editar e cancelar
+            Agendamentos que você criou - você pode reagendar e cancelar
           </p>
         </div>
         <Badge variant="outline">
@@ -217,10 +190,10 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => iniciarEdicao(agendamento)}
+                      onClick={() => iniciarReagendamento(agendamento)}
                       disabled={agendamento.status === 'cancelado'}
                     >
-                      <Edit2 className="h-4 w-4" />
+                      <CalendarDays className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
@@ -239,67 +212,38 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
         </div>
       )}
 
-      {/* Modal de Edição */}
-      <Dialog open={!!editandoAgendamento} onOpenChange={() => setEditandoAgendamento(null)}>
+      {/* Modal de Reagendamento */}
+      <Dialog open={!!reagendandoAgendamento} onOpenChange={() => setReagendandoAgendamento(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Editar Agendamento</DialogTitle>
+            <DialogTitle>Reagendar Agendamento</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Data e Hora de Início</label>
+              <label className="text-sm font-medium">Nova Data e Hora de Início</label>
               <Input
                 type="datetime-local"
-                value={dadosEdicao.data_agendamento}
-                onChange={(e) => setDadosEdicao(prev => ({ ...prev, data_agendamento: e.target.value }))}
+                value={dadosReagendamento.data_agendamento}
+                onChange={(e) => setDadosReagendamento(prev => ({ ...prev, data_agendamento: e.target.value }))}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Data e Hora de Fim (opcional)</label>
+              <label className="text-sm font-medium">Nova Data e Hora de Fim (opcional)</label>
               <Input
                 type="datetime-local"
-                value={dadosEdicao.data_fim_agendamento}
-                onChange={(e) => setDadosEdicao(prev => ({ ...prev, data_fim_agendamento: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Pós-graduação</label>
-              <Select 
-                value={dadosEdicao.pos_graduacao_interesse} 
-                onValueChange={(value) => setDadosEdicao(prev => ({ ...prev, pos_graduacao_interesse: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a pós-graduação" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cursos.map((curso) => (
-                    <SelectItem key={curso.id} value={`Pós-graduação: ${curso.nome}`}>
-                      {curso.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Observações</label>
-              <Textarea
-                value={dadosEdicao.observacoes}
-                onChange={(e) => setDadosEdicao(prev => ({ ...prev, observacoes: e.target.value }))}
-                placeholder="Observações adicionais..."
-                rows={3}
+                value={dadosReagendamento.data_fim_agendamento}
+                onChange={(e) => setDadosReagendamento(prev => ({ ...prev, data_fim_agendamento: e.target.value }))}
               />
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditandoAgendamento(null)}>
+              <Button variant="outline" onClick={() => setReagendandoAgendamento(null)}>
                 Cancelar
               </Button>
-              <Button onClick={salvarEdicao} disabled={salvando}>
-                {salvando ? 'Salvando...' : 'Salvar'}
+              <Button onClick={salvarReagendamento} disabled={salvando}>
+                {salvando ? 'Reagendando...' : 'Reagendar'}
               </Button>
             </div>
           </div>
