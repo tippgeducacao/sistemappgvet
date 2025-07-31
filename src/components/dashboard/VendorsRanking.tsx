@@ -42,6 +42,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   const { niveis, loading: niveisLoading } = useNiveis();
   const { data: agendamentos } = useAgendamentosLeads();
   const { currentUser, profile } = useAuthStore();
+  const { todasAvaliacoes } = useAvaliacaoSemanal();
   
   // Estado interno para o filtro de mês (apenas quando não há filtro externo) - usar regra de semanas
   const { getMesAnoSemanaAtual } = useMetasSemanais();
@@ -304,6 +305,16 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const progressoSemanaAtual = getCurrentWeekProgress(vendedor.id);
     const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
     
+    // Calcular taxa de conversão baseada na avaliação semanal mais recente
+    const avaliacaoMaisRecente = todasAvaliacoes
+      ?.filter(av => av.vendedor_id === vendedor.id)
+      ?.sort((a, b) => {
+        if (a.ano !== b.ano) return b.ano - a.ano;
+        return b.semana - a.semana;
+      })?.[0];
+    
+    const taxaConversao = avaliacaoMaisRecente?.taxa_conversao || 0;
+    
     // Calcular meta diária dinâmica baseada no progresso da semana atual
     const metaDiariaRestante = calculateDynamicDailyGoal(metaSemanal, progressoSemanaAtual.pontos);
     
@@ -323,7 +334,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       diaAtualNaSemana,
       vendasSemanais: vendasAprovadas, // Usar vendas da semana atual
       progressoSemanal: metaSemanal > 0 ? (pontuacaoAtual / metaSemanal) * 100 : 0,
-      progressoDiario: metaDiariaRestante > 0 ? Math.min((pontuacaoAtual / (metaSemanal - metaDiariaRestante)) * 100, 100) : 100
+      progressoDiario: metaDiariaRestante > 0 ? Math.min((pontuacaoAtual / (metaSemanal - metaDiariaRestante)) * 100, 100) : 100,
+      taxaConversao, // Adicionar taxa de conversão
+      avaliacaoMaisRecente // Para acessar outros dados da avaliação se necessário
     };
   });
 
@@ -896,14 +909,20 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                           </div>
                         </div>
                         
-                        <div className="space-y-1 text-sm">
-                          <p className="font-bold text-ppgvet-magenta text-lg">
-                            {DataFormattingService.formatPoints(vendedor.pontuacao)} pts
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Posição #{index + 1}
-                          </p>
-                        </div>
+                         <div className="space-y-1 text-sm">
+                           <p className="font-bold text-ppgvet-magenta text-lg">
+                             {DataFormattingService.formatPoints(vendedor.pontuacao)} pts
+                           </p>
+                           <div className="flex items-center gap-1">
+                             <div className={`w-2 h-2 rounded-full ${vendedor.taxaConversao >= 30 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                             <span className="text-xs text-muted-foreground">
+                               {vendedor.taxaConversao.toFixed(1)}% conversão
+                             </span>
+                           </div>
+                           <p className="text-xs text-muted-foreground">
+                             Posição #{index + 1}
+                           </p>
+                         </div>
                         
                         {/* Mini barras para o top 3 */}
                         <div className="flex gap-2 mt-3">
@@ -955,25 +974,33 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                   </Avatar>
                   <div className="flex items-center justify-between flex-1">
                     <div>
-                      <p 
-                        className="font-medium cursor-pointer hover:text-ppgvet-teal transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const vendedorCompleto = vendedores.find(v => v.id === vendedor.id);
-                          setSelectedVendedorForProfile({
-                            id: vendedor.id,
-                            nome: vendedor.nome,
-                            photo_url: vendedor.photo_url,
-                            nivel: vendedorCompleto?.nivel,
-                            user_type: vendedorCompleto?.user_type || 'vendedor'
-                          });
-                        }}
-                      >
-                        {vendedor.nome}
-                      </p>
-                      <p className="text-sm text-ppgvet-magenta font-semibold">
-                        {DataFormattingService.formatPoints(vendedor.pontuacao)} pontos
-                      </p>
+                       <p 
+                         className="font-medium cursor-pointer hover:text-ppgvet-teal transition-colors"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           const vendedorCompleto = vendedores.find(v => v.id === vendedor.id);
+                           setSelectedVendedorForProfile({
+                             id: vendedor.id,
+                             nome: vendedor.nome,
+                             photo_url: vendedor.photo_url,
+                             nivel: vendedorCompleto?.nivel,
+                             user_type: vendedorCompleto?.user_type || 'vendedor'
+                           });
+                         }}
+                       >
+                         {vendedor.nome}
+                       </p>
+                       <div className="flex items-center gap-2">
+                         <p className="text-sm text-ppgvet-magenta font-semibold">
+                           {DataFormattingService.formatPoints(vendedor.pontuacao)} pontos
+                         </p>
+                         <div className="flex items-center gap-1">
+                           <div className={`w-2 h-2 rounded-full ${vendedor.taxaConversao >= 30 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                           <span className="text-xs text-muted-foreground">
+                             {vendedor.taxaConversao.toFixed(1)}%
+                           </span>
+                         </div>
+                       </div>
                     </div>
                     
                      {/* Mini barras de progresso ao lado */}
