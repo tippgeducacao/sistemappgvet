@@ -342,11 +342,18 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
                 Marcar como Pendente
               </Button>}
             
-            <Button variant="destructive" onClick={handleOpenRejectDialog} disabled={isUpdating || isDeleting}>
+            <Button 
+              variant="destructive" 
+              onClick={handleOpenRejectDialog} 
+              disabled={isUpdating || isDeleting || venda.status === 'desistiu'}
+            >
               Rejeitar
             </Button>
             
-            <Button onClick={handleApprove} disabled={isUpdating || isDeleting}>
+            <Button 
+              onClick={handleApprove} 
+              disabled={isUpdating || isDeleting || venda.status === 'matriculado'}
+            >
               Aprovar
             </Button>
           </DialogFooter>
