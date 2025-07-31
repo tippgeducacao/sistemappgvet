@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter, Clock, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, addDays, subDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuthStore } from '@/stores/AuthStore';
 
 interface Vendedor {
   id: string;
@@ -51,6 +52,7 @@ interface AgendaGeralProps {
 }
 
 const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
+  const { profile } = useAuthStore();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [vendedoresFiltrados, setVendedoresFiltrados] = useState<Vendedor[]>([]);
@@ -61,6 +63,11 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const [filtroPosgGraduacao, setFiltroPosgGraduacao] = useState<string>('todas');
   const [filtroSDR, setFiltroSDR] = useState<string>('todos');
   const [vendedorHorarioModal, setVendedorHorarioModal] = useState<Vendedor | null>(null);
+  
+  // Verificar se o usuário tem permissão para ver a agenda geral
+  const temPermissao = profile?.user_type === 'admin' || 
+                      profile?.user_type === 'secretaria' || 
+                      profile?.user_type === 'diretor';
 
   // Horários da timeline (6:00 às 00:00) - Aumentando altura das células para 80px
   const horarios = Array.from({ length: 19 }, (_, i) => {
@@ -72,20 +79,51 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && temPermissao) {
       carregarDados();
+    } else if (isOpen && !temPermissao) {
+      toast.error('Você não tem permissão para acessar a agenda geral');
+      onClose();
     }
-  }, [isOpen]);
+  }, [isOpen, temPermissao]);
 
   useEffect(() => {
-    if (selectedDate) {
+    if (selectedDate && temPermissao) {
       carregarAgendamentosData();
     }
-  }, [selectedDate]);
+  }, [selectedDate, temPermissao]);
 
   useEffect(() => {
     aplicarFiltros();
   }, [vendedores, filtroPosgGraduacao, filtroSDR]);
+
+  // Função para detectar conflitos de horário
+  const detectarConflitos = (vendedorId: string, horario: string) => {
+    const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedorId, horario);
+    
+    if (agendamentosHorario.length <= 1) return false;
+    
+    // Verificar se há sobreposição de horários
+    for (let i = 0; i < agendamentosHorario.length; i++) {
+      for (let j = i + 1; j < agendamentosHorario.length; j++) {
+        const ag1 = agendamentosHorario[i];
+        const ag2 = agendamentosHorario[j];
+        
+        const inicio1 = new Date(ag1.data_agendamento);
+        const fim1 = ag1.data_fim_agendamento ? new Date(ag1.data_fim_agendamento) : new Date(inicio1.getTime() + 60 * 60 * 1000);
+        
+        const inicio2 = new Date(ag2.data_agendamento);
+        const fim2 = ag2.data_fim_agendamento ? new Date(ag2.data_fim_agendamento) : new Date(inicio2.getTime() + 60 * 60 * 1000);
+        
+        // Verificar sobreposição
+        if (inicio1 < fim2 && inicio2 < fim1) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  };
 
   const carregarDados = async () => {
     setLoading(true);
@@ -100,11 +138,11 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
       if (vendedoresError) throw vendedoresError;
 
-      // Buscar SDRs ativos
+      // Buscar SDRs ativos (incluindo inbound e outbound)
       const { data: sdrsData, error: sdrsError } = await supabase
         .from('profiles')
         .select('id, name, email')
-        .eq('user_type', 'sdr')
+        .in('user_type', ['sdr', 'sdr_inbound', 'sdr_outbound'])
         .eq('ativo', true)
         .order('name');
 
@@ -426,48 +464,69 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                           {horario}
                         </div>
                         
-                        {/* Colunas dos vendedores */}
-                        {vendedoresFiltrados.map((vendedor) => {
-                          const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
-                          
-                          return (
-                            <div key={`${vendedor.id}-${horario}`} className="border-b border-l min-h-[80px] relative">
-                              {agendamentosHorario.map((agendamento, index) => {
-                                const { top, height } = calcularPosicaoEAltura(agendamento, horario);
-                                
-                                return (
-                                  <div
-                                    key={`${agendamento.id}-${horario}-${index}`}
-                                    className={`
-                                      absolute left-1 right-1 rounded-sm border-l-4 p-2 text-xs
-                                      ${getCorAgendamento(agendamento)}
-                                      animate-fade-in
-                                    `}
-                                    style={{
-                                      top: `${top + 2}px`,
-                                      height: `${Math.max(height - 4, 24)}px`,
-                                      zIndex: 10
-                                    }}
-                                    title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}${agendamento.sdr?.name ? ` | SDR: ${agendamento.sdr.name}` : ''}`}
-                                  >
-                                    <div className="h-full flex flex-col justify-start">
-                                      <div className="font-semibold text-xs leading-tight">
-                                        {format(new Date(agendamento.data_agendamento), 'HH:mm')}
-                                        {agendamento.data_fim_agendamento && ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`}
-                                      </div>
-                                      <div className="font-medium text-xs truncate leading-tight mt-1">
-                                        {agendamento.lead?.nome || 'Lead não encontrado'}
-                                      </div>
-                                      <div className="text-[10px] truncate opacity-80 leading-tight">
-                                        {agendamento.pos_graduacao_interesse.replace('Pós-graduação: ', '')}
-                                      </div>
-                                    </div>
+                         {/* Colunas dos vendedores */}
+                         {vendedoresFiltrados.map((vendedor) => {
+                           const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
+                           const temConflito = detectarConflitos(vendedor.id, horario);
+                           
+                           return (
+                             <div 
+                               key={`${vendedor.id}-${horario}`} 
+                               className={`border-b border-l min-h-[80px] relative ${temConflito ? 'bg-red-50 dark:bg-red-950/20' : ''}`}
+                             >
+                                {temConflito && (
+                                  <div className="absolute top-1 right-1 z-20" title="Conflito de horário detectado">
+                                    <AlertTriangle className="h-4 w-4 text-red-500" />
                                   </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        })}
+                                )}
+                               {agendamentosHorario.map((agendamento, index) => {
+                                 const { top, height } = calcularPosicaoEAltura(agendamento, horario);
+                                 const isConflito = temConflito && agendamentosHorario.length > 1;
+                                 
+                                 return (
+                                   <div
+                                     key={`${agendamento.id}-${horario}-${index}`}
+                                     className={`
+                                       absolute left-1 right-1 rounded-sm border-l-4 p-2 text-xs
+                                       ${isConflito ? 'bg-red-200 border-red-500 dark:bg-red-900/50' : getCorAgendamento(agendamento)}
+                                       animate-fade-in
+                                       ${isConflito ? 'ring-2 ring-red-300 dark:ring-red-600' : ''}
+                                     `}
+                                     style={{
+                                       top: `${top + 2}px`,
+                                       height: `${Math.max(height - 4, 24)}px`,
+                                       zIndex: isConflito ? 15 : 10
+                                     }}
+                                     title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}${agendamento.sdr?.name ? ` | SDR: ${agendamento.sdr.name}` : ''}${isConflito ? ' | ⚠️ CONFLITO DE HORÁRIO' : ''}`}
+                                   >
+                                     <div className="h-full flex flex-col justify-start">
+                                       <div className="flex items-center justify-between">
+                                         <div className="font-semibold text-xs leading-tight">
+                                           {format(new Date(agendamento.data_agendamento), 'HH:mm')}
+                                           {agendamento.data_fim_agendamento && ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`}
+                                         </div>
+                                         {isConflito && (
+                                           <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400 flex-shrink-0" />
+                                         )}
+                                       </div>
+                                       <div className="font-medium text-xs truncate leading-tight mt-1">
+                                         {agendamento.lead?.nome || 'Lead não encontrado'}
+                                       </div>
+                                       <div className="text-[10px] truncate opacity-80 leading-tight">
+                                         {agendamento.pos_graduacao_interesse.replace('Pós-graduação: ', '')}
+                                       </div>
+                                       {agendamento.sdr?.name && (
+                                         <div className="text-[9px] truncate opacity-70 leading-tight mt-0.5">
+                                           SDR: {agendamento.sdr.name}
+                                         </div>
+                                       )}
+                                     </div>
+                                   </div>
+                                 );
+                               })}
+                             </div>
+                           );
+                         })}
                       </div>
                     );
                   })}
