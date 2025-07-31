@@ -31,6 +31,7 @@ interface Vendedor {
 interface Agendamento {
   id: string;
   vendedor_id: string;
+  sdr_id?: string;
   data_agendamento: string;
   data_fim_agendamento?: string;
   pos_graduacao_interesse: string;
@@ -38,6 +39,9 @@ interface Agendamento {
   status: string;
   lead?: {
     nome: string;
+  };
+  sdr?: {
+    name: string;
   };
 }
 
@@ -53,7 +57,9 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [cursos, setCursos] = useState<any[]>([]);
+  const [sdrs, setSdrs] = useState<any[]>([]);
   const [filtroPosgGraduacao, setFiltroPosgGraduacao] = useState<string>('todas');
+  const [filtroSDR, setFiltroSDR] = useState<string>('todos');
   const [vendedorHorarioModal, setVendedorHorarioModal] = useState<Vendedor | null>(null);
 
   // Horários da timeline (6:00 às 00:00) - Aumentando altura das células para 80px
@@ -79,7 +85,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     aplicarFiltros();
-  }, [vendedores, filtroPosgGraduacao]);
+  }, [vendedores, filtroPosgGraduacao, filtroSDR]);
 
   const carregarDados = async () => {
     setLoading(true);
@@ -94,6 +100,16 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
       if (vendedoresError) throw vendedoresError;
 
+      // Buscar SDRs ativos
+      const { data: sdrsData, error: sdrsError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('user_type', 'sdr')
+        .eq('ativo', true)
+        .order('name');
+
+      if (sdrsError) throw sdrsError;
+
       // Buscar cursos para mapear os IDs para nomes
       const { data: cursosData, error: cursosError } = await supabase
         .from('cursos')
@@ -103,6 +119,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       if (cursosError) throw cursosError;
 
       setCursos(cursosData || []);
+      setSdrs(sdrsData || []);
       
       // Mapear cursos para vendedores
       const vendedoresComCursos = (vendedoresData || []).map(vendedor => ({
@@ -135,11 +152,12 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
         .select(`
           *,
           vendedor:profiles!agendamentos_vendedor_id_fkey(name),
+          sdr:profiles!agendamentos_sdr_id_fkey(name),
           leads!inner(nome)
         `)
         .gte('data_agendamento', `${dataFormatada}T00:00:00`)
         .lt('data_agendamento', `${dataFormatada}T23:59:59`)
-        .eq('status', 'agendado');
+        .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda']);
 
       if (error) throw error;
       
@@ -182,6 +200,9 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     
     return agendamentos.filter(ag => {
       if (ag.vendedor_id !== vendedorId) return false;
+      
+      // Aplicar filtro por SDR se selecionado
+      if (filtroSDR !== 'todos' && ag.sdr_id !== filtroSDR) return false;
       
       const dataAgendamento = new Date(ag.data_agendamento);
       const horaAgendamento = dataAgendamento.getHours();
@@ -286,7 +307,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
                 <Select value={filtroPosgGraduacao} onValueChange={setFiltroPosgGraduacao}>
-                  <SelectTrigger className="w-[250px]">
+                  <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Todas as especializações" />
                   </SelectTrigger>
                   <SelectContent>
@@ -294,6 +315,23 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                     {posGraduacoesUnicas.map((pos, index) => (
                       <SelectItem key={index} value={pos}>
                         {pos}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Filtro por SDR */}
+              <div className="flex items-center gap-2">
+                <Select value={filtroSDR} onValueChange={setFiltroSDR}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Todos os SDRs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os SDRs</SelectItem>
+                    {sdrs.map((sdr) => (
+                      <SelectItem key={sdr.id} value={sdr.id}>
+                        {sdr.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -410,7 +448,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                                       height: `${Math.max(height - 4, 24)}px`,
                                       zIndex: 10
                                     }}
-                                    title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}`}
+                                    title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}${agendamento.sdr?.name ? ` | SDR: ${agendamento.sdr.name}` : ''}`}
                                   >
                                     <div className="h-full flex flex-col justify-start">
                                       <div className="font-semibold text-xs leading-tight">
@@ -441,7 +479,15 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
           {/* Footer */}
           <div className="flex justify-between items-center p-4 border-t">
             <div className="text-sm text-muted-foreground">
-              {vendedoresFiltrados.length} vendedor(es) • {agendamentos.length} agendamento(s)
+              {vendedoresFiltrados.length} vendedor(es) • {agendamentos.filter(ag => {
+                if (filtroSDR !== 'todos' && ag.sdr_id !== filtroSDR) return false;
+                return vendedoresFiltrados.some(v => v.id === ag.vendedor_id);
+              }).length} agendamento(s)
+              {filtroSDR !== 'todos' && (
+                <span className="ml-2 text-primary">
+                  • Filtrado por SDR: {sdrs.find(s => s.id === filtroSDR)?.name}
+                </span>
+              )}
             </div>
             <Button variant="outline" onClick={onClose}>
               Fechar
