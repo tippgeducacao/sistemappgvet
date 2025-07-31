@@ -209,8 +209,11 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled
-                      title="Somente visualização - você não pode editar agendamentos de outros SDRs"
+                      onClick={() => {
+                        console.log('Visualizando agendamento:', agendamento);
+                        // TODO: Implementar modal de visualização detalhada
+                      }}
+                      title="Visualizar detalhes do agendamento"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>

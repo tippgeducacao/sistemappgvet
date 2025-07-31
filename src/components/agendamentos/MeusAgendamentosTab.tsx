@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Calendar, Trash2, Clock, Users, MapPin } from 'lucide-react';
+import { Calendar, Trash2, Clock, Users, MapPin, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -136,6 +136,17 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        console.log('Visualizando agendamento:', agendamento);
+                        // TODO: Implementar modal de visualização detalhada
+                      }}
+                      title="Visualizar detalhes do agendamento"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
