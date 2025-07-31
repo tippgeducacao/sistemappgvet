@@ -51,6 +51,7 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   const [pontuacaoValidada, setPontuacaoValidada] = useState('');
   const [motivoPendencia, setMotivoPendencia] = useState('');
   const [dataAssinaturaContrato, setDataAssinaturaContrato] = useState('');
+  const [pontuacaoExtra, setPontuacaoExtra] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [isSavingValidations, setIsSavingValidations] = useState(false);
@@ -88,14 +89,19 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
     }
     
     console.log('✅ Validação passou, chamando updateStatus...');
-    // Usar pontuação esperada (calculada automaticamente)
-    const pontos = venda.pontuacao_esperada || 0;
-    console.log('🔢 Pontuação a ser usada:', pontos);
+    // Calcular pontuação total (esperada + extra)
+    const pontuacaoBase = venda.pontuacao_esperada || 0;
+    const pontuacaoExtraValue = parseFloat(pontuacaoExtra) || 0;
+    const pontuacaoTotal = pontuacaoBase + pontuacaoExtraValue;
+    
+    console.log('🔢 Pontuação base:', pontuacaoBase);
+    console.log('➕ Pontuação extra:', pontuacaoExtraValue);
+    console.log('📊 Pontuação total:', pontuacaoTotal);
     
     updateStatus({
       vendaId: venda.id,
       status: 'matriculado',
-      pontuacaoValidada: pontos,
+      pontuacaoValidada: pontuacaoTotal,
       dataAssinaturaContrato
     });
     onOpenChange(false);
@@ -304,6 +310,23 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
               />
               <span className="text-xs text-gray-600 mt-1">
                 Obrigatório para aprovação da venda
+              </span>
+            </div>
+
+            <div>
+              <Label htmlFor="pontuacaoExtra">Pontuação Extra (opcional)</Label>
+              <Input
+                id="pontuacaoExtra"
+                type="number"
+                step="0.1"
+                min="0"
+                value={pontuacaoExtra}
+                onChange={(e) => setPontuacaoExtra(e.target.value)}
+                placeholder="Ex: 2.5"
+              />
+              <span className="text-xs text-gray-600 mt-1">
+                Pontos extras a serem adicionados à pontuação base ({DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts)
+                {pontuacaoExtra && ` = Total: ${DataFormattingService.formatPoints((venda.pontuacao_esperada || 0) + (parseFloat(pontuacaoExtra) || 0))} pts`}
               </span>
             </div>
 
