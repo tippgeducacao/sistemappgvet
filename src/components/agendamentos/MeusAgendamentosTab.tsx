@@ -4,13 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Calendar, CalendarDays, Trash2, Clock, Users, MapPin } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar, CalendarDays, Trash2, Clock, Users, MapPin, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuthStore } from '@/stores/AuthStore';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
+import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
 
 interface MeusAgendamentosTabProps {
   agendamentos: AgendamentoSDR[];
@@ -25,6 +27,8 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
     data_fim_agendamento: ''
   });
   const [salvando, setSalvando] = useState(false);
+  const [forcarAgendamento, setForcarAgendamento] = useState(false);
+  const [conflitos, setConflitos] = useState<string[]>([]);
 
 
   // Filtrar apenas os agendamentos do SDR logado
@@ -32,6 +36,8 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
 
   const iniciarReagendamento = (agendamento: AgendamentoSDR) => {
     setReagendandoAgendamento(agendamento);
+    setConflitos([]);
+    setForcarAgendamento(false);
     
     const dataInicio = new Date(agendamento.data_agendamento);
     const dataFim = agendamento.data_fim_agendamento ? new Date(agendamento.data_fim_agendamento) : null;
@@ -42,8 +48,55 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
     });
   };
 
+  const verificarDisponibilidade = async () => {
+    if (!reagendandoAgendamento || !dadosReagendamento.data_agendamento) return;
+
+    try {
+      const conflitosEncontrados: string[] = [];
+
+      // Verificar horário de trabalho
+      const horarioValido = await AgendamentosService.verificarHorarioTrabalho(
+        reagendandoAgendamento.vendedor_id,
+        dadosReagendamento.data_agendamento,
+        dadosReagendamento.data_fim_agendamento
+      );
+
+      if (!horarioValido.valido) {
+        conflitosEncontrados.push(horarioValido.motivo || 'Horário fora do expediente');
+      }
+
+      // Verificar conflitos de agenda (excluindo o próprio agendamento)
+      const temConflito = await AgendamentosService.verificarConflitosAgenda(
+        reagendandoAgendamento.vendedor_id,
+        dadosReagendamento.data_agendamento
+      );
+
+      if (temConflito) {
+        conflitosEncontrados.push('Conflito com outro agendamento existente');
+      }
+
+      setConflitos(conflitosEncontrados);
+    } catch (error) {
+      console.error('Erro ao verificar disponibilidade:', error);
+      toast.error('Erro ao verificar disponibilidade');
+    }
+  };
+
+  // Verificar disponibilidade quando a data muda
+  useEffect(() => {
+    if (dadosReagendamento.data_agendamento) {
+      verificarDisponibilidade();
+    }
+  }, [dadosReagendamento.data_agendamento, dadosReagendamento.data_fim_agendamento]);
+
   const salvarReagendamento = async () => {
     if (!reagendandoAgendamento) return;
+
+    // Verificar se há conflitos e se não está forçando
+    if (conflitos.length > 0 && !forcarAgendamento) {
+      toast.error('Existem conflitos de agenda. Marque "Forçar agendamento" para prosseguir.');
+      return;
+    }
 
     setSalvando(true);
     try {
@@ -59,7 +112,7 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
         .from('agendamentos')
         .update(dadosAtualizacao)
         .eq('id', reagendandoAgendamento.id)
-        .eq('sdr_id', profile?.id); // Garantir que só pode reagendar seus próprios
+        .eq('sdr_id', profile?.id);
 
       if (error) throw error;
 
@@ -238,11 +291,45 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
               />
             </div>
 
+            {/* Mostrar conflitos encontrados */}
+            {conflitos.length > 0 && (
+              <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50 dark:bg-yellow-900/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                  <span className="font-medium text-yellow-800 dark:text-yellow-200">
+                    Conflitos encontrados:
+                  </span>
+                </div>
+                <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                  {conflitos.map((conflito, index) => (
+                    <li key={index}>• {conflito}</li>
+                  ))}
+                </ul>
+                
+                <div className="flex items-center gap-2 mt-3">
+                  <Checkbox
+                    id="forcar-agendamento"
+                    checked={forcarAgendamento}
+                    onCheckedChange={(checked) => setForcarAgendamento(checked === true)}
+                  />
+                  <label 
+                    htmlFor="forcar-agendamento" 
+                    className="text-sm font-medium text-yellow-800 dark:text-yellow-200"
+                  >
+                    Forçar reagendamento mesmo com conflitos
+                  </label>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setReagendandoAgendamento(null)}>
                 Cancelar
               </Button>
-              <Button onClick={salvarReagendamento} disabled={salvando}>
+              <Button 
+                onClick={salvarReagendamento} 
+                disabled={salvando || (conflitos.length > 0 && !forcarAgendamento)}
+              >
                 {salvando ? 'Reagendando...' : 'Reagendar'}
               </Button>
             </div>
