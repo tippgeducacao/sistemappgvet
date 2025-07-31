@@ -85,6 +85,8 @@ export class AgendamentosService {
         if (temConflito) {
           throw new Error('Vendedor já possui agendamento neste horário');
         }
+      } else {
+        console.log('🚀 AGENDAMENTO FORÇADO - Pulando validações de horário e conflitos');
       }
 
       const { data, error } = await supabase
