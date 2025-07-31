@@ -144,6 +144,57 @@ export type Database = {
           },
         ]
       }
+      avaliacoes_semanais_vendedores: {
+        Row: {
+          ano: number
+          classificacao: string
+          created_at: string
+          created_by: string | null
+          id: string
+          observacoes: string | null
+          semana: number
+          semanas_consecutivas_abaixo_meta: number
+          status_risco: string
+          taxa_conversao: number
+          total_matriculas: number
+          total_reunioes_realizadas: number
+          updated_at: string
+          vendedor_id: string
+        }
+        Insert: {
+          ano: number
+          classificacao?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          observacoes?: string | null
+          semana: number
+          semanas_consecutivas_abaixo_meta?: number
+          status_risco?: string
+          taxa_conversao?: number
+          total_matriculas?: number
+          total_reunioes_realizadas?: number
+          updated_at?: string
+          vendedor_id: string
+        }
+        Update: {
+          ano?: number
+          classificacao?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          observacoes?: string | null
+          semana?: number
+          semanas_consecutivas_abaixo_meta?: number
+          status_risco?: string
+          taxa_conversao?: number
+          total_matriculas?: number
+          total_reunioes_realizadas?: number
+          updated_at?: string
+          vendedor_id?: string
+        }
+        Relationships: []
+      }
       cursos: {
         Row: {
           ativo: boolean | null
@@ -691,6 +742,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calcular_avaliacao_semanal_vendedor: {
+        Args: { p_vendedor_id: string; p_ano: number; p_semana: number }
+        Returns: undefined
+      }
       check_and_update_overdue_appointments: {
         Args: Record<PropertyKey, never>
         Returns: undefined
