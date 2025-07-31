@@ -103,25 +103,46 @@ const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ sel
         // Filtro por período
         if (selectedMonth && selectedYear && venda.enviado_em) {
           const dataVenda = new Date(venda.enviado_em);
+          console.log(`📊 WEEKLY CHART: Venda ${venda.id?.substring(0, 8)} - Data venda: ${dataVenda.toLocaleDateString()} - Mês/Ano filtro: ${selectedMonth}/${selectedYear}`);
           if (dataVenda.getMonth() + 1 !== selectedMonth || dataVenda.getFullYear() !== selectedYear) {
+            console.log(`📊 WEEKLY CHART: Venda ${venda.id?.substring(0, 8)} rejeitada por período`);
             return false;
           }
         }
         
+        console.log(`📊 WEEKLY CHART: Venda ${venda.id?.substring(0, 8)} APROVADA!`);
         return true;
       });
 
-      console.log(`✅ Vendas aprovadas: ${vendasAprovadas.length}`);
+      console.log(`📊 WEEKLY CHART: ✅ Vendas aprovadas após filtros: ${vendasAprovadas.length}`);
+      
+      if (vendasAprovadas.length > 0) {
+        console.log('📊 WEEKLY CHART: Vendas aprovadas detalhes:', vendasAprovadas.map(v => ({
+          id: v.id?.substring(0, 8),
+          enviado_em: v.enviado_em,
+          status: v.status
+        })));
+      }
 
       const weeks = generateWeeks();
+      console.log('📊 WEEKLY CHART: Semanas geradas:', weeks.map(w => w.label));
       
       const weeklyStats = weeks.map(week => {
+        console.log(`📊 WEEKLY CHART: Processando semana ${week.label} (${week.start.toISOString()} até ${week.end.toISOString()})`);
+        
         const vendasNaSemana = vendasAprovadas.filter(venda => {
-          if (!venda.enviado_em) return false;
+          if (!venda.enviado_em) {
+            console.log(`📊 WEEKLY CHART: Venda ${venda.id?.substring(0, 8)} sem data de envio`);
+            return false;
+          }
           
           const vendaDate = new Date(venda.enviado_em);
-          return vendaDate >= week.start && vendaDate <= week.end;
+          const isInWeek = vendaDate >= week.start && vendaDate <= week.end;
+          console.log(`📊 WEEKLY CHART: Venda ${venda.id?.substring(0, 8)} (${vendaDate.toISOString()}) na semana ${week.label}? ${isInWeek}`);
+          return isInWeek;
         });
+
+        console.log(`📊 WEEKLY CHART: Semana ${week.label}: ${vendasNaSemana.length} vendas`);
 
         return {
           week: week.label,
@@ -131,7 +152,7 @@ const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ sel
         };
       });
 
-      console.log('📊 Dados semanais processados:', weeklyStats);
+      console.log('📊 WEEKLY CHART: 🎯 Dados semanais FINAIS:', weeklyStats);
       setWeeklyData(weeklyStats);
     } catch (error) {
       console.error('❌ Erro ao buscar dados semanais:', error);
