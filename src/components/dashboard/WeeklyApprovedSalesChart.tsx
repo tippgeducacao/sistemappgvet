@@ -70,19 +70,33 @@ const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ sel
   const fetchWeeklyData = async () => {
     try {
       setLoading(true);
-      console.log('📊 Buscando dados de vendas aprovadas por semana...');
+      console.log('📊 WEEKLY CHART: Buscando dados de vendas aprovadas por semana...');
+      console.log('📊 WEEKLY CHART: Filtros aplicados:', { propSelectedVendedor, selectedMonth, selectedYear });
       
       // Buscar todas as vendas ou vendas de um vendedor específico
       const vendas: VendaCompleta[] = propSelectedVendedor === 'todos' || !propSelectedVendedor
         ? await VendasDataService.getAllVendas()
         : await VendasDataService.getVendasByVendedor(propSelectedVendedor);
 
-      console.log(`📈 Total de vendas encontradas: ${vendas.length}`);
+      console.log(`📊 WEEKLY CHART: Total de vendas encontradas: ${vendas.length}`);
+      
+      // Log das primeiras vendas para debug
+      if (vendas.length > 0) {
+        console.log('📊 WEEKLY CHART: Primeiras vendas:', vendas.slice(0, 3).map(v => ({
+          id: v.id?.substring(0, 8),
+          status: v.status,
+          enviado_em: v.enviado_em,
+          vendedor_id: v.vendedor_id?.substring(0, 8)
+        })));
+      }
 
       // Filtrar vendas aprovadas (matriculadas) e por período se especificado
       const vendasAprovadas = vendas.filter(venda => {
+        console.log(`📊 WEEKLY CHART: Verificando venda ${venda.id?.substring(0, 8)} - Status: ${venda.status}, Data: ${venda.enviado_em}`);
+        
         // Filtro por status
         if (venda.status !== 'matriculado') {
+          console.log(`📊 WEEKLY CHART: Venda ${venda.id?.substring(0, 8)} rejeitada por status: ${venda.status}`);
           return false;
         }
         
