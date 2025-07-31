@@ -369,7 +369,7 @@ const AgendamentosPage: React.FC = () => {
       data_agendamento: dataHora,
       data_fim_agendamento: dataFim,
       pos_graduacao_interesse: selectedPosGraduacao,
-      link_reuniao: '',
+      link_reuniao: linkReuniao, // Usar o link já preenchido no formulário principal
       observacoes: `Agendamento forçado fora do horário normal. ${observacoes}`
     });
     
@@ -379,8 +379,8 @@ const AgendamentosPage: React.FC = () => {
 
   // Função para criar agendamento forçado
   const handleCreateForceSchedule = async () => {
-    if (!forceScheduleData.vendedor_id || !forceScheduleData.lead_id || !forceScheduleData.link_reuniao.trim()) {
-      toast.error('Selecione um vendedor e preencha o link da reunião');
+    if (!forceScheduleData.vendedor_id || !forceScheduleData.lead_id) {
+      toast.error('Selecione um vendedor');
       return;
     }
 
@@ -1676,23 +1676,12 @@ const AgendamentosPage: React.FC = () => {
                  </select>
                </div>
                
-               {/* Link da Reunião */}
-               <div>
-                 <label className="text-sm font-medium dark:text-foreground">Link da Reunião *</label>
-                 <input
-                   type="text"
-                   value={forceScheduleData.link_reuniao}
-                   onChange={(e) => setForceScheduleData(prev => ({ ...prev, link_reuniao: e.target.value }))}
-                   placeholder="https://meet.google.com/..."
-                   className="w-full mt-1 p-2 border rounded-md bg-background dark:bg-background dark:border-border dark:text-foreground"
-                 />
-               </div>
-               
                {/* Informações do Agendamento */}
                <div className="bg-muted/50 dark:bg-muted/30 p-3 rounded-lg text-sm border dark:border-border">
                  <div className="dark:text-foreground"><strong>Pós-graduação:</strong> {selectedPosGraduacao}</div>
                  <div className="dark:text-foreground"><strong>Data/Hora:</strong> {forceScheduleData.data_agendamento ? new Date(forceScheduleData.data_agendamento).toLocaleString('pt-BR') : 'Não definido'}</div>
                  <div className="dark:text-foreground"><strong>Lead:</strong> {leads.find(l => l.id === selectedLead)?.nome}</div>
+                 <div className="dark:text-foreground"><strong>Link:</strong> {forceScheduleData.link_reuniao || 'Não definido'}</div>
                </div>
             </div>
             
@@ -1706,7 +1695,7 @@ const AgendamentosPage: React.FC = () => {
               <Button 
                 onClick={handleCreateForceSchedule}
                 className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
-                disabled={!forceScheduleData.vendedor_id || !forceScheduleData.link_reuniao.trim()}
+                disabled={!forceScheduleData.vendedor_id}
               >
                 Criar Agendamento Forçado
               </Button>
