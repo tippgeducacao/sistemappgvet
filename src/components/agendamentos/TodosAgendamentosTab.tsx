@@ -1,0 +1,228 @@
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, Users, MapPin, Filter, Eye } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
+
+interface TodosAgendamentosTabProps {
+  agendamentos: AgendamentoSDR[];
+  sdrs: any[];
+}
+
+const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamentos, sdrs }) => {
+  const [filtroSDR, setFiltroSDR] = useState<string>('todos');
+  const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+
+  // Aplicar filtros
+  const agendamentosFiltrados = agendamentos.filter(agendamento => {
+    if (filtroSDR !== 'todos' && agendamento.sdr_id !== filtroSDR) return false;
+    if (filtroStatus !== 'todos' && agendamento.status !== filtroStatus) return false;
+    return true;
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'agendado': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'atrasado': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'finalizado': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'finalizado_venda': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
+      case 'cancelado': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'agendado': return 'Agendado';
+      case 'atrasado': return 'Atrasado';
+      case 'finalizado': return 'Finalizado';
+      case 'finalizado_venda': return 'Finalizado - Venda';
+      case 'cancelado': return 'Cancelado';
+      default: return status;
+    }
+  };
+
+  const getSdrName = (sdrId: string) => {
+    const sdr = sdrs.find(s => s.id === sdrId);
+    return sdr?.name || 'SDR não encontrado';
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Todos os Agendamentos</h3>
+          <p className="text-sm text-muted-foreground">
+            Visualização de todos os agendamentos do sistema - somente leitura
+          </p>
+        </div>
+        <Badge variant="outline">
+          {agendamentosFiltrados.length} de {agendamentos.length} agendamento(s)
+        </Badge>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex gap-4">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4" />
+          <Select value={filtroSDR} onValueChange={setFiltroSDR}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por SDR" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os SDRs</SelectItem>
+              {sdrs.map((sdr) => (
+                <SelectItem key={sdr.id} value={sdr.id}>
+                  {sdr.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="agendado">Agendado</SelectItem>
+            <SelectItem value="atrasado">Atrasado</SelectItem>
+            <SelectItem value="finalizado">Finalizado</SelectItem>
+            <SelectItem value="finalizado_venda">Finalizado - Venda</SelectItem>
+            <SelectItem value="cancelado">Cancelado</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {(filtroSDR !== 'todos' || filtroStatus !== 'todos') && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setFiltroSDR('todos');
+              setFiltroStatus('todos');
+            }}
+          >
+            Limpar Filtros
+          </Button>
+        )}
+      </div>
+
+      {agendamentosFiltrados.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-muted-foreground mb-2">
+              Nenhum agendamento encontrado
+            </h3>
+            <p className="text-sm text-muted-foreground text-center">
+              {agendamentos.length === 0 
+                ? 'Não há agendamentos no sistema'
+                : 'Tente ajustar os filtros para ver mais agendamentos'
+              }
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {agendamentosFiltrados.map((agendamento) => (
+            <Card key={agendamento.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(agendamento.status)}>
+                        {getStatusText(agendamento.status)}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        {agendamento.data_fim_agendamento && 
+                          ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`
+                        }
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{agendamento.lead?.nome}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{agendamento.pos_graduacao_interesse}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">SDR: {getSdrName(agendamento.sdr_id)}</span>
+                      </div>
+
+                      {agendamento.vendedor?.name && (
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">Vendedor: {agendamento.vendedor.name}</span>
+                        </div>
+                      )}
+
+                      {agendamento.observacoes && (
+                        <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                          {agendamento.observacoes}
+                        </div>
+                      )}
+
+                      {agendamento.resultado_reuniao && (
+                        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border">
+                          <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                            Resultado da Reunião
+                          </div>
+                          <div className="text-sm">
+                            <Badge variant={
+                              agendamento.resultado_reuniao === 'comprou' ? 'default' :
+                              agendamento.resultado_reuniao === 'nao_compareceu' ? 'destructive' : 'secondary'
+                            }>
+                              {agendamento.resultado_reuniao === 'comprou' ? 'Comprou' :
+                               agendamento.resultado_reuniao === 'nao_compareceu' ? 'Não Compareceu' :
+                               'Compareceu mas não comprou'}
+                            </Badge>
+                            {agendamento.data_resultado && (
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                em {format(new Date(agendamento.data_resultado), 'dd/MM/yyyy', { locale: ptBR })}
+                              </span>
+                            )}
+                          </div>
+                          {agendamento.observacoes_resultado && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {agendamento.observacoes_resultado}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                      title="Somente visualização - você não pode editar agendamentos de outros SDRs"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TodosAgendamentosTab;

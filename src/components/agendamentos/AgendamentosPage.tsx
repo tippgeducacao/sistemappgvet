@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List, Edit, X, FileSpreadsheet } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
 import { useCreateLead } from '@/hooks/useCreateLead';
 import { toast } from 'sonner';
@@ -18,7 +19,11 @@ import { ptBR } from 'date-fns/locale';
 import AgendamentosSDRPlanilha from '@/components/sdr/AgendamentosSDRPlanilha';
 import AgendaGeral from './AgendaGeral';
 import AgendamentoErrorDiagnosis from './AgendamentoErrorDiagnosis';
+import MeusAgendamentosTab from './MeusAgendamentosTab';
+import TodosAgendamentosTab from './TodosAgendamentosTab';
 import { useOverdueAppointments } from '@/hooks/useOverdueAppointments';
+import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
+import { useAllAgendamentos } from '@/hooks/useAllAgendamentos';
 
 const AgendamentosPage: React.FC = () => {
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
@@ -111,10 +116,36 @@ const AgendamentosPage: React.FC = () => {
 
   // Hook para verificar agendamentos atrasados automaticamente
   useOverdueAppointments();
+  
+  // Hook para meus agendamentos SDR  
+  const { agendamentos: meusAgendamentosSDR, fetchAgendamentos: recarregarMeusAgendamentos } = useAgendamentosSDR();
+  
+  // Hook para todos os agendamentos
+  const { agendamentos: todosAgendamentosSDR, fetchAllAgendamentos: recarregarTodosAgendamentos } = useAllAgendamentos();
+  
+  // Estado para SDRs
+  const [sdrs, setSdrs] = useState<any[]>([]);
 
   useEffect(() => {
     carregarDados();
+    carregarSdrs();
   }, []);
+
+  const carregarSdrs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('user_type', ['sdr_inbound', 'sdr_outbound'])
+        .eq('ativo', true)
+        .order('name');
+
+      if (error) throw error;
+      setSdrs(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar SDRs:', error);
+    }
+  };
 
   useEffect(() => {
     if (selectedPosGraduacao) {
@@ -1405,12 +1436,16 @@ const AgendamentosPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Visualizations Tabs */}
-      <Tabs defaultValue="lista" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="lista" className="flex items-center gap-2">
-            <List className="h-4 w-4" />
-            Lista
+      {/* Nova estrutura de abas: Meus Agendamentos vs Todos os Agendamentos */}
+      <Tabs defaultValue="meus" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="meus" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Meus Agendamentos
+          </TabsTrigger>
+          <TabsTrigger value="todos" className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            Todos os Agendamentos
           </TabsTrigger>
           <TabsTrigger value="calendario" className="flex items-center gap-2">
             <Grid className="h-4 w-4" />
@@ -1422,10 +1457,20 @@ const AgendamentosPage: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="lista">
-          <AgendamentosSDRPlanilha 
-            agendamentos={agendamentos.filter(ag => ag.status !== 'cancelado')}
-            onRecarregarDados={carregarDados}
+        <TabsContent value="meus">
+          <MeusAgendamentosTab 
+            agendamentos={meusAgendamentosSDR}
+            onRefresh={() => {
+              recarregarMeusAgendamentos();
+              carregarDados();
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="todos">
+          <TodosAgendamentosTab 
+            agendamentos={todosAgendamentosSDR}
+            sdrs={sdrs}
           />
         </TabsContent>
 
