@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CalendarDays, Target, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { CalendarDays, Target, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { useAllVendas } from '@/hooks/useVendas';
+import { useSemanasConsecutivas } from '@/hooks/useSemanasConsecutivas';
 import MonthYearFilter from '@/components/common/MonthYearFilter';
 
 interface VendedorProfileModalProps {
@@ -38,6 +39,7 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
 
   const { data: agendamentos = [] } = useAgendamentosLeads();
   const { vendas = [] } = useAllVendas();
+  const { semanasConsecutivas, loading: loadingSemanas } = useSemanasConsecutivas(vendedor?.id);
 
   if (!vendedor) return null;
 
@@ -126,6 +128,10 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
                     {vendedor.nivel.charAt(0).toUpperCase() + vendedor.nivel.slice(1)}
                   </Badge>
                 )}
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" />
+                  {loadingSemanas ? '...' : semanasConsecutivas} semanas consecutivas
+                </Badge>
               </div>
             </div>
           </DialogTitle>

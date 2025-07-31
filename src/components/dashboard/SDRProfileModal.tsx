@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, Trophy, Target, TrendingUp, Users } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
+import { useSemanasConsecutivas } from '@/hooks/useSemanasConsecutivas';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -30,6 +31,7 @@ interface SDRProfileModalProps {
 const SDRProfileModal: React.FC<SDRProfileModalProps> = ({ isOpen, onClose, sdr }) => {
   const { vendas } = useAllVendas();
   const { agendamentos = [] } = useAgendamentosSDR();
+  const { semanasConsecutivas, loading: loadingSemanas } = useSemanasConsecutivas(sdr?.id);
   const [selectedPeriod, setSelectedPeriod] = useState<'semana' | 'mes' | 'ano'>('mes');
 
   // Calcular histórico de vendas
@@ -142,6 +144,10 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({ isOpen, onClose, sdr 
                   className={`${getSDRColor(sdr.tipo)} text-white border-0`}
                 >
                   {sdr.tipo === 'inbound' ? 'Inbound' : 'Outbound'}
+                </Badge>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" />
+                  {loadingSemanas ? '...' : semanasConsecutivas} semanas consecutivas
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">{sdr.nivel}</p>
