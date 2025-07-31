@@ -110,6 +110,12 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
             <div className="text-xs text-muted-foreground">
               {person.isSDR ? `${person.weeklySales} reuniões` : `${person.points} pts`}
             </div>
+            <div className="flex items-center gap-1 mt-1">
+              <div className={`w-1.5 h-1.5 rounded-full ${weeklyProgress >= 100 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-xs text-muted-foreground">
+                {weeklyProgress.toFixed(0)}%
+              </span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-1">

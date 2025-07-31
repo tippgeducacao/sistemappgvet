@@ -142,6 +142,10 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
                   <TrendingUp className="h-3 w-3" />
                   {loadingSemanas ? '...' : semanasConsecutivas} semanas consecutivas
                 </Badge>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${vendasHistory.filter(v => v.status === 'matriculado').length >= 5 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  {vendasHistory.filter(v => v.status === 'matriculado').length} vendas
+                </Badge>
               </div>
             </div>
           </DialogTitle>

@@ -16,6 +16,7 @@ import { useMetas } from '@/hooks/useMetas';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
+import { useAvaliacaoSemanal } from '@/hooks/useAvaliacaoSemanal';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';

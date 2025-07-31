@@ -267,6 +267,7 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <User className="h-4 w-4" />
+                  <div className={`w-2 h-2 rounded-full ${approvedSales >= metaMensal ? 'bg-green-500' : 'bg-red-500'}`}></div>
                   Total: {totalVendasAprovadas} vendas aprovadas
                 </span>
                 <span className="flex items-center gap-1">

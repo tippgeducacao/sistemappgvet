@@ -159,6 +159,7 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({
                 </span>
                 <span className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
+                  <div className={`w-2 h-2 rounded-full ${totalReunioes >= metaReunioesSemanal ? 'bg-green-500' : 'bg-red-500'}`}></div>
                   Total: {totalReunioes} reuniões marcadas
                 </span>
                 <span className="flex items-center gap-1">

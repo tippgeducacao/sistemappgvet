@@ -10,6 +10,8 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
+import { useSDRWeeklyConversions } from '@/hooks/useSDRConversion';
+import { SDRConversionService } from '@/services/sdr/SDRConversionService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import SDRProfileModal from './SDRProfileModal';
 
@@ -33,6 +35,16 @@ const SDRRanking: React.FC = () => {
   const { niveis } = useNiveis();
   const { data: agendamentosData } = useAgendamentosLeads();
   const agendamentos = agendamentosData || [];
+
+  // Calcular período da semana atual (quarta a terça)
+  const hoje = new Date();
+  const inicioSemana = new Date(hoje);
+  inicioSemana.setDate(hoje.getDate() - ((hoje.getDay() + 4) % 7)); // Quarta-feira
+  const fimSemana = new Date(inicioSemana);
+  fimSemana.setDate(inicioSemana.getDate() + 6); // Terça-feira
+
+  // Buscar dados de conversão dos SDRs para a semana atual
+  const { data: conversionsData } = useSDRWeeklyConversions(inicioSemana, fimSemana);
   
   const [selectedPeriod, setSelectedPeriod] = useState<'semana' | 'mes' | 'ano'>('semana');
   const [showHistory, setShowHistory] = useState(false);
@@ -295,6 +307,12 @@ const SDRRanking: React.FC = () => {
                             selectedPeriod === 'mes' ? sdr.metaVendasSemanal * 4 :
                             sdr.metaVendasSemanal * 52}
                     </p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <div className={`w-2 h-2 rounded-full ${progressoVendas >= 100 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span className="text-xs text-muted-foreground">
+                        {Math.round(progressoVendas)}% da meta
+                      </span>
+                    </div>
                   </div>
 
                   {/* Progresso da Meta de Vendas */}
@@ -338,6 +356,20 @@ const SDRRanking: React.FC = () => {
                     <p className="text-xs text-center mt-1 text-muted-foreground">
                       {Math.round((sdr.agendamentosSemana / sdr.metaReunioesSemanal) * 100)}%
                     </p>
+                  </div>
+
+                  {/* Taxa de Conversão */}
+                  <div className="text-center">
+                    <div className="flex items-center gap-1 text-sm">
+                      <div className={`w-2 h-2 rounded-full ${(() => {
+                        const conversion = conversionsData?.find(c => c.sdrId === sdr.id);
+                        return conversion && conversion.taxaConversao >= 30 ? 'bg-green-500' : 'bg-red-500';
+                      })()}`}></div>
+                      <span className="font-medium">
+                        {conversionsData?.find(c => c.sdrId === sdr.id)?.taxaConversao.toFixed(0) || '0'}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">conversão</p>
                   </div>
                 </div>
               );
