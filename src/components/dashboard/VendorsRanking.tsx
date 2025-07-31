@@ -17,6 +17,7 @@ import { useNiveis } from '@/hooks/useNiveis';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { useAvaliacaoSemanal } from '@/hooks/useAvaliacaoSemanal';
+import { useVendedoresWeeklyConversions } from '@/hooks/useVendedorConversion';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
@@ -261,6 +262,26 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     };
   };
 
+  // Calcular período da semana atual (quarta a terça)
+  const startOfWeek = new Date();
+  const dayOfWeek = startOfWeek.getDay();
+  let daysToWednesday;
+  if (dayOfWeek >= 3) {
+    daysToWednesday = dayOfWeek - 3;
+  } else {
+    daysToWednesday = dayOfWeek + 4;
+  }
+  startOfWeek.setDate(startOfWeek.getDate() - daysToWednesday);
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  // Buscar taxas de conversão dos vendedores para a semana atual
+  const vendedorIds = vendedoresFiltrados.map(v => v.id);
+  const { data: conversionsData } = useVendedoresWeeklyConversions(vendedorIds, startOfWeek, endOfWeek);
+
   // Função para calcular qual dia da semana estamos na semana de trabalho (1=quarta, 7=terça)
   const getCurrentWorkDay = () => {
     const now = new Date();
@@ -305,15 +326,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const progressoSemanaAtual = getCurrentWeekProgress(vendedor.id);
     const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
     
-    // Calcular taxa de conversão baseada na avaliação semanal mais recente
-    const avaliacaoMaisRecente = todasAvaliacoes
-      ?.filter(av => av.vendedor_id === vendedor.id)
-      ?.sort((a, b) => {
-        if (a.ano !== b.ano) return b.ano - a.ano;
-        return b.semana - a.semana;
-      })?.[0];
-    
-    const taxaConversao = avaliacaoMaisRecente?.taxa_conversao || 0;
+    // Buscar taxa de conversão em tempo real baseada em reuniões vs matrículas
+    const conversaoData = conversionsData?.find(c => c.vendedorId === vendedor.id);
+    const taxaConversao = conversaoData?.taxaConversao || 0;
     
     // Calcular meta diária dinâmica baseada no progresso da semana atual
     const metaDiariaRestante = calculateDynamicDailyGoal(metaSemanal, progressoSemanaAtual.pontos);
@@ -335,8 +350,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       vendasSemanais: vendasAprovadas, // Usar vendas da semana atual
       progressoSemanal: metaSemanal > 0 ? (pontuacaoAtual / metaSemanal) * 100 : 0,
       progressoDiario: metaDiariaRestante > 0 ? Math.min((pontuacaoAtual / (metaSemanal - metaDiariaRestante)) * 100, 100) : 100,
-      taxaConversao, // Adicionar taxa de conversão
-      avaliacaoMaisRecente // Para acessar outros dados da avaliação se necessário
+      taxaConversao // Adicionar taxa de conversão
     };
   });
 
