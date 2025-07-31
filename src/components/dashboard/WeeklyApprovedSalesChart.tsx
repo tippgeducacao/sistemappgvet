@@ -70,7 +70,7 @@ const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ sel
   const fetchWeeklyData = async () => {
     try {
       setLoading(true);
-      console.log('📊 WEEKLY CHART: Buscando dados de vendas aprovadas por semana...');
+      console.log('📊📊📊 WEEKLY CHART: ===== INICIANDO BUSCA DE DADOS =====');
       console.log('📊 WEEKLY CHART: Filtros aplicados:', { propSelectedVendedor, selectedMonth, selectedYear });
       
       // Buscar todas as vendas ou vendas de um vendedor específico
