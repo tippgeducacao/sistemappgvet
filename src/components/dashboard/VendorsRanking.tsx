@@ -85,6 +85,26 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   const isLoading = vendasLoading || vendedoresLoading || metasLoading || niveisLoading;
 
+  // Calcular período da semana atual para o hook de conversões
+  const hoje = new Date();
+  const daysToWednesday = (hoje.getDay() + 4) % 7; // Quantos dias até quarta-feira
+  const startOfWeek = new Date(hoje);
+  if (daysToWednesday === 0 && hoje.getHours() >= 6) {
+    // Se hoje é quarta e já passou das 6h, usar esta semana
+  } else {
+    startOfWeek.setDate(startOfWeek.getDate() - daysToWednesday);
+  }
+  startOfWeek.setDate(startOfWeek.getDate() - daysToWednesday);
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  // Buscar taxas de conversão dos vendedores para a semana atual (usar todos os vendedores)
+  const allVendedorIds = vendedores.filter(v => v.user_type === 'vendedor').map(v => v.id);
+  const { data: conversionsData } = useVendedoresWeeklyConversions(allVendedorIds, startOfWeek, endOfWeek);
+
   // Filtrar vendedores - apenas vendedores ativos e remover "Vendedor teste" exceto para admin específico
   const vendedoresFiltrados = useMemo(() => {
     const userEmail = profile?.email || currentUser?.email;
@@ -262,25 +282,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     };
   };
 
-  // Calcular período da semana atual (quarta a terça)
-  const startOfWeek = new Date();
-  const dayOfWeek = startOfWeek.getDay();
-  let daysToWednesday;
-  if (dayOfWeek >= 3) {
-    daysToWednesday = dayOfWeek - 3;
-  } else {
-    daysToWednesday = dayOfWeek + 4;
-  }
-  startOfWeek.setDate(startOfWeek.getDate() - daysToWednesday);
-  startOfWeek.setHours(0, 0, 0, 0);
-  
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
-
-  // Buscar taxas de conversão dos vendedores para a semana atual
-  const vendedorIds = vendedoresFiltrados.map(v => v.id);
-  const { data: conversionsData } = useVendedoresWeeklyConversions(vendedorIds, startOfWeek, endOfWeek);
 
   // Função para calcular qual dia da semana estamos na semana de trabalho (1=quarta, 7=terça)
   const getCurrentWorkDay = () => {
