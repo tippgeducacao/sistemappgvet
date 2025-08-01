@@ -3,22 +3,25 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Users, MapPin, Filter, Eye } from 'lucide-react';
+import { Calendar, Users, MapPin, Filter, Eye, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
 import AgendamentoDetailsModal from './AgendamentoDetailsModal';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface TodosAgendamentosTabProps {
   agendamentos: AgendamentoSDR[];
   sdrs: any[];
+  onEditarAgendamento?: (agendamento: AgendamentoSDR) => void;
 }
 
-const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamentos, sdrs }) => {
+const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamentos, sdrs, onEditarAgendamento }) => {
   const [filtroSDR, setFiltroSDR] = useState<string>('todos');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [selectedAgendamento, setSelectedAgendamento] = useState<AgendamentoSDR | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const { isDiretor } = useUserRoles();
 
   // Aplicar filtros
   const agendamentosFiltrados = agendamentos.filter(agendamento => {
@@ -209,6 +212,16 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
+                    {isDiretor && onEditarAgendamento && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEditarAgendamento(agendamento)}
+                        title="Editar agendamento"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

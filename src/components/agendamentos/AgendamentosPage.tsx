@@ -1604,6 +1604,7 @@ const AgendamentosPage: React.FC = () => {
           <TodosAgendamentosTab 
             agendamentos={todosAgendamentosSDR}
             sdrs={sdrs}
+            onEditarAgendamento={handleEditarAgendamentoDiretor}
           />
         </TabsContent>
 
