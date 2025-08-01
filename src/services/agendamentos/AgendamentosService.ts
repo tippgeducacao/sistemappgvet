@@ -201,7 +201,7 @@ export class AgendamentosService {
       const dataInicio = new Date(dataAgendamento);
       const dataFim = dataFimAgendamento 
         ? new Date(dataFimAgendamento)
-        : new Date(new Date(dataAgendamento).getTime() + 60 * 60 * 1000); // +1 hora se não informado
+        : new Date(new Date(dataAgendamento).getTime() + 45 * 60 * 1000); // +45 minutos se não informado
 
       // Buscar TODOS os agendamentos do vendedor para detectar conflitos
       const { data, error } = await supabase
@@ -219,7 +219,7 @@ export class AgendamentosService {
         const agendamentoInicio = new Date(agendamento.data_agendamento);
         const agendamentoFim = agendamento.data_fim_agendamento 
           ? new Date(agendamento.data_fim_agendamento)
-          : new Date(agendamentoInicio.getTime() + 60 * 60 * 1000); // +1 hora se não tem fim definido
+          : new Date(agendamentoInicio.getTime() + 45 * 60 * 1000); // +45 minutos se não tem fim definido
         
         // Verificar se há sobreposição
         if (dataInicio < agendamentoFim && dataFim > agendamentoInicio) {

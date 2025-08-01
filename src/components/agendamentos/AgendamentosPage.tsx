@@ -427,16 +427,8 @@ const AgendamentosPage: React.FC = () => {
         return;
       }
 
-      // Verificar novamente se há conflito antes de criar o agendamento
-      const temConflito = await AgendamentosService.verificarConflitosAgenda(
-        vendedorSelecionado.id,
-        dataHoraAgendamento
-      );
-      
-      if (temConflito) {
-        toast.error(`${vendedorSelecionado.name} já possui agendamento neste horário. Tente outro horário.`);
-        return;
-      }
+      // A função selecionarVendedorAutomatico já verifica conflitos,
+      // não precisamos fazer verificação dupla
 
       const agendamento = await AgendamentosService.criarAgendamento({
         lead_id: selectedLead,
@@ -1247,9 +1239,9 @@ const AgendamentosPage: React.FC = () => {
                             const [hours, minutes] = e.target.value.split(':');
                             const startTime = new Date();
                             startTime.setHours(parseInt(hours), parseInt(minutes));
-                            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Adicionar 1 hora
+                            const endTime = new Date(startTime.getTime() + 45 * 60 * 1000); // Adicionar 45 minutos
                             const endTimeString = endTime.toTimeString().slice(0, 5);
-                            console.log('🎯 Definindo horário final:', endTimeString);
+                            console.log('🎯 Definindo horário final (45min padrão):', endTimeString);
                             setSelectedEndTime(endTimeString);
                           }
                         }}
