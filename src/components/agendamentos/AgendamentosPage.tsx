@@ -161,36 +161,44 @@ const AgendamentosPage: React.FC = () => {
     carregarSdrs();
   }, []);
 
-  // Efeito para atualizar vendedor indicado na interface quando data/hora mudarem
+  // ÚNICA FUNÇÃO para atualizar vendedor indicado - USA APENAS selecionarVendedorAutomatico
   useEffect(() => {
     const atualizarVendedorIndicado = async () => {
-      if (selectedDateForm && selectedTime && vendedores.length > 0) {
+      console.log('🎯 ÚNICA FUNÇÃO: Atualizando vendedor indicado:', {
+        vendedoresLength: vendedores.length,
+        selectedDateForm,
+        selectedTime,
+        vendedores: vendedores.map(v => ({ id: v.id, name: v.name }))
+      });
+      
+      if (vendedores.length > 0 && selectedDateForm && selectedTime) {
         try {
-          console.log('🎯 INTERFACE: Atualizando vendedor indicado');
-          const dataHoraAgendamento = new Date(selectedDateForm + 'T' + selectedTime + ':00').toISOString();
-          const dataHoraFim = selectedEndTime 
-            ? new Date(selectedDateForm + 'T' + selectedEndTime + ':00').toISOString()
-            : undefined;
+          // USA SEMPRE O MESMO FORMATO - SEM CONVERSÕES DIFERENTES
+          const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00`;
+          const dataHoraFim = selectedEndTime ? `${selectedDateForm}T${selectedEndTime}:00` : undefined;
           
+          console.log('🎯 ÚNICA FUNÇÃO: Chamando selecionarVendedorAutomatico');
+          console.log('🎯 ÚNICA FUNÇÃO: DataHora:', dataHoraAgendamento);
           const vendedorSelecionado = await selecionarVendedorAutomatico(
             vendedores, 
             dataHoraAgendamento, 
             dataHoraFim
           );
           
-          console.log('🎯 INTERFACE: Vendedor indicado atualizado:', vendedorSelecionado?.name);
+          console.log('🎯 ÚNICA FUNÇÃO: Vendedor selecionado:', vendedorSelecionado?.name);
           setVendedorIndicado(vendedorSelecionado);
         } catch (error) {
           console.error('Erro ao atualizar vendedor indicado:', error);
           setVendedorIndicado(null);
         }
       } else {
+        console.log('🎯 Condições não atendidas, limpando vendedor indicado');
         setVendedorIndicado(null);
       }
     };
     
     atualizarVendedorIndicado();
-  }, [selectedDateForm, selectedTime, selectedEndTime, vendedores, agendamentos]);
+  }, [vendedores, selectedDateForm, selectedTime, selectedEndTime, agendamentos]);
 
   const carregarSdrs = async () => {
     try {
@@ -217,31 +225,6 @@ const AgendamentosPage: React.FC = () => {
     }
   }, [selectedPosGraduacao]);
 
-  // Calcular vendedor indicado automaticamente quando dados mudam
-  useEffect(() => {
-    const calcularVendedorIndicado = async () => {
-      console.log('🎯 Calculando vendedor indicado:', {
-        vendedoresLength: vendedores.length,
-        selectedDateForm,
-        selectedTime,
-        vendedores: vendedores.map(v => ({ id: v.id, name: v.name }))
-      });
-      
-      if (vendedores.length > 0 && selectedDateForm && selectedTime) {
-        const dataHora = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
-        console.log('🎯 DataHora formatada:', dataHora);
-        console.log('🎯 INTERFACE: Chamando selecionarVendedorAutomatico para EXIBIÇÃO');
-        const vendedor = await selecionarVendedorAutomatico(vendedores, dataHora);
-        console.log('🎯 INTERFACE: Vendedor selecionado para EXIBIÇÃO:', vendedor?.name);
-        setVendedorIndicado(vendedor);
-      } else {
-        console.log('🎯 Condições não atendidas, limpando vendedor indicado');
-        setVendedorIndicado(null);
-      }
-    };
-
-    calcularVendedorIndicado();
-  }, [vendedores, selectedDateForm, selectedTime, agendamentos]);
 
   const carregarDados = async (): Promise<void> => {
     setLoading(true);
