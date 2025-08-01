@@ -8,6 +8,11 @@ export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
     icon: 'BarChart3'
   },
   {
+    title: 'Agendamentos',
+    section: 'agendamentos',
+    icon: 'Calendar'
+  },
+  {
     title: 'Gerenciar Vendas',
     section: 'gerenciar-vendas',
     icon: 'FileText'
