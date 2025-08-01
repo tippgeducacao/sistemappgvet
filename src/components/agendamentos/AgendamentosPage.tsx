@@ -307,10 +307,18 @@ const AgendamentosPage: React.FC = () => {
     });
     
     try {
-      // Selecionar vendedor automaticamente
-      const vendedorSelecionado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento);
+      // Usar vendedor selecionado manualmente ou selecionar automaticamente
+      let vendedorSelecionado = null;
       
-      console.log('👤 VENDEDOR SELECIONADO:', vendedorSelecionado);
+      if (selectedVendedor) {
+        // Se há vendedor selecionado manualmente, usar ele
+        vendedorSelecionado = vendedores.find(v => v.id === selectedVendedor);
+        console.log('👤 VENDEDOR SELECIONADO MANUALMENTE:', vendedorSelecionado);
+      } else {
+        // Se não há seleção manual, usar seleção automática
+        vendedorSelecionado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento);
+        console.log('👤 VENDEDOR SELECIONADO AUTOMATICAMENTE:', vendedorSelecionado);
+      }
       
       if (!vendedorSelecionado) {
         toast.error('Nenhum vendedor disponível neste horário. Todos os vendedores já possuem reuniões marcadas neste horário.');
@@ -1082,24 +1090,43 @@ const AgendamentosPage: React.FC = () => {
                         
                         console.log(`Vendedor ${vendedor.name}: ${contadorAgendamentos} agendamentos, indicado: ${isIndicado}`);
                         
-                        return (
+                         const isManuallySelected = selectedVendedor === vendedor.id;
+                         
+                         return (
                         <div 
                           key={vendedor.id} 
-                          className={`flex items-center justify-between p-3 border rounded-lg transition-all duration-200 ${
-                            isIndicado ? 'border-primary bg-primary/10 shadow-md ring-2 ring-primary/20' : 'border-border'
+                          onClick={() => {
+                            if (selectedVendedor === vendedor.id) {
+                              setSelectedVendedor(''); // Deselecionar se já estava selecionado
+                            } else {
+                              setSelectedVendedor(vendedor.id); // Selecionar vendedor
+                            }
+                          }}
+                          className={`flex items-center justify-between p-3 border rounded-lg transition-all duration-200 cursor-pointer hover:shadow-md ${
+                            isManuallySelected 
+                              ? 'border-green-500 bg-green-50 shadow-md ring-2 ring-green-200' 
+                              : isIndicado 
+                                ? 'border-primary bg-primary/10 shadow-md ring-2 ring-primary/20' 
+                                : 'border-border hover:border-primary/50'
                           }`}
                         >
                           <div className="flex items-center gap-2 text-sm">
-                            {isIndicado && <span className="text-primary text-xl animate-pulse">🎯</span>}
+                            {isManuallySelected && <span className="text-green-600 text-xl">✓</span>}
+                            {!isManuallySelected && isIndicado && <span className="text-primary text-xl animate-pulse">🎯</span>}
                             <User className="h-3 w-3" />
-                            <span className={isIndicado ? 'font-bold text-primary' : ''}>{vendedor.name}</span>
+                            <span className={isManuallySelected ? 'font-bold text-green-700' : isIndicado ? 'font-bold text-primary' : ''}>{vendedor.name}</span>
                             <span className="text-xs text-muted-foreground">({vendedor.email})</span>
                             <Badge variant={contadorAgendamentos === 0 ? "outline" : "secondary"} className="text-xs">
                               {contadorAgendamentos} agendamento{contadorAgendamentos !== 1 ? 's' : ''}
                             </Badge>
-                            {isIndicado && (
+                            {isManuallySelected && (
+                              <Badge variant="default" className="text-xs bg-green-600 font-semibold">
+                                ESCOLHIDO
+                              </Badge>
+                            )}
+                            {!isManuallySelected && isIndicado && (
                               <Badge variant="default" className="text-xs bg-primary font-semibold animate-pulse">
-                                SELECIONADO
+                                SUGERIDO
                               </Badge>
                             )}
                          </div>
@@ -1107,9 +1134,12 @@ const AgendamentosPage: React.FC = () => {
                        );
                      })}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      O sistema selecionará automaticamente o vendedor com menor número de agendamentos
-                    </p>
+                     <p className="text-xs text-muted-foreground mt-2">
+                       {selectedVendedor 
+                         ? '✓ Vendedor escolhido manualmente. Clique novamente para deselecionar e usar seleção automática.' 
+                         : '🎯 Sistema sugere automaticamente o vendedor com menor número de agendamentos. Clique em um vendedor para escolher manualmente.'
+                       }
+                     </p>
                   </div>
                 )}
               </div>
