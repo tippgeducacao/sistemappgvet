@@ -51,43 +51,77 @@ export class AgendamentosService {
     observacoes?: string;
   }, forcarAgendamento: boolean = false): Promise<Agendamento | null> {
     try {
+      console.log('🚀 AgendamentosService.criarAgendamento - INÍCIO');
+      console.log('📅 Dados recebidos:', JSON.stringify(dados, null, 2));
+      console.log('🔧 forcarAgendamento:', forcarAgendamento);
+
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) {
+        console.error('❌ Usuário não autenticado');
+        throw new Error('Usuário não autenticado');
+      }
+      console.log('✅ Usuário autenticado:', user.id);
 
       // Validar se o link da reunião foi fornecido
       if (!dados.link_reuniao?.trim()) {
+        console.error('❌ Link da reunião não fornecido');
         throw new Error('Link da reunião é obrigatório');
       }
+      console.log('✅ Link da reunião validado');
 
       // Validar se a data/hora é no futuro (com margem de 5 minutos)
       const dataAgendamento = new Date(dados.data_agendamento);
       const agora = new Date();
       const cincoMinutosAtras = new Date(agora.getTime() - 5 * 60 * 1000);
       
+      console.log('📅 Validação de data/hora:');
+      console.log('  - Data agendamento:', dataAgendamento.toISOString());
+      console.log('  - Agora:', agora.toISOString());
+      console.log('  - 5 min atrás:', cincoMinutosAtras.toISOString());
+      console.log('  - É futuro?', dataAgendamento > cincoMinutosAtras);
+      
       if (dataAgendamento <= cincoMinutosAtras) {
+        console.error('❌ Data/hora já passou');
         throw new Error('Não é possível agendar para uma data/hora que já passou');
       }
+      console.log('✅ Data/hora validada');
 
       // Verificar horário de trabalho do vendedor (apenas se não for agendamento forçado)
       if (!forcarAgendamento) {
+        console.log('🕒 Verificando horário de trabalho...');
         const verificacaoHorario = await this.verificarHorarioTrabalho(
           dados.vendedor_id, 
           dados.data_agendamento, 
           dados.data_fim_agendamento
         );
         
+        console.log('🕒 Resultado verificação horário:', verificacaoHorario);
+        
         if (!verificacaoHorario.valido) {
+          console.error('❌ Horário inválido:', verificacaoHorario.motivo);
           throw new Error(verificacaoHorario.motivo || 'Horário inválido');
         }
+        console.log('✅ Horário de trabalho validado');
       } else {
         console.log('🚀 AGENDAMENTO FORÇADO - Pulando validação de horário de trabalho');
       }
 
       // Sempre verificar conflitos de agenda, mesmo em agendamentos forçados
+      console.log('⚔️ Verificando conflitos de agenda...');
       const temConflito = await this.verificarConflitosAgenda(dados.vendedor_id, dados.data_agendamento, dados.data_fim_agendamento);
+      console.log('⚔️ Resultado verificação conflitos:', temConflito);
+      
       if (temConflito) {
+        console.error('❌ Conflito de agenda detectado');
         throw new Error('Vendedor já possui agendamento neste horário');
       }
+      console.log('✅ Sem conflitos de agenda');
+
+      console.log('💾 Inserindo agendamento no banco de dados...');
+      console.log('💾 Dados para inserção:', {
+        ...dados,
+        sdr_id: user.id
+      });
 
       const { data, error } = await supabase
         .from('agendamentos')
@@ -103,7 +137,18 @@ export class AgendamentosService {
         `)
         .single();
 
-      if (error) throw error;
+      console.log('💾 Resultado da inserção:');
+      console.log('  - Data:', data ? 'Presente' : 'Null');
+      console.log('  - Error:', error);
+
+      if (error) {
+        console.error('❌ Erro do Supabase ao inserir agendamento:', error);
+        throw error;
+      }
+      
+      console.log('✅ Agendamento inserido com sucesso!');
+      console.log('✅ ID do agendamento criado:', data?.id);
+      
       return data;
     } catch (error) {
       console.error('🚨 ERRO DETALHADO AO CRIAR AGENDAMENTO:', error);
@@ -111,6 +156,7 @@ export class AgendamentosService {
       
       if (error instanceof Error) {
         console.error('📝 Mensagem de erro:', error.message);
+        console.error('📝 Stack trace:', error.stack);
         // Re-lançar o erro para mostrar a mensagem específica
         throw error;
       }
