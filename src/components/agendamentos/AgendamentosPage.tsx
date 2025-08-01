@@ -413,6 +413,12 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const handleSubmit = async (): Promise<void> => {
+    // Prevenir duplo clique/submissão
+    if (loading) {
+      console.log('🔒 Submissão já em andamento, ignorando...');
+      return;
+    }
+
     if (!selectedLead || !selectedPosGraduacao || !selectedDateForm || !selectedTime || !selectedEndTime || !linkReuniao.trim()) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
@@ -445,6 +451,9 @@ const AgendamentosPage: React.FC = () => {
     });
     
     try {
+      setLoading(true);
+      console.log('🚀 Iniciando processo de criação de agendamento...');
+      
       // Selecionar vendedor automaticamente (NUNCA manual)
       console.log('🎯 CRIAÇÃO: Chamando selecionarVendedorAutomatico para CRIAR AGENDAMENTO');
       console.log('🎯 CRIAÇÃO: DataHora sendo usada:', dataHoraAgendamento);
@@ -496,6 +505,9 @@ const AgendamentosPage: React.FC = () => {
       setLastError(errorMessage);
       setShowErrorDiagnosis(true);
       toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+      console.log('✅ Processo de criação de agendamento finalizado');
     }
   };
 
@@ -1449,8 +1461,8 @@ const AgendamentosPage: React.FC = () => {
               <Button variant="outline" onClick={() => { setShowForm(false); resetForm(); }}>
                 Cancelar
               </Button>
-              <Button onClick={handleSubmit}>
-                Criar Agendamento
+              <Button onClick={handleSubmit} disabled={loading}>
+                {loading ? 'Criando...' : 'Criar Agendamento'}
               </Button>
             </div>
           </CardContent>
