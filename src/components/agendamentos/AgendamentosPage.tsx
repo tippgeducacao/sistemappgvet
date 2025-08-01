@@ -303,10 +303,20 @@ const AgendamentosPage: React.FC = () => {
         dataHoraRecebida: dataHora
       });
       
-      // Verificar conflito de agenda
+      // Verificar conflito de agenda - precisa passar data fim também
+      const dataFimAgendamento = new Date(dataHora);
+      if (selectedEndTime) {
+        const [horas, minutos] = selectedEndTime.split(':');
+        dataFimAgendamento.setHours(parseInt(horas), parseInt(minutos), 0, 0);
+      } else {
+        // Se não tem horário fim, assumir 1 hora
+        dataFimAgendamento.setHours(dataFimAgendamento.getHours() + 1);
+      }
+      
       const temConflito = await AgendamentosService.verificarConflitosAgenda(
         vendedor.id,
-        dataHora
+        dataHora,
+        dataFimAgendamento.toISOString()
       );
       
       console.log(`🎯 CONFLITO: ${vendedor.name} tem conflito:`, temConflito);

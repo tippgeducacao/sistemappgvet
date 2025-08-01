@@ -84,7 +84,7 @@ export class AgendamentosService {
       }
 
       // Sempre verificar conflitos de agenda, mesmo em agendamentos forçados
-      const temConflito = await this.verificarConflitosAgenda(dados.vendedor_id, dados.data_agendamento);
+      const temConflito = await this.verificarConflitosAgenda(dados.vendedor_id, dados.data_agendamento, dados.data_fim_agendamento);
       if (temConflito) {
         throw new Error('Vendedor já possui agendamento neste horário');
       }
@@ -196,11 +196,12 @@ export class AgendamentosService {
     }
   }
 
-  static async verificarConflitosAgenda(vendedorId: string, dataAgendamento: string): Promise<boolean> {
+  static async verificarConflitosAgenda(vendedorId: string, dataAgendamento: string, dataFimAgendamento?: string): Promise<boolean> {
     try {
       const dataInicio = new Date(dataAgendamento);
-      const dataFim = new Date(dataAgendamento);
-      dataFim.setHours(dataFim.getHours() + 1); // Assumindo reuniões de 1 hora
+      const dataFim = dataFimAgendamento 
+        ? new Date(dataFimAgendamento)
+        : new Date(new Date(dataAgendamento).getTime() + 60 * 60 * 1000); // +1 hora se não informado
 
       // Buscar TODOS os agendamentos do vendedor para detectar conflitos
       const { data, error } = await supabase
