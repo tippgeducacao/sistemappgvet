@@ -119,15 +119,44 @@ export class AgendamentosService {
 
       console.log('💾 Inserindo agendamento no banco de dados...');
       console.log('💾 Dados para inserção:', {
-        ...dados,
-        sdr_id: user.id
+        lead_id: dados.lead_id,
+        vendedor_id: dados.vendedor_id,
+        sdr_id: user.id,
+        pos_graduacao_interesse: dados.pos_graduacao_interesse,
+        data_agendamento: dados.data_agendamento,
+        data_fim_agendamento: dados.data_fim_agendamento,
+        link_reuniao: dados.link_reuniao,
+        observacoes: dados.observacoes,
+        status: 'agendado'
       });
+
+      // ANTES DE INSERIR: Fazer uma última verificação de conflitos
+      console.log('🛡️ VERIFICAÇÃO FINAL DE CONFLITOS antes da inserção...');
+      const conflitosAntesFinal = await this.verificarConflitosAgenda(
+        dados.vendedor_id, 
+        dados.data_agendamento, 
+        dados.data_fim_agendamento
+      );
+      
+      if (conflitosAntesFinal) {
+        console.error('❌ CONFLITO DETECTADO NA VERIFICAÇÃO FINAL!');
+        throw new Error('Horário não disponível - conflito detectado na verificação final');
+      }
+      
+      console.log('✅ Verificação final OK - prosseguindo com inserção');
 
       const { data, error } = await supabase
         .from('agendamentos')
         .insert({
-          ...dados,
-          sdr_id: user.id
+          lead_id: dados.lead_id,
+          vendedor_id: dados.vendedor_id,
+          sdr_id: user.id,
+          pos_graduacao_interesse: dados.pos_graduacao_interesse,
+          data_agendamento: dados.data_agendamento,
+          data_fim_agendamento: dados.data_fim_agendamento,
+          link_reuniao: dados.link_reuniao,
+          observacoes: dados.observacoes || '',
+          status: 'agendado'
         })
         .select(`
           *,
@@ -244,43 +273,89 @@ export class AgendamentosService {
 
   static async verificarConflitosAgenda(vendedorId: string, dataAgendamento: string, dataFimAgendamento?: string): Promise<boolean> {
     try {
+      console.log('🔍 VERIFICANDO CONFLITOS DE AGENDA:', {
+        vendedorId,
+        dataAgendamento,
+        dataFimAgendamento
+      });
+
+      // Converter para objetos Date usando horário local (SEM UTC)
       const dataInicio = new Date(dataAgendamento);
       const dataFim = dataFimAgendamento 
         ? new Date(dataFimAgendamento)
-        : new Date(new Date(dataAgendamento).getTime() + 45 * 60 * 1000); // +45 minutos se não informado
+        : new Date(dataInicio.getTime() + 45 * 60 * 1000);
 
-      // Buscar TODOS os agendamentos do vendedor para detectar conflitos
+      console.log('📅 Datas convertidas:', {
+        dataInicio: dataInicio.toISOString(),
+        dataFim: dataFim.toISOString(),
+        dataInicioLocal: dataInicio.toLocaleString('pt-BR'),
+        dataFimLocal: dataFim.toLocaleString('pt-BR')
+      });
+
+      // Buscar agendamentos do vendedor no mesmo dia (usando formato sem timezone)
+      const dataConsulta = dataAgendamento.split('T')[0]; // YYYY-MM-DD
+      
       const { data, error } = await supabase
         .from('agendamentos')
-        .select('id, data_agendamento, data_fim_agendamento')
+        .select('id, data_agendamento, data_fim_agendamento, status')
         .eq('vendedor_id', vendedorId)
         .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda'])
-        .gte('data_agendamento', dataInicio.toISOString().split('T')[0] + 'T00:00:00') // Dia todo
-        .lt('data_agendamento', dataInicio.toISOString().split('T')[0] + 'T23:59:59');
+        .gte('data_agendamento', `${dataConsulta}T00:00:00`)
+        .lte('data_agendamento', `${dataConsulta}T23:59:59`);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro na query de conflitos:', error);
+        throw error;
+      }
       
-      // Verificar sobreposição de horários
+      console.log('📋 Agendamentos encontrados para verificação:', data?.length || 0);
+      
+      // Verificar sobreposição de horários usando lógica rigorosa
       for (const agendamento of data || []) {
         const agendamentoInicio = new Date(agendamento.data_agendamento);
         const agendamentoFim = agendamento.data_fim_agendamento 
           ? new Date(agendamento.data_fim_agendamento)
-          : new Date(agendamentoInicio.getTime() + 45 * 60 * 1000); // +45 minutos se não tem fim definido
+          : new Date(agendamentoInicio.getTime() + 45 * 60 * 1000);
         
-        // Verificar se há sobreposição
-        if (dataInicio < agendamentoFim && dataFim > agendamentoInicio) {
-          console.log('⚠️ Conflito detectado:', {
-            novoAgendamento: { inicio: dataInicio, fim: dataFim },
-            agendamentoExistente: { inicio: agendamentoInicio, fim: agendamentoFim }
+        console.log('🔍 Verificando conflito com agendamento:', {
+          id: agendamento.id,
+          status: agendamento.status,
+          existente: {
+            inicio: agendamentoInicio.toLocaleString('pt-BR'),
+            fim: agendamentoFim.toLocaleString('pt-BR')
+          },
+          novo: {
+            inicio: dataInicio.toLocaleString('pt-BR'),
+            fim: dataFim.toLocaleString('pt-BR')
+          }
+        });
+        
+        // Lógica rigorosa de sobreposição: 
+        // Há conflito se o início do novo é antes do fim do existente E o fim do novo é depois do início do existente
+        const temSobreposicao = dataInicio < agendamentoFim && dataFim > agendamentoInicio;
+        
+        if (temSobreposicao) {
+          console.log('⚠️ CONFLITO DETECTADO!', {
+            agendamentoExistente: {
+              id: agendamento.id,
+              inicio: agendamentoInicio.toLocaleString('pt-BR'),
+              fim: agendamentoFim.toLocaleString('pt-BR')
+            },
+            novoAgendamento: {
+              inicio: dataInicio.toLocaleString('pt-BR'),
+              fim: dataFim.toLocaleString('pt-BR')
+            }
           });
           return true;
         }
       }
       
-      return false; // Sem conflitos
-    } catch (error) {
-      console.error('Erro ao verificar conflitos de agenda:', error);
+      console.log('✅ Nenhum conflito detectado');
       return false;
+    } catch (error) {
+      console.error('❌ Erro ao verificar conflitos de agenda:', error);
+      // Em caso de erro, retornar TRUE para ser conservador e evitar conflitos
+      return true;
     }
   }
 
