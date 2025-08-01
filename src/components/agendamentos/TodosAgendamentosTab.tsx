@@ -145,28 +145,10 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
                         {getStatusText(agendamento.status)}
                       </Badge>
                         <span className="text-sm text-muted-foreground">
-                         {(() => {
-                           // Extrair horário UTC e converter para horário local brasileiro (UTC-3)
-                           const dataUTC = new Date(agendamento.data_agendamento);
-                           // Adicionar 3 horas para converter UTC para horário de Brasília
-                           dataUTC.setHours(dataUTC.getHours() + 3);
-                           
-                           const dia = dataUTC.getDate().toString().padStart(2, '0');
-                           const mes = (dataUTC.getMonth() + 1).toString().padStart(2, '0');
-                           const ano = dataUTC.getFullYear();
-                           const hora = dataUTC.getHours().toString().padStart(2, '0');
-                           const minuto = dataUTC.getMinutes().toString().padStart(2, '0');
-                           
-                           return `${dia}/${mes}/${ano} às ${hora}:${minuto}`;
-                         })()}
-                         {agendamento.data_fim_agendamento && (() => {
-                           const dataFimUTC = new Date(agendamento.data_fim_agendamento);
-                           // Adicionar 3 horas para converter UTC para horário de Brasília
-                           dataFimUTC.setHours(dataFimUTC.getHours() + 3);
-                           const hora = dataFimUTC.getHours().toString().padStart(2, '0');
-                           const minuto = dataFimUTC.getMinutes().toString().padStart(2, '0');
-                           return ` - ${hora}:${minuto}`;
-                         })()}
+                          {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          {agendamento.data_fim_agendamento && 
+                            ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`
+                          }
                         </span>
                     </div>
 
