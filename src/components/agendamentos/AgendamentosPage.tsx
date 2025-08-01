@@ -179,14 +179,30 @@ const AgendamentosPage: React.FC = () => {
           
           console.log('🎯 ÚNICA FUNÇÃO: Chamando selecionarVendedorAutomatico');
           console.log('🎯 ÚNICA FUNÇÃO: DataHora:', dataHoraAgendamento);
-          const vendedorSelecionado = await selecionarVendedorAutomatico(
+          const resultado = await selecionarVendedorAutomatico(
             vendedores, 
             dataHoraAgendamento, 
             dataHoraFim
           );
           
-          console.log('🎯 ÚNICA FUNÇÃO: Vendedor selecionado:', vendedorSelecionado?.name);
-          setVendedorIndicado(vendedorSelecionado);
+          console.log('🎯 ÚNICA FUNÇÃO: Resultado:', resultado);
+          
+          // Verificar se todos estão fora do horário
+          if (resultado.diagnostico.todosForaHorario) {
+            setVendedorIndicado({ 
+              name: 'FORA DO HORÁRIO', 
+              foraHorario: true,
+              diagnostico: resultado.diagnostico
+            });
+          } else if (resultado.diagnostico.todoComConflito) {
+            setVendedorIndicado({ 
+              name: 'TODOS COM CONFLITO', 
+              conflito: true,
+              diagnostico: resultado.diagnostico
+            });
+          } else {
+            setVendedorIndicado(resultado.vendedor);
+          }
         } catch (error) {
           console.error('Erro ao atualizar vendedor indicado:', error);
           setVendedorIndicado(null);
@@ -267,6 +283,10 @@ const AgendamentosPage: React.FC = () => {
   // Função para selecionar vendedor automaticamente
   const selecionarVendedorAutomatico = async (vendedoresList: any[], dataHora: string, dataHoraFim?: string) => {
     console.log('🎯 selecionarVendedorAutomatico chamada:', { vendedoresList: vendedoresList.length, dataHora });
+    
+    // Contadores para diagnóstico
+    let vendedoresForaHorario = 0;
+    let vendedoresComConflito = 0;
     
     // Buscar TODOS os agendamentos ativos de TODOS os vendedores (independente de SDR)
     const { data: todosAgendamentos, error } = await supabase
@@ -366,48 +386,70 @@ const AgendamentosPage: React.FC = () => {
       
       if (!verificacaoHorario.valido) {
         console.log(`🎯 ❌ HORÁRIO INVÁLIDO: ${vendedor.name} - ${verificacaoHorario.motivo}`);
+        vendedoresForaHorario++;
         continue; // Pula este vendedor
       }
       
       console.log(`🎯 ✅ HORÁRIO VÁLIDO: ${vendedor.name}`);
       
       // SEGUNDO: Verificar conflitos de agenda
-      if (!temConflito) {
-        // Critério 1: Menor número de agendamentos
-        if (numAgendamentos < menorNumeroAgendamentos) {
-          menorNumeroAgendamentos = numAgendamentos;
-          maiorTaxaConversao = taxaConversao;
+      if (temConflito) {
+        console.log(`🎯 ❌ CONFLITO: ${vendedor.name} tem conflito de horário`);
+        vendedoresComConflito++;
+        continue; // Pula este vendedor
+      }
+      
+      console.log(`🎯 ✅ SEM CONFLITOS: ${vendedor.name}`);
+      
+      // TERCEIRO: Aplicar critérios de seleção
+      // Critério 1: Menor número de agendamentos
+      if (numAgendamentos < menorNumeroAgendamentos) {
+        menorNumeroAgendamentos = numAgendamentos;
+        maiorTaxaConversao = taxaConversao;
+        vendedorSelecionado = vendedor;
+        console.log(`🎯 ✅ SELECIONADO (menor agendamentos): ${vendedor.name} - ${numAgendamentos} agendamentos`);
+      } 
+      // Critério 2: Empate no número de agendamentos, usar maior taxa de conversão
+      else if (numAgendamentos === menorNumeroAgendamentos && taxaConversao > maiorTaxaConversao) {
+        maiorTaxaConversao = taxaConversao;
+        vendedorSelecionado = vendedor;
+        console.log(`🎯 ✅ SELECIONADO (maior conversão): ${vendedor.name} - conversão ${taxaConversao}%`);
+      }
+      // Critério 3: EMPATE TOTAL - usar ordem alfabética como critério final
+      else if (numAgendamentos === menorNumeroAgendamentos && taxaConversao === maiorTaxaConversao) {
+        // Se não há vendedor selecionado ainda, ou se este vendedor vem antes na ordem alfabética
+        if (!vendedorSelecionado || vendedor.name.localeCompare(vendedorSelecionado.name) < 0) {
           vendedorSelecionado = vendedor;
-          console.log(`🎯 ✅ SELECIONADO (menor agendamentos): ${vendedor.name} - ${numAgendamentos} agendamentos`);
-        } 
-        // Critério 2: Empate no número de agendamentos, usar maior taxa de conversão
-        else if (numAgendamentos === menorNumeroAgendamentos && taxaConversao > maiorTaxaConversao) {
-          maiorTaxaConversao = taxaConversao;
-          vendedorSelecionado = vendedor;
-          console.log(`🎯 ✅ SELECIONADO (maior conversão): ${vendedor.name} - conversão ${taxaConversao}%`);
-        }
-        // Critério 3: EMPATE TOTAL - usar ordem alfabética como critério final
-        else if (numAgendamentos === menorNumeroAgendamentos && taxaConversao === maiorTaxaConversao) {
-          // Se não há vendedor selecionado ainda, ou se este vendedor vem antes na ordem alfabética
-          if (!vendedorSelecionado || vendedor.name.localeCompare(vendedorSelecionado.name) < 0) {
-            vendedorSelecionado = vendedor;
-            console.log(`🎯 ✅ SELECIONADO (ordem alfabética): ${vendedor.name} - critério final de desempate`);
-          } else {
-            console.log(`🎯 ❌ NÃO SELECIONADO (ordem alfabética): ${vendedor.name} vem depois de ${vendedorSelecionado.name}`);
-          }
+          console.log(`🎯 ✅ SELECIONADO (ordem alfabética): ${vendedor.name} - critério final de desempate`);
         } else {
-          console.log(`🎯 ❌ NÃO SELECIONADO: ${vendedor.name} - ${numAgendamentos} agendamentos, ${taxaConversao}% conversão`);
+          console.log(`🎯 ❌ NÃO SELECIONADO (ordem alfabética): ${vendedor.name} vem depois de ${vendedorSelecionado.name}`);
         }
       } else {
-        console.log(`🎯 ❌ CONFLITO: ${vendedor.name} tem conflito de horário`);
+        console.log(`🎯 ❌ NÃO SELECIONADO: ${vendedor.name} - ${numAgendamentos} agendamentos, ${taxaConversao}% conversão`);
       }
     }
     
     console.log('🎯 ===== RESULTADO FINAL DA SELEÇÃO =====');
     console.log('🎯 Vendedor final selecionado:', vendedorSelecionado?.name || 'NENHUM');
-    console.log('🎯 Critérios finais:', { menorNumeroAgendamentos, maiorTaxaConversao });
+    console.log('🎯 Diagnóstico:', { 
+      totalVendedores: vendedoresList.length,
+      vendedoresForaHorario, 
+      vendedoresComConflito,
+      vendedoresDisponiveis: vendedoresList.length - vendedoresForaHorario - vendedoresComConflito
+    });
     console.log('🎯 ========================================');
-    return vendedorSelecionado;
+    
+    // Retornar objeto com diagnóstico
+    return {
+      vendedor: vendedorSelecionado,
+      diagnostico: {
+        totalVendedores: vendedoresList.length,
+        vendedoresForaHorario,
+        vendedoresComConflito,
+        todosForaHorario: vendedoresForaHorario === vendedoresList.length,
+        todoComConflito: vendedoresComConflito === vendedoresList.length
+      }
+    };
   };
 
   const handleSubmit = async (): Promise<void> => {
@@ -455,11 +497,17 @@ const AgendamentosPage: React.FC = () => {
       // Selecionar vendedor automaticamente (NUNCA manual)
       console.log('🎯 CRIAÇÃO: Chamando selecionarVendedorAutomatico para CRIAR AGENDAMENTO');
       console.log('🎯 CRIAÇÃO: DataHora sendo usada:', dataHoraAgendamento);
-      const vendedorSelecionado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento, dataHoraFim);
+      const resultado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento, dataHoraFim);
       
-      console.log('👤 CRIAÇÃO: VENDEDOR SELECIONADO AUTOMATICAMENTE:', vendedorSelecionado?.name);
+      console.log('👤 CRIAÇÃO: RESULTADO SELEÇÃO:', resultado);
       
-      if (!vendedorSelecionado) {
+      // Verificar se todos estão fora do horário
+      if (resultado.diagnostico.todosForaHorario) {
+        toast.error('Todos os vendedores estão fora do horário de trabalho. Use "Forçar Agendamento" se necessário.');
+        return;
+      }
+      
+      if (!resultado.vendedor) {
         toast.error('Nenhum vendedor disponível neste horário. Todos os vendedores já possuem reuniões marcadas neste horário.');
         return;
       }
@@ -469,7 +517,7 @@ const AgendamentosPage: React.FC = () => {
 
       const agendamento = await AgendamentosService.criarAgendamento({
         lead_id: selectedLead,
-        vendedor_id: vendedorSelecionado.id,
+        vendedor_id: resultado.vendedor.id,
         pos_graduacao_interesse: selectedPosGraduacao,
         data_agendamento: dataHoraAgendamento,
         data_fim_agendamento: dataHoraFim,
@@ -481,7 +529,7 @@ const AgendamentosPage: React.FC = () => {
         // Atualizar status do lead para "reuniao_marcada"
         await AgendamentosService.atualizarStatusLead(selectedLead, 'reuniao_marcada');
         
-        toast.success(`Agendamento criado com ${vendedorSelecionado.name}!`);
+        toast.success(`Agendamento criado com ${resultado.vendedor.name}!`);
         resetForm();
         setShowForm(false);
         carregarDados();
@@ -1200,12 +1248,24 @@ const AgendamentosPage: React.FC = () => {
                   <div>
                      <div className="flex items-center justify-between mb-2">
                        <p className="text-sm font-medium">Vendedores especializados disponíveis:</p>
-                       {vendedorIndicado ? (
-                         <div className="flex items-center gap-1 text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded">
-                           <span>🎯</span>
-                           <span>Será agendado com: {vendedorIndicado.name}</span>
-                         </div>
-                       ) : selectedDateForm && selectedTime ? (
+                        {vendedorIndicado ? (
+                          vendedorIndicado.foraHorario ? (
+                            <div className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded border border-red-200">
+                              <span>⚠️</span>
+                              <span>Fora do horário de trabalho - Use "Forçar Agendamento"</span>
+                            </div>
+                          ) : vendedorIndicado.conflito ? (
+                            <div className="flex items-center gap-1 text-xs text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded border border-orange-200">
+                              <span>⚠️</span>
+                              <span>Todos têm conflitos - Use "Forçar Agendamento"</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded">
+                              <span>🎯</span>
+                              <span>Será agendado com: {vendedorIndicado.name}</span>
+                            </div>
+                          )
+                        ) : selectedDateForm && selectedTime ? (
                          <div className="text-xs text-muted-foreground">
                            Calculando vendedor disponível...
                          </div>
