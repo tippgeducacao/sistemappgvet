@@ -132,6 +132,37 @@ const AgendamentosPage: React.FC = () => {
     carregarSdrs();
   }, []);
 
+  // Efeito para atualizar vendedor indicado na interface quando data/hora mudarem
+  useEffect(() => {
+    const atualizarVendedorIndicado = async () => {
+      if (selectedDateForm && selectedTime && vendedores.length > 0) {
+        try {
+          console.log('🎯 INTERFACE: Atualizando vendedor indicado');
+          const dataHoraAgendamento = new Date(selectedDateForm + 'T' + selectedTime + ':00').toISOString();
+          const dataHoraFim = selectedEndTime 
+            ? new Date(selectedDateForm + 'T' + selectedEndTime + ':00').toISOString()
+            : undefined;
+          
+          const vendedorSelecionado = await selecionarVendedorAutomatico(
+            vendedores, 
+            dataHoraAgendamento, 
+            dataHoraFim
+          );
+          
+          console.log('🎯 INTERFACE: Vendedor indicado atualizado:', vendedorSelecionado?.name);
+          setVendedorIndicado(vendedorSelecionado);
+        } catch (error) {
+          console.error('Erro ao atualizar vendedor indicado:', error);
+          setVendedorIndicado(null);
+        }
+      } else {
+        setVendedorIndicado(null);
+      }
+    };
+    
+    atualizarVendedorIndicado();
+  }, [selectedDateForm, selectedTime, selectedEndTime, vendedores, agendamentos]);
+
   const carregarSdrs = async () => {
     try {
       const { data, error } = await supabase
@@ -1137,26 +1168,14 @@ const AgendamentosPage: React.FC = () => {
                        )}
                      </div>
                     <div className="space-y-2">
-                      {vendedores.map((vendedor) => {
+                     {vendedores.map((vendedor) => {
                         // Contar agendamentos ativos e atrasados do vendedor
                         const contadorAgendamentos = agendamentos.filter(
                           ag => ag.vendedor_id === vendedor.id && ['agendado', 'atrasado'].includes(ag.status)
                         ).length;
                         
-                        // Quando data e horário estão preenchidos, destacar o vendedor com menos agendamentos
-                        let isIndicado = false;
-                        if (selectedDateForm && selectedTime && vendedores.length > 0) {
-                          // Encontrar o menor número de agendamentos
-                          const agendamentosPorVendedor = vendedores.map(v => ({
-                            id: v.id,
-                            count: agendamentos.filter(ag => ag.vendedor_id === v.id && ['agendado', 'atrasado'].includes(ag.status)).length
-                          }));
-                          
-                          const menorCount = Math.min(...agendamentosPorVendedor.map(v => v.count));
-                          
-                          // Se este vendedor tem o menor número de agendamentos, destacar
-                          isIndicado = contadorAgendamentos === menorCount;
-                        }
+                        // Verificar se este vendedor é o indicado pelo sistema
+                        const isIndicado = vendedorIndicado?.id === vendedor.id;
                         
                         console.log(`Vendedor ${vendedor.name}: ${contadorAgendamentos} agendamentos, indicado: ${isIndicado}`);
                         
@@ -1188,7 +1207,7 @@ const AgendamentosPage: React.FC = () => {
                      })}
                     </div>
                      <p className="text-xs text-muted-foreground mt-2">
-                       🎯 Sistema distribui automaticamente para o vendedor com menor número de agendamentos. 
+                       🎯 Sistema distribui automaticamente para o vendedor com menor número de agendamentos E que esteja disponível. 
                        Em caso de empate, será escolhido quem tem maior taxa de conversão.
                      </p>
                   </div>
