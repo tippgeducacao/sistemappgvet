@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List, Edit, X, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
+import { VendedorConversionService } from '@/services/vendedor/VendedorConversionService';
 import { useCreateLead } from '@/hooks/useCreateLead';
 import { toast } from 'sonner';
 import { format, isSameDay, parseISO } from 'date-fns';
@@ -43,7 +44,7 @@ const AgendamentosPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLead, setSelectedLead] = useState('');
   const [selectedPosGraduacao, setSelectedPosGraduacao] = useState('');
-  const [selectedVendedor, setSelectedVendedor] = useState('');
+  
   const [selectedDateForm, setSelectedDateForm] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedEndTime, setSelectedEndTime] = useState('');
@@ -152,7 +153,6 @@ const AgendamentosPage: React.FC = () => {
       carregarVendedoresPorPosGraduacao();
     } else {
       setVendedores([]);
-      setSelectedVendedor('');
       setVendedorIndicado(null);
     }
   }, [selectedPosGraduacao]);
@@ -244,16 +244,43 @@ const AgendamentosPage: React.FC = () => {
     
     console.log('🎯 Contadores de agendamentos:', Array.from(agendamentosVendedores.entries()));
     
-    // Encontrar vendedor com menor número de agendamentos e sem conflito de horário
+    // Calcular período da semana atual para buscar taxas de conversão
+    const hoje = new Date();
+    const startOfWeek = new Date(hoje);
+    startOfWeek.setDate(hoje.getDate() - 30); // Últimos 30 dias para ter mais dados
+    const endOfWeek = new Date();
+    
+    // Buscar taxas de conversão dos vendedores usando o serviço existente
+    const conversionsMap = new Map();
+    try {
+      for (const vendedor of vendedoresList) {
+        const conversion = await VendedorConversionService.calcularTaxaConversaoVendedor(
+          vendedor.id, 
+          startOfWeek, 
+          endOfWeek
+        );
+        conversionsMap.set(vendedor.id, conversion.taxaConversao || 0);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar conversões:', error);
+      // Se houver erro, continuar sem conversões (todas serão 0)
+    }
+    
+    // Encontrar vendedor com menor número de agendamentos
+    // Em caso de empate, usar maior taxa de conversão como critério de desempate
     let vendedorSelecionado = null;
     let menorNumeroAgendamentos = Infinity;
+    let maiorTaxaConversao = -1;
     
     for (const vendedor of vendedoresList) {
       const numAgendamentos = agendamentosVendedores.get(vendedor.id);
+      const taxaConversao = conversionsMap.get(vendedor.id) || 0;
       
       console.log(`🎯 Verificando vendedor ${vendedor.name} (${vendedor.id}):`, {
         numAgendamentos,
-        menorNumeroAgendamentos
+        taxaConversao,
+        menorNumeroAgendamentos,
+        maiorTaxaConversao
       });
       
       // Verificar conflito de agenda
@@ -264,10 +291,20 @@ const AgendamentosPage: React.FC = () => {
       
       console.log(`🎯 Conflito para ${vendedor.name}:`, temConflito);
       
-      if (!temConflito && numAgendamentos < menorNumeroAgendamentos) {
-        menorNumeroAgendamentos = numAgendamentos;
-        vendedorSelecionado = vendedor;
-        console.log(`🎯 Novo vendedor selecionado: ${vendedor.name}`);
+      if (!temConflito) {
+        // Critério 1: Menor número de agendamentos
+        if (numAgendamentos < menorNumeroAgendamentos) {
+          menorNumeroAgendamentos = numAgendamentos;
+          maiorTaxaConversao = taxaConversao;
+          vendedorSelecionado = vendedor;
+          console.log(`🎯 Novo vendedor selecionado (menor agendamentos): ${vendedor.name}`);
+        } 
+        // Critério 2: Empate no número de agendamentos, usar maior taxa de conversão
+        else if (numAgendamentos === menorNumeroAgendamentos && taxaConversao > maiorTaxaConversao) {
+          maiorTaxaConversao = taxaConversao;
+          vendedorSelecionado = vendedor;
+          console.log(`🎯 Novo vendedor selecionado (maior conversão): ${vendedor.name}`);
+        }
       }
     }
     
@@ -307,18 +344,10 @@ const AgendamentosPage: React.FC = () => {
     });
     
     try {
-      // Usar vendedor selecionado manualmente ou selecionar automaticamente
-      let vendedorSelecionado = null;
+      // Selecionar vendedor automaticamente (NUNCA manual)
+      const vendedorSelecionado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento);
       
-      if (selectedVendedor) {
-        // Se há vendedor selecionado manualmente, usar ele
-        vendedorSelecionado = vendedores.find(v => v.id === selectedVendedor);
-        console.log('👤 VENDEDOR SELECIONADO MANUALMENTE:', vendedorSelecionado);
-      } else {
-        // Se não há seleção manual, usar seleção automática
-        vendedorSelecionado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento);
-        console.log('👤 VENDEDOR SELECIONADO AUTOMATICAMENTE:', vendedorSelecionado);
-      }
+      console.log('👤 VENDEDOR SELECIONADO AUTOMATICAMENTE:', vendedorSelecionado);
       
       if (!vendedorSelecionado) {
         toast.error('Nenhum vendedor disponível neste horário. Todos os vendedores já possuem reuniões marcadas neste horário.');
@@ -377,7 +406,6 @@ const AgendamentosPage: React.FC = () => {
     setSearchTerm('');
     setSelectedLead('');
     setSelectedPosGraduacao('');
-    setSelectedVendedor('');
     setSelectedDateForm('');
     setSelectedTime('');
     setSelectedEndTime('');
@@ -1090,43 +1118,26 @@ const AgendamentosPage: React.FC = () => {
                         
                         console.log(`Vendedor ${vendedor.name}: ${contadorAgendamentos} agendamentos, indicado: ${isIndicado}`);
                         
-                         const isManuallySelected = selectedVendedor === vendedor.id;
+                         const isManuallySelected = false; // Não há mais seleção manual
                          
                          return (
                         <div 
                           key={vendedor.id} 
-                          onClick={() => {
-                            if (selectedVendedor === vendedor.id) {
-                              setSelectedVendedor(''); // Deselecionar se já estava selecionado
-                            } else {
-                              setSelectedVendedor(vendedor.id); // Selecionar vendedor
-                            }
-                          }}
-                          className={`flex items-center justify-between p-3 border rounded-lg transition-all duration-200 cursor-pointer hover:shadow-md ${
-                            isManuallySelected 
-                              ? 'border-green-500 bg-green-50 shadow-md ring-2 ring-green-200' 
-                              : isIndicado 
-                                ? 'border-primary bg-primary/10 shadow-md ring-2 ring-primary/20' 
-                                : 'border-border hover:border-primary/50'
+                          className={`flex items-center justify-between p-3 border rounded-lg transition-all duration-200 ${
+                            isIndicado ? 'border-primary bg-primary/10 shadow-md ring-2 ring-primary/20' : 'border-border'
                           }`}
                         >
                           <div className="flex items-center gap-2 text-sm">
-                            {isManuallySelected && <span className="text-green-600 text-xl">✓</span>}
-                            {!isManuallySelected && isIndicado && <span className="text-primary text-xl animate-pulse">🎯</span>}
+                            {isIndicado && <span className="text-primary text-xl animate-pulse">🎯</span>}
                             <User className="h-3 w-3" />
-                            <span className={isManuallySelected ? 'font-bold text-green-700' : isIndicado ? 'font-bold text-primary' : ''}>{vendedor.name}</span>
+                            <span className={isIndicado ? 'font-bold text-primary' : ''}>{vendedor.name}</span>
                             <span className="text-xs text-muted-foreground">({vendedor.email})</span>
                             <Badge variant={contadorAgendamentos === 0 ? "outline" : "secondary"} className="text-xs">
                               {contadorAgendamentos} agendamento{contadorAgendamentos !== 1 ? 's' : ''}
                             </Badge>
-                            {isManuallySelected && (
-                              <Badge variant="default" className="text-xs bg-green-600 font-semibold">
-                                ESCOLHIDO
-                              </Badge>
-                            )}
-                            {!isManuallySelected && isIndicado && (
+                            {isIndicado && (
                               <Badge variant="default" className="text-xs bg-primary font-semibold animate-pulse">
-                                SUGERIDO
+                                DISTRIBUIÇÃO AUTOMÁTICA
                               </Badge>
                             )}
                          </div>
@@ -1135,10 +1146,8 @@ const AgendamentosPage: React.FC = () => {
                      })}
                     </div>
                      <p className="text-xs text-muted-foreground mt-2">
-                       {selectedVendedor 
-                         ? '✓ Vendedor escolhido manualmente. Clique novamente para deselecionar e usar seleção automática.' 
-                         : '🎯 Sistema sugere automaticamente o vendedor com menor número de agendamentos. Clique em um vendedor para escolher manualmente.'
-                       }
+                       🎯 Sistema distribui automaticamente para o vendedor com menor número de agendamentos. 
+                       Em caso de empate, será escolhido quem tem maior taxa de conversão.
                      </p>
                   </div>
                 )}
@@ -1694,7 +1703,7 @@ const AgendamentosPage: React.FC = () => {
           <div className="max-w-2xl w-full">
             <AgendamentoErrorDiagnosis 
               error={lastError}
-              vendedor={vendedores.find(v => v.id === selectedVendedor)}
+              vendedor={vendedores.find(v => v.id === vendedorIndicado?.id)}
               dataAgendamento={selectedDateForm && selectedTime ? `${selectedDateForm}T${selectedTime}:00` : undefined}
               onForcarAgendamento={handleForcarAgendamento}
             />
