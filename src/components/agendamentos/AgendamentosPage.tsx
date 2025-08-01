@@ -357,6 +357,21 @@ const AgendamentosPage: React.FC = () => {
       
       console.log(`🎯 CONFLITO: ${vendedor.name} tem conflito:`, temConflito);
       
+      // PRIMEIRO: Verificar horário de trabalho
+      const verificacaoHorario = await AgendamentosService.verificarHorarioTrabalho(
+        vendedor.id, 
+        dataHora, 
+        dataFimAgendamento
+      );
+      
+      if (!verificacaoHorario.valido) {
+        console.log(`🎯 ❌ HORÁRIO INVÁLIDO: ${vendedor.name} - ${verificacaoHorario.motivo}`);
+        continue; // Pula este vendedor
+      }
+      
+      console.log(`🎯 ✅ HORÁRIO VÁLIDO: ${vendedor.name}`);
+      
+      // SEGUNDO: Verificar conflitos de agenda
       if (!temConflito) {
         // Critério 1: Menor número de agendamentos
         if (numAgendamentos < menorNumeroAgendamentos) {
