@@ -94,10 +94,21 @@ const AgendamentoDetailsModal: React.FC<AgendamentoDetailsModalProps> = ({
               <div className="space-y-1">
                 <span className="text-sm font-medium">Data e hora:</span>
                 <p className="text-sm">
-                  {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                  {agendamento.data_fim_agendamento && 
-                    ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`
-                  }
+                  {(() => {
+                    // Converter UTC para horário de Brasília (UTC-3)
+                    const dataAgendamento = new Date(agendamento.data_agendamento);
+                    const dataBrasil = new Date(dataAgendamento.getTime() - (3 * 60 * 60 * 1000));
+                    
+                    let formatoCompleto = format(dataBrasil, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+                    
+                    if (agendamento.data_fim_agendamento) {
+                      const dataFim = new Date(agendamento.data_fim_agendamento);
+                      const dataFimBrasil = new Date(dataFim.getTime() - (3 * 60 * 60 * 1000));
+                      formatoCompleto += ` - ${format(dataFimBrasil, 'HH:mm')}`;
+                    }
+                    
+                    return formatoCompleto;
+                  })()}
                 </p>
               </div>
 
