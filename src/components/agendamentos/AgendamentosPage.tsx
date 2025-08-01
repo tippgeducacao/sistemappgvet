@@ -307,6 +307,16 @@ const AgendamentosPage: React.FC = () => {
           maiorTaxaConversao = taxaConversao;
           vendedorSelecionado = vendedor;
           console.log(`🎯 ✅ SELECIONADO (maior conversão): ${vendedor.name} - conversão ${taxaConversao}%`);
+        }
+        // Critério 3: EMPATE TOTAL - usar ordem alfabética como critério final
+        else if (numAgendamentos === menorNumeroAgendamentos && taxaConversao === maiorTaxaConversao) {
+          // Se não há vendedor selecionado ainda, ou se este vendedor vem antes na ordem alfabética
+          if (!vendedorSelecionado || vendedor.name.localeCompare(vendedorSelecionado.name) < 0) {
+            vendedorSelecionado = vendedor;
+            console.log(`🎯 ✅ SELECIONADO (ordem alfabética): ${vendedor.name} - critério final de desempate`);
+          } else {
+            console.log(`🎯 ❌ NÃO SELECIONADO (ordem alfabética): ${vendedor.name} vem depois de ${vendedorSelecionado.name}`);
+          }
         } else {
           console.log(`🎯 ❌ NÃO SELECIONADO: ${vendedor.name} - ${numAgendamentos} agendamentos, ${taxaConversao}% conversão`);
         }
