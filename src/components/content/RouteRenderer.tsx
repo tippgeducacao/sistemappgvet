@@ -104,14 +104,14 @@ const RouteRenderer: React.FC = () => {
       return <LeadsManager />;
 
     case 'agendamentos':
-      // Apenas SDRs (inbound e outbound) podem acessar agendamentos
-      if (isSDRInbound || isSDROutbound) {
+      // SDRs (inbound e outbound) e diretores podem acessar agendamentos
+      if (isSDRInbound || isSDROutbound || isDiretor) {
         return <AgendamentosPage />;
       }
       return (
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
-          <p className="text-gray-600 mt-2">Apenas SDRs podem acessar agendamentos.</p>
+          <p className="text-gray-600 mt-2">Apenas SDRs e diretores podem acessar agendamentos.</p>
         </div>
       );
 
