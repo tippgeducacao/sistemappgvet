@@ -222,7 +222,7 @@ const AgendamentosPage: React.FC = () => {
   };
 
   // Função para selecionar vendedor automaticamente
-  const selecionarVendedorAutomatico = async (vendedoresList: any[], dataHora: string) => {
+  const selecionarVendedorAutomatico = async (vendedoresList: any[], dataHora: string, dataHoraFim?: string) => {
     console.log('🎯 selecionarVendedorAutomatico chamada:', { vendedoresList: vendedoresList.length, dataHora });
     
     // Buscar TODOS os agendamentos ativos de TODOS os vendedores (independente de SDR)
@@ -303,20 +303,13 @@ const AgendamentosPage: React.FC = () => {
         dataHoraRecebida: dataHora
       });
       
-      // Verificar conflito de agenda - precisa passar data fim também
-      const dataFimAgendamento = new Date(dataHora);
-      if (selectedEndTime) {
-        const [horas, minutos] = selectedEndTime.split(':');
-        dataFimAgendamento.setHours(parseInt(horas), parseInt(minutos), 0, 0);
-      } else {
-        // Se não tem horário fim, assumir 1 hora
-        dataFimAgendamento.setHours(dataFimAgendamento.getHours() + 1);
-      }
+      // Verificar conflito de agenda - usar dataHoraFim se fornecida
+      const dataFimAgendamento = dataHoraFim || new Date(new Date(dataHora).getTime() + 60 * 60 * 1000).toISOString();
       
       const temConflito = await AgendamentosService.verificarConflitosAgenda(
         vendedor.id,
         dataHora,
-        dataFimAgendamento.toISOString()
+        dataFimAgendamento
       );
       
       console.log(`🎯 CONFLITO: ${vendedor.name} tem conflito:`, temConflito);
@@ -394,7 +387,7 @@ const AgendamentosPage: React.FC = () => {
       // Selecionar vendedor automaticamente (NUNCA manual)
       console.log('🎯 CRIAÇÃO: Chamando selecionarVendedorAutomatico para CRIAR AGENDAMENTO');
       console.log('🎯 CRIAÇÃO: DataHora sendo usada:', dataHoraAgendamento);
-      const vendedorSelecionado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento);
+      const vendedorSelecionado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento, dataHoraFim);
       
       console.log('👤 CRIAÇÃO: VENDEDOR SELECIONADO AUTOMATICAMENTE:', vendedorSelecionado?.name);
       
