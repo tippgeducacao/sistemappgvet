@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List, Edit, X, FileSpreadsheet } from 'lucide-react';
+import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List, Edit, Edit2, X, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
 import { VendedorConversionService } from '@/services/vendedor/VendedorConversionService';
@@ -23,8 +23,11 @@ import AgendamentoErrorDiagnosis from './AgendamentoErrorDiagnosis';
 import MeusAgendamentosTab from './MeusAgendamentosTab';
 import TodosAgendamentosTab from './TodosAgendamentosTab';
 import { useOverdueAppointments } from '@/hooks/useOverdueAppointments';
+import { useAuth } from '@/hooks/useAuth';
 import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
 import { useAllAgendamentos } from '@/hooks/useAllAgendamentos';
+
+import { EditarAgendamentoDiretor } from './EditarAgendamentoDiretor';
 
 const AgendamentosPage: React.FC = () => {
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
@@ -70,6 +73,10 @@ const AgendamentosPage: React.FC = () => {
     pos_graduacao_interesse: '',
     observacoes: ''
   });
+
+  // Estado para edição de agendamento (Diretor)
+  const [showEditarAgendamentoDiretor, setShowEditarAgendamentoDiretor] = useState(false);
+  const [agendamentoEditando, setAgendamentoEditando] = useState<any>(null);
   
   // Calendar state for main page
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
@@ -126,6 +133,28 @@ const AgendamentosPage: React.FC = () => {
   
   // Estado para SDRs
   const [sdrs, setSdrs] = useState<any[]>([]);
+
+  // Hook para verificar se é diretor
+  const { user } = useAuth();
+  const [isDiretor, setIsDiretor] = useState(false);
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('id', user.id)
+          .single();
+        
+        if (!error && data) {
+          setIsDiretor(data.user_type === 'diretor');
+        }
+      }
+    };
+    
+    checkUserRole();
+  }, [user]);
 
   useEffect(() => {
     carregarDados();
@@ -543,6 +572,18 @@ const AgendamentosPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função para abrir edição de agendamento (Diretor)
+  const handleEditarAgendamentoDiretor = (agendamento: any) => {
+    setAgendamentoEditando(agendamento);
+    setShowEditarAgendamentoDiretor(true);
+  };
+
+  const handleSuccessEditDiretor = () => {
+    carregarDados(); // Recarregar dados após edição
+    setShowEditarAgendamentoDiretor(false);
+    setAgendamentoEditando(null);
   };
 
   // Extrair profissões únicas dos leads existentes
@@ -1651,7 +1692,19 @@ const AgendamentosPage: React.FC = () => {
                               Vendedor: {agendamento.vendedor?.name}
                             </p>
                           </div>
-                          {getStatusBadge(agendamento.status)}
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(agendamento.status)}
+                            {isDiretor && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditarAgendamentoDiretor(agendamento)}
+                                className="h-8 px-2"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1846,6 +1899,17 @@ const AgendamentosPage: React.FC = () => {
       <AgendaGeral 
         isOpen={showAgendaGeral} 
         onClose={() => setShowAgendaGeral(false)} 
+      />
+
+      {/* Modal de Edição para Diretores */}
+      <EditarAgendamentoDiretor
+        agendamento={agendamentoEditando}
+        isOpen={showEditarAgendamentoDiretor}
+        onClose={() => {
+          setShowEditarAgendamentoDiretor(false);
+          setAgendamentoEditando(null);
+        }}
+        onSuccess={handleSuccessEditDiretor}
       />
     </div>
   );
