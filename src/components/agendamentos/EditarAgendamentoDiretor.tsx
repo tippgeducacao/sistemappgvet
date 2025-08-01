@@ -136,8 +136,8 @@ export const EditarAgendamentoDiretor: React.FC<EditarAgendamentoDiretorProps> =
       setLoading(true);
 
       // Construir as datas completas
-      const dataHoraInicio = new Date(`${dataAgendamento}T${horaInicio}:00`).toISOString();
-      const dataHoraFim = new Date(`${dataAgendamento}T${horaFim}:00`).toISOString();
+      const dataHoraInicio = `${dataAgendamento}T${horaInicio}:00.000-03:00`;
+      const dataHoraFim = `${dataAgendamento}T${horaFim}:00.000-03:00`;
 
       console.log('📅 Atualizando agendamento:', {
         id: agendamento.id,

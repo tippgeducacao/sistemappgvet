@@ -173,9 +173,9 @@ const AgendamentosPage: React.FC = () => {
       
       if (vendedores.length > 0 && selectedDateForm && selectedTime) {
         try {
-          // USA SEMPRE O MESMO FORMATO - SEM CONVERSÕES DIFERENTES
-          const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00`;
-          const dataHoraFim = selectedEndTime ? `${selectedDateForm}T${selectedEndTime}:00` : undefined;
+          // USA SEMPRE O MESMO FORMATO - COM TIMEZONE BRASILEIRO
+          const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
+          const dataHoraFim = selectedEndTime ? `${selectedDateForm}T${selectedEndTime}:00.000-03:00` : undefined;
           
           console.log('🎯 ÚNICA FUNÇÃO: Chamando selecionarVendedorAutomatico');
           console.log('🎯 ÚNICA FUNÇÃO: DataHora:', dataHoraAgendamento);
@@ -475,9 +475,9 @@ const AgendamentosPage: React.FC = () => {
       return;
     }
 
-    // Corrigir formato da data para ISO 8601 padrão
-    const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00`;
-    const dataHoraFim = `${selectedDateForm}T${selectedEndTime}:00`;
+    // Usar timezone brasileiro (-03:00) para salvar corretamente
+    const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
+    const dataHoraFim = `${selectedDateForm}T${selectedEndTime}:00.000-03:00`;
     
     console.log('🔍 DADOS PARA CRIAR AGENDAMENTO:', {
       selectedLead,
@@ -584,8 +584,8 @@ const AgendamentosPage: React.FC = () => {
   // Função para iniciar o processo de forçar agendamento
   const handleForcarAgendamento = () => {
     // Preencher dados do agendamento forçado com os dados do formulário atual
-    const dataHora = selectedDateForm && selectedTime ? `${selectedDateForm}T${selectedTime}:00` : '';
-    const dataFim = selectedDateForm && selectedEndTime ? `${selectedDateForm}T${selectedEndTime}:00` : '';
+    const dataHora = selectedDateForm && selectedTime ? `${selectedDateForm}T${selectedTime}:00.000-03:00` : '';
+    const dataFim = selectedDateForm && selectedEndTime ? `${selectedDateForm}T${selectedEndTime}:00.000-03:00` : '';
     
     setForceScheduleData({
       vendedor_id: '',
