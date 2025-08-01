@@ -262,10 +262,11 @@ const AgendamentosPage: React.FC = () => {
     console.log('🎯 IMPORTANTE: Função selecionarVendedorAutomatico chamada para dataHora:', dataHora);
     console.log('🎯 IMPORTANTE: Agendamentos considerados no cálculo:', agendamentos.length);
     console.log('🎯 IMPORTANTE: Vendedores disponíveis:', vendedoresList.map(v => v.name));
-    const hoje = new Date();
-    const startOfWeek = new Date(hoje);
-    startOfWeek.setDate(hoje.getDate() - 30); // Últimos 30 dias para ter mais dados
-    const endOfWeek = new Date();
+    // Calcular taxa de conversão de TODO O PERÍODO (histórico completo)
+    const startOfAllTime = new Date('2020-01-01'); // Data bem antiga para pegar tudo
+    const endOfAllTime = new Date(); // Até hoje
+    
+    console.log('🎯 IMPORTANTE: Calculando taxa de conversão de TODO O PERÍODO histórico');
     
     // Buscar taxas de conversão dos vendedores usando o serviço existente
     const conversionsMap = new Map();
@@ -273,10 +274,11 @@ const AgendamentosPage: React.FC = () => {
       for (const vendedor of vendedoresList) {
         const conversion = await VendedorConversionService.calcularTaxaConversaoVendedor(
           vendedor.id, 
-          startOfWeek, 
-          endOfWeek
+          startOfAllTime, 
+          endOfAllTime
         );
         conversionsMap.set(vendedor.id, conversion.taxaConversao || 0);
+        console.log(`📊 Taxa conversão histórica ${vendedor.name}: ${conversion.taxaConversao.toFixed(1)}%`);
       }
     } catch (error) {
       console.error('Erro ao buscar conversões:', error);
