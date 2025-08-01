@@ -96,21 +96,26 @@ export const EditarAgendamentoDiretor: React.FC<EditarAgendamentoDiretorProps> =
     setLinkReuniao(agendamento.link_reuniao || '');
     setObservacoes(agendamento.observacoes || '');
 
-    // Extrair data e hora
+    // Extrair data e hora sem conversões de timezone complicadas
     if (agendamento.data_agendamento) {
       const dataInicio = new Date(agendamento.data_agendamento);
       
-      // Corrigir timezone para garantir data correta
-      const dataLocal = new Date(dataInicio.getTime() - (dataInicio.getTimezoneOffset() * 60000));
-      setDataAgendamento(dataLocal.toISOString().split('T')[0]);
+      // Usar o horário local diretamente
+      const ano = dataInicio.getFullYear();
+      const mes = String(dataInicio.getMonth() + 1).padStart(2, '0');
+      const dia = String(dataInicio.getDate()).padStart(2, '0');
+      const horas = String(dataInicio.getHours()).padStart(2, '0');
+      const minutos = String(dataInicio.getMinutes()).padStart(2, '0');
       
-      setHoraInicio(dataLocal.toTimeString().slice(0, 5));
+      setDataAgendamento(`${ano}-${mes}-${dia}`);
+      setHoraInicio(`${horas}:${minutos}`);
     }
 
     if (agendamento.data_fim_agendamento) {
       const dataFim = new Date(agendamento.data_fim_agendamento);
-      const dataLocalFim = new Date(dataFim.getTime() - (dataFim.getTimezoneOffset() * 60000));
-      setHoraFim(dataLocalFim.toTimeString().slice(0, 5));
+      const horasFim = String(dataFim.getHours()).padStart(2, '0');
+      const minutosFim = String(dataFim.getMinutes()).padStart(2, '0');
+      setHoraFim(`${horasFim}:${minutosFim}`);
     }
   };
 
