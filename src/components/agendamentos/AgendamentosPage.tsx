@@ -429,8 +429,9 @@ const AgendamentosPage: React.FC = () => {
       return;
     }
 
-    const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00.000-03:00`; // Fuso horário brasileiro
-    const dataHoraFim = `${selectedDateForm}T${selectedEndTime}:00.000-03:00`; // Fuso horário brasileiro
+    // Corrigir formato da data para ISO 8601 padrão
+    const dataHoraAgendamento = `${selectedDateForm}T${selectedTime}:00`;
+    const dataHoraFim = `${selectedDateForm}T${selectedEndTime}:00`;
     
     console.log('🔍 DADOS PARA CRIAR AGENDAMENTO:', {
       selectedLead,
@@ -481,16 +482,20 @@ const AgendamentosPage: React.FC = () => {
         throw new Error('Erro ao criar agendamento');
       }
     } catch (error) {
-      console.error('Erro ao criar agendamento:', error);
+      console.error('🚨 ERRO COMPLETO ao criar agendamento:', error);
       
       // Mostrar mensagem de erro mais específica e diagnóstico
+      let errorMessage = 'Erro inesperado ao criar agendamento';
+      
       if (error instanceof Error) {
-        setLastError(error.message);
-        setShowErrorDiagnosis(true);
-        toast.error(error.message);
-      } else {
-        toast.error('Erro ao criar agendamento');
+        errorMessage = error.message;
+        console.error('📝 Mensagem específica do erro:', error.message);
       }
+      
+      // Sempre mostrar o diagnóstico com as informações do contexto
+      setLastError(errorMessage);
+      setShowErrorDiagnosis(true);
+      toast.error(errorMessage);
     }
   };
 
