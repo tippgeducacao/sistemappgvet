@@ -88,6 +88,8 @@ export const EditarAgendamentoDiretor: React.FC<EditarAgendamentoDiretorProps> =
   const preencherFormulario = () => {
     if (!agendamento) return;
 
+    console.log('📝 Preenchendo formulário com agendamento:', agendamento);
+
     setSelectedVendedor(agendamento.vendedor_id || '');
     setSelectedLead(agendamento.lead_id || '');
     setSelectedPosGraduacao(agendamento.pos_graduacao_interesse || '');
@@ -97,18 +99,23 @@ export const EditarAgendamentoDiretor: React.FC<EditarAgendamentoDiretorProps> =
     // Extrair data e hora
     if (agendamento.data_agendamento) {
       const dataInicio = new Date(agendamento.data_agendamento);
-      setDataAgendamento(dataInicio.toISOString().split('T')[0]);
-      setHoraInicio(dataInicio.toTimeString().slice(0, 5));
+      
+      // Corrigir timezone para garantir data correta
+      const dataLocal = new Date(dataInicio.getTime() - (dataInicio.getTimezoneOffset() * 60000));
+      setDataAgendamento(dataLocal.toISOString().split('T')[0]);
+      
+      setHoraInicio(dataLocal.toTimeString().slice(0, 5));
     }
 
     if (agendamento.data_fim_agendamento) {
       const dataFim = new Date(agendamento.data_fim_agendamento);
-      setHoraFim(dataFim.toTimeString().slice(0, 5));
+      const dataLocalFim = new Date(dataFim.getTime() - (dataFim.getTimezoneOffset() * 60000));
+      setHoraFim(dataLocalFim.toTimeString().slice(0, 5));
     }
   };
 
   const handleSubmit = async () => {
-    if (!selectedVendedor || !selectedLead || !selectedPosGraduacao || 
+    if (!selectedVendedor || !selectedPosGraduacao || 
         !dataAgendamento || !horaInicio || !horaFim || !linkReuniao.trim()) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
@@ -127,12 +134,21 @@ export const EditarAgendamentoDiretor: React.FC<EditarAgendamentoDiretorProps> =
       const dataHoraInicio = new Date(`${dataAgendamento}T${horaInicio}:00`).toISOString();
       const dataHoraFim = new Date(`${dataAgendamento}T${horaFim}:00`).toISOString();
 
-      // Atualizar o agendamento
+      console.log('📅 Atualizando agendamento:', {
+        id: agendamento.id,
+        vendedor_id: selectedVendedor,
+        pos_graduacao_interesse: selectedPosGraduacao,
+        data_agendamento: dataHoraInicio,
+        data_fim_agendamento: dataHoraFim,
+        link_reuniao: linkReuniao,
+        observacoes: observacoes
+      });
+
+      // Atualizar o agendamento (sem alterar o lead_id)
       const { error } = await supabase
         .from('agendamentos')
         .update({
           vendedor_id: selectedVendedor,
-          lead_id: selectedLead,
           pos_graduacao_interesse: selectedPosGraduacao,
           data_agendamento: dataHoraInicio,
           data_fim_agendamento: dataHoraFim,
@@ -167,21 +183,23 @@ export const EditarAgendamentoDiretor: React.FC<EditarAgendamentoDiretorProps> =
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Lead */}
+          {/* Lead - Não editável */}
           <div className="space-y-2">
             <Label>Lead *</Label>
-            <Select value={selectedLead} onValueChange={setSelectedLead}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o lead" />
-              </SelectTrigger>
-              <SelectContent>
-                {leads.map((lead) => (
-                  <SelectItem key={lead.id} value={lead.id}>
-                    {lead.nome} ({lead.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">
+                {agendamento?.lead?.nome || 'Lead não encontrado'}
+              </span>
+              {agendamento?.lead?.email && (
+                <span className="text-muted-foreground">
+                  ({agendamento.lead.email})
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              O lead não pode ser alterado em agendamentos existentes
+            </p>
           </div>
 
           {/* Vendedor */}
