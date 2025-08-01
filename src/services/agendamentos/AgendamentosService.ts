@@ -70,13 +70,18 @@ export class AgendamentosService {
       console.log('✅ Link da reunião validado');
 
       // Validar se a data/hora é no futuro (com margem de 5 minutos)
+      // Considerar fuso horário brasileiro (UTC-3)
       const dataAgendamento = new Date(dados.data_agendamento);
       const agora = new Date();
-      const cincoMinutosAtras = new Date(agora.getTime() - 5 * 60 * 1000);
+      
+      // Ajustar agora para horário brasileiro (UTC-3)
+      const agoraBrasil = new Date(agora.getTime() - (3 * 60 * 60 * 1000));
+      const cincoMinutosAtras = new Date(agoraBrasil.getTime() - 5 * 60 * 1000);
       
       console.log('📅 Validação de data/hora:');
       console.log('  - Data agendamento:', dataAgendamento.toISOString());
-      console.log('  - Agora:', agora.toISOString());
+      console.log('  - Agora (original):', agora.toISOString());
+      console.log('  - Agora Brasil (UTC-3):', agoraBrasil.toISOString());
       console.log('  - 5 min atrás:', cincoMinutosAtras.toISOString());
       console.log('  - É futuro?', dataAgendamento > cincoMinutosAtras);
       
@@ -538,7 +543,10 @@ export class AgendamentosService {
       if (dados.data_agendamento) {
         const dataAgendamento = new Date(dados.data_agendamento);
         const agora = new Date();
-        const cincoMinutosAtras = new Date(agora.getTime() - 5 * 60 * 1000);
+        
+        // Ajustar agora para horário brasileiro (UTC-3)
+        const agoraBrasil = new Date(agora.getTime() - (3 * 60 * 60 * 1000));
+        const cincoMinutosAtras = new Date(agoraBrasil.getTime() - 5 * 60 * 1000);
         
         if (dataAgendamento <= cincoMinutosAtras) {
           throw new Error('Não é possível agendar para uma data/hora que já passou');
