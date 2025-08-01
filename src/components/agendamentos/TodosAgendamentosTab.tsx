@@ -146,15 +146,18 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
                       </Badge>
                        <span className="text-sm text-muted-foreground">
                         {(() => {
-                          // Criar data garantindo que será interpretada como UTC-3 (horário brasileiro)
-                          const dataUTC = new Date(agendamento.data_agendamento);
-                          const dataLocal = new Date(dataUTC.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
-                          return format(dataLocal, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+                          // Extrair horário diretamente da string ISO sem conversões de timezone
+                          const dataISO = agendamento.data_agendamento; // 2025-08-01T15:51:00+00:00
+                          const [datePart, timePart] = dataISO.split('T');
+                          const [hora, minuto] = timePart.split(':');
+                          const [dia, mes, ano] = datePart.split('-').reverse();
+                          return `${dia}/${mes}/${ano} às ${hora}:${minuto}`;
                         })()}
                         {agendamento.data_fim_agendamento && (() => {
-                          const dataFimUTC = new Date(agendamento.data_fim_agendamento);
-                          const dataFimLocal = new Date(dataFimUTC.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
-                          return ` - ${format(dataFimLocal, 'HH:mm')}`;
+                          const dataFimISO = agendamento.data_fim_agendamento;
+                          const [, timePart] = dataFimISO.split('T');
+                          const [hora, minuto] = timePart.split(':');
+                          return ` - ${hora}:${minuto}`;
                         })()}
                        </span>
                     </div>
