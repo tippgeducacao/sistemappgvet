@@ -1396,85 +1396,29 @@ const AgendamentosPage: React.FC = () => {
                         agendamentos: agendamentos?.length
                       });
 
-                      // Verificar se temos dados necessários
-                      if (!vendedores || vendedores.length === 0 || !selectedDateForm || !selectedTime) {
-                        console.log('⚠️ Dados insuficientes para seleção');
+                      // Usar o mesmo vendedor que foi indicado pela lógica principal
+                      if (!vendedorIndicado) {
                         return <span className="text-gray-500">Aguardando seleção de data e horário</span>;
                       }
 
-                      // Usar a mesma lógica da função selecionarVendedorAutomatico
-                      const dataHoraForm = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
                       
-                      // Buscar agendamentos existentes para contar distribuição
-                      const agendamentosVendedores = new Map();
-                      
-                      // Inicializar contadores para todos os vendedores
-                      vendedores.forEach(vendedor => {
-                        agendamentosVendedores.set(vendedor.id, 0);
-                      });
-                      
-                      // Contar agendamentos ativos e atrasados
-                      agendamentos.forEach(agendamento => {
-                        if (['agendado', 'atrasado'].includes(agendamento.status)) {
-                          const currentCount = agendamentosVendedores.get(agendamento.vendedor_id) || 0;
-                          agendamentosVendedores.set(agendamento.vendedor_id, currentCount + 1);
-                        }
-                      });
-                      
-                      console.log('🔍 Contadores interface:', Array.from(agendamentosVendedores.entries()));
-                      
-                      // Encontrar vendedor com menor número de agendamentos e verificar conflitos
-                      let vendedorSelecionado = null;
-                      let menorNumeroAgendamentos = Infinity;
-                      
-                      for (const vendedor of vendedores) {
-                        const numAgendamentos = agendamentosVendedores.get(vendedor.id) || 0;
-                        
-                        // Verificar conflito com mais precisão
-                        const temConflito = agendamentos.some(ag => {
-                          if (ag.vendedor_id !== vendedor.id || !['agendado', 'atrasado'].includes(ag.status)) return false;
-                          
-                          try {
-                            const agendamentoInicio = new Date(ag.data_agendamento);
-                            const agendamentoFim = new Date(ag.data_fim_agendamento || ag.data_agendamento);
-                            const novoAgendamento = new Date(dataHoraForm);
-                            const novoAgendamentoFim = selectedEndTime ? new Date(`${selectedDateForm}T${selectedEndTime}:00.000-03:00`) : novoAgendamento;
-                            
-                            console.log(`🔍 Verificando conflito ${vendedor.name}:`, {
-                              agendamentoExistente: `${agendamentoInicio.toLocaleString()} - ${agendamentoFim.toLocaleString()}`,
-                              novoAgendamento: `${novoAgendamento.toLocaleString()} - ${novoAgendamentoFim.toLocaleString()}`,
-                              temSobreposicao: (novoAgendamento < agendamentoFim && novoAgendamentoFim > agendamentoInicio)
-                            });
-                            
-                            // Verificar se há sobreposição de horários - condição mais rigorosa
-                            return (novoAgendamento < agendamentoFim && novoAgendamentoFim > agendamentoInicio);
-                          } catch (e) {
-                            console.error('❌ Erro ao verificar conflito:', e);
-                            return false;
-                          }
-                        });
-                        
-                        console.log(`🔍 Vendedor ${vendedor.name}: ${numAgendamentos} agendamentos, conflito: ${temConflito}`);
-                        
-                        if (!temConflito && numAgendamentos < menorNumeroAgendamentos) {
-                          menorNumeroAgendamentos = numAgendamentos;
-                          vendedorSelecionado = vendedor;
-                        }
-                      }
-                      
-                      console.log('🎯 Vendedor interface selecionado:', vendedorSelecionado);
-                      
-                      if (!vendedorSelecionado) {
+                      if (vendedorIndicado.conflito) {
                         return <span className="text-red-500">Nenhum vendedor disponível neste horário</span>;
                       }
                       
+                      // Contar agendamentos do vendedor indicado
+                      const agendamentosVendedor = agendamentos.filter(ag => 
+                        ag.vendedor_id === vendedorIndicado.id && 
+                        ['agendado', 'atrasado'].includes(ag.status)
+                      ).length;
+                      
                       return (
                         <span className="text-blue-800 font-semibold">
-                          {vendedorSelecionado.name} ({menorNumeroAgendamentos} agendamentos)
+                          {vendedorIndicado.name} ({agendamentosVendedor} agendamentos)
                         </span>
                       );
                     } catch (error) {
-                      console.error('❌ Erro crítico na seleção do vendedor:', error);
+                      console.error('❌ Erro na seleção do vendedor:', error);
                       return <span className="text-red-500">Erro na seleção do vendedor</span>;
                     }
                   })()}
