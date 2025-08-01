@@ -106,10 +106,17 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
                         {getStatusText(agendamento.status)}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        {agendamento.data_fim_agendamento && 
-                          ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`
-                        }
+                        {(() => {
+                          // Criar data garantindo que será interpretada como UTC-3 (horário brasileiro)
+                          const dataUTC = new Date(agendamento.data_agendamento);
+                          const dataLocal = new Date(dataUTC.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
+                          return format(dataLocal, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+                        })()}
+                        {agendamento.data_fim_agendamento && (() => {
+                          const dataFimUTC = new Date(agendamento.data_fim_agendamento);
+                          const dataFimLocal = new Date(dataFimUTC.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
+                          return ` - ${format(dataFimLocal, 'HH:mm')}`;
+                        })()}
                       </span>
                     </div>
 
