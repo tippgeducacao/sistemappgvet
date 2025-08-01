@@ -170,8 +170,9 @@ const AgendamentosPage: React.FC = () => {
       if (vendedores.length > 0 && selectedDateForm && selectedTime) {
         const dataHora = `${selectedDateForm}T${selectedTime}:00.000-03:00`;
         console.log('🎯 DataHora formatada:', dataHora);
+        console.log('🎯 INTERFACE: Chamando selecionarVendedorAutomatico para EXIBIÇÃO');
         const vendedor = await selecionarVendedorAutomatico(vendedores, dataHora);
-        console.log('🎯 Vendedor selecionado:', vendedor);
+        console.log('🎯 INTERFACE: Vendedor selecionado para EXIBIÇÃO:', vendedor?.name);
         setVendedorIndicado(vendedor);
       } else {
         console.log('🎯 Condições não atendidas, limpando vendedor indicado');
@@ -243,8 +244,9 @@ const AgendamentosPage: React.FC = () => {
     });
     
     console.log('🎯 Contadores de agendamentos:', Array.from(agendamentosVendedores.entries()));
-    
-    // Calcular período da semana atual para buscar taxas de conversão
+    console.log('🎯 IMPORTANTE: Função selecionarVendedorAutomatico chamada para dataHora:', dataHora);
+    console.log('🎯 IMPORTANTE: Agendamentos considerados no cálculo:', agendamentos.length);
+    console.log('🎯 IMPORTANTE: Vendedores disponíveis:', vendedoresList.map(v => v.name));
     const hoje = new Date();
     const startOfWeek = new Date(hoje);
     startOfWeek.setDate(hoje.getDate() - 30); // Últimos 30 dias para ter mais dados
@@ -276,11 +278,12 @@ const AgendamentosPage: React.FC = () => {
       const numAgendamentos = agendamentosVendedores.get(vendedor.id);
       const taxaConversao = conversionsMap.get(vendedor.id) || 0;
       
-      console.log(`🎯 Verificando vendedor ${vendedor.name} (${vendedor.id}):`, {
+      console.log(`🎯 DETALHE: Verificando vendedor ${vendedor.name} (${vendedor.id}):`, {
         numAgendamentos,
         taxaConversao,
         menorNumeroAgendamentos,
-        maiorTaxaConversao
+        maiorTaxaConversao,
+        dataHoraRecebida: dataHora
       });
       
       // Verificar conflito de agenda
@@ -289,7 +292,7 @@ const AgendamentosPage: React.FC = () => {
         dataHora
       );
       
-      console.log(`🎯 Conflito para ${vendedor.name}:`, temConflito);
+      console.log(`🎯 CONFLITO: ${vendedor.name} tem conflito:`, temConflito);
       
       if (!temConflito) {
         // Critério 1: Menor número de agendamentos
@@ -297,18 +300,25 @@ const AgendamentosPage: React.FC = () => {
           menorNumeroAgendamentos = numAgendamentos;
           maiorTaxaConversao = taxaConversao;
           vendedorSelecionado = vendedor;
-          console.log(`🎯 Novo vendedor selecionado (menor agendamentos): ${vendedor.name}`);
+          console.log(`🎯 ✅ SELECIONADO (menor agendamentos): ${vendedor.name} - ${numAgendamentos} agendamentos`);
         } 
         // Critério 2: Empate no número de agendamentos, usar maior taxa de conversão
         else if (numAgendamentos === menorNumeroAgendamentos && taxaConversao > maiorTaxaConversao) {
           maiorTaxaConversao = taxaConversao;
           vendedorSelecionado = vendedor;
-          console.log(`🎯 Novo vendedor selecionado (maior conversão): ${vendedor.name}`);
+          console.log(`🎯 ✅ SELECIONADO (maior conversão): ${vendedor.name} - conversão ${taxaConversao}%`);
+        } else {
+          console.log(`🎯 ❌ NÃO SELECIONADO: ${vendedor.name} - ${numAgendamentos} agendamentos, ${taxaConversao}% conversão`);
         }
+      } else {
+        console.log(`🎯 ❌ CONFLITO: ${vendedor.name} tem conflito de horário`);
       }
     }
     
-    console.log('🎯 Vendedor final selecionado:', vendedorSelecionado);
+    console.log('🎯 ===== RESULTADO FINAL DA SELEÇÃO =====');
+    console.log('🎯 Vendedor final selecionado:', vendedorSelecionado?.name || 'NENHUM');
+    console.log('🎯 Critérios finais:', { menorNumeroAgendamentos, maiorTaxaConversao });
+    console.log('🎯 ========================================');
     return vendedorSelecionado;
   };
 
@@ -345,9 +355,11 @@ const AgendamentosPage: React.FC = () => {
     
     try {
       // Selecionar vendedor automaticamente (NUNCA manual)
+      console.log('🎯 CRIAÇÃO: Chamando selecionarVendedorAutomatico para CRIAR AGENDAMENTO');
+      console.log('🎯 CRIAÇÃO: DataHora sendo usada:', dataHoraAgendamento);
       const vendedorSelecionado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento);
       
-      console.log('👤 VENDEDOR SELECIONADO AUTOMATICAMENTE:', vendedorSelecionado);
+      console.log('👤 CRIAÇÃO: VENDEDOR SELECIONADO AUTOMATICAMENTE:', vendedorSelecionado?.name);
       
       if (!vendedorSelecionado) {
         toast.error('Nenhum vendedor disponível neste horário. Todos os vendedores já possuem reuniões marcadas neste horário.');
