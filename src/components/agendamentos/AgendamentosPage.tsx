@@ -225,6 +225,21 @@ const AgendamentosPage: React.FC = () => {
   const selecionarVendedorAutomatico = async (vendedoresList: any[], dataHora: string) => {
     console.log('🎯 selecionarVendedorAutomatico chamada:', { vendedoresList: vendedoresList.length, dataHora });
     
+    // Buscar TODOS os agendamentos ativos de TODOS os vendedores (independente de SDR)
+    const { data: todosAgendamentos, error } = await supabase
+      .from('agendamentos')
+      .select('vendedor_id, status')
+      .in('vendedor_id', vendedoresList.map(v => v.id))
+      .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda']);
+    
+    if (error) {
+      console.error('❌ Erro ao buscar agendamentos para seleção:', error);
+      // Em caso de erro, usar os agendamentos já carregados como fallback
+    }
+    
+    const agendamentosParaContar = todosAgendamentos || agendamentos;
+    console.log('🎯 IMPORTANTE: Total de agendamentos considerados no cálculo:', agendamentosParaContar.length);
+    
     // Buscar agendamentos existentes para contar distribuição
     const agendamentosVendedores = new Map();
     
@@ -233,8 +248,8 @@ const AgendamentosPage: React.FC = () => {
       agendamentosVendedores.set(vendedor.id, 0);
     });
     
-    // Contar agendamentos existentes
-    agendamentos.forEach(agendamento => {
+    // Contar agendamentos existentes de TODOS os SDRs
+    agendamentosParaContar.forEach(agendamento => {
       if (agendamentosVendedores.has(agendamento.vendedor_id)) {
         agendamentosVendedores.set(
           agendamento.vendedor_id, 
