@@ -1248,32 +1248,52 @@ const AgendamentosPage: React.FC = () => {
                   <div>
                      <div className="flex items-center justify-between mb-2">
                        <p className="text-sm font-medium">Vendedores especializados disponíveis:</p>
-                        {vendedorIndicado ? (
-                          vendedorIndicado.foraHorario ? (
-                            <div className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded border border-red-200">
-                              <span>⚠️</span>
-                              <span>Fora do horário de trabalho - Use "Forçar Agendamento"</span>
-                            </div>
-                          ) : vendedorIndicado.conflito ? (
-                            <div className="flex items-center gap-1 text-xs text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded border border-orange-200">
-                              <span>⚠️</span>
-                              <span>Todos têm conflitos - Use "Forçar Agendamento"</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1 text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded">
-                              <span>🎯</span>
-                              <span>Será agendado com: {vendedorIndicado.name}</span>
-                            </div>
-                          )
-                        ) : selectedDateForm && selectedTime ? (
-                         <div className="text-xs text-muted-foreground">
-                           Calculando vendedor disponível...
-                         </div>
-                       ) : (
-                         <div className="text-xs text-muted-foreground">
-                           Selecione data e horário para ver indicação
-                         </div>
-                       )}
+                         {vendedorIndicado ? (
+                           vendedorIndicado.foraHorario ? (
+                             <div className="flex items-center gap-2">
+                               <div className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded border border-red-200">
+                                 <span>⚠️</span>
+                                 <span>Fora do horário de trabalho</span>
+                               </div>
+                               <Button
+                                 variant="destructive"
+                                 size="sm"
+                                 onClick={handleForcarAgendamento}
+                                 className="text-xs px-3 py-1 h-7"
+                               >
+                                 Forçar Agendamento
+                               </Button>
+                             </div>
+                           ) : vendedorIndicado.conflito ? (
+                             <div className="flex items-center gap-2">
+                               <div className="flex items-center gap-1 text-xs text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded border border-orange-200">
+                                 <span>⚠️</span>
+                                 <span>Todos têm conflitos</span>
+                               </div>
+                               <Button
+                                 variant="destructive"
+                                 size="sm"
+                                 onClick={handleForcarAgendamento}
+                                 className="text-xs px-3 py-1 h-7"
+                               >
+                                 Forçar Agendamento
+                               </Button>
+                             </div>
+                           ) : (
+                             <div className="flex items-center gap-1 text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded">
+                               <span>🎯</span>
+                               <span>Será agendado com: {vendedorIndicado.name}</span>
+                             </div>
+                           )
+                         ) : selectedDateForm && selectedTime ? (
+                          <div className="text-xs text-muted-foreground">
+                            Calculando vendedor disponível...
+                          </div>
+                        ) : (
+                          <div className="text-xs text-muted-foreground">
+                            Selecione data e horário para ver indicação
+                          </div>
+                        )}
                      </div>
                     <div className="space-y-2">
                      {vendedores.map((vendedor) => {
@@ -1384,47 +1404,80 @@ const AgendamentosPage: React.FC = () => {
 
             {/* Vendedor Selecionado Automaticamente */}
             {selectedDateForm && (
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2">
-                  <span className="text-blue-600 font-medium">🎯 Vendedor Selecionado:</span>
-                  {(() => {
-                    try {
-                      console.log('🔍 Debug vendedor selecionado interface:', {
-                        vendedores: vendedores?.length,
-                        selectedDateForm,
-                        selectedTime,
-                        agendamentos: agendamentos?.length
-                      });
+              <div className={`p-4 rounded-lg border ${
+                vendedorIndicado?.foraHorario || vendedorIndicado?.conflito 
+                  ? 'bg-red-50 border-red-200' 
+                  : 'bg-blue-50 border-blue-200'
+              }`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-medium ${
+                      vendedorIndicado?.foraHorario || vendedorIndicado?.conflito 
+                        ? 'text-red-600' 
+                        : 'text-blue-600'
+                    }`}>
+                      {vendedorIndicado?.foraHorario || vendedorIndicado?.conflito ? '⚠️' : '🎯'} Vendedor Selecionado:
+                    </span>
+                    {(() => {
+                      try {
+                        console.log('🔍 Debug vendedor selecionado interface:', {
+                          vendedores: vendedores?.length,
+                          selectedDateForm,
+                          selectedTime,
+                          agendamentos: agendamentos?.length
+                        });
 
-                      // Usar o mesmo vendedor que foi indicado pela lógica principal
-                      if (!vendedorIndicado) {
-                        return <span className="text-gray-500">Aguardando seleção de data e horário</span>;
-                      }
+                        // Usar o mesmo vendedor que foi indicado pela lógica principal
+                        if (!vendedorIndicado) {
+                          return <span className="text-gray-500">Aguardando seleção de data e horário</span>;
+                        }
 
-                      
-                      if (vendedorIndicado.conflito) {
-                        return <span className="text-red-500">Nenhum vendedor disponível neste horário</span>;
+                        if (vendedorIndicado.foraHorario) {
+                          return <span className="text-red-600 font-semibold">Todos os vendedores estão fora do horário de trabalho</span>;
+                        }
+                        
+                        if (vendedorIndicado.conflito) {
+                          return <span className="text-red-500">Nenhum vendedor disponível neste horário</span>;
+                        }
+                        
+                        // Contar agendamentos do vendedor indicado
+                        const agendamentosVendedor = agendamentos.filter(ag => 
+                          ag.vendedor_id === vendedorIndicado.id && 
+                          ['agendado', 'atrasado'].includes(ag.status)
+                        ).length;
+                        
+                        return (
+                          <span className="text-blue-800 font-semibold">
+                            {vendedorIndicado.name} ({agendamentosVendedor} agendamentos)
+                          </span>
+                        );
+                      } catch (error) {
+                        console.error('❌ Erro na seleção do vendedor:', error);
+                        return <span className="text-red-500">Erro na seleção do vendedor</span>;
                       }
-                      
-                      // Contar agendamentos do vendedor indicado
-                      const agendamentosVendedor = agendamentos.filter(ag => 
-                        ag.vendedor_id === vendedorIndicado.id && 
-                        ['agendado', 'atrasado'].includes(ag.status)
-                      ).length;
-                      
-                      return (
-                        <span className="text-blue-800 font-semibold">
-                          {vendedorIndicado.name} ({agendamentosVendedor} agendamentos)
-                        </span>
-                      );
-                    } catch (error) {
-                      console.error('❌ Erro na seleção do vendedor:', error);
-                      return <span className="text-red-500">Erro na seleção do vendedor</span>;
-                    }
-                  })()}
+                    })()}
+                  </div>
+                  
+                  {(vendedorIndicado?.foraHorario || vendedorIndicado?.conflito) && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleForcarAgendamento}
+                      className="text-sm px-4 py-2"
+                    >
+                      Forçar Agendamento
+                    </Button>
+                  )}
                 </div>
-                <p className="text-xs text-blue-600 mt-1">
-                  * Sistema selecionou automaticamente o vendedor com menor número de agendamentos
+                <p className={`text-xs mt-1 ${
+                  vendedorIndicado?.foraHorario || vendedorIndicado?.conflito 
+                    ? 'text-red-600' 
+                    : 'text-blue-600'
+                }`}>
+                  {vendedorIndicado?.foraHorario || vendedorIndicado?.conflito 
+                    ? '* Todos os vendedores estão fora do horário de trabalho. Use "Forçar Agendamento" se necessário.'
+                    : '* Sistema selecionou automaticamente o vendedor com menor número de agendamentos'
+                  }
                 </p>
               </div>
             )}
