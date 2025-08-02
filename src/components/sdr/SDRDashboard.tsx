@@ -12,6 +12,7 @@ import HistoricoReunioes from './HistoricoReunioes';
 import SDRMetasDiarias from '@/components/dashboard/SDRMetasDiarias';
 import { SDRMetasSemanais } from './SDRMetasSemanais';
 import { ReunioesChart } from '@/components/dashboard/ReunioesChart';
+import SemanasConsecutivasCard from '@/components/dashboard/SemanasConsecutivasCard';
 import { FileText, Users, Calendar, TrendingUp, X, History } from 'lucide-react';
 
 const SDRDashboard: React.FC = () => {
@@ -126,6 +127,9 @@ const SDRDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Semanas Consecutivas */}
+      <SemanasConsecutivasCard vendedorId={profile?.id} />
 
       {/* Metas Diárias e Semanais */}
       <SDRMetasDiarias 

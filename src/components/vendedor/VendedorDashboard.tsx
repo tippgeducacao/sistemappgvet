@@ -8,6 +8,7 @@ import { useVendas } from '@/hooks/useVendas';
 import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards';
 import VendedorMetas from '@/components/dashboard/VendedorMetas';
 import VendedorMetasDiarias from '@/components/dashboard/VendedorMetasDiarias';
+import SemanasConsecutivasCard from '@/components/dashboard/SemanasConsecutivasCard';
 import ReuniaoAtrasadaModal from '@/components/vendedor/ReuniaoAtrasadaModal';
 import { useReuniaoAtrasada } from '@/hooks/useReuniaoAtrasada';
 import { FileText, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -100,6 +101,9 @@ const VendedorDashboard: React.FC = () => {
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
       />
+
+      {/* Semanas Consecutivas */}
+      <SemanasConsecutivasCard vendedorId={profile?.id} />
 
       {/* Metas Diárias */}
       <VendedorMetasDiarias
