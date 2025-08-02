@@ -20,14 +20,15 @@ const PaymentConditionsSection: React.FC<PaymentConditionsSectionProps> = ({ for
     <div className="space-y-3">
       {/* Percentual de desconto e Data de primeiro pagamento lado a lado */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormSelectField
-          id="percentualDesconto"
-          label="Percentual de Descontos *"
-          value={formData.percentualDesconto || ''}
-          onChange={(value) => updateField('percentualDesconto', value)}
-          options={PERCENTUAL_DESCONTO_OPTIONS}
-          placeholder="Selecione o percentual"
-        />
+        <div>
+          <Label htmlFor="percentualDesconto">Percentual de Descontos *</Label>
+          <Input
+            id="percentualDesconto"
+            value={formData.percentualDesconto || ''}
+            onChange={(e) => updateField('percentualDesconto', e.target.value)}
+            placeholder="Ex: 10, 15, 20"
+          />
+        </div>
 
         <FormSelectField
           id="dataPrimeiroPagamento"
