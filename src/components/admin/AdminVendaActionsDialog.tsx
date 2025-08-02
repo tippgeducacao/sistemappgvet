@@ -218,18 +218,18 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   };
   return <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-xl">
+                <DialogTitle className="text-lg">
                   Gerenciar Venda #{venda.id.substring(0, 8)}
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-sm">
                   Aprovar, rejeitar ou alterar status da venda
                 </DialogDescription>
                 {dataMatricula && (
-                  <div className="mt-2 text-sm text-gray-600">
+                  <div className="mt-1 text-xs text-gray-600">
                     <span className="font-medium">Data de Matrícula:</span> {dataMatricula}
                   </div>
                 )}
@@ -242,102 +242,107 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
 
           {/* Conteúdo Principal */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
               {/* Coluna Esquerda */}
-              <div className="space-y-6">
+              <div className="space-y-3">
                 <VendaAlunoInfoCard alunoData={venda.aluno} isLoading={false} />
                 <VendaCursoInfoCard cursoData={venda.curso} />
                 
                 {/* Status da Venda */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-lg mb-3">Status da Venda</h3>
-                  <div className="space-y-3">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <h3 className="font-semibold text-base mb-2">Status da Venda</h3>
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">Status Atual:</span>
+                      <span className="text-sm font-medium">Status Atual:</span>
                       <Badge variant={getStatusBadgeVariant(venda.status)}>
                         {getStatusLabel(venda.status)}
                       </Badge>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div>
-                        <span className="text-sm text-gray-600">Pontuação (calculada automaticamente):</span>
-                        <p className="font-medium text-lg text-ppgvet-teal">{DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts</p>
+                        <span className="text-xs text-gray-600">Pontuação (calculada automaticamente):</span>
+                        <p className="font-medium text-base text-ppgvet-teal">{DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts</p>
                         <span className="text-xs text-gray-500">Esta pontuação é calculada automaticamente com base nas regras de negócio</span>
                       </div>
                       {venda.pontuacao_validada && (
                         <div>
-                          <span className="text-sm text-gray-600">Pontuação Validada:</span>
-                          <p className="font-medium">{DataFormattingService.formatPoints(venda.pontuacao_validada)} pts</p>
+                          <span className="text-xs text-gray-600">Pontuação Validada:</span>
+                          <p className="text-sm font-medium">{DataFormattingService.formatPoints(venda.pontuacao_validada)} pts</p>
                         </div>
                       )}
                     </div>
-                    {venda.motivo_pendencia && <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-                        <span className="text-sm font-medium text-yellow-800">Motivo da Pendência:</span>
-                        <p className="text-sm text-yellow-700 mt-1">{venda.motivo_pendencia}</p>
+                    {venda.motivo_pendencia && <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                        <span className="text-xs font-medium text-yellow-800">Motivo da Pendência:</span>
+                        <p className="text-xs text-yellow-700 mt-1">{venda.motivo_pendencia}</p>
                       </div>}
                   </div>
                 </div>
               </div>
 
               {/* Coluna Direita */}
-              <div className="space-y-6">
+              <div className="space-y-3">
                 <VendaDocumentCard documentPath={venda.documento_comprobatorio || null} tipoVenda={tipoVenda} vendaId={venda.id} />
                 <VendaObservationsCard observacoes={venda.observacoes || ''} />
               </div>
             </div>
             
             {/* Detalhes do Formulário */}
-            <div className="mt-6">
+            <div className="mt-3">
               <VendaFormDetailsCard respostas={formDetails} isLoading={isLoadingDetails} error={detailsError} vendaId={venda.id} onRefetch={refetchDetails} />
             </div>
 
             {/* Validação de Campos */}
-            <div className="mt-6">
+            <div className="mt-3">
               <VendaFieldValidationCard respostas={formDetails} isLoading={isLoadingDetails} error={detailsError} vendaId={venda.id} onSaveValidations={handleSaveValidations} isSaving={isSavingValidations} />
             </div>
           </div>
 
           {/* Seção de Gerenciamento */}
-          <div className="border-t pt-4 space-y-4 flex-shrink-0">
-            <div>
-              <Label htmlFor="dataAssinatura">Data de Assinatura do Contrato *</Label>
-              <Input
-                id="dataAssinatura"
-                type="date"
-                value={dataAssinaturaContrato}
-                onChange={(e) => setDataAssinaturaContrato(e.target.value)}
-                placeholder="Data de assinatura"
-              />
-              <span className="text-xs text-gray-600 mt-1">
-                Obrigatório para aprovação da venda
-              </span>
+          <div className="border-t pt-3 space-y-3 flex-shrink-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="dataAssinatura" className="text-sm">Data de Assinatura do Contrato *</Label>
+                <Input
+                  id="dataAssinatura"
+                  type="date"
+                  value={dataAssinaturaContrato}
+                  onChange={(e) => setDataAssinaturaContrato(e.target.value)}
+                  placeholder="Data de assinatura"
+                  className="text-sm"
+                />
+                <span className="text-xs text-gray-600">
+                  Obrigatório para aprovação da venda
+                </span>
+              </div>
+
+              <div>
+                <Label htmlFor="pontuacaoExtra" className="text-sm">Pontuação Extra (opcional)</Label>
+                <Input
+                  id="pontuacaoExtra"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={pontuacaoExtra}
+                  onChange={(e) => setPontuacaoExtra(e.target.value)}
+                  placeholder="Ex: 2.5"
+                  className="text-sm"
+                />
+                <span className="text-xs text-gray-600">
+                  Pontos extras a serem adicionados à pontuação base ({DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts)
+                  {pontuacaoExtra && ` = Total: ${DataFormattingService.formatPoints((venda.pontuacao_esperada || 0) + (parseFloat(pontuacaoExtra) || 0))} pts`}
+                </span>
+              </div>
             </div>
 
             <div>
-              <Label htmlFor="pontuacaoExtra">Pontuação Extra (opcional)</Label>
-              <Input
-                id="pontuacaoExtra"
-                type="number"
-                step="0.1"
-                min="0"
-                value={pontuacaoExtra}
-                onChange={(e) => setPontuacaoExtra(e.target.value)}
-                placeholder="Ex: 2.5"
-              />
-              <span className="text-xs text-gray-600 mt-1">
-                Pontos extras a serem adicionados à pontuação base ({DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts)
-                {pontuacaoExtra && ` = Total: ${DataFormattingService.formatPoints((venda.pontuacao_esperada || 0) + (parseFloat(pontuacaoExtra) || 0))} pts`}
-              </span>
-            </div>
-
-            <div>
-              <Label htmlFor="motivo">Motivo da Pendência (opcional)</Label>
+              <Label htmlFor="motivo" className="text-sm">Motivo da Pendência (opcional)</Label>
               <Textarea 
                 id="motivo" 
                 value={motivoPendencia} 
                 onChange={e => setMotivoPendencia(e.target.value)} 
                 placeholder="Digite o motivo caso seja necessário..." 
-                rows={3} 
+                rows={2}
+                className="text-sm"
               />
             </div>
 
