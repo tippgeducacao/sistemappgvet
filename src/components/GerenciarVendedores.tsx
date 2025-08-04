@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings, KeyRound, Clock } from 'lucide-react';
+import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings, KeyRound, Clock, ArrowUpDown } from 'lucide-react';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -19,6 +19,7 @@ import SDRProfileModal from '@/components/sdr/SDRProfileModal';
 import EditarVendedorDialog from '@/components/vendedores/EditarVendedorDialog';
 import ResetPasswordDialog from '@/components/vendedores/ResetPasswordDialog';
 import ConfigurarNiveisDialog from '@/components/niveis/ConfigurarNiveisDialog';
+import { UserMigrationDialog } from '@/components/admin/UserMigrationDialog';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { NiveisService } from '@/services/niveisService';
 import type { Vendedor } from '@/services/vendedoresService';
@@ -39,6 +40,7 @@ const GerenciarVendedores: React.FC = () => {
   const [editingVendedor, setEditingVendedor] = useState<Vendedor | null>(null);
   const [resetPasswordVendedor, setResetPasswordVendedor] = useState<Vendedor | null>(null);
   const [showNiveisConfig, setShowNiveisConfig] = useState(false);
+  const [showUserMigration, setShowUserMigration] = useState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [currentVendedorId, setCurrentVendedorId] = useState<string>('');
@@ -164,6 +166,15 @@ const GerenciarVendedores: React.FC = () => {
           >
             <Settings className="h-4 w-4 mr-2" />
             Configurar Níveis
+          </Button>
+          
+          <Button 
+            onClick={() => setShowUserMigration(true)} 
+            variant="outline" 
+            className="border-amber-300 hover:bg-amber-50 text-amber-700"
+          >
+            <ArrowUpDown className="h-4 w-4 mr-2" />
+            Migrar Usuários
           </Button>
           
           <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
@@ -743,6 +754,11 @@ const GerenciarVendedores: React.FC = () => {
       <ConfigurarNiveisDialog
         open={showNiveisConfig}
         onOpenChange={setShowNiveisConfig}
+      />
+      
+      <UserMigrationDialog
+        open={showUserMigration}
+        onOpenChange={setShowUserMigration}
       />
       
       <ResetPasswordDialog
