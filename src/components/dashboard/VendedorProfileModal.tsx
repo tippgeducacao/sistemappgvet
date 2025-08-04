@@ -159,17 +159,52 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
             onYearChange={setFilterYear}
           />
 
-          <Tabs defaultValue="reunioes" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="reunioes" className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4" />
-                Agenda de Reuniões
+          <Tabs defaultValue="metas" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="metas" className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Metas
               </TabsTrigger>
               <TabsTrigger value="vendas" className="flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                Histórico de Vendas
+                <TrendingUp className="h-4 w-4" />
+                Vendas
+              </TabsTrigger>
+              <TabsTrigger value="reunioes" className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" />
+                Reuniões
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="metas">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Metas do Período</CardTitle>
+                  <CardDescription>
+                    Visualizando: {new Date(filterYear, filterMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">Meta Semanal</span>
+                      </div>
+                      <p className="text-2xl font-bold">8 pts</p>
+                      <p className="text-sm text-muted-foreground">Por semana</p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">Semanas Consecutivas</span>
+                      </div>
+                      <p className="text-2xl font-bold">{loadingSemanas ? '...' : semanasConsecutivas}</p>
+                      <p className="text-sm text-muted-foreground">Batendo meta</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="reunioes">
               <Card>
