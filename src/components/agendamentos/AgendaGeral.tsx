@@ -11,13 +11,14 @@ import { toast } from 'sonner';
 import { format, addDays, subDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuthStore } from '@/stores/AuthStore';
+import { useGruposPosGraduacoes } from '@/hooks/useGruposPosGraduacoes';
 
 interface Vendedor {
   id: string;
   name: string;
   email: string;
   photo_url?: string;
-  pos_graduacoes: string[];
+  grupos_pos_graduacoes: string[];
   cursos?: string[];
   horario_trabalho?: {
     manha_inicio?: string;
@@ -53,6 +54,7 @@ interface AgendaGeralProps {
 
 const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const { profile } = useAuthStore();
+  const { grupos } = useGruposPosGraduacoes();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [vendedoresFiltrados, setVendedoresFiltrados] = useState<Vendedor[]>([]);
@@ -60,7 +62,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [cursos, setCursos] = useState<any[]>([]);
   const [sdrs, setSdrs] = useState<any[]>([]);
-  const [filtroPosgGraduacao, setFiltroPosgGraduacao] = useState<string>('todas');
+  const [filtroGrupo, setFiltroGrupo] = useState<string>('todos');
   const [filtroSDR, setFiltroSDR] = useState<string>('todos');
   const [vendedorHorarioModal, setVendedorHorarioModal] = useState<Vendedor | null>(null);
   
@@ -97,7 +99,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     aplicarFiltros();
-  }, [vendedores, filtroPosgGraduacao, filtroSDR]);
+  }, [vendedores, filtroGrupo, filtroSDR]);
 
   // Função para detectar conflitos de horário
   const detectarConflitos = (vendedorId: string, horario: string) => {
@@ -161,18 +163,19 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       setCursos(cursosData || []);
       setSdrs(sdrsData || []);
       
-      // Mapear cursos para vendedores
-      const vendedoresComCursos = (vendedoresData || []).map(vendedor => ({
+      // Mapear grupos para vendedores
+      const vendedoresComGrupos = (vendedoresData || []).map(vendedor => ({
         ...vendedor,
         horario_trabalho: vendedor.horario_trabalho as any,
-        cursos: (vendedor.pos_graduacoes || []).map((cursoId: string) => {
-          const curso = cursosData?.find(c => c.id === cursoId);
-          return curso ? curso.nome : 'Curso não encontrado';
+        grupos_pos_graduacoes: vendedor.pos_graduacoes || [],
+        cursos: (vendedor.pos_graduacoes || []).map((grupoId: string) => {
+          const grupo = grupos.find(g => g.id === grupoId);
+          return grupo ? grupo.nome : 'Grupo não encontrado';
         })
       })) as Vendedor[];
 
-      setVendedores(vendedoresComCursos);
-      setVendedoresFiltrados(vendedoresComCursos);
+      setVendedores(vendedoresComGrupos);
+      setVendedoresFiltrados(vendedoresComGrupos);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados');
@@ -219,11 +222,11 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const aplicarFiltros = () => {
     let vendedoresFiltrados = [...vendedores];
 
-    // Filtro por pós-graduação
-    if (filtroPosgGraduacao && filtroPosgGraduacao !== 'todas') {
+    // Filtro por grupo
+    if (filtroGrupo && filtroGrupo !== 'todos') {
       vendedoresFiltrados = vendedoresFiltrados.filter(vendedor => 
-        vendedor.cursos?.some(curso => 
-          curso.toLowerCase().includes(filtroPosgGraduacao.toLowerCase())
+        vendedor.cursos?.some(grupo => 
+          grupo.toLowerCase().includes(filtroGrupo.toLowerCase())
         )
       );
     }
@@ -231,7 +234,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     setVendedoresFiltrados(vendedoresFiltrados);
   };
 
-  const posGraduacoesUnicas = [...new Set(
+  const gruposUnicos = [...new Set(
     vendedores.flatMap(v => v.cursos || [])
   )].sort();
 
@@ -343,18 +346,18 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                 </Button>
               </div>
 
-              {/* Filtro de Pós-graduação */}
+              {/* Filtro de Grupos */}
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                <Select value={filtroPosgGraduacao} onValueChange={setFiltroPosgGraduacao}>
+                <Select value={filtroGrupo} onValueChange={setFiltroGrupo}>
                   <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Todas as especializações" />
+                    <SelectValue placeholder="Todos os grupos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todas">Todas as especializações</SelectItem>
-                    {posGraduacoesUnicas.map((pos, index) => (
-                      <SelectItem key={index} value={pos}>
-                        {pos}
+                    <SelectItem value="todos">Todos os grupos</SelectItem>
+                    {gruposUnicos.map((grupo, index) => (
+                      <SelectItem key={index} value={grupo}>
+                        {grupo}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -395,12 +398,12 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                       : "Nenhum vendedor corresponde ao filtro aplicado"
                     }
                   </p>
-                  {filtroPosgGraduacao !== 'todas' && (
+                  {filtroGrupo !== 'todos' && (
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="mt-2" 
-                      onClick={() => setFiltroPosgGraduacao('todas')}
+                      onClick={() => setFiltroGrupo('todos')}
                     >
                       Limpar Filtro
                     </Button>

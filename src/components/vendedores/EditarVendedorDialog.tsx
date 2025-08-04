@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { User, TrendingUp, Save, X, Clock, GraduationCap } from 'lucide-react';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useCursos } from '@/hooks/useCursos';
+import { useGruposPosGraduacoes } from '@/hooks/useGruposPosGraduacoes';
 import { NiveisService } from '@/services/niveisService';
 import { UserService } from '@/services/user/UserService';
 import type { Vendedor } from '@/services/vendedoresService';
@@ -29,10 +30,11 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
   onSuccess
 }) => {
   const { updateVendedorNivel } = useNiveis();
+  const { grupos } = useGruposPosGraduacoes();
   const { cursos } = useCursos();
   const { toast } = useToast();
   const [selectedNivel, setSelectedNivel] = useState<string>('');
-  const [selectedPosGraduacoes, setSelectedPosGraduacoes] = useState<string[]>([]);
+  const [selectedGruposPosGraduacoes, setSelectedGruposPosGraduacoes] = useState<string[]>([]);
   const [horarioTrabalho, setHorarioTrabalho] = useState<HorarioTrabalho>({
     dias_trabalho: 'segunda_sabado',
     segunda_sexta: {
@@ -71,9 +73,9 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
         setSelectedNivel('');
       }
 
-      // Carregar pós-graduações do vendedor
+      // Carregar grupos de pós-graduações do vendedor
       if (vendedor.pos_graduacoes) {
-        setSelectedPosGraduacoes(vendedor.pos_graduacoes);
+        setSelectedGruposPosGraduacoes(vendedor.pos_graduacoes);
       }
 
       // Carregar horário de trabalho do vendedor
@@ -115,9 +117,9 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
         await updateVendedorNivel(vendedor.id, selectedNivel as any);
       }
       
-      // Atualizar pós-graduações e horário de trabalho
+      // Atualizar grupos de pós-graduações e horário de trabalho
       await UserService.updateProfile(vendedor.id, {
-        pos_graduacoes: selectedPosGraduacoes,
+        grupos_pos_graduacoes: selectedGruposPosGraduacoes,
         horario_trabalho: horarioTrabalho
       });
 
@@ -140,16 +142,16 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
     }
   };
 
-  const togglePosGraduacao = (cursoId: string) => {
-    setSelectedPosGraduacoes(prev => {
-      if (prev.includes(cursoId)) {
-        return prev.filter(id => id !== cursoId);
-      } else if (prev.length < 20) {
-        return [...prev, cursoId];
+  const toggleGrupoPosGraduacao = (grupoId: string) => {
+    setSelectedGruposPosGraduacoes(prev => {
+      if (prev.includes(grupoId)) {
+        return prev.filter(id => id !== grupoId);
+      } else if (prev.length < 10) {
+        return [...prev, grupoId];
       } else {
         toast({
           title: "Limite atingido",
-          description: "Máximo de 20 pós-graduações por vendedor",
+          description: "Máximo de 10 grupos de pós-graduações por vendedor",
           variant: "destructive",
         });
         return prev;
@@ -281,7 +283,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
             </>
           )}
 
-          {/* Pós-graduações (apenas para vendedores e SDRs) */}
+          {/* Grupos de Pós-graduações (apenas para vendedores e SDRs) */}
           {(vendedor.user_type === 'vendedor' || 
             vendedor.user_type === 'sdr_inbound' || 
             vendedor.user_type === 'sdr_outbound') && (
@@ -289,34 +291,41 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-foreground" />
                 <Label className="text-sm font-medium text-foreground">
-                  Pós que pode vender ({selectedPosGraduacoes.length}/20)
+                  Grupos que pode vender ({selectedGruposPosGraduacoes.length}/10)
                 </Label>
               </div>
               <div className="space-y-2 max-h-32 overflow-y-auto">
-                {posGraduacoes.length > 0 ? (
-                  posGraduacoes.map((curso) => (
-                    <div key={curso.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={curso.id}
-                        checked={selectedPosGraduacoes.includes(curso.id)}
-                        onCheckedChange={() => togglePosGraduacao(curso.id)}
-                        disabled={!selectedPosGraduacoes.includes(curso.id) && selectedPosGraduacoes.length >= 20}
-                      />
-                      <Label
-                        htmlFor={curso.id}
-                        className={`text-sm cursor-pointer ${
-                          !selectedPosGraduacoes.includes(curso.id) && selectedPosGraduacoes.length >= 20
-                            ? 'text-muted-foreground/50' 
-                            : 'text-foreground'
-                        }`}
-                      >
-                        {curso.nome}
-                      </Label>
+                {grupos.length > 0 ? (
+                  grupos.map((grupo) => (
+                    <div key={grupo.id} className="flex flex-col space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id={grupo.id}
+                          checked={selectedGruposPosGraduacoes.includes(grupo.id)}
+                          onCheckedChange={() => toggleGrupoPosGraduacao(grupo.id)}
+                          disabled={!selectedGruposPosGraduacoes.includes(grupo.id) && selectedGruposPosGraduacoes.length >= 10}
+                        />
+                        <Label
+                          htmlFor={grupo.id}
+                          className={`text-sm cursor-pointer font-medium ${
+                            !selectedGruposPosGraduacoes.includes(grupo.id) && selectedGruposPosGraduacoes.length >= 10
+                              ? 'text-muted-foreground/50' 
+                              : 'text-foreground'
+                          }`}
+                        >
+                          {grupo.nome}
+                        </Label>
+                      </div>
+                      {grupo.cursos && grupo.cursos.length > 0 && (
+                        <div className="ml-6 text-xs text-muted-foreground">
+                          {grupo.cursos.map(curso => curso.nome).join(', ')}
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
-                    Nenhuma pós-graduação disponível
+                    Nenhum grupo de pós-graduação disponível
                   </p>
                 )}
               </div>
