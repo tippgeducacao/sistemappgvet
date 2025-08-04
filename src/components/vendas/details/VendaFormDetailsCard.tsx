@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCursos } from '@/hooks/useCursos';
 
 interface RespostaFormulario {
   id: string;
@@ -24,6 +25,17 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
   vendaId,
   onRefetch
 }) => {
+  const { cursos } = useCursos();
+
+  const formatFieldValue = (fieldName: string, value: string) => {
+    // Se o campo é relacionado a curso e o valor parece ser um UUID
+    if ((fieldName.includes('Curso') || fieldName.includes('cursoId')) && 
+        value && value.length === 36 && value.includes('-')) {
+      const curso = cursos.find(c => c.id === value);
+      return curso ? curso.nome : value;
+    }
+    return value;
+  };
   const formatFieldName = (fieldName: string) => {
     const fieldLabels: Record<string, string> = {
       'Data de Chegada': 'Data de Chegada do Lead',
@@ -191,7 +203,7 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
                             {formatFieldName(resposta.campo_nome)}
                           </td>
                           <td className="p-2 text-gray-900">
-                            {resposta.valor_informado}
+                            {formatFieldValue(resposta.campo_nome, resposta.valor_informado)}
                           </td>
                         </tr>
                       ))}
