@@ -72,8 +72,17 @@ const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
 const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: boolean }> = ({ person, rank, isTopThree = false }) => {
   const weeklyProgress = person.weeklyTarget > 0 ? (person.weeklySales / person.weeklyTarget) * 100 : 0;
   const dailyProgress = person.dailyTarget > 0 ? (person.dailySales / person.dailyTarget) * 100 : 0;
+  
+  // Verificar se é SDR com comissão bloqueada (abaixo de 71%)
+  const isSDR = person.isSDR;
+  const comissaoBloqueada = isSDR && weeklyProgress < 71;
 
   const getTopThreeStyle = () => {
+    // Se for SDR com comissão bloqueada, sempre usar fundo vermelho
+    if (comissaoBloqueada) {
+      return 'bg-red-500 border-red-400 shadow-xl shadow-red-500/50 text-white';
+    }
+    
     if (!isTopThree) return 'bg-card border-border';
     
     switch (rank) {
@@ -95,6 +104,15 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
       transition={{ delay: rank * 0.05 }}
       className={`border rounded-lg p-3 hover:shadow-md transition-shadow ${getTopThreeStyle()}`}
     >
+      {/* Badge para SDR com comissão bloqueada */}
+      {comissaoBloqueada && (
+        <div className="absolute top-1 right-1 z-10">
+          <div className="bg-white text-red-600 px-1 py-0.5 rounded text-xs font-bold animate-pulse">
+            BLOQUEADO
+          </div>
+        </div>
+      )}
+      
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
           <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-bold">
@@ -108,7 +126,12 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
           <div>
             <div className="text-sm font-medium text-foreground">{person.name}</div>
             <div className="text-xs text-muted-foreground">
-              {person.isSDR ? `${person.weeklySales} cursos` : `${person.points} pts`}
+               {person.isSDR ? `${person.weeklySales} cursos` : `${person.points} pts`}
+               {comissaoBloqueada && (
+                 <div className="text-white font-bold text-xs mt-1">
+                   {weeklyProgress.toFixed(0)}% - COMISSÃO BLOQUEADA
+                 </div>
+               )}
             </div>
             <div className="flex items-center gap-1 mt-1">
               <div className={`w-1.5 h-1.5 rounded-full ${weeklyProgress >= 100 ? 'bg-green-500' : 'bg-red-500'}`}></div>

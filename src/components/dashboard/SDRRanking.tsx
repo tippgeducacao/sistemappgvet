@@ -259,8 +259,26 @@ const SDRRanking: React.FC = () => {
                 (sdr.pontosVendas / (sdr.metaVendasSemanal * 4)) * 100 :
                 (sdr.pontosVendas / (sdr.metaVendasSemanal * 52)) * 100;
 
+              const atingiu71Porcento = progressoVendas >= 71;
+              const comissaoBloqueada = !atingiu71Porcento;
+
               return (
-                <div key={sdr.id} className="flex items-center space-x-4 p-4 bg-background border rounded-lg">
+                <div 
+                  key={sdr.id} 
+                  className={`relative flex items-center space-x-4 p-4 border rounded-lg transition-all ${
+                    comissaoBloqueada 
+                      ? 'bg-red-100 border-red-500 shadow-red-100 dark:bg-red-950/50 dark:border-red-400' 
+                      : 'bg-background border-border'
+                  }`}
+                >
+                  {comissaoBloqueada && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <Badge variant="destructive" className="bg-red-600 text-white text-xs animate-pulse">
+                        COMISSÃO BLOQUEADA
+                      </Badge>
+                    </div>
+                  )}
+                  
                   {/* Posição */}
                   <div className="flex-shrink-0">
                     {getPositionIcon(position)}
