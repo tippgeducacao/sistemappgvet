@@ -91,6 +91,16 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   // Buscar taxas de conversão históricas dos vendedores (usar todos os vendedores)
   const allVendedorIds = vendedores.filter(v => v.user_type === 'vendedor').map(v => v.id);
+  
+  // Debug dos IDs dos vendedores
+  console.log('🔍 DEBUG IDs dos vendedores:', {
+    totalVendedores: vendedores.length,
+    vendedoresAtivos: allVendedorIds.length,
+    vendedorTesteExiste: allVendedorIds.includes('a3e182d3-c4d0-49af-9e95-cac6989820f5'),
+    todosOsIds: allVendedorIds,
+    vendedorTesteDados: vendedores.find(v => v.name === 'Vendedor Teste')
+  });
+  
   const { data: conversionsData } = useVendedoresWeeklyConversions(allVendedorIds, startOfAllTime, endOfAllTime);
 
   // Filtrar vendedores - apenas vendedores ativos e remover "Vendedor teste" exceto para admin específico
