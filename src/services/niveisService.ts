@@ -10,6 +10,7 @@ export interface NivelVendedor {
   meta_semanal_vendedor: number;
   meta_semanal_inbound: number;
   meta_semanal_outbound: number;
+  meta_vendas_cursos: number;
   created_at: string;
   updated_at: string;
   created_by?: string;

@@ -40,6 +40,7 @@ const GerenciarNiveis: React.FC = () => {
     if (editingNivel.tipo_usuario === 'sdr') {
       dados.meta_semanal_inbound = parseInt(formData.get('meta_semanal_inbound') as string);
       dados.meta_semanal_outbound = parseInt(formData.get('meta_semanal_outbound') as string);
+      dados.meta_vendas_cursos = parseInt(formData.get('meta_vendas_cursos') as string);
     } else {
       dados.meta_semanal_vendedor = parseInt(formData.get('meta_semanal_vendedor') as string);
     }
@@ -107,6 +108,7 @@ const GerenciarNiveis: React.FC = () => {
                 {nivel.meta_semanal_outbound > 0 && (
                   <p className="text-sm font-medium">Outbound: {nivel.meta_semanal_outbound} reuniões</p>
                 )}
+                <p className="text-sm font-medium text-orange-600">Cursos: {nivel.meta_vendas_cursos} por semana</p>
               </div>
             ) : (
               <p className="text-lg font-semibold">{nivel.meta_semanal_vendedor} pontos</p>
@@ -293,6 +295,18 @@ const GerenciarNiveis: React.FC = () => {
                   </div>
                 )}
               </div>
+              {editingNivel.tipo_usuario === 'sdr' && (
+                <div>
+                  <Label htmlFor="meta_vendas_cursos">Meta Vendas de Cursos (semanal)</Label>
+                  <Input
+                    id="meta_vendas_cursos"
+                    name="meta_vendas_cursos"
+                    type="number"
+                    defaultValue={editingNivel.meta_vendas_cursos}
+                    required
+                  />
+                </div>
+              )}
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Cancelar

@@ -540,6 +540,7 @@ export type Database = {
           meta_semanal_inbound: number | null
           meta_semanal_outbound: number | null
           meta_semanal_vendedor: number
+          meta_vendas_cursos: number
           nivel: string
           tipo_usuario: string
           updated_at: string
@@ -554,6 +555,7 @@ export type Database = {
           meta_semanal_inbound?: number | null
           meta_semanal_outbound?: number | null
           meta_semanal_vendedor?: number
+          meta_vendas_cursos?: number
           nivel: string
           tipo_usuario?: string
           updated_at?: string
@@ -568,6 +570,7 @@ export type Database = {
           meta_semanal_inbound?: number | null
           meta_semanal_outbound?: number | null
           meta_semanal_vendedor?: number
+          meta_vendas_cursos?: number
           nivel?: string
           tipo_usuario?: string
           updated_at?: string
