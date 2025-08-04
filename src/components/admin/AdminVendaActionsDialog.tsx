@@ -247,68 +247,79 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
             {/* Informações Compactas */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
               {/* Informações do Aluno */}
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <h3 className="font-semibold text-base mb-2">Informações do Aluno</h3>
-                <div className="space-y-1">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-xs text-gray-600">Nome:</span>
-                      <p className="text-sm font-medium">{venda.aluno?.nome || 'Não informado'}</p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-gray-600">Email:</span>
-                      <p className="text-sm">{venda.aluno?.email || 'Não informado'}</p>
-                    </div>
-                  </div>
+              <div className="bg-white border rounded-lg shadow-sm">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-2 border-b">
+                  <h3 className="font-semibold text-blue-900 text-sm">Informações do Aluno</h3>
                 </div>
+                <table className="w-full text-xs">
+                  <tbody>
+                    <tr className="border-b bg-white hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Nome:</td>
+                      <td className="px-3 py-2 text-gray-900">{venda.aluno?.nome || 'Não informado'}</td>
+                    </tr>
+                    <tr className="bg-gray-50 hover:bg-gray-100">
+                      <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Email:</td>
+                      <td className="px-3 py-2 text-gray-900">{venda.aluno?.email || 'Não informado'}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               {/* Informações do Curso */}
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <h3 className="font-semibold text-base mb-2">Informações do Curso</h3>
-                <div>
-                  <span className="text-xs text-gray-600">Curso:</span>
-                  <p className="text-sm font-medium">{venda.curso?.nome || 'Não informado'}</p>
+              <div className="bg-white border rounded-lg shadow-sm">
+                <div className="bg-gradient-to-r from-green-50 to-green-100 px-3 py-2 border-b">
+                  <h3 className="font-semibold text-green-900 text-sm">Informações do Curso</h3>
                 </div>
+                <table className="w-full text-xs">
+                  <tbody>
+                    <tr className="bg-white hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Curso:</td>
+                      <td className="px-3 py-2 text-gray-900">{venda.curso?.nome || 'Não informado'}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* Status e Observações */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
-              {/* Status da Venda */}
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <h3 className="font-semibold text-base mb-2">Status da Venda</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Status Atual:</span>
-                    <Badge variant={getStatusBadgeVariant(venda.status)}>
-                      {getStatusLabel(venda.status)}
-                    </Badge>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-600">Pontuação (calculada automaticamente):</span>
-                    <p className="font-medium text-base text-ppgvet-teal">{DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts</p>
-                  </div>
-                  {venda.pontuacao_validada && (
-                    <div>
-                      <span className="text-xs text-gray-600">Pontuação Validada:</span>
-                      <p className="text-sm font-medium">{DataFormattingService.formatPoints(venda.pontuacao_validada)} pts</p>
-                    </div>
-                  )}
-                  {venda.motivo_pendencia && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
-                      <span className="text-xs font-medium text-yellow-800">Motivo da Pendência:</span>
-                      <p className="text-xs text-yellow-700 mt-1">{venda.motivo_pendencia}</p>
-                    </div>
-                  )}
-                </div>
+            {/* Status da Venda */}
+            <div className="bg-white border rounded-lg shadow-sm mb-4">
+              <div className="bg-gradient-to-r from-purple-50 to-purple-100 px-3 py-2 border-b">
+                <h3 className="font-semibold text-purple-900 text-sm">Status da Venda</h3>
               </div>
+              <table className="w-full text-xs">
+                <tbody>
+                  <tr className="border-b bg-white hover:bg-gray-50">
+                    <td className="px-3 py-2 font-medium text-gray-700 w-1/4">Status Atual:</td>
+                    <td className="px-3 py-2 text-gray-900">
+                      <Badge variant={getStatusBadgeVariant(venda.status)}>
+                        {getStatusLabel(venda.status)}
+                      </Badge>
+                    </td>
+                  </tr>
+                  <tr className="border-b bg-gray-50 hover:bg-gray-100">
+                    <td className="px-3 py-2 font-medium text-gray-700 w-1/4">Pontuação (calculada automaticamente):</td>
+                    <td className="px-3 py-2 text-cyan-600 font-medium">{DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts</td>
+                  </tr>
+                  {venda.pontuacao_validada && (
+                    <tr className="border-b bg-white hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium text-gray-700 w-1/4">Pontuação Validada:</td>
+                      <td className="px-3 py-2 text-green-600 font-medium">{DataFormattingService.formatPoints(venda.pontuacao_validada)} pts</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              
+              {venda.motivo_pendencia && (
+                <div className="m-3 bg-yellow-50 border border-yellow-200 rounded p-3">
+                  <span className="text-xs font-medium text-yellow-800">Motivo da Pendência:</span>
+                  <p className="text-xs text-yellow-700 mt-1">{venda.motivo_pendencia}</p>
+                </div>
+              )}
 
-              {/* Observações */}
               {venda.observacoes && (
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <h3 className="font-semibold text-base mb-2">Observações</h3>
-                  <p className="text-sm text-gray-700">{venda.observacoes}</p>
+                <div className="m-3 bg-gray-50 border border-gray-200 rounded p-3">
+                  <span className="text-xs font-medium text-gray-800">Observações:</span>
+                  <p className="text-xs text-gray-700 mt-1">{venda.observacoes}</p>
                 </div>
               )}
             </div>
