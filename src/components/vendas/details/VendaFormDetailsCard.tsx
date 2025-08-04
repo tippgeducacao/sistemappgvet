@@ -101,15 +101,15 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
         'Telefone do Aluno', 'telefone', 'Formação do Aluno', 'formacaoAluno', 'Data de Matrícula', 
         'dataMatricula', 'IES', 'ies', 'Vendedor', 'vendedor', 'CRMV', 'crmv'
       ],
-      'Informações do Curso': [
-        'Curso ID', 'cursoId', 'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada', 
-        'Lote da Pós-Graduação', 'lotePos', 'Matrícula', 'matricula', 'Turma', 'turma', 'Abertura', 'abertura'
-      ],
       'Condições Comerciais': [
         'Valor do Contrato', 'valorContrato', 'Percentual de Desconto', 'percentualDesconto', 
         'Data do Primeiro Pagamento', 'dataPrimeiroPagamento', 'Carência da Primeira Cobrança', 
         'carenciaPrimeiraCobranca', 'Detalhes da Carência', 'detalhesCarencia', 'Reembolso da Matrícula', 
         'reembolsoMatricula', 'Condições de Parcelamento', 'parcelamento', 'Forma de Pagamento', 'pagamento'
+      ],
+      'Informações do Curso': [
+        'Curso ID', 'cursoId', 'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada', 
+        'Lote da Pós-Graduação', 'lotePos', 'Matrícula', 'matricula', 'Turma', 'turma', 'Abertura', 'abertura'
       ],
       'Origem e Captação': [
         'Forma de Captação do Lead', 'formaCaptacao', 'Tipo de Venda', 'tipoVenda', 'Venda Casada', 
