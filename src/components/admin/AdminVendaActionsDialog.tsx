@@ -242,48 +242,73 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
 
           {/* Conteúdo Principal */}
           <div className="flex-1 overflow-y-auto min-h-0">
+            {/* Informações Compactas */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
-              {/* Coluna Esquerda */}
-              <div className="space-y-3">
-                <VendaAlunoInfoCard alunoData={venda.aluno} isLoading={false} />
-                <VendaCursoInfoCard cursoData={venda.curso} />
-                
-                {/* Status da Venda */}
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <h3 className="font-semibold text-base mb-2">Status da Venda</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Status Atual:</span>
-                      <Badge variant={getStatusBadgeVariant(venda.status)}>
-                        {getStatusLabel(venda.status)}
-                      </Badge>
+              {/* Informações do Aluno */}
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <h3 className="font-semibold text-base mb-2">Informações do Aluno</h3>
+                <div className="space-y-1">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-xs text-gray-600">Nome:</span>
+                      <p className="text-sm font-medium">{venda.aluno?.nome || 'Não informado'}</p>
                     </div>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-xs text-gray-600">Pontuação (calculada automaticamente):</span>
-                        <p className="font-medium text-base text-ppgvet-teal">{DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts</p>
-                        <span className="text-xs text-gray-500">Esta pontuação é calculada automaticamente com base nas regras de negócio</span>
-                      </div>
-                      {venda.pontuacao_validada && (
-                        <div>
-                          <span className="text-xs text-gray-600">Pontuação Validada:</span>
-                          <p className="text-sm font-medium">{DataFormattingService.formatPoints(venda.pontuacao_validada)} pts</p>
-                        </div>
-                      )}
+                    <div>
+                      <span className="text-xs text-gray-600">Email:</span>
+                      <p className="text-sm">{venda.aluno?.email || 'Não informado'}</p>
                     </div>
-                    {venda.motivo_pendencia && <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
-                        <span className="text-xs font-medium text-yellow-800">Motivo da Pendência:</span>
-                        <p className="text-xs text-yellow-700 mt-1">{venda.motivo_pendencia}</p>
-                      </div>}
                   </div>
                 </div>
               </div>
 
-              {/* Coluna Direita */}
-              <div className="space-y-3">
-                <VendaDocumentCard documentPath={venda.documento_comprobatorio || null} tipoVenda={tipoVenda} vendaId={venda.id} />
-                <VendaObservationsCard observacoes={venda.observacoes || ''} />
+              {/* Informações do Curso */}
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <h3 className="font-semibold text-base mb-2">Informações do Curso</h3>
+                <div>
+                  <span className="text-xs text-gray-600">Curso:</span>
+                  <p className="text-sm font-medium">{venda.curso?.nome || 'Não informado'}</p>
+                </div>
               </div>
+            </div>
+
+            {/* Status e Observações */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
+              {/* Status da Venda */}
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <h3 className="font-semibold text-base mb-2">Status da Venda</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Status Atual:</span>
+                    <Badge variant={getStatusBadgeVariant(venda.status)}>
+                      {getStatusLabel(venda.status)}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-600">Pontuação (calculada automaticamente):</span>
+                    <p className="font-medium text-base text-ppgvet-teal">{DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts</p>
+                  </div>
+                  {venda.pontuacao_validada && (
+                    <div>
+                      <span className="text-xs text-gray-600">Pontuação Validada:</span>
+                      <p className="text-sm font-medium">{DataFormattingService.formatPoints(venda.pontuacao_validada)} pts</p>
+                    </div>
+                  )}
+                  {venda.motivo_pendencia && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                      <span className="text-xs font-medium text-yellow-800">Motivo da Pendência:</span>
+                      <p className="text-xs text-yellow-700 mt-1">{venda.motivo_pendencia}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Observações */}
+              {venda.observacoes && (
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <h3 className="font-semibold text-base mb-2">Observações</h3>
+                  <p className="text-sm text-gray-700">{venda.observacoes}</p>
+                </div>
+              )}
             </div>
             
             {/* Detalhes do Formulário */}
