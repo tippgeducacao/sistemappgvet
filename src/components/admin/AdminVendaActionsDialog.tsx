@@ -272,10 +272,26 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
                 </div>
                 <table className="w-full text-xs">
                   <tbody>
-                    <tr className="bg-white hover:bg-gray-50">
+                    <tr className="border-b bg-white hover:bg-gray-50">
                       <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Curso:</td>
                       <td className="px-3 py-2 text-gray-900">{venda.curso?.nome || 'Não informado'}</td>
                     </tr>
+                    {formDetails?.find(r => r.campo_nome === 'Turma' || r.campo_nome === 'turma') && (
+                      <tr className="border-b bg-gray-50 hover:bg-gray-100">
+                        <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Turma:</td>
+                        <td className="px-3 py-2 text-gray-900">
+                          {formDetails.find(r => r.campo_nome === 'Turma' || r.campo_nome === 'turma')?.valor_informado || 'Não informado'}
+                        </td>
+                      </tr>
+                    )}
+                    {formDetails?.find(r => r.campo_nome === 'Abertura' || r.campo_nome === 'abertura') && (
+                      <tr className="bg-white hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Abertura:</td>
+                        <td className="px-3 py-2 text-gray-900">
+                          {formDetails.find(r => r.campo_nome === 'Abertura' || r.campo_nome === 'abertura')?.valor_informado || 'Não informado'}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

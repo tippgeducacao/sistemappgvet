@@ -24,7 +24,7 @@ interface VendaFieldValidationCardProps {
 }
 
 // Campos que têm pontuação definida
-const CAMPOS_COM_PONTUACAO = ['Modalidade', 'Parcelamento', 'Forma de Pagamento', 'Forma de Captação', 'Tipo de Venda', 'Venda Casada'];
+const CAMPOS_COM_PONTUACAO = ['Modalidade', 'Parcelamento', 'Forma de Captação', 'Tipo de Venda'];
 
 // Pontuações hardcoded para alguns campos
 const getPontuacaoHardcoded = (campo: string, valor: string): number => {
@@ -32,9 +32,6 @@ const getPontuacaoHardcoded = (campo: string, valor: string): number => {
     case 'Tipo de Venda':
       if (valor === 'LIGAÇÃO') return 0.3;
       if (valor === 'WHATSAPP') return -0.3;
-      return 0;
-    case 'Venda Casada':
-      if (valor === 'SIM') return 0.3;
       return 0;
     default:
       return 0;
