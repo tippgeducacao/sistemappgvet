@@ -35,58 +35,64 @@ const VendaStatusCard: React.FC<VendaStatusCardProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center justify-between">
-          Status da Venda
-          <Badge className={getStatusColor(status)}>
-            {getStatusLabel(status)}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <span className="text-sm text-gray-600">Pontuação Esperada:</span>
-              <p className="font-medium">{pontuacaoEsperada || 0} pontos</p>
-            </div>
-            <div>
-              <span className="text-sm text-gray-600">Pontuação Validada:</span>
-              <p className="font-medium">{pontuacaoValidada || '-'} pontos</p>
-            </div>
-          </div>
-          
-          {motivoPendencia && (
-            <div className={`border rounded-lg p-3 ${
+    <div className="bg-white border rounded-lg shadow-sm">
+      <div className="bg-gradient-to-r from-purple-50 to-purple-100 px-4 py-3 border-b flex items-center justify-between">
+        <h3 className="font-semibold text-purple-900">Status da Venda</h3>
+        <Badge className={getStatusColor(status)}>
+          {getStatusLabel(status)}
+        </Badge>
+      </div>
+      <div className="p-0">
+        <table className="w-full text-sm">
+          <tbody>
+            <tr className="border-b bg-white hover:bg-gray-50">
+              <td className="px-4 py-3 font-medium text-gray-700 w-1/3">Status Atual:</td>
+              <td className="px-4 py-3 text-gray-900">
+                <Badge className={getStatusColor(status)}>
+                  {getStatusLabel(status)}
+                </Badge>
+              </td>
+            </tr>
+            <tr className="border-b bg-gray-50 hover:bg-gray-100">
+              <td className="px-4 py-3 font-medium text-gray-700 w-1/3">Pontuação (calculada automaticamente):</td>
+              <td className="px-4 py-3 text-cyan-600 font-medium">{pontuacaoEsperada || 0} pts</td>
+            </tr>
+            <tr className="bg-white hover:bg-gray-50">
+              <td className="px-4 py-3 font-medium text-gray-700 w-1/3">Pontuação Validada:</td>
+              <td className="px-4 py-3 text-green-600 font-medium">{pontuacaoValidada || '-'} pts</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        {motivoPendencia && (
+          <div className={`m-4 border rounded-lg p-3 ${
+            status === 'desistiu' 
+              ? 'bg-red-50 border-red-200' 
+              : 'bg-yellow-50 border-yellow-200'
+          }`}>
+            <span className={`text-sm font-medium ${
               status === 'desistiu' 
-                ? 'bg-red-50 border-red-200' 
-                : 'bg-yellow-50 border-yellow-200'
+                ? 'text-red-800' 
+                : 'text-yellow-800'
             }`}>
-              <span className={`text-sm font-medium ${
-                status === 'desistiu' 
-                  ? 'text-red-800' 
-                  : 'text-yellow-800'
-              }`}>
-                {status === 'desistiu' ? 'Motivo da Rejeição:' : 'Motivo da Pendência:'}
-              </span>
-              <p className={`text-sm mt-1 ${
-                status === 'desistiu' 
-                  ? 'text-red-700' 
-                  : 'text-yellow-700'
-              }`}>
-                {motivoPendencia}
+              {status === 'desistiu' ? 'Motivo da Rejeição:' : 'Motivo da Pendência:'}
+            </span>
+            <p className={`text-sm mt-1 ${
+              status === 'desistiu' 
+                ? 'text-red-700' 
+                : 'text-yellow-700'
+            }`}>
+              {motivoPendencia}
+            </p>
+            {status === 'desistiu' && (
+              <p className="text-xs text-red-600 mt-2 italic">
+                💡 Corrija os pontos mencionados e envie uma nova venda
               </p>
-              {status === 'desistiu' && (
-                <p className="text-xs text-red-600 mt-2 italic">
-                  💡 Corrija os pontos mencionados e envie uma nova venda
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

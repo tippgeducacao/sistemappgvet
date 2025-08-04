@@ -20,43 +20,41 @@ const VendaAlunoInfoCard: React.FC<VendaAlunoInfoCardProps> = ({
   isLoading
 }) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Informações do Aluno</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="bg-white border rounded-lg shadow-sm">
+      <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b">
+        <h3 className="font-semibold text-blue-900">Informações do Aluno</h3>
+      </div>
+      <div className="p-0">
         {isLoading ? (
-          <div className="text-gray-500">Carregando dados do aluno...</div>
+          <div className="text-gray-500 p-4">Carregando dados do aluno...</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <span className="font-medium text-gray-600">Nome:</span>
-              <p className="text-lg">
-                {alunoData?.nome || 'Não informado'}
-              </p>
-            </div>
-            <div>
-              <span className="font-medium text-gray-600">Email:</span>
-              <p>
-                {alunoData?.email || 'Não informado'}
-              </p>
-            </div>
-            {alunoData?.telefone && (
-              <div>
-                <span className="font-medium text-gray-600">Telefone:</span>
-                <p>{alunoData.telefone}</p>
-              </div>
-            )}
-            {alunoData?.crmv && (
-              <div>
-                <span className="font-medium text-gray-600">CRMV:</span>
-                <p>{alunoData.crmv}</p>
-              </div>
-            )}
-          </div>
+          <table className="w-full text-sm">
+            <tbody>
+              <tr className="border-b bg-white hover:bg-gray-50">
+                <td className="px-4 py-3 font-medium text-gray-700 w-1/4">Nome:</td>
+                <td className="px-4 py-3 text-gray-900">{alunoData?.nome || 'Não informado'}</td>
+              </tr>
+              <tr className="border-b bg-gray-50 hover:bg-gray-100">
+                <td className="px-4 py-3 font-medium text-gray-700 w-1/4">Email:</td>
+                <td className="px-4 py-3 text-gray-900">{alunoData?.email || 'Não informado'}</td>
+              </tr>
+              {alunoData?.telefone && (
+                <tr className="border-b bg-white hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-700 w-1/4">Telefone:</td>
+                  <td className="px-4 py-3 text-gray-900">{alunoData.telefone}</td>
+                </tr>
+              )}
+              {alunoData?.crmv && (
+                <tr className="border-b bg-gray-50 hover:bg-gray-100">
+                  <td className="px-4 py-3 font-medium text-gray-700 w-1/4">CRMV:</td>
+                  <td className="px-4 py-3 text-gray-900">{alunoData.crmv}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
