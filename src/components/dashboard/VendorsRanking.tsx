@@ -85,13 +85,29 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   const isLoading = vendasLoading || vendedoresLoading || metasLoading || niveisLoading;
 
-  // Calcular período de TODO O HISTÓRICO para taxas de conversão
-  const startOfAllTime = new Date('2020-01-01'); // Data bem antiga para pegar todo histórico
-  const endOfAllTime = new Date(); // Até hoje
+  // Calcular período da SEMANA ATUAL para taxas de conversão
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=domingo, 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado
+  
+  // Calcular início da semana atual (quarta-feira anterior ou atual)
+  const startOfCurrentWeek = new Date(now);
+  let daysToWednesday;
+  if (dayOfWeek >= 3) { // Quinta, sexta, sábado ou quarta
+    daysToWednesday = dayOfWeek - 3;
+  } else { // Domingo, segunda, terça
+    daysToWednesday = dayOfWeek + 4; // Volta para quarta anterior
+  }
+  startOfCurrentWeek.setDate(now.getDate() - daysToWednesday);
+  startOfCurrentWeek.setHours(0, 0, 0, 0);
+  
+  // Final da semana é terça-feira
+  const endOfCurrentWeek = new Date(startOfCurrentWeek);
+  endOfCurrentWeek.setDate(startOfCurrentWeek.getDate() + 6); // 6 dias depois (quarta + 6 = terça)
+  endOfCurrentWeek.setHours(23, 59, 59, 999);
 
-  // Buscar taxas de conversão históricas dos vendedores (usar todos os vendedores)
+  // Buscar taxas de conversão da semana atual dos vendedores
   const allVendedorIds = vendedores.filter(v => v.user_type === 'vendedor').map(v => v.id);
-  const { data: conversionsData } = useVendedoresWeeklyConversions(allVendedorIds, startOfAllTime, endOfAllTime);
+  const { data: conversionsData } = useVendedoresWeeklyConversions(allVendedorIds, startOfCurrentWeek, endOfCurrentWeek);
 
   // Filtrar vendedores - apenas vendedores ativos e remover "Vendedor teste" exceto para admin específico
   const vendedoresFiltrados = useMemo(() => {
