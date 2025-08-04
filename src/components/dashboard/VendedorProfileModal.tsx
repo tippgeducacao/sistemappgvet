@@ -206,71 +206,12 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
               </Card>
             </TabsContent>
 
-            <TabsContent value="reunioes">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Reuniões Agendadas</CardTitle>
-                  <CardDescription>
-                    Histórico de reuniões do vendedor
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[400px]">
-                    {agendamentosHistory.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">
-                        Nenhuma reunião encontrada para este período
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {agendamentosHistory.map((agendamento) => (
-                          <div key={agendamento.id} className="border rounded-lg p-4 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                                <span className="font-medium">{agendamento.data}</span>
-                                <span className="text-muted-foreground">às {agendamento.hora}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {getResultadoIcon(agendamento.resultado_reuniao)}
-                                <Badge className={getStatusColor(agendamento.status)}>
-                                  {agendamento.status}
-                                </Badge>
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm">
-                                <strong>Interesse:</strong> {agendamento.pos_graduacao_interesse}
-                              </p>
-                              {agendamento.observacoes && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  <strong>Observações:</strong> {agendamento.observacoes}
-                                </p>
-                              )}
-                              {agendamento.resultado_reuniao && (
-                                <p className="text-sm">
-                                  <strong>Resultado:</strong> {
-                                    agendamento.resultado_reuniao === 'comprou' ? 'Cliente comprou' :
-                                    agendamento.resultado_reuniao === 'nao_compareceu' ? 'Cliente não compareceu' :
-                                    'Cliente compareceu mas não comprou'
-                                  }
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
             <TabsContent value="vendas">
               <Card>
                 <CardHeader>
-                  <CardTitle>Histórico de Vendas</CardTitle>
+                  <CardTitle>Vendas do Período</CardTitle>
                   <CardDescription>
-                    Vendas realizadas pelo vendedor
+                    {vendasHistory.filter(v => v.status === 'matriculado').length} vendas aprovadas
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -306,6 +247,65 @@ const VendedorProfileModal: React.FC<VendedorProfileModalProps> = ({
                               {venda.pontuacao_esperada && (
                                 <p className="text-sm">
                                   <strong>Pontuação:</strong> {venda.pontuacao_esperada}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="reunioes">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Histórico de Reuniões</CardTitle>
+                  <CardDescription>
+                    Todas as reuniões agendadas para este vendedor
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    {agendamentosHistory.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        Nenhuma reunião encontrada para este vendedor
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {agendamentosHistory.map((agendamento) => (
+                          <div key={agendamento.id} className="border rounded-lg p-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">{agendamento.data}</span>
+                                <span className="text-muted-foreground">às {agendamento.hora}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {getResultadoIcon(agendamento.resultado_reuniao)}
+                                <Badge className={getStatusColor(agendamento.status)}>
+                                  {agendamento.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm">
+                                <strong>Interesse:</strong> {agendamento.pos_graduacao_interesse}
+                              </p>
+                              {agendamento.observacoes && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  <strong>Observações:</strong> {agendamento.observacoes}
+                                </p>
+                              )}
+                              {agendamento.resultado_reuniao && (
+                                <p className="text-sm">
+                                  <strong>Resultado:</strong> {
+                                    agendamento.resultado_reuniao === 'comprou' ? 'Cliente comprou' :
+                                    agendamento.resultado_reuniao === 'nao_compareceu' ? 'Cliente não compareceu' :
+                                    'Cliente compareceu mas não comprou'
+                                  }
                                 </p>
                               )}
                             </div>
