@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2, Power, PowerOff } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Edit, Trash2, Power, PowerOff, BookOpen, Users } from 'lucide-react';
 import { useCourses } from '@/hooks/useCourses';
 import { MODALIDADE_OPTIONS } from '@/constants/formOptions';
+import GerenciarGruposPosGraduacao from './GerenciarGruposPosGraduacao';
 
 const GerenciarCursos: React.FC = () => {
   const { courses, loading, addCourse, updateCourse, toggleCourseStatus, removeCourse, isDiretor } = useCourses();
@@ -94,7 +96,20 @@ const GerenciarCursos: React.FC = () => {
         </p>
       </div>
 
-      {/* Formulário para adicionar curso */}
+      <Tabs defaultValue="cursos" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="cursos" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Cursos
+          </TabsTrigger>
+          <TabsTrigger value="grupos" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Grupos de Pós-Graduações
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="cursos" className="space-y-6">
+          {/* Formulário para adicionar curso */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -281,11 +296,17 @@ const GerenciarCursos: React.FC = () => {
                 </TableBody>
               </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+           )}
+         </CardContent>
+       </Card>
+        </TabsContent>
+
+        <TabsContent value="grupos" className="space-y-6">
+          <GerenciarGruposPosGraduacao />
+        </TabsContent>
+      </Tabs>
+     </div>
+   );
+ };
 
 export default GerenciarCursos;

@@ -312,6 +312,72 @@ export type Database = {
           },
         ]
       }
+      grupos_pos_graduacoes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      grupos_pos_graduacoes_cursos: {
+        Row: {
+          created_at: string
+          curso_id: string
+          grupo_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          curso_id: string
+          grupo_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          curso_id?: string
+          grupo_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupos_pos_graduacoes_cursos_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grupos_pos_graduacoes_cursos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos_pos_graduacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historico_validacoes: {
         Row: {
           acao: string
