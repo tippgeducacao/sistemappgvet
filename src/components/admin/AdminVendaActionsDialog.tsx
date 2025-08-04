@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2 } from 'lucide-react';
 import { useAdminVendas } from '@/hooks/useAdminVendas';
 import { useDeleteVenda } from '@/hooks/useDeleteVenda';
@@ -55,6 +56,7 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [isSavingValidations, setIsSavingValidations] = useState(false);
+  const [showMotivoField, setShowMotivoField] = useState(false);
   const {
     data: formDetails,
     isLoading: isLoadingDetails,
@@ -65,6 +67,7 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
     if (venda) {
       setPontuacaoValidada(venda.pontuacao_validada?.toString() || venda.pontuacao_esperada?.toString() || '');
       setMotivoPendencia(venda.motivo_pendencia || '');
+      setShowMotivoField(!!venda.motivo_pendencia);
     }
   }, [venda]);
   if (!venda) return null;
@@ -358,15 +361,28 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="motivo" className="text-sm">Motivo da Pendência (opcional)</Label>
-              <Textarea 
-                id="motivo" 
-                value={motivoPendencia} 
-                onChange={e => setMotivoPendencia(e.target.value)} 
-                placeholder="Digite o motivo caso seja necessário..." 
-                rows={2}
-                className="text-sm"
-              />
+              <div className="flex items-center space-x-2 mb-2">
+                <Checkbox 
+                  id="motivo-checkbox"
+                  checked={showMotivoField}
+                  onCheckedChange={(checked) => {
+                    setShowMotivoField(!!checked);
+                    if (!checked) {
+                      setMotivoPendencia('');
+                    }
+                  }}
+                />
+                <Label htmlFor="motivo-checkbox" className="text-sm">Adicionar motivo da pendência</Label>
+              </div>
+              {showMotivoField && (
+                <Textarea 
+                  value={motivoPendencia} 
+                  onChange={e => setMotivoPendencia(e.target.value)} 
+                  placeholder="Digite o motivo..." 
+                  rows={2}
+                  className="text-sm"
+                />
+              )}
             </div>
 
             {/* Seção de Exclusão */}
