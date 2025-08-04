@@ -62,9 +62,13 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
       'modalidadeCurso': 'Modalidade do Curso',
       'modalidade': 'Modalidade do Curso',
       'Turma': 'Turma',
-      'turma': 'Turma',
+      'turma': 'Turma', 
+      'turmaEscolhida': 'Turma',
+      'turma_escolhida': 'Turma',
       'Abertura': 'Abertura',
       'abertura': 'Abertura',
+      'aberturaEscolhida': 'Abertura',
+      'abertura_escolhida': 'Abertura',
       'Valor do Contrato': 'Valor Total do Contrato',
       'valorContrato': 'Valor Total do Contrato',
       'Percentual de Desconto': 'Desconto Aplicado (%)',
@@ -122,7 +126,7 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
       'Informações do Curso': [
         'Curso ID', 'cursoId', 'Curso Selecionado', 'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada', 
         'Lote da Pós-Graduação', 'lotePos', 'Lote da Pós', 'Matrícula', 'matricula', 'Tipo de Matrícula', 
-        'Turma', 'turma', 'Abertura', 'abertura'
+        'Turma', 'turma', 'turmaEscolhida', 'turma_escolhida', 'Abertura', 'abertura', 'aberturaEscolhida', 'abertura_escolhida'
       ],
       'Origem e Captação': [
         'Forma de Captação do Lead', 'formaCaptacao', 'Tipo de Venda', 'tipoVenda', 'Venda Casada', 
