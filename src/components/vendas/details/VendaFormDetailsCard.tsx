@@ -154,75 +154,71 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center justify-between">
-          Detalhes do Formulário
-          <span className="text-sm font-normal text-gray-500">
-            {isLoading ? 'Carregando...' : `${respostas?.length || 0} respostas`}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-gray-500">Carregando detalhes do formulário...</div>
-          </div>
-        ) : error ? (
-          <div className="text-red-500 py-4">
-            <p>Erro ao carregar detalhes: {error.message}</p>
-            <button 
-              onClick={onRefetch} 
-              className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        ) : respostas && respostas.length > 0 ? (
-          <div className="space-y-6">
-            {Object.entries(groupRespostasByCategory(respostas)).map(([category, categoryRespostas]) => 
-              categoryRespostas.length > 0 && (
-                <div key={category} className="border rounded-lg p-4 bg-gray-50">
-                  <h4 className="font-semibold text-gray-800 mb-3 border-b pb-2 bg-white px-2 py-1 rounded">
-                    {category} ({categoryRespostas.length} campos)
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {categoryRespostas.map((resposta) => (
-                      <div key={resposta.id} className="space-y-1 bg-white p-3 rounded border">
-                        <span className="font-medium text-gray-700 text-sm block">
-                          {formatFieldName(resposta.campo_nome)}:
-                        </span>
-                        <p className="text-gray-900 bg-blue-50 p-2 rounded border text-sm">
-                          {resposta.valor_informado}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+    <div className="space-y-4">
+      <h3 className="font-semibold text-lg">
+        Detalhes do Formulário 
+        <span className="text-sm font-normal text-gray-500 ml-2">
+          ({respostas?.length || 0} respostas)
+        </span>
+      </h3>
+      
+      {isLoading ? (
+        <div className="text-gray-500 py-4">Carregando detalhes do formulário...</div>
+      ) : error ? (
+        <div className="text-red-500 py-4">
+          <p>Erro ao carregar detalhes: {error.message}</p>
+          <button 
+            onClick={onRefetch} 
+            className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      ) : respostas && respostas.length > 0 ? (
+        <div className="space-y-4">
+          {Object.entries(groupRespostasByCategory(respostas)).map(([category, categoryRespostas]) => 
+            categoryRespostas.length > 0 && (
+              <div key={category}>
+                <h4 className="font-medium text-gray-800 mb-2 text-sm">
+                  {category} ({categoryRespostas.length} campos)
+                </h4>
+                <div className="bg-gray-50 rounded border">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {categoryRespostas.map((resposta, index) => (
+                        <tr key={resposta.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="p-2 font-medium text-gray-700 border-r w-1/3">
+                            {formatFieldName(resposta.campo_nome)}
+                          </td>
+                          <td className="p-2 text-gray-900">
+                            {resposta.valor_informado}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              )
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-8 bg-yellow-50 rounded border">
-            <h3 className="text-lg font-semibold text-yellow-800 mb-2">
-              ⚠️ Nenhum detalhe do formulário encontrado
-            </h3>
-            <p className="text-yellow-700 mb-2">
-              Os dados do formulário não foram salvos ou não estão sendo encontrados.
-            </p>
-            <div className="text-sm text-gray-600 space-y-1 mb-4">
-              <p><strong>Form Entry ID:</strong> {vendaId}</p>
-            </div>
-            <button 
-              onClick={onRefetch} 
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              🔄 Recarregar dados
-            </button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              </div>
+            )
+          )}
+        </div>
+      ) : (
+        <div className="text-center py-6 bg-yellow-50 rounded border">
+          <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+            ⚠️ Nenhum detalhe encontrado
+          </h3>
+          <p className="text-yellow-700 mb-2">
+            Os dados do formulário não foram encontrados.
+          </p>
+          <button 
+            onClick={onRefetch} 
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+          >
+            🔄 Recarregar dados
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 
