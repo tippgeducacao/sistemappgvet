@@ -93,11 +93,37 @@ export class CoursesService {
   }
 
   static async removeCourse(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('cursos')
-      .delete()
-      .eq('id', id);
+    // Verificar se há vendas associadas ao curso
+    const { data: vendas, error: vendasError } = await supabase
+      .from('form_entries')
+      .select('id')
+      .eq('curso_id', id)
+      .limit(1);
 
-    if (error) throw error;
+    if (vendasError) {
+      throw vendasError;
+    }
+
+    // Se há vendas associadas, apenas desativar o curso
+    if (vendas && vendas.length > 0) {
+      const { error } = await supabase
+        .from('cursos')
+        .update({ ativo: false })
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+    } else {
+      // Se não há vendas, pode excluir permanentemente
+      const { error } = await supabase
+        .from('cursos')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+    }
   }
 }

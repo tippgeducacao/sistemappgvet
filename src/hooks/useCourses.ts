@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { CoursesService, Course } from '@/services/coursesService';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useCourses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -114,12 +115,34 @@ export const useCourses = () => {
 
   const removeCourse = async (id: string) => {
     try {
+      // Verificar se há vendas associadas primeiro
+      const { data: vendas } = await supabase
+        .from('form_entries')
+        .select('id')
+        .eq('curso_id', id)
+        .limit(1);
+
+      const hasVendas = vendas && vendas.length > 0;
+      
       await CoursesService.removeCourse(id);
-      setCourses(prev => prev.filter(course => course.id !== id));
-      toast({
-        title: "Sucesso",
-        description: "Curso excluído permanentemente!",
-      });
+      
+      if (hasVendas) {
+        // Se tinha vendas, foi apenas desativado
+        setCourses(prev => prev.map(course => 
+          course.id === id ? { ...course, ativo: false } : course
+        ));
+        toast({
+          title: "Sucesso",
+          description: "Curso desativado! (Não foi possível excluir pois há vendas associadas)",
+        });
+      } else {
+        // Se não tinha vendas, foi excluído
+        setCourses(prev => prev.filter(course => course.id !== id));
+        toast({
+          title: "Sucesso",
+          description: "Curso excluído permanentemente!",
+        });
+      }
     } catch (error) {
       console.error('Erro ao remover curso:', error);
       toast({
