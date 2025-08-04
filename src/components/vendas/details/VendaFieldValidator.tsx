@@ -61,6 +61,9 @@ const VendaFieldValidator: React.FC<VendaFieldValidatorProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium text-sm">{campo}:</span>
             {getStatusIcon()}
+            <Badge variant={pontos >= 0 ? "default" : "destructive"} className="ml-auto">
+              {pontos >= 0 ? '+' : ''}{pontos} pts
+            </Badge>
           </div>
           <p className="text-sm text-gray-700 mb-2">{valor}</p>
           

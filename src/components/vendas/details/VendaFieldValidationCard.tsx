@@ -6,6 +6,8 @@ import { Loader2, Save } from 'lucide-react';
 import VendaFieldValidator from './VendaFieldValidator';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import { useToast } from '@/hooks/use-toast';
+import { usePontuacao } from '@/hooks/usePontuacao';
+
 interface FormDetailsResponse {
   id: string;
   campo_nome: string;
@@ -14,6 +16,7 @@ interface FormDetailsResponse {
   tick_status?: 'pendente' | 'aprovado' | 'rejeitado';
   observacao_validacao?: string;
 }
+
 interface VendaFieldValidationCardProps {
   respostas: FormDetailsResponse[] | undefined;
   isLoading: boolean;
@@ -23,20 +26,10 @@ interface VendaFieldValidationCardProps {
   isSaving?: boolean;
 }
 
-// Campos que têm pontuação definida
-const CAMPOS_COM_PONTUACAO = ['Modalidade', 'Parcelamento', 'Forma de Captação', 'Tipo de Venda'];
+interface CampoComPontuacao extends FormDetailsResponse {
+  pontos: number;
+}
 
-// Pontuações hardcoded para alguns campos
-const getPontuacaoHardcoded = (campo: string, valor: string): number => {
-  switch (campo) {
-    case 'Tipo de Venda':
-      if (valor === 'LIGAÇÃO') return 0.3;
-      if (valor === 'WHATSAPP') return -0.3;
-      return 0;
-    default:
-      return 0;
-  }
-};
 const VendaFieldValidationCard: React.FC<VendaFieldValidationCardProps> = ({
   respostas,
   isLoading,
@@ -45,15 +38,44 @@ const VendaFieldValidationCard: React.FC<VendaFieldValidationCardProps> = ({
   onSaveValidations,
   isSaving = false
 }) => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  const { regras, isLoading: loadingRegras } = usePontuacao();
+  
   const [validations, setValidations] = useState<Record<string, {
     status: 'aprovado' | 'rejeitado';
     observacao?: string;
   }>>({});
-  if (isLoading) {
-    return <Card>
+
+  // Função para buscar pontuação das regras configuradas
+  const getPontuacaoFromRegras = (campo: string, valor: string): number => {
+    if (!regras) return 0;
+    
+    const regra = regras.find(r => 
+      r.campo_nome.toLowerCase() === campo.toLowerCase() && 
+      r.opcao_valor.toLowerCase() === valor.toLowerCase()
+    );
+    
+    return regra ? regra.pontos : 0;
+  };
+
+  // Mapear campos das respostas com as regras de pontuação
+  const getCamposComPontuacao = (): CampoComPontuacao[] => {
+    if (!respostas || !regras) return [];
+    
+    return respostas.filter(resposta => {
+      const temRegra = regras.some(regra => 
+        regra.campo_nome.toLowerCase() === resposta.campo_nome.toLowerCase()
+      );
+      return temRegra;
+    }).map(resposta => ({
+      ...resposta,
+      pontos: getPontuacaoFromRegras(resposta.campo_nome, resposta.valor_informado)
+    }));
+  };
+
+  if (isLoading || loadingRegras) {
+    return (
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">Validação de Campos com Pontuação</CardTitle>
         </CardHeader>
@@ -63,10 +85,13 @@ const VendaFieldValidationCard: React.FC<VendaFieldValidationCardProps> = ({
             <span className="ml-2 text-gray-500">Carregando campos...</span>
           </div>
         </CardContent>
-      </Card>;
+      </Card>
+    );
   }
+  
   if (error || !respostas) {
-    return <Card>
+    return (
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">Validação de Campos com Pontuação</CardTitle>
         </CardHeader>
@@ -75,11 +100,13 @@ const VendaFieldValidationCard: React.FC<VendaFieldValidationCardProps> = ({
             Erro ao carregar campos para validação
           </p>
         </CardContent>
-      </Card>;
+      </Card>
+    );
   }
 
-  // Filtrar apenas campos que têm pontuação
-  const camposComPontuacao = respostas.filter(r => CAMPOS_COM_PONTUACAO.includes(r.campo_nome));
+  // Buscar campos que têm regras de pontuação configuradas
+  const camposComPontuacao = getCamposComPontuacao();
+
   const handleStatusChange = (campo: string, status: 'aprovado' | 'rejeitado', observacao?: string) => {
     setValidations(prev => ({
       ...prev,
@@ -89,6 +116,7 @@ const VendaFieldValidationCard: React.FC<VendaFieldValidationCardProps> = ({
       }
     }));
   };
+
   const handleSaveAll = () => {
     const validationsList = Object.entries(validations).map(([campo, validation]) => ({
       campo,
@@ -96,43 +124,70 @@ const VendaFieldValidationCard: React.FC<VendaFieldValidationCardProps> = ({
     }));
     onSaveValidations(validationsList);
   };
-  const totalPontosAprovados = camposComPontuacao.filter(campo => validations[campo.campo_nome]?.status === 'aprovado').reduce((total, campo) => {
-    const pontosHardcoded = getPontuacaoHardcoded(campo.campo_nome, campo.valor_informado);
-    // Aqui você poderia buscar pontos das regras de pontuação também
-    return total + pontosHardcoded;
-  }, 0);
+
+  const totalPontosAprovados = camposComPontuacao
+    .filter(campo => validations[campo.campo_nome]?.status === 'aprovado')
+    .reduce((total, campo) => total + campo.pontos, 0);
+
   if (camposComPontuacao.length === 0) {
-    return <Card>
+    return (
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">Validação de Campos com Pontuação</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center py-8 text-gray-500">
-            Nenhum campo com pontuação encontrado para esta venda
+            Nenhum campo com regras de pontuação encontrado para esta venda
           </p>
         </CardContent>
-      </Card>;
+      </Card>
+    );
   }
-  return <Card>
-      
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Validação de Campos com Pontuação</CardTitle>
+      </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {camposComPontuacao.map(campo => <VendaFieldValidator key={campo.id} campo={campo.campo_nome} valor={campo.valor_informado} pontos={getPontuacaoHardcoded(campo.campo_nome, campo.valor_informado)} status={campo.tick_status || validations[campo.campo_nome]?.status} observacao={campo.observacao_validacao || validations[campo.campo_nome]?.observacao} onStatusChange={handleStatusChange} />)}
+          {camposComPontuacao.map(campo => (
+            <VendaFieldValidator 
+              key={campo.id} 
+              campo={campo.campo_nome} 
+              valor={campo.valor_informado} 
+              pontos={campo.pontos}
+              status={campo.tick_status || validations[campo.campo_nome]?.status} 
+              observacao={campo.observacao_validacao || validations[campo.campo_nome]?.observacao} 
+              onStatusChange={handleStatusChange} 
+            />
+          ))}
         </div>
 
-        {Object.keys(validations).length > 0 && <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        {Object.keys(validations).length > 0 && (
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h4 className="font-medium text-blue-800 mb-2">Resumo das Validações Pendentes:</h4>
             <div className="space-y-1">
-              {Object.entries(validations).map(([campo, validation]) => <div key={campo} className="text-sm text-blue-700">
+              {Object.entries(validations).map(([campo, validation]) => (
+                <div key={campo} className="text-sm text-blue-700">
                   <span className="font-medium">{campo}:</span>{' '}
                   <span className={validation.status === 'aprovado' ? 'text-green-600' : 'text-red-600'}>
                     {validation.status === 'aprovado' ? 'Aprovado' : 'Rejeitado'}
                   </span>
                   {validation.observacao && <span className="text-gray-600"> - {validation.observacao}</span>}
-                </div>)}
+                </div>
+              ))}
             </div>
-          </div>}
+            <div className="mt-3 text-sm">
+              <span className="font-medium text-blue-800">
+                Total de pontos aprovados: {DataFormattingService.formatPoints(totalPontosAprovados)} pts
+              </span>
+            </div>
+          </div>
+        )}
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
+
 export default VendaFieldValidationCard;
