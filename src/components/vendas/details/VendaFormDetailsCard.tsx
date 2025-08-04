@@ -120,8 +120,9 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
         'reembolsoMatricula', 'Condições de Parcelamento', 'parcelamento', 'Forma de Pagamento', 'pagamento'
       ],
       'Informações do Curso': [
-        'Curso ID', 'cursoId', 'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada', 
-        'Lote da Pós-Graduação', 'lotePos', 'Matrícula', 'matricula', 'Turma', 'turma', 'Abertura', 'abertura'
+        'Curso ID', 'cursoId', 'Curso Selecionado', 'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada', 
+        'Lote da Pós-Graduação', 'lotePos', 'Lote da Pós', 'Matrícula', 'matricula', 'Tipo de Matrícula', 
+        'Turma', 'turma', 'Abertura', 'abertura'
       ],
       'Origem e Captação': [
         'Forma de Captação do Lead', 'formaCaptacao', 'Tipo de Venda', 'tipoVenda', 'Venda Casada', 
