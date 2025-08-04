@@ -36,6 +36,9 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
   isOpen,
   onClose
 }) => {
+  // Early return BEFORE any hooks to avoid hook order issues
+  if (!vendedorId || !vendedorNome) return null;
+
   const { metas } = useMetas();
   const { vendas: todasVendas } = useAllVendas();
   const { niveis } = useNiveis();
@@ -46,8 +49,6 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
   const [comissoesPorSemana, setComissoesPorSemana] = useState<{[key: string]: {valor: number, multiplicador: number, percentual: number}}>({});
   const [filtroMes, setFiltroMes] = useState(selectedMonth);
   const [filtroAno, setFiltroAno] = useState(selectedYear);
-
-  if (!vendedorId || !vendedorNome) return null;
 
   // Filtrar agendamentos do vendedor
   const vendedorAgendamentos = useMemo(() => {
