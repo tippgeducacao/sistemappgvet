@@ -319,6 +319,17 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const conversaoData = conversionsData?.find(c => c.vendedorId === vendedor.id);
     const taxaConversao = conversaoData?.taxaConversao || 0;
     
+    // Debug log para verificar dados de conversão
+    if (vendedor.name === 'Vendedor Teste') {
+      console.log('🐛 DEBUG CONVERSÃO Vendedor Teste:', {
+        vendedorId: vendedor.id,
+        conversionsData: conversionsData?.length || 0,
+        conversaoData,
+        taxaConversao,
+        allConversionsIds: conversionsData?.map(c => ({ id: c.vendedorId, taxa: c.taxaConversao })) || []
+      });
+    }
+    
     // Calcular meta diária dinâmica baseada no progresso da semana atual
     const metaDiariaRestante = calculateDynamicDailyGoal(metaSemanal, progressoSemanaAtual.pontos);
     

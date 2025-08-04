@@ -42,14 +42,14 @@ export class VendedorConversionService {
       ag.status === 'finalizado'
     ).length || 0;
 
-    // Buscar matrículas do vendedor no período
+    // Buscar matrículas do vendedor no período (vendas matriculadas)
     const { data: vendas, error: vendasError } = await supabase
       .from('form_entries')
       .select('*')
       .eq('vendedor_id', vendedorId)
       .eq('status', 'matriculado')
-      .gte('data_aprovacao', startDate.toISOString())
-      .lte('data_aprovacao', endDate.toISOString());
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
 
     if (vendasError) {
       console.error('❌ Erro ao buscar vendas:', vendasError);
