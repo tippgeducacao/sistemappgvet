@@ -310,9 +310,6 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
                   placeholder="Data de assinatura"
                   className="text-sm"
                 />
-                <span className="text-xs text-gray-600">
-                  Obrigatório para aprovação da venda
-                </span>
               </div>
 
               <div>
@@ -327,10 +324,11 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
                   placeholder="Ex: 2.5"
                   className="text-sm"
                 />
-                <span className="text-xs text-gray-600">
-                  Pontos extras a serem adicionados à pontuação base ({DataFormattingService.formatPoints(venda.pontuacao_esperada || 0)} pts)
-                  {pontuacaoExtra && ` = Total: ${DataFormattingService.formatPoints((venda.pontuacao_esperada || 0) + (parseFloat(pontuacaoExtra) || 0))} pts`}
-                </span>
+                {pontuacaoExtra && (
+                  <span className="text-xs text-gray-600">
+                    Total: {DataFormattingService.formatPoints((venda.pontuacao_esperada || 0) + (parseFloat(pontuacaoExtra) || 0))} pts
+                  </span>
+                )}
               </div>
             </div>
 
