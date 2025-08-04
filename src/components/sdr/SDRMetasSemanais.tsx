@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanaisSDR } from '@/hooks/useMetasSemanaisSDR';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
-import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
+import { useVendas } from '@/hooks/useVendas';
 import { useComissionamento } from '@/hooks/useComissionamento';
 import { Calendar } from 'lucide-react';
 
@@ -25,29 +25,27 @@ export const SDRMetasSemanais = () => {
     getDataFimSemana 
   } = useMetasSemanaisSDR();
   
-  const { data: agendamentos } = useAgendamentosLeads();
+  const { vendas } = useVendas(); // Mudança: agora usar vendas ao invés de agendamentos
   const { calcularComissao } = useComissionamento();
 
   if (!profile) return null;
 
   const semanas = getSemanasDoMes(selectedYear, selectedMonth);
   
-  const getAgendamentosNaSemana = (semana: number) => {
+  const getVendasNaSemana = (semana: number) => {
     const startDate = getDataInicioSemana(selectedYear, selectedMonth, semana);
     const endDate = getDataFimSemana(selectedYear, selectedMonth, semana);
     
     console.log(`📅 Semana ${semana}: ${startDate.toLocaleDateString('pt-BR')} - ${endDate.toLocaleDateString('pt-BR')}`);
     
-    return agendamentos?.filter(agendamento => {
-      if (agendamento.sdr_id !== profile.id) return false;
+    return vendas?.filter(venda => {
+      if (venda.vendedor_id !== profile.id) return false;
       
-      // Contar apenas reuniões onde houve comparecimento confirmado
-      const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                        agendamento.resultado_reuniao === 'comprou';
-      if (!compareceu) return false;
+      // Contar apenas vendas matriculadas (cursos vendidos com sucesso)
+      if (venda.status !== 'matriculado') return false;
       
-      const dataAgendamento = new Date(agendamento.data_agendamento);
-      return dataAgendamento >= startDate && dataAgendamento <= endDate;
+      const dataVenda = new Date(venda.enviado_em);
+      return dataVenda >= startDate && dataVenda <= endDate;
     }) || [];
   };
 
@@ -71,12 +69,13 @@ export const SDRMetasSemanais = () => {
       return <Badge variant="secondary">Atual</Badge>;
     }
     
+    // Implementar regra de 71% para desbloqueio de comissão
     if (percentual >= 100) {
       return <Badge className="bg-emerald-500 text-white">Meta atingida</Badge>;
-    } else if (percentual >= 70) {
-      return <Badge className="bg-amber-500 text-white">Em progresso</Badge>;
+    } else if (percentual >= 71) {
+      return <Badge className="bg-green-500 text-white">Comissão desbloqueada</Badge>;
     } else if (percentual > 0) {
-      return <Badge variant="destructive">Abaixo da meta</Badge>;
+      return <Badge variant="destructive" className="bg-red-500 text-white">Comissão bloqueada</Badge>;
     }
     
     return <Badge variant="outline">Sem atividade</Badge>;
@@ -100,12 +99,12 @@ export const SDRMetasSemanais = () => {
   // Calcular totais
   const totalMeta = semanas.reduce((acc, semana) => {
     const meta = getMetaSemanalSDR(profile.id, selectedYear, semana);
-    return acc + (meta?.meta_agendamentos || 0);
+    return acc + (meta?.meta_vendas_cursos || 0);
   }, 0);
 
   const totalRealizado = semanas.reduce((acc, semana) => {
-    const agendamentosNaSemana = getAgendamentosNaSemana(semana);
-    return acc + agendamentosNaSemana.length;
+    const vendasNaSemana = getVendasNaSemana(semana);
+    return acc + vendasNaSemana.length;
   }, 0);
 
   const percentualTotal = totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
@@ -150,8 +149,8 @@ export const SDRMetasSemanais = () => {
               <tr className="border-b">
                 <th className="text-left p-3 font-medium text-muted-foreground">Semana</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Período</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Meta</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Realizado</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Meta Cursos</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Cursos Vendidos</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">%</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
               </tr>
@@ -159,14 +158,17 @@ export const SDRMetasSemanais = () => {
             <tbody>
               {semanas.map((semana) => {
                 const meta = getMetaSemanalSDR(profile.id, selectedYear, semana);
-                const agendamentosNaSemana = getAgendamentosNaSemana(semana);
-                const realizado = agendamentosNaSemana.length;
-                const metaValue = meta?.meta_agendamentos || 0;
+                const vendasNaSemana = getVendasNaSemana(semana);
+                const realizado = vendasNaSemana.length;
+                const metaValue = meta?.meta_vendas_cursos || 0;
                 const percentual = metaValue > 0 ? (realizado / metaValue) * 100 : 0;
                 const isAtual = isCurrentWeek(semana);
 
                 return (
-                  <tr key={semana} className={`border-b hover:bg-muted/50 ${isAtual ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}>
+                  <tr 
+                    key={semana} 
+                    className={`border-b hover:bg-muted/50 ${isAtual ? 'bg-blue-50 dark:bg-blue-950/20' : ''} ${percentual < 71 && percentual > 0 ? 'bg-red-50 dark:bg-red-950/20' : ''}`}
+                  >
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{semana}</span>
@@ -185,7 +187,7 @@ export const SDRMetasSemanais = () => {
                       <span className="font-medium">{realizado}</span>
                     </td>
                     <td className="p-3">
-                      <span className={`font-medium ${percentual >= 100 ? 'text-emerald-600' : percentual >= 70 ? 'text-amber-600' : 'text-red-600'}`}>
+                      <span className={`font-medium ${percentual >= 100 ? 'text-emerald-600' : percentual >= 71 ? 'text-green-600' : 'text-red-600'}`}>
                         {percentual.toFixed(0)}%
                       </span>
                     </td>
@@ -207,7 +209,7 @@ export const SDRMetasSemanais = () => {
                 </td>
                 <td className="p-3 font-bold">{totalRealizado}</td>
                 <td className="p-3">
-                  <span className={`font-bold ${percentualTotal >= 100 ? 'text-emerald-600' : percentualTotal >= 70 ? 'text-amber-600' : 'text-red-600'}`}>
+                  <span className={`font-bold ${percentualTotal >= 100 ? 'text-emerald-600' : percentualTotal >= 71 ? 'text-green-600' : 'text-red-600'}`}>
                     {percentualTotal.toFixed(0)}%
                   </span>
                 </td>

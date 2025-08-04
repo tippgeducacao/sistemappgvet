@@ -151,8 +151,8 @@ const SDRRanking: React.FC = () => {
 
       const metaDiariaReunioes = Math.ceil(metaSemanaltReunioes / 7);
 
-      // Meta fixa de pontos por vendas de cursos (sempre 10 pontos por semana)
-      const metaSemanaltVendas = 10;
+      // Meta fixa de vendas de cursos baseada no nível do SDR
+      const metaSemanaltVendas = nivelConfig?.meta_vendas_cursos || 8;
 
       // Pontos do período selecionado
       let pontosVendas = vendasSemana;

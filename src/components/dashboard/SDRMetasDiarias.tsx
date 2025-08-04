@@ -80,7 +80,7 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
   const isSDR = profile?.user_type?.includes('sdr') || false;
   
   if (isSDR) {
-    // Lógica para SDRs (meta de reuniões)
+    // Lógica para SDRs (meta de vendas de cursos)
     const semanaAtual = getSemanaAtual();
     const metaSemanal = profile?.id ? getMetaSemanalSDR(profile.id, selectedYear, semanaAtual) : null;
     
@@ -92,7 +92,7 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
       selectedYear 
     });
 
-    // Calcular agendamentos da semana atual
+    // Calcular vendas de cursos da semana atual
     const inicioSemana = new Date();
     inicioSemana.setDate(inicioSemana.getDate() - ((inicioSemana.getDay() + 4) % 7)); // Última quarta-feira
     inicioSemana.setHours(0, 0, 0, 0);
@@ -101,45 +101,45 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
     fimSemana.setDate(fimSemana.getDate() + 6); // Próxima terça-feira
     fimSemana.setHours(23, 59, 59, 999);
 
-    // Agendamentos da semana (quarta a terça) - apenas com comparecimento confirmado
-    const agendamentosSemana = agendamentos.filter(agendamento => {
-      const dataAgendamento = new Date(agendamento.data_agendamento);
-      const dentroDoPeriodo = dataAgendamento >= inicioSemana && dataAgendamento <= fimSemana;
+    // Vendas de cursos da semana (quarta a terça) - apenas matriculadas
+    const vendasCursosSemana = vendas.filter(venda => {
+      const dataVenda = new Date(venda.enviado_em);
+      const dentroDoPeriodo = dataVenda >= inicioSemana && dataVenda <= fimSemana;
+      const isSDRVenda = venda.vendedor_id === profile?.id;
+      const isMatriculada = venda.status === 'matriculado';
       
-      // Contar apenas agendamentos onde houve comparecimento confirmado
-      const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                         agendamento.resultado_reuniao === 'comprou';
-      
-      return dentroDoPeriodo && compareceu;
+      return dentroDoPeriodo && isSDRVenda && isMatriculada;
     });
 
-    // Agendamentos de hoje - apenas com comparecimento confirmado
+    // Vendas de cursos de hoje - apenas matriculadas
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const agendamentosHoje = agendamentos.filter(agendamento => {
-      const dataAgendamento = new Date(agendamento.data_agendamento);
-      dataAgendamento.setHours(0, 0, 0, 0);
-      const dentroDoPeriodo = dataAgendamento.getTime() === hoje.getTime();
+    const vendasCursosHoje = vendas.filter(venda => {
+      const dataVenda = new Date(venda.enviado_em);
+      dataVenda.setHours(0, 0, 0, 0);
+      const dentroDoPeriodo = dataVenda.getTime() === hoje.getTime();
+      const isSDRVenda = venda.vendedor_id === profile?.id;
+      const isMatriculada = venda.status === 'matriculado';
       
-      // Contar apenas agendamentos onde houve comparecimento confirmado
-      const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                         agendamento.resultado_reuniao === 'comprou';
-      
-      return dentroDoPeriodo && compareceu;
+      return dentroDoPeriodo && isSDRVenda && isMatriculada;
     });
 
     // Cálculos para SDR
-    const metaDiaria = metaSemanal?.meta_agendamentos ? Math.ceil(metaSemanal.meta_agendamentos / 7) : 0;
-    const agendamentosHojeCount = agendamentosHoje.length;
-    const agendamentosSemanaCount = agendamentosSemana.length;
+    const metaDiaria = metaSemanal?.meta_vendas_cursos ? Math.ceil(metaSemanal.meta_vendas_cursos / 7) : 0;
+    const vendasCursosHojeCount = vendasCursosHoje.length;
+    const vendasCursosSemanaCount = vendasCursosSemana.length;
 
-    const progressoDiario = metaDiaria > 0 ? Math.min((agendamentosHojeCount / metaDiaria) * 100, 100) : 0;
-    const progressoSemanal = metaSemanal?.meta_agendamentos ? 
-      Math.min((agendamentosSemanaCount / metaSemanal.meta_agendamentos) * 100, 100) : 0;
+    const progressoDiario = metaDiaria > 0 ? Math.min((vendasCursosHojeCount / metaDiaria) * 100, 100) : 0;
+    const progressoSemanal = metaSemanal?.meta_vendas_cursos ? 
+      Math.min((vendasCursosSemanaCount / metaSemanal.meta_vendas_cursos) * 100, 100) : 0;
 
-    const metaBatidaHoje = agendamentosHojeCount >= metaDiaria;
-    const metaBatidaSemana = metaSemanal ? agendamentosSemanaCount >= metaSemanal.meta_agendamentos : false;
+    const metaBatidaHoje = vendasCursosHojeCount >= metaDiaria;
+    const metaBatidaSemana = metaSemanal ? vendasCursosSemanaCount >= metaSemanal.meta_vendas_cursos : false;
+
+    // Verificar se atingiu 71% da meta para desbloqueio de comissão
+    const percentual71 = 71;
+    const atingiu71Porcento = progressoSemanal >= percentual71;
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -149,7 +149,7 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Meta Diária
+                Meta Diária de Cursos
               </div>
               <Badge variant={metaBatidaHoje ? "default" : "secondary"}>
                 {metaBatidaHoje ? "Atingida" : "Em Progresso"}
@@ -158,9 +158,9 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Reuniões Hoje</span>
+              <span className="text-sm text-muted-foreground">Cursos Vendidos Hoje</span>
               <span className="text-lg font-semibold">
-                {agendamentosHojeCount} / {metaDiaria}
+                {vendasCursosHojeCount} / {metaDiaria}
               </span>
             </div>
             
@@ -176,33 +176,44 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
         </Card>
 
         {/* Meta Semanal SDR */}
-        <Card>
+        <Card className={!atingiu71Porcento ? "border-red-500 bg-red-50 dark:bg-red-950/20" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                Meta Semanal
+                Meta Semanal de Cursos
               </div>
-              <Badge variant={metaBatidaSemana ? "default" : "secondary"}>
-                {metaBatidaSemana ? "Atingida" : "Em Progresso"}
+              <Badge 
+                variant={atingiu71Porcento ? "default" : "destructive"}
+                className={!atingiu71Porcento ? "bg-red-500 hover:bg-red-600" : ""}
+              >
+                {atingiu71Porcento ? "Comissão Desbloqueada" : "Comissão Bloqueada"}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Reuniões Esta Semana</span>
+              <span className="text-sm text-muted-foreground">Cursos Vendidos Esta Semana</span>
               <span className="text-lg font-semibold">
-                {agendamentosSemanaCount} / {metaSemanal?.meta_agendamentos || 0}
+                {vendasCursosSemanaCount} / {metaSemanal?.meta_vendas_cursos || 0}
               </span>
             </div>
             
             <Progress 
               value={progressoSemanal} 
-              className="h-2"
+              className={`h-2 ${!atingiu71Porcento ? '[&>div]:bg-red-500' : ''}`}
             />
             
-            <div className="text-xs text-muted-foreground">
-              {Math.round(progressoSemanal)}% da meta semanal concluída
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">
+                {Math.round(progressoSemanal)}% da meta semanal concluída
+              </div>
+              <div className={`text-xs font-medium ${atingiu71Porcento ? 'text-green-600' : 'text-red-600'}`}>
+                {atingiu71Porcento 
+                  ? `✅ Acima de 71% - Comissão desbloqueada` 
+                  : `❌ Abaixo de 71% - Comissão bloqueada (faltam ${Math.ceil((percentual71 * (metaSemanal?.meta_vendas_cursos || 0) / 100) - vendasCursosSemanaCount)} cursos)`
+                }
+              </div>
             </div>
           </CardContent>
         </Card>

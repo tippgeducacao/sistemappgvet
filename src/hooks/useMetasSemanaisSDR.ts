@@ -7,7 +7,7 @@ export interface MetaSemanalSDR {
   vendedor_id: string;
   ano: number;
   semana: number;
-  meta_agendamentos: number;
+  meta_vendas_cursos: number; // Mudança: agora representa vendas de cursos
   created_at: string;
   updated_at: string;
   created_by?: string;
@@ -49,14 +49,14 @@ export const useMetasSemanaisSDR = () => {
       return undefined;
     }
     
-    const metaAgendamentos = getMetaPadraoSDR(nivelCompleto);
+    const metaCursos = getMetaPadraoSDR(nivelCompleto);
     
     const resultado = {
       id: `${vendedorId}-${ano}-${semana}`,
       vendedor_id: vendedorId,
       ano,
       semana,
-      meta_agendamentos: metaAgendamentos,
+      meta_vendas_cursos: metaCursos, // Mudança: agora representa vendas de cursos
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -65,9 +65,9 @@ export const useMetasSemanaisSDR = () => {
     return resultado;
   };
 
-  // Obter a meta padrão baseada no nível do SDR
+  // Obter a meta padrão baseada no nível do SDR (agora para vendas de cursos)
   const getMetaPadraoSDR = (nivel: string): number => {
-    console.log('🔍 Buscando meta para nível:', nivel);
+    console.log('🔍 Buscando meta de cursos para nível:', nivel);
     console.log('📊 Níveis disponíveis:', niveis);
     
     const nivelConfig = niveis.find(n => n.nivel === nivel);
@@ -78,19 +78,9 @@ export const useMetasSemanaisSDR = () => {
       return 0;
     }
     
-    let meta = 0;
-    
-    if (nivel.includes('inbound')) {
-      meta = nivelConfig.meta_semanal_inbound || 0;
-      console.log('📈 Meta inbound encontrada:', meta);
-    } else if (nivel.includes('outbound')) {
-      meta = nivelConfig.meta_semanal_outbound || 0;
-      console.log('📈 Meta outbound encontrada:', meta);
-    } else {
-      // Para vendedores normais, usar meta_semanal_vendedor
-      meta = nivelConfig.meta_semanal_vendedor || 0;
-      console.log('📈 Meta vendedor encontrada:', meta);
-    }
+    // Para SDRs, sempre usar meta_vendas_cursos
+    const meta = nivelConfig.meta_vendas_cursos || 0;
+    console.log('📈 Meta de vendas de cursos encontrada:', meta);
     
     return meta;
   };
