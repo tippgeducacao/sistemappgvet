@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, Calendar, TrendingUp, BarChart3, User } from 'lucide-react';
+import { Target, Calendar, TrendingUp, BarChart3, User, CalendarDays, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useMetas } from '@/hooks/useMetas';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useVendedores } from '@/hooks/useVendedores';
+import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import VendasFilter from '@/components/vendas/VendasFilter';
 
 interface VendorWeeklyGoalsModalProps {
@@ -36,6 +40,7 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
   const { vendas: todasVendas } = useAllVendas();
   const { niveis } = useNiveis();
   const { vendedores } = useVendedores();
+  const { data: agendamentos = [] } = useAgendamentosLeads();
   
   // Estado para armazenar comissões calculadas
   const [comissoesPorSemana, setComissoesPorSemana] = useState<{[key: string]: {valor: number, multiplicador: number, percentual: number}}>({});
@@ -43,6 +48,25 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
   const [filtroAno, setFiltroAno] = useState(selectedYear);
 
   if (!vendedorId || !vendedorNome) return null;
+
+  // Filtrar agendamentos do vendedor
+  const vendedorAgendamentos = useMemo(() => {
+    return agendamentos.filter(ag => ag.vendedor_id === vendedorId);
+  }, [agendamentos, vendedorId]);
+
+  // Filtrar agendamentos para o período
+  const agendamentosHistory = useMemo(() => {
+    return vendedorAgendamentos
+      .map(agendamento => {
+        const agendamentoDate = new Date(agendamento.data_agendamento);
+        return {
+          ...agendamento,
+          data: format(agendamentoDate, 'dd/MM/yyyy', { locale: ptBR }),
+          hora: format(agendamentoDate, 'HH:mm', { locale: ptBR })
+        };
+      })
+      .sort((a, b) => new Date(b.data_agendamento).getTime() - new Date(a.data_agendamento).getTime());
+  }, [vendedorAgendamentos]);
 
   // Filtrar vendas do vendedor específico
   const vendasVendedor = todasVendas.filter(venda => venda.vendedor_id === vendedorId);
@@ -251,6 +275,25 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'agendado': return 'bg-blue-100 text-blue-800';
+      case 'realizado': return 'bg-green-100 text-green-800';
+      case 'cancelado': return 'bg-red-100 text-red-800';
+      case 'atrasado': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getResultadoIcon = (resultado: string | null) => {
+    switch (resultado) {
+      case 'comprou': return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'nao_compareceu': return <XCircle className="h-4 w-4 text-red-600" />;
+      case 'compareceu_nao_comprou': return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+      default: return <Clock className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -280,7 +323,7 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
         </DialogHeader>
         
         <Tabs defaultValue="metas" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="metas" className="flex items-center gap-2">
               <Target className="h-4 w-4" />
               Metas
@@ -288,6 +331,10 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
             <TabsTrigger value="vendas" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Vendas
+            </TabsTrigger>
+            <TabsTrigger value="reunioes" className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4" />
+              Reuniões
             </TabsTrigger>
           </TabsList>
 
@@ -424,6 +471,65 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reunioes">
+            <Card>
+              <CardHeader>
+                <CardTitle>Histórico de Reuniões</CardTitle>
+                <CardDescription>
+                  Todas as reuniões agendadas para este vendedor
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px]">
+                  {agendamentosHistory.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      Nenhuma reunião encontrada para este vendedor
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {agendamentosHistory.map((agendamento) => (
+                        <div key={agendamento.id} className="border rounded-lg p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{agendamento.data}</span>
+                              <span className="text-muted-foreground">às {agendamento.hora}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {getResultadoIcon(agendamento.resultado_reuniao)}
+                              <Badge className={getStatusColor(agendamento.status)}>
+                                {agendamento.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-sm">
+                              <strong>Interesse:</strong> {agendamento.pos_graduacao_interesse}
+                            </p>
+                            {agendamento.observacoes && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                <strong>Observações:</strong> {agendamento.observacoes}
+                              </p>
+                            )}
+                            {agendamento.resultado_reuniao && (
+                              <p className="text-sm">
+                                <strong>Resultado:</strong> {
+                                  agendamento.resultado_reuniao === 'comprou' ? 'Cliente comprou' :
+                                  agendamento.resultado_reuniao === 'nao_compareceu' ? 'Cliente não compareceu' :
+                                  'Cliente compareceu mas não comprou'
+                                }
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
               </CardContent>
             </Card>
           </TabsContent>
