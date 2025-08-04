@@ -101,7 +101,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     vendedorTesteDados: vendedores.find(v => v.name === 'Vendedor Teste')
   });
   
-  const { data: conversionsData } = useVendedoresWeeklyConversions(allVendedorIds, startOfAllTime, endOfAllTime);
+  const { data: conversionsData, error: conversionsError, isLoading: conversionsLoading } = useVendedoresWeeklyConversions(allVendedorIds, startOfAllTime, endOfAllTime);
+  
+  // Debug conversions
+  console.log('🔍 DEBUG CONVERSIONS HOOK:', {
+    isLoading: conversionsLoading,
+    error: conversionsError,
+    dataLength: conversionsData?.length || 0,
+    rawData: conversionsData
+  });
 
   // Filtrar vendedores - apenas vendedores ativos e remover "Vendedor teste" exceto para admin específico
   const vendedoresFiltrados = useMemo(() => {
