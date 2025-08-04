@@ -665,10 +665,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;
         const nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
         
-        // Buscar a meta correta baseada no tipo do SDR
-        const metaSemanal = sdrType === 'inbound' 
-          ? (nivelConfig?.meta_semanal_inbound || 0) 
-          : (nivelConfig?.meta_semanal_outbound || 0);
+        // Buscar a meta correta baseada no nível do SDR (vendas de cursos)
+        const metaSemanal = nivelConfig?.meta_vendas_cursos || 8;
         const metaMensal = metaSemanal * weeks.length;
         
         // Calcular reuniões por semana
@@ -794,10 +792,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;
       const nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
       
-      // Buscar a meta correta baseada no tipo do SDR
-      const metaSemanal = sdrType === 'inbound' 
-        ? (nivelConfig?.meta_semanal_inbound || 0) 
-        : (nivelConfig?.meta_semanal_outbound || 0);
+      // Buscar a meta correta baseada no nível do SDR (vendas de cursos)
+      const metaSemanal = nivelConfig?.meta_vendas_cursos || 8;
       
       const metaMensal = metaSemanal * weeks.length;
       
