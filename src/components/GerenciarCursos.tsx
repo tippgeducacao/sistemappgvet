@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Power, PowerOff, BookOpen, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Power, PowerOff, BookOpen, Users, Filter, Search } from 'lucide-react';
 import { useCourses } from '@/hooks/useCourses';
 import { MODALIDADE_OPTIONS } from '@/constants/formOptions';
 import GerenciarGruposPosGraduacao from './GerenciarGruposPosGraduacao';
+import { Badge } from '@/components/ui/badge';
 
 const GerenciarCursos: React.FC = () => {
   const { courses, loading, addCourse, updateCourse, toggleCourseStatus, removeCourse, isDiretor } = useCourses();
@@ -21,6 +22,41 @@ const GerenciarCursos: React.FC = () => {
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
   const [excluindoId, setExcluindoId] = useState<string | null>(null);
   const [alterandoStatusId, setAlterandoStatusId] = useState<string | null>(null);
+  
+  // Estados para filtros
+  const [filtroModalidade, setFiltroModalidade] = useState<'todos' | 'Curso' | 'Pós-Graduação'>('todos');
+  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'ativo' | 'inativo'>('todos');
+  const [pesquisa, setPesquisa] = useState('');
+
+  // Filtrar e ordenar cursos
+  const cursosFiltrados = courses
+    .filter(curso => {
+      // Filtro por modalidade
+      if (filtroModalidade !== 'todos' && curso.modalidade !== filtroModalidade) return false;
+      
+      // Filtro por status
+      if (filtroStatus === 'ativo' && !curso.ativo) return false;
+      if (filtroStatus === 'inativo' && curso.ativo) return false;
+      
+      // Filtro por pesquisa
+      if (pesquisa && !curso.nome.toLowerCase().includes(pesquisa.toLowerCase())) return false;
+      
+      return true;
+    })
+    .sort((a, b) => {
+      // Primeiro por status (ativos primeiro)
+      if (a.ativo !== b.ativo) {
+        return a.ativo ? -1 : 1;
+      }
+      
+      // Depois por modalidade
+      if (a.modalidade !== b.modalidade) {
+        return a.modalidade.localeCompare(b.modalidade);
+      }
+      
+      // Por fim por nome
+      return a.nome.localeCompare(b.nome);
+    });
 
   const handleAdicionarCurso = async () => {
     if (!novoCurso.trim()) return;
@@ -157,21 +193,107 @@ const GerenciarCursos: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtros e Pesquisa
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Pesquisa */}
+            <div>
+              <Label htmlFor="pesquisa">Pesquisar por nome</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="pesquisa"
+                  value={pesquisa}
+                  onChange={(e) => setPesquisa(e.target.value)}
+                  placeholder="Digite o nome do curso..."
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            {/* Filtro por modalidade */}
+            <div>
+              <Label>Modalidade</Label>
+              <Select value={filtroModalidade} onValueChange={(value: 'todos' | 'Curso' | 'Pós-Graduação') => setFiltroModalidade(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas as modalidades</SelectItem>
+                  <SelectItem value="Curso">Apenas Cursos</SelectItem>
+                  <SelectItem value="Pós-Graduação">Apenas Pós-Graduações</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Filtro por status */}
+            {isDiretor && (
+              <div>
+                <Label>Status</Label>
+                <Select value={filtroStatus} onValueChange={(value: 'todos' | 'ativo' | 'inativo') => setFiltroStatus(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os status</SelectItem>
+                    <SelectItem value="ativo">Apenas Ativos</SelectItem>
+                    <SelectItem value="inativo">Apenas Inativos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          
+          {/* Contadores */}
+          <div className="flex gap-4 mt-4 flex-wrap">
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Total: {courses.length}
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1">
+              Filtrados: {cursosFiltrados.length}
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-300">
+              Ativos: {courses.filter(c => c.ativo).length}
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1 text-red-600 border-red-300">
+              Inativos: {courses.filter(c => !c.ativo).length}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Tabela de cursos */}
       <Card>
         <CardHeader>
-          <CardTitle>Cursos Cadastrados ({courses.length})</CardTitle>
+          <CardTitle>
+            Cursos {cursosFiltrados.length !== courses.length ? 
+              `Filtrados (${cursosFiltrados.length} de ${courses.length})` : 
+              `Cadastrados (${courses.length})`
+            }
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-8">
               <p className="text-gray-500">Carregando cursos...</p>
             </div>
-          ) : courses.length === 0 ? (
+          ) : cursosFiltrados.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Nenhum curso cadastrado</p>
+              <p className="text-gray-500">
+                {courses.length === 0 ? 'Nenhum curso cadastrado' : 'Nenhum curso encontrado com os filtros aplicados'}
+              </p>
               <p className="text-sm text-gray-400 mt-2">
-                Adicione o primeiro curso usando o formulário acima
+                {courses.length === 0 
+                  ? 'Adicione o primeiro curso usando o formulário acima'
+                  : 'Tente ajustar os filtros para ver mais resultados'
+                }
               </p>
             </div>
           ) : (
@@ -187,8 +309,11 @@ const GerenciarCursos: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {courses.map((curso, index) => (
-                    <TableRow key={curso.id}>
+                  {cursosFiltrados.map((curso, index) => (
+                    <TableRow 
+                      key={curso.id}
+                      className={`${!curso.ativo ? 'bg-gray-50 opacity-70' : ''} transition-all duration-200`}
+                    >
                       <TableCell className="font-medium text-gray-500">
                         {index + 1}
                       </TableCell>
@@ -222,14 +347,20 @@ const GerenciarCursos: React.FC = () => {
                             </Button>
                           </div>
                         ) : (
-                          <span className="font-medium">{curso.nome}</span>
+                          <span className={`font-medium ${!curso.ativo ? 'text-gray-500 line-through' : ''}`}>
+                            {curso.nome}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           curso.modalidade === 'Curso' 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-purple-100 text-purple-800'
+                            ? !curso.ativo 
+                              ? 'bg-blue-50 text-blue-600 opacity-60' 
+                              : 'bg-blue-100 text-blue-800'
+                            : !curso.ativo 
+                              ? 'bg-purple-50 text-purple-600 opacity-60'
+                              : 'bg-purple-100 text-purple-800'
                         }`}>
                           {curso.modalidade}
                         </span>
