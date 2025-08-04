@@ -122,45 +122,117 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
         
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full pr-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
-              <div className="space-y-6">
-                <VendaAlunoInfoCard 
-                  alunoData={venda.aluno}
-                  isLoading={false}
-                />
-                <VendaCursoInfoCard 
-                  cursoData={venda.curso}
-                />
-                <VendaStatusCard 
-                  status={venda.status}
-                  pontuacaoEsperada={venda.pontuacao_esperada}
-                  pontuacaoValidada={venda.pontuacao_validada}
-                  motivoPendencia={venda.motivo_pendencia}
-                />
+            {/* Informações Principais Compactas */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+              {/* Informações do Aluno */}
+              <div className="bg-white border rounded-lg shadow-sm">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-2 border-b">
+                  <h3 className="font-semibold text-blue-900 text-sm">Informações do Aluno</h3>
+                </div>
+                <table className="w-full text-xs">
+                  <tbody>
+                    <tr className="border-b bg-white hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Nome:</td>
+                      <td className="px-3 py-2 text-gray-900">{venda.aluno?.nome || 'Não informado'}</td>
+                    </tr>
+                    <tr className="bg-gray-50 hover:bg-gray-100">
+                      <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Email:</td>
+                      <td className="px-3 py-2 text-gray-900">{venda.aluno?.email || 'Não informado'}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              
-              <div className="space-y-6">
-                <VendaDocumentCard 
-                  documentPath={venda.documento_comprobatorio}
-                  tipoVenda={tipoVenda}
-                  vendaId={venda.id}
-                  isLoadingFormDetails={isLoadingDetails}
-                />
-                <VendaObservationsCard 
-                  observacoes={venda.observacoes || ''}
-                />
+
+              {/* Informações do Curso */}
+              <div className="bg-white border rounded-lg shadow-sm">
+                <div className="bg-gradient-to-r from-green-50 to-green-100 px-4 py-2 border-b">
+                  <h3 className="font-semibold text-green-900 text-sm">Informações do Curso</h3>
+                </div>
+                <table className="w-full text-xs">
+                  <tbody>
+                    <tr className="bg-white hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Curso:</td>
+                      <td className="px-3 py-2 text-gray-900">{venda.curso?.nome || 'Não informado'}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-            
-            <div className="mt-6">
-              <VendaFormDetailsCard
-                respostas={formDetails}
-                isLoading={isLoadingDetails}
-                error={detailsError}
+
+            {/* Status da Venda */}
+            <div className="bg-white border rounded-lg shadow-sm mb-6">
+              <div className="bg-gradient-to-r from-purple-50 to-purple-100 px-4 py-2 border-b flex items-center justify-between">
+                <h3 className="font-semibold text-purple-900 text-sm">Status da Venda</h3>
+                <Badge className={getStatusColor(venda.status)}>
+                  {getStatusLabel(venda.status)}
+                </Badge>
+              </div>
+              <table className="w-full text-xs">
+                <tbody>
+                  <tr className="border-b bg-white hover:bg-gray-50">
+                    <td className="px-3 py-2 font-medium text-gray-700 w-1/4">Status Atual:</td>
+                    <td className="px-3 py-2 text-gray-900">
+                      <Badge className={getStatusColor(venda.status)}>
+                        {getStatusLabel(venda.status)}
+                      </Badge>
+                    </td>
+                  </tr>
+                  <tr className="border-b bg-gray-50 hover:bg-gray-100">
+                    <td className="px-3 py-2 font-medium text-gray-700 w-1/4">Pontuação (calculada automaticamente):</td>
+                    <td className="px-3 py-2 text-cyan-600 font-medium">{venda.pontuacao_esperada || 0} pts</td>
+                  </tr>
+                  <tr className="bg-white hover:bg-gray-50">
+                    <td className="px-3 py-2 font-medium text-gray-700 w-1/4">Pontuação Validada:</td>
+                    <td className="px-3 py-2 text-green-600 font-medium">{venda.pontuacao_validada || '-'} pts</td>
+                  </tr>
+                </tbody>
+              </table>
+              
+              {venda.motivo_pendencia && (
+                <div className={`m-3 border rounded-lg p-3 ${
+                  venda.status === 'desistiu' 
+                    ? 'bg-red-50 border-red-200' 
+                    : 'bg-yellow-50 border-yellow-200'
+                }`}>
+                  <span className={`text-xs font-medium ${
+                    venda.status === 'desistiu' 
+                      ? 'text-red-800' 
+                      : 'text-yellow-800'
+                  }`}>
+                    {venda.status === 'desistiu' ? 'Motivo da Rejeição:' : 'Motivo da Pendência:'}
+                  </span>
+                  <p className={`text-xs mt-1 ${
+                    venda.status === 'desistiu' 
+                      ? 'text-red-700' 
+                      : 'text-yellow-700'
+                  }`}>
+                    {venda.motivo_pendencia}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Documentos e Observações em grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+              <VendaDocumentCard 
+                documentPath={venda.documento_comprobatorio}
+                tipoVenda={tipoVenda}
                 vendaId={venda.id}
-                onRefetch={refetchDetails}
+                isLoadingFormDetails={isLoadingDetails}
+              />
+              <VendaObservationsCard 
+                observacoes={venda.observacoes || ''}
               />
             </div>
+            
+            {/* Detalhes do Formulário */}
+            <VendaFormDetailsCard
+              respostas={formDetails}
+              isLoading={isLoadingDetails}
+              error={detailsError}
+              vendaId={venda.id}
+              onRefetch={refetchDetails}
+            />
           </ScrollArea>
         </div>
       </DialogContent>
