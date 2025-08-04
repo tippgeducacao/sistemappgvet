@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Pencil, Trash2, Plus, Users } from 'lucide-react';
+import { Pencil, Trash2, Plus, Users, Search } from 'lucide-react';
 
 const GerenciarGruposPosGraduacao: React.FC = () => {
   const {
@@ -38,6 +38,8 @@ const GerenciarGruposPosGraduacao: React.FC = () => {
   const [grupoEditando, setGrupoEditando] = useState<GrupoPosGraduacao | null>(null);
   const [dialogAberto, setDialogAberto] = useState(false);
   const [cursosEditando, setCursosEditando] = useState<string[]>([]);
+  const [pesquisaCursos, setPesquisaCursos] = useState('');
+  const [pesquisaCursosEdicao, setPesquisaCursosEdicao] = useState('');
 
   const handleCriarGrupo = async () => {
     if (!novoGrupo.nome.trim()) return;
@@ -53,6 +55,7 @@ const GerenciarGruposPosGraduacao: React.FC = () => {
   const iniciarEdicao = (grupo: GrupoPosGraduacao) => {
     setGrupoEditando(grupo);
     setCursosEditando(grupo.cursos?.map(c => c.id) || []);
+    setPesquisaCursosEdicao('');
     setDialogAberto(true);
   };
 
@@ -68,6 +71,7 @@ const GerenciarGruposPosGraduacao: React.FC = () => {
       );
       setGrupoEditando(null);
       setCursosEditando([]);
+      setPesquisaCursosEdicao('');
       setDialogAberto(false);
     } catch (error) {
       console.error('Erro ao editar grupo:', error);
@@ -96,6 +100,15 @@ const GerenciarGruposPosGraduacao: React.FC = () => {
         : [...prev, cursoId]
     );
   };
+
+  // Filtrar cursos baseado na pesquisa
+  const cursosFiltrados = cursosDisponiveis.filter(curso =>
+    curso.nome.toLowerCase().includes(pesquisaCursos.toLowerCase())
+  );
+
+  const cursosFiltradosEdicao = cursosDisponiveis.filter(curso =>
+    curso.nome.toLowerCase().includes(pesquisaCursosEdicao.toLowerCase())
+  );
 
   if (loading) {
     return <LoadingSpinner />;
@@ -135,19 +148,36 @@ const GerenciarGruposPosGraduacao: React.FC = () => {
 
           <div>
             <Label>Pós-Graduações do Grupo</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2 max-h-40 overflow-y-auto border rounded p-3">
-              {cursosDisponiveis.map((curso) => (
-                <div key={curso.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`curso-${curso.id}`}
-                    checked={novoGrupo.cursosIds.includes(curso.id)}
-                    onCheckedChange={() => toggleCursoNovoGrupo(curso.id)}
-                  />
-                  <Label htmlFor={`curso-${curso.id}`} className="text-sm">
-                    {curso.nome}
-                  </Label>
-                </div>
-              ))}
+            <div className="space-y-3 mt-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Pesquisar pós-graduações..."
+                  value={pesquisaCursos}
+                  onChange={(e) => setPesquisaCursos(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded p-3 bg-muted/50">
+                {cursosFiltrados.length === 0 ? (
+                  <div className="col-span-full text-center text-muted-foreground py-4">
+                    {pesquisaCursos ? 'Nenhuma pós-graduação encontrada' : 'Nenhuma pós-graduação disponível'}
+                  </div>
+                ) : (
+                  cursosFiltrados.map((curso) => (
+                    <div key={curso.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`curso-${curso.id}`}
+                        checked={novoGrupo.cursosIds.includes(curso.id)}
+                        onCheckedChange={() => toggleCursoNovoGrupo(curso.id)}
+                      />
+                      <Label htmlFor={`curso-${curso.id}`} className="text-sm">
+                        {curso.nome}
+                      </Label>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
@@ -268,19 +298,36 @@ const GerenciarGruposPosGraduacao: React.FC = () => {
 
               <div>
                 <Label>Pós-Graduações do Grupo</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-60 overflow-y-auto border rounded p-3">
-                  {cursosDisponiveis.map((curso) => (
-                    <div key={curso.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`edit-curso-${curso.id}`}
-                        checked={cursosEditando.includes(curso.id)}
-                        onCheckedChange={() => toggleCursoEdicao(curso.id)}
-                      />
-                      <Label htmlFor={`edit-curso-${curso.id}`} className="text-sm">
-                        {curso.nome}
-                      </Label>
-                    </div>
-                  ))}
+                <div className="space-y-3 mt-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Pesquisar pós-graduações..."
+                      value={pesquisaCursosEdicao}
+                      onChange={(e) => setPesquisaCursosEdicao(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded p-3 bg-muted/50">
+                    {cursosFiltradosEdicao.length === 0 ? (
+                      <div className="col-span-full text-center text-muted-foreground py-4">
+                        {pesquisaCursosEdicao ? 'Nenhuma pós-graduação encontrada' : 'Nenhuma pós-graduação disponível'}
+                      </div>
+                    ) : (
+                      cursosFiltradosEdicao.map((curso) => (
+                        <div key={curso.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-curso-${curso.id}`}
+                            checked={cursosEditando.includes(curso.id)}
+                            onCheckedChange={() => toggleCursoEdicao(curso.id)}
+                          />
+                          <Label htmlFor={`edit-curso-${curso.id}`} className="text-sm">
+                            {curso.nome}
+                          </Label>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
 
