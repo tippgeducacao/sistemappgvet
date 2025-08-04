@@ -107,12 +107,14 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
               .lte('data_agendamento', endOfAllTime.toISOString());
 
             const totalReunioes = agendamentos?.length || 0;
+            // CORREÇÃO: Reuniões realizadas = apenas as que têm resultado marcado (não canceladas)
             const reunioesRealizadas = agendamentos?.filter(ag => 
-              ag.resultado_reuniao === 'presente' || 
-              ag.resultado_reuniao === 'compareceu' ||
-              ag.resultado_reuniao === 'compareceu_nao_comprou' ||
-              ag.resultado_reuniao === 'comprou' ||
-              ag.status === 'finalizado'
+              ag.resultado_reuniao !== null && 
+              ag.resultado_reuniao !== undefined &&
+              ag.resultado_reuniao.trim() !== '' &&
+              (ag.resultado_reuniao === 'nao_compareceu' ||
+               ag.resultado_reuniao === 'compareceu_nao_comprou' ||
+               ag.resultado_reuniao === 'comprou')
             ).length || 0;
 
             // Buscar vendas do vendedor
@@ -126,11 +128,16 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
             const matriculas = vendas?.length || 0;
             
-            // AJUSTE: Se não há reuniões mas há vendas, considerar as vendas como 100% de conversão
+            // CORREÇÃO: Conversões = reuniões que resultaram em compra
+            const reunioesComVenda = agendamentos?.filter(ag => 
+              ag.resultado_reuniao === 'comprou'
+            ).length || 0;
+            
+            // AJUSTE: Taxa de conversão baseada em reuniões realizadas vs reuniões que geraram venda
             let taxaConversao = 0;
             if (reunioesRealizadas > 0) {
-              // Cálculo normal: vendas / reuniões realizadas
-              taxaConversao = (matriculas / reunioesRealizadas) * 100;
+              // Cálculo: reuniões que resultaram em compra / reuniões realizadas
+              taxaConversao = (reunioesComVenda / reunioesRealizadas) * 100;
             } else if (matriculas > 0) {
               // Se não há reuniões mas há vendas, considerar como vendas diretas (100% conversão)
               taxaConversao = 100;
