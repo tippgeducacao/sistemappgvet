@@ -1,5 +1,6 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -85,31 +86,75 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   const isLoading = vendasLoading || vendedoresLoading || metasLoading || niveisLoading;
 
-  // Calcular período de TODO O HISTÓRICO para taxas de conversão
-  const startOfAllTime = new Date('2020-01-01'); // Data bem antiga para pegar todo histórico
-  const endOfAllTime = new Date(); // Até hoje
+  // CÁLCULO DIRETO DE CONVERSÃO - SEM HOOK
+  const [conversionsData, setConversionsData] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const calcularConversoesDiretamente = async () => {
+      const vendedorIds = vendedores.filter(v => v.user_type === 'vendedor').map(v => v.id);
+      const startOfAllTime = new Date('2020-01-01');
+      const endOfAllTime = new Date();
+      
+      try {
+        const conversoes = await Promise.all(
+          vendedorIds.map(async (vendedorId) => {
+            // Buscar reuniões do vendedor
+            const { data: agendamentos } = await supabase
+              .from('agendamentos')
+              .select('*')
+              .eq('vendedor_id', vendedorId)
+              .gte('data_agendamento', startOfAllTime.toISOString())
+              .lte('data_agendamento', endOfAllTime.toISOString());
 
-  // Buscar taxas de conversão históricas dos vendedores (usar todos os vendedores)
-  const allVendedorIds = vendedores.filter(v => v.user_type === 'vendedor').map(v => v.id);
-  
-  // Debug dos IDs dos vendedores
-  console.log('🔍 DEBUG IDs dos vendedores:', {
-    totalVendedores: vendedores.length,
-    vendedoresAtivos: allVendedorIds.length,
-    vendedorTesteExiste: allVendedorIds.includes('a3e182d3-c4d0-49af-9e95-cac6989820f5'),
-    todosOsIds: allVendedorIds,
-    vendedorTesteDados: vendedores.find(v => v.name === 'Vendedor Teste')
-  });
-  
-  const { data: conversionsData, error: conversionsError, isLoading: conversionsLoading } = useVendedoresWeeklyConversions(allVendedorIds, startOfAllTime, endOfAllTime);
-  
-  // Debug conversions
-  console.log('🔍 DEBUG CONVERSIONS HOOK:', {
-    isLoading: conversionsLoading,
-    error: conversionsError,
-    dataLength: conversionsData?.length || 0,
-    rawData: conversionsData
-  });
+            const totalReunioes = agendamentos?.length || 0;
+            const reunioesRealizadas = agendamentos?.filter(ag => 
+              ag.resultado_reuniao === 'presente' || 
+              ag.resultado_reuniao === 'compareceu' ||
+              ag.resultado_reuniao === 'compareceu_nao_comprou' ||
+              ag.resultado_reuniao === 'comprou' ||
+              ag.status === 'finalizado'
+            ).length || 0;
+
+            // Buscar vendas do vendedor
+            const { data: vendas } = await supabase
+              .from('form_entries')
+              .select('*')
+              .eq('vendedor_id', vendedorId)
+              .eq('status', 'matriculado')
+              .gte('created_at', startOfAllTime.toISOString())
+              .lte('created_at', endOfAllTime.toISOString());
+
+            const matriculas = vendas?.length || 0;
+            const taxaConversao = reunioesRealizadas > 0 ? (matriculas / reunioesRealizadas) * 100 : 0;
+
+            console.log(`📊 CONVERSÃO DIRETA ${vendedorId}:`, {
+              totalReunioes,
+              reunioesRealizadas, 
+              matriculas,
+              taxaConversao: `${taxaConversao.toFixed(1)}%`
+            });
+
+            return {
+              vendedorId,
+              totalReunioes,
+              reunioesRealizadas,
+              matriculas,
+              taxaConversao
+            };
+          })
+        );
+        
+        setConversionsData(conversoes);
+        console.log('✅ CONVERSÕES CALCULADAS:', conversoes.length);
+      } catch (error) {
+        console.error('❌ Erro no cálculo direto:', error);
+      }
+    };
+
+    if (vendedores.length > 0) {
+      calcularConversoesDiretamente();
+    }
+  }, [vendedores]);
 
   // Filtrar vendedores - apenas vendedores ativos e remover "Vendedor teste" exceto para admin específico
   const vendedoresFiltrados = useMemo(() => {
