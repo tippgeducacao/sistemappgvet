@@ -125,7 +125,16 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
               .lte('created_at', endOfAllTime.toISOString());
 
             const matriculas = vendas?.length || 0;
-            const taxaConversao = reunioesRealizadas > 0 ? (matriculas / reunioesRealizadas) * 100 : 0;
+            
+            // AJUSTE: Se não há reuniões mas há vendas, considerar as vendas como 100% de conversão
+            let taxaConversao = 0;
+            if (reunioesRealizadas > 0) {
+              // Cálculo normal: vendas / reuniões realizadas
+              taxaConversao = (matriculas / reunioesRealizadas) * 100;
+            } else if (matriculas > 0) {
+              // Se não há reuniões mas há vendas, considerar como vendas diretas (100% conversão)
+              taxaConversao = 100;
+            }
 
             console.log(`📊 CONVERSÃO DIRETA ${vendedorId}:`, {
               totalReunioes,
