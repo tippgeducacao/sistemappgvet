@@ -224,15 +224,14 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
         <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-lg">
-                  Gerenciar Venda #{venda.id.substring(0, 8)}
-                </DialogTitle>
-                <DialogDescription className="text-sm">
-                  Aprovar, rejeitar ou alterar status da venda
-                </DialogDescription>
+              <div className="flex items-center gap-4">
+                <div>
+                  <DialogTitle className="text-lg">
+                    Gerenciar Venda #{venda.id.substring(0, 8)}
+                  </DialogTitle>
+                </div>
                 {dataMatricula && (
-                  <div className="mt-1 text-xs text-gray-600">
+                  <div className="text-sm text-gray-600">
                     <span className="font-medium">Data de Matrícula:</span> {dataMatricula}
                   </div>
                 )}
