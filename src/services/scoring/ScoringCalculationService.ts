@@ -19,8 +19,19 @@ export class ScoringCalculationService {
     console.log('📋 Dados do formulário:', formData);
     console.log('📊 Regras disponíveis:', rules.length);
     
-    let totalPoints = this.getBasePoints();
-    console.log(`🎯 Pontos base: ${totalPoints}`);
+    // Verificar se modalidade é "Curso"
+    const modalidade = formData.modalidade;
+    const isCurso = modalidade === 'Curso';
+    
+    let totalPoints = this.getBasePoints(modalidade);
+    console.log(`🎯 Pontos base: ${totalPoints} (modalidade: ${modalidade})`);
+
+    // Se modalidade é "Curso", não aplicar regras de pontuação
+    if (isCurso) {
+      console.log('🚫 Modalidade é "Curso" - não aplicando regras de pontuação');
+      console.log(`🏆 Pontuação total calculada: ${totalPoints}`);
+      return totalPoints;
+    }
 
     // Iterar pelos campos que têm pontuação
     for (const [formFieldName, ruleFieldName] of Object.entries(this.FIELD_NAME_MAPPING)) {
@@ -39,9 +50,9 @@ export class ScoringCalculationService {
     return totalPoints;
   }
 
-  static getBasePoints(): number {
-    // Retorna 1 ponto fixo como base, conforme regra estabelecida
-    return 1;
+  static getBasePoints(modalidade?: string): number {
+    // Se modalidade é "Curso", retorna 0,2; caso contrário, retorna 1
+    return modalidade === 'Curso' ? 0.2 : 1;
   }
 
   static calculatePointsFromResponses(vendaRespostas: any[], rules: any[]): number {
@@ -49,8 +60,22 @@ export class ScoringCalculationService {
     console.log('📝 Respostas recebidas:', vendaRespostas.length);
     console.log('📊 Regras disponíveis:', rules.length);
 
-    let totalPoints = this.getBasePoints();
-    console.log(`🎯 Pontos base: ${totalPoints}`);
+    // Verificar se modalidade é "Curso"
+    const modalidadeResposta = vendaRespostas.find(r => 
+      r.campo_nome === 'Modalidade' || r.campo_nome === 'Modalidade do Curso'
+    );
+    const modalidade = modalidadeResposta?.valor_informado;
+    const isCurso = modalidade === 'Curso';
+
+    let totalPoints = this.getBasePoints(modalidade);
+    console.log(`🎯 Pontos base: ${totalPoints} (modalidade: ${modalidade})`);
+
+    // Se modalidade é "Curso", não aplicar regras de pontuação
+    if (isCurso) {
+      console.log('🚫 Modalidade é "Curso" - não aplicando regras de pontuação');
+      console.log(`🏆 Pontuação total das respostas: ${totalPoints}`);
+      return totalPoints;
+    }
 
     // Mapear respostas do formulário para os nomes corretos dos campos
     const fieldMapping: Record<string, string> = {
