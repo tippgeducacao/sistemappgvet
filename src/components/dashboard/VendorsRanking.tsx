@@ -23,7 +23,7 @@ import { DataFormattingService } from '@/services/formatting/DataFormattingServi
 import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
-import SDRRanking from './SDRRanking';
+import SimpleSDRRanking from './SimpleSDRRanking';
 import VendedorProfileModal from './VendedorProfileModal';
 
 
@@ -1158,7 +1158,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       
       {/* Ranking de SDRs - Posicionado abaixo do ranking de vendedores */}
       <div className="mt-6">
-        <SDRRanking />
+        <SimpleSDRRanking />
       </div>
     </Card>
   );
