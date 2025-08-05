@@ -230,6 +230,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
       console.log('✅ Formulário salvo com sucesso:', formEntryId);
 
       // Se a venda veio de uma reunião, marcar como "comprou"
+      console.log('🔍 Verificando agendamentoId:', formData.agendamentoId, 'editId:', editId);
       if (formData.agendamentoId && !editId) {
         console.log('🔄 Marcando reunião como comprou:', formData.agendamentoId);
         console.log('👤 Usuário atual:', currentUser);

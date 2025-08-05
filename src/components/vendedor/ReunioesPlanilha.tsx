@@ -138,6 +138,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     updateField('observacoes', observacaoOrigem);
     
     // Adicionar ID do agendamento para controle
+    console.log('🆔 Definindo agendamentoId no formulário:', agendamento.id);
     updateField('agendamentoId', agendamento.id);
     
     setAgendamentoSelecionado(agendamento);
