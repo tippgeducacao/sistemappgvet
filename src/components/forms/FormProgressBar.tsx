@@ -2,10 +2,12 @@
 import React from 'react';
 import { useFormProgress } from '@/hooks/useFormProgress';
 import { ScoringCalculationService } from '@/services/scoring/ScoringCalculationService';
+import { useFormStore } from '@/store/FormStore';
 
 const FormProgressBar: React.FC = () => {
   const { totalPoints, isLoading } = useFormProgress();
-  const basePoints = ScoringCalculationService.getBasePoints();
+  const { formData } = useFormStore();
+  const basePoints = ScoringCalculationService.getBasePoints(formData.modalidade);
 
   if (isLoading) {
     return (
