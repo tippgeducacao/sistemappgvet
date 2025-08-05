@@ -14,7 +14,7 @@ const VendedorReunioes: React.FC = () => {
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground">Carregando reuniões...</p>
+          <p className="text-muted-foreground">Carregando Reuniões...</p>
         </CardContent>
       </Card>
     );
@@ -29,7 +29,7 @@ const VendedorReunioes: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Reuniões</h1>
           <p className="text-muted-foreground">
-            Gerencie suas reuniões agendadas pelos SDRs
+            Gerencie suas Reuniões agendadas pelos SDRs
           </p>
         </div>
       </div>
@@ -57,7 +57,7 @@ const VendedorReunioes: React.FC = () => {
           <CardContent>
             <div className="text-2xl font-bold">{reunioesFinalizadas.length}</div>
             <p className="text-xs text-muted-foreground">
-              reuniões com resultado
+              Reuniões com resultado
             </p>
           </CardContent>
         </Card>

@@ -205,7 +205,7 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
                   >
-                    Acessar Reunião
+                   Acessar Reunião
                   </a>
                 </div>
               )}
@@ -216,7 +216,7 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
                   id="observacoes"
                   value={observacoes}
                   onChange={(e) => setObservacoes(e.target.value)}
-                  placeholder="Adicione observações sobre a reunião..."
+                  placeholder="Adicione observações sobre a Reunião..."
                   className="min-h-20"
                 />
               </div>
