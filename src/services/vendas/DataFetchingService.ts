@@ -20,7 +20,7 @@ export class DataFetchingService {
     // Buscar dados relacionados em paralelo
     const [alunosResult, cursosResult, profilesResult, rulesResult] = await Promise.allSettled([
       supabase.from('alunos').select('*'),
-      supabase.from('cursos').select('*'),
+      supabase.from('cursos').select('*'), // Buscar TODOS os cursos para resolver vendas existentes
       supabase.from('profiles').select('*'),
       this.fetchScoringRules()
     ]);

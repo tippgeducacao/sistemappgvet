@@ -183,20 +183,20 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormInputField
           id="turma"
-          label="Turma"
-          value={formData.turma || ''}
-          onChange={handleTurmaChange}
-          placeholder="Ex: 2 (será T02)"
-          className="font-mono"
-        />
-        
-        <FormInputField
-          id="abertura"
-          label="Abertura"
-          value={formData.abertura || ''}
-          onChange={handleAberturaChange}
-          placeholder="Ex: 5 (será #05)"
-          className="font-mono"
+           label="Turma *"
+           value={formData.turma || ''}
+           onChange={handleTurmaChange}
+           placeholder="Ex: 2 (será T02)"
+           className="font-mono"
+         />
+         
+         <FormInputField
+           id="abertura"
+           label="Abertura *"
+           value={formData.abertura || ''}
+           onChange={handleAberturaChange}
+           placeholder="Ex: 5 (será #05)"
+           className="font-mono"
         />
       </div>
 
