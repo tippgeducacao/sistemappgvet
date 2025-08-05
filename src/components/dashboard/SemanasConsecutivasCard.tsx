@@ -47,33 +47,30 @@ const SemanasConsecutivasCard: React.FC<SemanasConsecutivasCardProps> = ({
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Target className="h-4 w-4" />
+    <Card className="w-72">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-1">
+          <Target className="h-3 w-3" />
           {title}
         </CardTitle>
-        <CardDescription className="text-sm">
-          Sequência atual de semanas atingindo a meta
-        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-3">
-          <div className="text-2xl font-bold text-foreground">
+      <CardContent className="pt-0">
+        <div className="flex items-center gap-2">
+          <div className="text-xl font-bold text-foreground">
             {semanasConsecutivas}
           </div>
-          <div className="flex items-center gap-2">
-            <Badge className={getStatusColor(semanasConsecutivas)}>
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className={getStatusColor(semanasConsecutivas)}>
               {getStatusText(semanasConsecutivas)}
             </Badge>
             {semanasConsecutivas > 0 && (
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <TrendingUp className="h-3 w-3 text-green-500" />
             )}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-xs text-muted-foreground mt-1">
           {semanasConsecutivas === 0 
-            ? "Nenhuma sequência ativa no momento" 
+            ? "Sem sequência ativa" 
             : `${semanasConsecutivas} semana${semanasConsecutivas > 1 ? 's' : ''} consecutiva${semanasConsecutivas > 1 ? 's' : ''}`
           }
         </p>

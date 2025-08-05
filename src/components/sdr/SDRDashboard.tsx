@@ -54,13 +54,21 @@ const SDRDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Olá, {profile?.name || 'SDR'}!
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Gerencie seus leads, agendamentos e vendas de cursos
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Olá, {profile?.name || 'SDR'}!
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie seus leads, agendamentos e vendas de cursos
+          </p>
+        </div>
+        <div className="flex-shrink-0">
+          <SemanasConsecutivasCard 
+            vendedorId={profile?.id} 
+            title="Semanas Consecutivas"
+          />
+        </div>
       </div>
 
       {/* Filtro por período */}
@@ -128,8 +136,6 @@ const SDRDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Semanas Consecutivas */}
-      <SemanasConsecutivasCard vendedorId={profile?.id} />
 
       {/* Metas Diárias e Semanais */}
       <SDRMetasDiarias 
