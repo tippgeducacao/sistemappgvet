@@ -170,7 +170,7 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" id="form-details-section">
       <h3 className="font-semibold text-lg">
         Detalhes do Formulário 
         <span className="text-sm font-normal text-gray-500 ml-2">
