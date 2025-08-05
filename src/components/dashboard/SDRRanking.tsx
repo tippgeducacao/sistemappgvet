@@ -89,7 +89,7 @@ const SDRRanking: React.FC = () => {
         nivelConfig = niveis.find(n => n.nivel === (sdr.nivel || 'sdr_outbound_junior') && n.tipo_usuario === 'sdr');
       }
 
-      // Vendas de cursos diretas do SDR (cada curso = 1 venda)
+      // Vendas de cursos do SDR (incluindo vendas diretas + vendas de agendamentos)
       const vendasSemana = vendas.filter(v => {
         // Usar data de aprovação para vendas matriculadas, senão data de envio
         const dataVenda = v.status === 'matriculado' && v.data_aprovacao 
@@ -97,10 +97,24 @@ const SDRRanking: React.FC = () => {
           : v.status === 'matriculado' && v.atualizado_em 
             ? new Date(v.atualizado_em) 
             : new Date(v.enviado_em);
-        return v.vendedor_id === sdr.id && 
-               v.status === 'matriculado' &&
-               dataVenda >= inicioSemana && 
-               dataVenda <= fimSemana;
+        
+        const isInPeriod = dataVenda >= inicioSemana && dataVenda <= fimSemana;
+        const isMatriculado = v.status === 'matriculado';
+        
+        if (!isInPeriod || !isMatriculado) return false;
+        
+        // 1. Vendas diretas do SDR
+        if (v.vendedor_id === sdr.id) return true;
+        
+        // 2. Vendas de agendamentos do SDR (vendedor marca como "comprou")
+        const agendamentoRelacionado = agendamentos.find(a => 
+          a.sdr_id === sdr.id && 
+          a.resultado_reuniao === 'comprou' &&
+          a.data_resultado &&
+          Math.abs(new Date(a.data_resultado).getTime() - dataVenda.getTime()) < 5 * 60 * 1000 // 5 minutos de diferença
+        );
+        
+        return !!agendamentoRelacionado;
       }).length;
 
       const vendasMes = vendas.filter(v => {
@@ -110,10 +124,24 @@ const SDRRanking: React.FC = () => {
           : v.status === 'matriculado' && v.atualizado_em 
             ? new Date(v.atualizado_em) 
             : new Date(v.enviado_em);
-        return v.vendedor_id === sdr.id && 
-               v.status === 'matriculado' &&
-               dataVenda >= inicioMes && 
-               dataVenda <= fimMes;
+        
+        const isInPeriod = dataVenda >= inicioMes && dataVenda <= fimMes;
+        const isMatriculado = v.status === 'matriculado';
+        
+        if (!isInPeriod || !isMatriculado) return false;
+        
+        // 1. Vendas diretas do SDR
+        if (v.vendedor_id === sdr.id) return true;
+        
+        // 2. Vendas de agendamentos do SDR (vendedor marca como "comprou")
+        const agendamentoRelacionado = agendamentos.find(a => 
+          a.sdr_id === sdr.id && 
+          a.resultado_reuniao === 'comprou' &&
+          a.data_resultado &&
+          Math.abs(new Date(a.data_resultado).getTime() - dataVenda.getTime()) < 5 * 60 * 1000 // 5 minutos de diferença
+        );
+        
+        return !!agendamentoRelacionado;
       }).length;
 
       const vendasAno = vendas.filter(v => {
@@ -123,10 +151,24 @@ const SDRRanking: React.FC = () => {
           : v.status === 'matriculado' && v.atualizado_em 
             ? new Date(v.atualizado_em) 
             : new Date(v.enviado_em);
-        return v.vendedor_id === sdr.id && 
-               v.status === 'matriculado' &&
-               dataVenda >= inicioAno && 
-               dataVenda <= fimAno;
+        
+        const isInPeriod = dataVenda >= inicioAno && dataVenda <= fimAno;
+        const isMatriculado = v.status === 'matriculado';
+        
+        if (!isInPeriod || !isMatriculado) return false;
+        
+        // 1. Vendas diretas do SDR
+        if (v.vendedor_id === sdr.id) return true;
+        
+        // 2. Vendas de agendamentos do SDR (vendedor marca como "comprou")
+        const agendamentoRelacionado = agendamentos.find(a => 
+          a.sdr_id === sdr.id && 
+          a.resultado_reuniao === 'comprou' &&
+          a.data_resultado &&
+          Math.abs(new Date(a.data_resultado).getTime() - dataVenda.getTime()) < 5 * 60 * 1000 // 5 minutos de diferença
+        );
+        
+        return !!agendamentoRelacionado;
       }).length;
 
       // Agendamentos hoje com resultado positivo
