@@ -25,12 +25,15 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
 
 
   // Filtrar apenas os agendamentos do SDR logado que não foram finalizados
-  const meusAgendamentos = agendamentos.filter(ag => 
-    ag.sdr_id === profile?.id && (
-      !['finalizado', 'finalizado_venda'].includes(ag.status) ||
-      !ag.resultado_reuniao
+  // Ordenar pelo último criado primeiro (created_at decrescente)
+  const meusAgendamentos = agendamentos
+    .filter(ag => 
+      ag.sdr_id === profile?.id && (
+        !['finalizado', 'finalizado_venda'].includes(ag.status) ||
+        !ag.resultado_reuniao
+      )
     )
-  );
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const cancelarAgendamento = async (agendamentoId: string) => {
     try {
