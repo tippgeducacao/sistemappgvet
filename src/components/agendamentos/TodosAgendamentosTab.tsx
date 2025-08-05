@@ -155,16 +155,26 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(agendamento.status)}>
-                        {getStatusText(agendamento.status)}
-                      </Badge>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge className={getStatusColor(agendamento.status)}>
+                          {getStatusText(agendamento.status)}
+                        </Badge>
                         <span className="text-sm text-muted-foreground">
                           {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                           {agendamento.data_fim_agendamento && 
                             ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`
                           }
                         </span>
+                      </div>
+                      
+                      {/* Data e hora de finalização */}
+                      {agendamento.data_resultado && (
+                        <div className="text-sm text-muted-foreground">
+                          <span className="font-medium">Finalizado em:</span>{' '}
+                          {format(new Date(agendamento.data_resultado), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">
