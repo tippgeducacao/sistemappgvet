@@ -109,99 +109,70 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
   };
 
   const groupRespostasByCategory = (respostas: RespostaFormulario[]) => {
-    console.log('📊 Agrupando respostas por categoria:', respostas.length, 'respostas');
+    console.log('📊 DEBUG - Todos os campos recebidos:', respostas.map(r => r.campo_nome));
     
     const categories = {
       'Informações Básicas': [
-        // Data de Chegada do Lead
-        'Data de Chegada', 'dataChegada', 'Data de Chegada do Lead',
-        // Nome Completo
-        'Nome do Aluno', 'nomeAluno', 'Nome Completo', 'nome',
-        // Email 
-        'Email do Aluno', 'emailAluno', 'Email', 'email',
-        // Telefone
-        'Telefone do Aluno', 'telefone', 'Telefone', 'whatsapp',
-        // CRMV
-        'CRMV', 'crmv', 'Número do CRMV',
-        // Formação Acadêmica
-        'Formação do Aluno', 'formacaoAluno', 'Formação Acadêmica', 'formacao',
-        // IES
-        'IES', 'ies', 'Instituição de Ensino Superior',
-        // Vendedor
-        'Vendedor', 'vendedor', 'Vendedor Responsável'
+        'Data de Chegada do Lead',
+        'Nome Completo', 
+        'Email',
+        'Telefone',
+        'CRMV',
+        'Formação Acadêmica',
+        'Instituição de Ensino Superior',
+        'Vendedor Responsável'
       ],
       'Informações do Curso': [
-        // Curso
-        'Curso ID', 'cursoId', 'Curso Selecionado', 'Curso', 'curso',
-        // Modalidade
-        'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada', 'Modalidade',
-        // Turma (próximo da Abertura)
-        'Turma', 'turma', 'turmaEscolhida', 'turma_escolhida',
-        // Abertura (próximo da Turma)
-        'Abertura', 'abertura', 'aberturaEscolhida', 'abertura_escolhida',
-        // Lote da Pós (movido para esta seção)
-        'Lote da Pós-Graduação', 'lotePos', 'Lote da Pós', 'lote_pos',
-        // Tipo de Matrícula
-        'Matrícula', 'matricula', 'Tipo de Matrícula', 'tipo_matricula',
-        // Data de Matrícula
-        'Data de Matrícula', 'dataMatricula', 'data_matricula',
-        // Reembolso
-        'Reembolso da Matrícula', 'reembolsoMatricula', 'reembolso_matricula', 'Reembolso de Matrícula'
+        'Curso Selecionado',
+        'Modalidade do Curso',
+        'Turma',
+        'Abertura', 
+        'Lote da Pós',
+        'Tipo de Matrícula',
+        'Data de Matrícula',
+        'Reembolso de Matrícula'
       ],
       'Condições Comerciais': [
-        // Valor do Contrato
-        'Valor do Contrato', 'valorContrato', 'valor_contrato', 'Valor Total do Contrato',
-        // Desconto
-        'Percentual de Desconto', 'percentualDesconto', 'desconto', 'Desconto Aplicado (%)', 'Desconto',
-        // Parcelamento
-        'Condições de Parcelamento', 'parcelamento', 'Parcelamento', 'condicoes_parcelamento',
-        // Forma de Pagamento
-        'Forma de Pagamento', 'pagamento', 'forma_pagamento', 'metodoPagamento',
-        // Data do 1º Pagamento
-        'Data do Primeiro Pagamento', 'dataPrimeiroPagamento', 'data_primeiro_pagamento', 'Data do 1º Pagamento',
-        // Carência
-        'Carência da Primeira Cobrança', 'carenciaPrimeiraCobranca', 'carencia', 'Carência para 1ª Cobrança',
-        // Detalhes da Carência
-        'Detalhes da Carência', 'detalhesCarencia', 'detalhes_carencia',
-        // Valor das Parcelas (caso exista)
-        'Valor das Parcelas', 'valorParcelas', 'valor_parcelas'
+        'Valor Total do Contrato',
+        'Desconto Aplicado (%)',
+        'Parcelamento',
+        'Forma de Pagamento',
+        'Data do 1º Pagamento',
+        'Carência para 1ª Cobrança',
+        'Detalhes da Carência'
       ],
       'Origem e Captação': [
-        // Como chegou
-        'Forma de Captação do Lead', 'formaCaptacao', 'forma_captacao', 'Como Chegou o Lead',
-        // Tipo de Venda
-        'Tipo de Venda', 'tipoVenda', 'tipo_venda', 'Tipo da Venda',
-        // Venda Casada
-        'Venda Casada', 'vendaCasada', 'venda_casada', 'É Venda Casada?',
-        // Detalhes Venda Casada
-        'Detalhes da Venda Casada', 'detalhesVendaCasada', 'detalhes_venda_casada',
-        // Indicação
-        'Indicação', 'indicacao', 'Foi Indicado?', 'foi_indicado',
-        // Nome do Indicador
-        'Nome do Indicador', 'nomeIndicador', 'nome_indicador', 'Nome de Quem Indicou'
+        'Como Chegou o Lead',
+        'Tipo da Venda',
+        'É Venda Casada?',
+        'Detalhes da Venda Casada',
+        'Foi Indicado?',
+        'Nome de Quem Indicou'
       ],
       'Observações': [
-        'Observações Gerais', 'observacoes', 'Observações', 'observacao'
+        'Observações'
       ]
     };
 
     const grouped: Record<string, RespostaFormulario[]> = {};
     
+    // Inicializar todas as categorias
     Object.keys(categories).forEach(category => {
       grouped[category] = [];
     });
     
+    // Mapear cada resposta para a categoria correta usando o nome formatado
     respostas.forEach(resposta => {
+      const formattedName = formatFieldName(resposta.campo_nome);
       let categorized = false;
       
-      Object.entries(categories).forEach(([category, fields]) => {
-        if (fields.some(field => 
-          resposta.campo_nome.includes(field) || 
-          field.includes(resposta.campo_nome) ||
-          resposta.campo_nome === field
-        )) {
+      console.log(`📊 DEBUG - Campo original: "${resposta.campo_nome}" -> Formatado: "${formattedName}"`);
+      
+      Object.entries(categories).forEach(([category, expectedFields]) => {
+        if (expectedFields.includes(formattedName)) {
           grouped[category].push(resposta);
           categorized = true;
+          console.log(`✅ Campo "${formattedName}" adicionado à categoria "${category}"`);
         }
       });
       
@@ -210,10 +181,15 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
           grouped['Outras Informações'] = [];
         }
         grouped['Outras Informações'].push(resposta);
+        console.log(`❌ Campo "${formattedName}" não categorizado - adicionado a "Outras Informações"`);
       }
     });
 
-    console.log('📊 Respostas agrupadas:', Object.entries(grouped).map(([cat, items]) => `${cat}: ${items.length}`));
+    console.log('📊 Resultado final do agrupamento:');
+    Object.entries(grouped).forEach(([cat, items]) => {
+      console.log(`  ${cat}: ${items.length} campos - ${items.map(i => formatFieldName(i.campo_nome)).join(', ')}`);
+    });
+    
     return grouped;
   };
 
