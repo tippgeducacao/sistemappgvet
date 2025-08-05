@@ -20,6 +20,8 @@ interface SDRStats {
   nome: string;
   photo_url?: string;
   tipo: 'inbound' | 'outbound';
+  pontosTotal: number; // Vendas diretas + reuniões realizadas
+  vendasDiretas: number; // Vendas que o SDR fez
   reunioesRealizadas: number; // Reuniões com resultado positivo
   metaReunioesSemanal: number; // Meta de reuniões
   metaReunioesdiaria: number; // Meta diária de reuniões
@@ -88,6 +90,43 @@ const SDRRanking: React.FC = () => {
         nivelConfig = niveis.find(n => n.nivel === (sdr.nivel || 'sdr_outbound_junior') && n.tipo_usuario === 'sdr');
       }
 
+      // Vendas diretas do SDR (cada venda = 1 ponto)
+      const vendasDiretasSemana = vendas.filter(v => {
+        const dataVenda = v.status === 'matriculado' && v.data_aprovacao 
+          ? new Date(v.data_aprovacao)
+          : v.status === 'matriculado' && v.atualizado_em 
+            ? new Date(v.atualizado_em) 
+            : new Date(v.enviado_em);
+        return v.vendedor_id === sdr.id && 
+               v.status === 'matriculado' &&
+               dataVenda >= inicioSemana && 
+               dataVenda <= fimSemana;
+      }).length;
+
+      const vendasDiretasMes = vendas.filter(v => {
+        const dataVenda = v.status === 'matriculado' && v.data_aprovacao 
+          ? new Date(v.data_aprovacao)
+          : v.status === 'matriculado' && v.atualizado_em 
+            ? new Date(v.atualizado_em) 
+            : new Date(v.enviado_em);
+        return v.vendedor_id === sdr.id && 
+               v.status === 'matriculado' &&
+               dataVenda >= inicioMes && 
+               dataVenda <= fimMes;
+      }).length;
+
+      const vendasDiretasAno = vendas.filter(v => {
+        const dataVenda = v.status === 'matriculado' && v.data_aprovacao 
+          ? new Date(v.data_aprovacao)
+          : v.status === 'matriculado' && v.atualizado_em 
+            ? new Date(v.atualizado_em) 
+            : new Date(v.enviado_em);
+        return v.vendedor_id === sdr.id && 
+               v.status === 'matriculado' &&
+               dataVenda >= inicioAno && 
+               dataVenda <= fimAno;
+      }).length;
+
       // Reuniões realizadas do SDR (compareceu ou comprou)
       const reunioesSemana = agendamentos.filter(a => {
         const dataAgendamento = new Date(a.data_agendamento);
@@ -113,6 +152,20 @@ const SDRRanking: React.FC = () => {
                (a.resultado_reuniao === 'comprou' || a.resultado_reuniao === 'compareceu_nao_comprou');
       }).length;
 
+      // Calcular totais do período selecionado
+      let vendasDiretas = vendasDiretasSemana;
+      let reunioesRealizadas = reunioesSemana;
+      if (selectedPeriod === 'mes') {
+        vendasDiretas = vendasDiretasMes;
+        reunioesRealizadas = reunioesMes;
+      }
+      if (selectedPeriod === 'ano') {
+        vendasDiretas = vendasDiretasAno;
+        reunioesRealizadas = reunioesAno;
+      }
+
+      const pontosTotal = vendasDiretas + reunioesRealizadas;
+
       // Agendamentos hoje com resultado positivo
       const agendamentosHoje = agendamentos.filter(a => {
         const dataAgendamento = new Date(a.data_agendamento);
@@ -137,16 +190,13 @@ const SDRRanking: React.FC = () => {
 
       const metaDiariaReunioes = Math.ceil(metaSemanaltReunioes / 7);
 
-      // Reuniões realizadas do período selecionado
-      let reunioesRealizadas = reunioesSemana;
-      if (selectedPeriod === 'mes') reunioesRealizadas = reunioesMes;
-      if (selectedPeriod === 'ano') reunioesRealizadas = reunioesAno;
-
       return {
         id: sdr.id,
         nome: sdr.name,
         photo_url: sdr.photo_url,
         tipo: (isInbound ? 'inbound' : 'outbound') as 'inbound' | 'outbound',
+        pontosTotal,
+        vendasDiretas,
         reunioesRealizadas,
         metaReunioesSemanal: metaSemanaltReunioes,
         metaReunioesdiaria: metaDiariaReunioes,
@@ -157,11 +207,11 @@ const SDRRanking: React.FC = () => {
     });
   }, [sdrs, vendas, agendamentos, niveis, selectedPeriod]);
 
-  // Ranking ordenado por reuniões realizadas
+  // Ranking ordenado por pontos totais (vendas + reuniões)
   const ranking = useMemo(() => {
     return [...sdrStats].sort((a, b) => {
-      if (a.reunioesRealizadas !== b.reunioesRealizadas) {
-        return b.reunioesRealizadas - a.reunioesRealizadas;
+      if (a.pontosTotal !== b.pontosTotal) {
+        return b.pontosTotal - a.pontosTotal;
       }
       return a.nome.localeCompare(b.nome);
     });
@@ -200,7 +250,7 @@ const SDRRanking: React.FC = () => {
               Ranking de SDRs
             </CardTitle>
             <CardDescription>
-              Reuniões realizadas - {periodLabels[selectedPeriod]}
+              Pontos totais (vendas + reuniões) - {periodLabels[selectedPeriod]}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -294,14 +344,17 @@ const SDRRanking: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Reuniões Realizadas */}
+                  {/* Pontos Totais */}
                   <div className="text-right">
                     <div className="flex items-center gap-2">
                       <span className={`text-2xl font-bold ${getSDRColorText(sdr.tipo as 'inbound' | 'outbound')}`}>
-                        {sdr.reunioesRealizadas}
+                        {sdr.pontosTotal}
                       </span>
-                      <span className="text-sm text-muted-foreground">reuniões</span>
+                      <span className="text-sm text-muted-foreground">pontos</span>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      {sdr.vendasDiretas} vendas + {sdr.reunioesRealizadas} reuniões
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       Meta de Reuniões: {selectedPeriod === 'semana' ? sdr.metaReunioesSemanal : 
                             selectedPeriod === 'mes' ? sdr.metaReunioesSemanal * 4 :
@@ -310,7 +363,7 @@ const SDRRanking: React.FC = () => {
                     <div className="flex items-center gap-1 mt-1">
                       <div className={`w-2 h-2 rounded-full ${progressoReunioes >= 100 ? 'bg-green-500' : 'bg-red-500'}`}></div>
                       <span className="text-xs text-muted-foreground">
-                        {Math.round(progressoReunioes)}% da meta
+                        {Math.round(progressoReunioes)}% da meta reuniões
                       </span>
                     </div>
                   </div>
