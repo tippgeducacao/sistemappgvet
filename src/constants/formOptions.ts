@@ -35,7 +35,8 @@ export const PERCENTUAL_DESCONTO_OPTIONS = [
 
 export const DATA_PRIMEIRO_PAGAMENTO_OPTIONS = [
   { value: 'dia-10', label: 'Dia 10 de cada mês' },
-  { value: 'dia-25', label: 'Dia 25 de cada mês' }
+  { value: 'dia-25', label: 'Dia 25 de cada mês' },
+  { value: 'cartao-nao-possui-data', label: 'CARTÃO/NÃO POSSUI DATA' }
 ];
 
 export const CARENCIA_PRIMEIRA_COBRANCA_OPTIONS = [
