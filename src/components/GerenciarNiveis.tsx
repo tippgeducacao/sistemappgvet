@@ -103,10 +103,10 @@ const GerenciarNiveis: React.FC = () => {
             {nivel.tipo_usuario === 'sdr' ? (
               <div className="space-y-1">
                 {nivel.meta_semanal_inbound > 0 && (
-                  <p className="text-sm font-medium">Inbound: {nivel.meta_semanal_inbound} reuniões</p>
+                  <p className="text-sm font-medium">Inbound: {nivel.meta_semanal_inbound} Reuniões</p>
                 )}
                 {nivel.meta_semanal_outbound > 0 && (
-                  <p className="text-sm font-medium">Outbound: {nivel.meta_semanal_outbound} reuniões</p>
+                  <p className="text-sm font-medium">Outbound: {nivel.meta_semanal_outbound} Reuniões</p>
                 )}
                 <p className="text-sm font-medium text-orange-600">Cursos: {nivel.meta_vendas_cursos} por semana</p>
               </div>
@@ -259,7 +259,7 @@ const GerenciarNiveis: React.FC = () => {
                   <>
                     {editingNivel.nivel.includes('inbound') && (
                       <div>
-                        <Label htmlFor="meta_semanal_inbound">Meta Inbound (reuniões)</Label>
+                        <Label htmlFor="meta_semanal_inbound">Meta Inbound (Reuniões)</Label>
                         <Input
                           id="meta_semanal_inbound"
                           name="meta_semanal_inbound"
@@ -271,7 +271,7 @@ const GerenciarNiveis: React.FC = () => {
                     )}
                     {editingNivel.nivel.includes('outbound') && (
                       <div>
-                        <Label htmlFor="meta_semanal_outbound">Meta Outbound (reuniões)</Label>
+                        <Label htmlFor="meta_semanal_outbound">Meta Outbound (Reuniões)</Label>
                         <Input
                           id="meta_semanal_outbound"
                           name="meta_semanal_outbound"

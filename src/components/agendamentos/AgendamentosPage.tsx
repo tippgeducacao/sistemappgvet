@@ -509,7 +509,7 @@ const AgendamentosPage: React.FC = () => {
       }
       
       if (!resultado.vendedor) {
-        toast.error('Nenhum vendedor disponível neste horário. Todos os vendedores já possuem reuniões marcadas neste horário.');
+        toast.error('Nenhum vendedor disponível neste horário. Todos os vendedores já possuem Reuniões marcadas neste horário.');
         return;
       }
 
@@ -664,7 +664,7 @@ const AgendamentosPage: React.FC = () => {
 
   // Filtrar leads baseado na busca ou mostrar os 5 últimos por padrão
   const filteredLeads = leads
-    .filter(lead => lead.status !== 'reuniao_marcada') // Excluir leads com reunião já marcada
+    .filter(lead => lead.status !== 'reuniao_marcada') // Excluir leads com Reunião já marcada
     .filter(lead => {
       if (!searchTerm) {
         // Se não há termo de busca, mostrar todos os leads disponíveis
@@ -758,7 +758,7 @@ const AgendamentosPage: React.FC = () => {
 
   const handleUpdateLink = async () => {
     if (!editingAgendamento || !editLinkData.link_reuniao.trim()) {
-      toast.error('O link da reunião é obrigatório');
+      toast.error('O link da Reunião é obrigatório');
       return;
     }
 
@@ -769,16 +769,16 @@ const AgendamentosPage: React.FC = () => {
       );
 
       if (success) {
-        toast.success('Link da reunião atualizado com sucesso!');
+        toast.success('Link da Reunião atualizado com sucesso!');
         setShowEditLinkForm(false);
         setEditingAgendamento(null);
         carregarDados();
       } else {
-        toast.error('Erro ao atualizar link da reunião');
+        toast.error('Erro ao atualizar link da Reunião');
       }
     } catch (error) {
       console.error('Erro ao atualizar link:', error);
-      toast.error('Erro ao atualizar link da reunião');
+      toast.error('Erro ao atualizar link da Reunião');
     }
   };
 
@@ -877,7 +877,7 @@ const AgendamentosPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Agendamentos</h1>
-          <p className="text-muted-foreground">Gerencie reuniões entre SDRs, leads e vendedores</p>
+          <p className="text-muted-foreground">Gerencie Reuniões entre SDRs, leads e vendedores</p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -901,7 +901,7 @@ const AgendamentosPage: React.FC = () => {
           <CardHeader>
             <CardTitle>Novo Agendamento</CardTitle>
             <CardDescription>
-              Agende uma reunião entre um lead e um vendedor especializado
+              Agende uma Reunião entre um lead e um vendedor especializado
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1495,7 +1495,7 @@ const AgendamentosPage: React.FC = () => {
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Insira o link da reunião online (Zoom, Google Meet, Teams, etc.)
+                Insira o link da Reunião online (Zoom, Google Meet, Teams, etc.)
               </p>
             </div>
 
@@ -1531,7 +1531,7 @@ const AgendamentosPage: React.FC = () => {
           <CardHeader>
             <CardTitle>Editar Link da Reunião</CardTitle>
             <CardDescription>
-              Atualize o link da reunião com {editingAgendamento.lead?.nome}
+              Atualize o link da Reunião com {editingAgendamento.lead?.nome}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1546,7 +1546,7 @@ const AgendamentosPage: React.FC = () => {
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Insira o link da reunião online (Zoom, Google Meet, Teams, etc.)
+                Insira o link da Reunião online (Zoom, Google Meet, Teams, etc.)
               </p>
             </div>
 

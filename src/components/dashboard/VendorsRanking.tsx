@@ -692,7 +692,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         
         const weeklyMeetingsStrings = reunioesPorSemana.map((reunioes, index) => {
           const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : '0.0';
-          return `${reunioes} reuniões (${percentage}%)`;
+          return `${reunioes} Reuniões (${percentage}%)`;
         });
         
         return [
@@ -812,14 +812,14 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           return dataAgendamento >= startDate && dataAgendamento <= endDate;
         }) || [];
         
-        console.log(`📅 Semana ${week.week} ${sdr.name}: ${reunioesNaSemana.length} reuniões validadas`);
+        console.log(`📅 Semana ${week.week} ${sdr.name}: ${reunioesNaSemana.length} Reuniões validadas`);
         return reunioesNaSemana.length;
       });
       
       const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
       const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
       
-      console.log(`📈 ${sdr.name}: Total reuniões=${totalReunioes}, Meta mensal=${metaMensal}, Atingimento=${achievementPercentage.toFixed(1)}%`);
+      console.log(`📈 ${sdr.name}: Total Reuniões=${totalReunioes}, Meta mensal=${metaMensal}, Atingimento=${achievementPercentage.toFixed(1)}%`);
       
       const row: any = {
         'SDR': sdr.name,
@@ -833,7 +833,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         const reunioes = reunioesPorSemana[i];
         const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : '0.0';
         
-        row[`Semana ${weeks[i].week} (${weeks[i].label})`] = `${reunioes} reuniões (${percentage}%)`;
+        row[`Semana ${weeks[i].week} (${weeks[i].label})`] = `${reunioes} Reuniões (${percentage}%)`;
       }
       
       // Adicionar colunas finais

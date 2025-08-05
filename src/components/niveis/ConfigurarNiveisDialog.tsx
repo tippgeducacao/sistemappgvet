@@ -217,8 +217,8 @@ const ConfigurarNiveisDialog: React.FC<ConfigurarNiveisDialogProps> = ({
                           {nivel.tipo_usuario === 'vendedor' 
                             ? `${parseInt(getDisplayValue(nivel, 'meta_semanal_vendedor')) * 4} pts/mês`
                             : nivel.nivel.includes('inbound')
-                              ? `${parseInt(getDisplayValue(nivel, 'meta_semanal_inbound')) * 4} reuniões/mês`
-                              : `${parseInt(getDisplayValue(nivel, 'meta_semanal_outbound')) * 4} reuniões/mês`
+                              ? `${parseInt(getDisplayValue(nivel, 'meta_semanal_inbound')) * 4} Reuniões/mês`
+                              : `${parseInt(getDisplayValue(nivel, 'meta_semanal_outbound')) * 4} Reuniões/mês`
                           }
                         </span>
                       </div>
