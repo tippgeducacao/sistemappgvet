@@ -139,6 +139,16 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
                         </div>
                       )}
 
+                      {/* Data de criação da reunião */}
+                      {agendamento.created_at && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            Reunião criada em: {format(new Date(agendamento.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </span>
+                        </div>
+                      )}
+
                       {agendamento.observacoes && (
                         <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
                           {agendamento.observacoes}
