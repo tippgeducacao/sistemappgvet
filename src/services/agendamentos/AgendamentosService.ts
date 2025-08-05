@@ -214,44 +214,64 @@ export class AgendamentosService {
     }
   }
 
-  static async buscarPosGraduacoes(): Promise<any[]> {
+  static async buscarPosGraduacoes(): Promise<PosGraduacao[]> {
     try {
-      // Buscar grupos de pós-graduações ativos em vez de cursos individuais
+      // Voltar a buscar pós-graduações individuais para o formulário
       const { data, error } = await supabase
-        .from('grupos_pos_graduacoes')
+        .from('cursos')
         .select('*')
         .eq('ativo', true)
+        .eq('modalidade', 'Pós-Graduação')
         .order('nome');
 
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar grupos de pós-graduações:', error);
+      console.error('Erro ao buscar pós-graduações:', error);
       return [];
     }
   }
 
-  static async buscarVendedoresPorPosGraduacao(grupoNome: string): Promise<any[]> {
+  static async buscarVendedoresPorPosGraduacao(posGraduacao: string): Promise<any[]> {
     try {
-      console.log('🔍 Buscando vendedores para grupo:', grupoNome);
+      console.log('🔍 Buscando vendedores para pós-graduação:', posGraduacao);
       
-      // Primeiro, buscar o ID do grupo pela nome
-      const { data: grupoData, error: grupoError } = await supabase
-        .from('grupos_pos_graduacoes')
+      // Primeiro, buscar o ID do curso pela nome da pós-graduação
+      const { data: cursoData, error: cursoError } = await supabase
+        .from('cursos')
         .select('id')
-        .eq('nome', grupoNome)
+        .eq('nome', posGraduacao)
         .eq('ativo', true)
         .single();
 
-      if (grupoError || !grupoData) {
-        console.log('🔍 Grupo não encontrado:', grupoNome);
+      if (cursoError || !cursoData) {
+        console.log('🔍 Curso não encontrado:', posGraduacao);
         return [];
       }
 
-      const grupoId = grupoData.id;
-      console.log('✅ Grupo encontrado:', grupoId);
+      const cursoId = cursoData.id;
+      console.log('✅ Curso encontrado:', cursoId);
 
-      // Buscar vendedores que têm esse grupo em pos_graduacoes
+      // Buscar em quais grupos este curso está
+      const { data: gruposCursos, error: gruposCursosError } = await supabase
+        .from('grupos_pos_graduacoes_cursos')
+        .select('grupo_id')
+        .eq('curso_id', cursoId);
+
+      if (gruposCursosError) {
+        console.error('Erro ao buscar grupos do curso:', gruposCursosError);
+        return [];
+      }
+
+      const gruposIds = gruposCursos?.map(gc => gc.grupo_id) || [];
+      console.log('📋 Grupos que contêm este curso:', gruposIds);
+
+      if (gruposIds.length === 0) {
+        console.log('⚠️ Curso não está em nenhum grupo');
+        return [];
+      }
+
+      // Buscar vendedores que têm algum desses grupos
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, email, pos_graduacoes, horario_trabalho')
@@ -260,18 +280,19 @@ export class AgendamentosService {
 
       if (error) throw error;
       
-      // Filtrar vendedores que têm o grupo
+      // Filtrar vendedores que têm pelo menos um dos grupos do curso
       const vendedoresFiltrados = (data || []).filter(vendedor => {
         if (!vendedor.pos_graduacoes || !Array.isArray(vendedor.pos_graduacoes)) {
           return false;
         }
-        return vendedor.pos_graduacoes.includes(grupoId);
+        // Verificar se o vendedor tem pelo menos um dos grupos que contém este curso
+        return gruposIds.some(grupoId => vendedor.pos_graduacoes.includes(grupoId));
       });
 
-      console.log('🔍 Vendedores encontrados para grupo', grupoNome, '(ID:', grupoId, '):', vendedoresFiltrados);
+      console.log('🔍 Vendedores encontrados para', posGraduacao, '(via grupos):', vendedoresFiltrados);
       return vendedoresFiltrados;
     } catch (error) {
-      console.error('Erro ao buscar vendedores por grupo:', error);
+      console.error('Erro ao buscar vendedores por pós-graduação:', error);
       return [];
     }
   }
