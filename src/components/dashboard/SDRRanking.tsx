@@ -84,9 +84,9 @@ const SDRRanking: React.FC = () => {
       // Buscar configuração do nível baseado no tipo de SDR
       let nivelConfig;
       if (isInbound) {
-        nivelConfig = niveis.find(n => n.nivel === `sdr_inbound_${sdr.nivel || 'junior'}` && n.tipo_usuario === 'sdr');
+        nivelConfig = niveis.find(n => n.nivel === (sdr.nivel || 'sdr_inbound_junior') && n.tipo_usuario === 'sdr');
       } else if (isOutbound) {
-        nivelConfig = niveis.find(n => n.nivel === `sdr_outbound_${sdr.nivel || 'junior'}` && n.tipo_usuario === 'sdr');
+        nivelConfig = niveis.find(n => n.nivel === (sdr.nivel || 'sdr_outbound_junior') && n.tipo_usuario === 'sdr');
       }
 
       // Vendas de cursos diretas do SDR (cada curso = 1 venda)
