@@ -57,7 +57,7 @@ export const useAgendamentosSDR = () => {
         `)
         .eq('sdr_id', profile.id)
         .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda'])
-        .order('data_agendamento', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Erro ao buscar agendamentos:', error);
