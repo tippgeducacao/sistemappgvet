@@ -86,16 +86,13 @@ export const SDRMetasSemanais = () => {
       const nivel = profileData?.nivel || 'junior';
       console.log('🔍 Nível do SDR encontrado:', nivel, 'Tipo:', profile.user_type);
 
-      // Extrair apenas o nível base (junior, pleno, senior) removendo prefixos
-      const nivelBase = nivel.replace('sdr_inbound_', '').replace('sdr_outbound_', '');
-      console.log('🔍 Nível base extraído:', nivelBase);
-
       // Buscar meta de agendamentos na tabela niveis_vendedores
+      // O tipo_usuario na tabela é sempre 'sdr' para SDRs
       const { data: nivelData, error: nivelError } = await supabase
         .from('niveis_vendedores')
         .select('meta_semanal_inbound, meta_semanal_outbound')
-        .eq('nivel', nivelBase)
-        .eq('tipo_usuario', profile.user_type)
+        .eq('nivel', nivel)
+        .eq('tipo_usuario', 'sdr')
         .maybeSingle();
 
       if (nivelError) {
