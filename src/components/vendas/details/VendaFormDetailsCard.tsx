@@ -114,24 +114,25 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
     const categories = {
       'Informações Básicas': [
         'Data de Chegada', 'dataChegada', 'Nome do Aluno', 'nomeAluno', 'Email do Aluno', 'emailAluno', 
-        'Telefone do Aluno', 'telefone', 'Formação do Aluno', 'formacaoAluno', 'Data de Matrícula', 
-        'dataMatricula', 'IES', 'ies', 'Vendedor', 'vendedor', 'CRMV', 'crmv'
+        'Telefone do Aluno', 'telefone', 'CRMV', 'crmv', 'Formação do Aluno', 'formacaoAluno', 
+        'IES', 'ies', 'Vendedor', 'vendedor'
+      ],
+      'Informações do Curso': [
+        'Curso ID', 'cursoId', 'Curso Selecionado', 'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada',
+        'Turma', 'turma', 'turmaEscolhida', 'turma_escolhida', 'Abertura', 'abertura', 'aberturaEscolhida', 'abertura_escolhida',
+        'Lote da Pós-Graduação', 'lotePos', 'Lote da Pós', 'Matrícula', 'matricula', 'Tipo de Matrícula',
+        'Data de Matrícula', 'dataMatricula', 'Reembolso da Matrícula', 'reembolsoMatricula'
       ],
       'Condições Comerciais': [
         'Valor do Contrato', 'valorContrato', 'Percentual de Desconto', 'percentualDesconto', 
+        'Condições de Parcelamento', 'parcelamento', 'Forma de Pagamento', 'pagamento',
         'Data do Primeiro Pagamento', 'dataPrimeiroPagamento', 'Carência da Primeira Cobrança', 
-        'carenciaPrimeiraCobranca', 'Detalhes da Carência', 'detalhesCarencia', 'Reembolso da Matrícula', 
-        'reembolsoMatricula', 'Condições de Parcelamento', 'parcelamento', 'Forma de Pagamento', 'pagamento'
-      ],
-      'Informações do Curso': [
-        'Curso ID', 'cursoId', 'Curso Selecionado', 'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada', 
-        'Lote da Pós-Graduação', 'lotePos', 'Lote da Pós', 'Matrícula', 'matricula', 'Tipo de Matrícula', 
-        'Turma', 'turma', 'turmaEscolhida', 'turma_escolhida', 'Abertura', 'abertura', 'aberturaEscolhida', 'abertura_escolhida'
+        'carenciaPrimeiraCobranca', 'Detalhes da Carência', 'detalhesCarencia'
       ],
       'Origem e Captação': [
         'Forma de Captação do Lead', 'formaCaptacao', 'Tipo de Venda', 'tipoVenda', 'Venda Casada', 
-        'vendaCasada', 'Indicação', 'indicacao', 'Nome do Indicador', 'nomeIndicador', 
-        'Detalhes da Venda Casada', 'detalhesVendaCasada'
+        'vendaCasada', 'Detalhes da Venda Casada', 'detalhesVendaCasada', 'Indicação', 'indicacao', 
+        'Nome do Indicador', 'nomeIndicador'
       ],
       'Observações': [
         'Observações Gerais', 'observacoes'
