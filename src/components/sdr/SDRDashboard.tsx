@@ -9,10 +9,10 @@ import MonthYearFilter from '@/components/common/MonthYearFilter';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import ReunioesCanceladasSDR from './ReunioesCanceladasSDR';
 import HistoricoReunioes from './HistoricoReunioes';
-import SDRMetasDiarias from '@/components/dashboard/SDRMetasDiarias';
 import { SDRMetasSemanais } from './SDRMetasSemanais';
 import { ReunioesChart } from '@/components/dashboard/ReunioesChart';
 import SemanasConsecutivasCard from '@/components/dashboard/SemanasConsecutivasCard';
+import SDRAgendamentosComparativo from './SDRAgendamentosComparativo';
 import { FileText, Users, Calendar, TrendingUp, X, History } from 'lucide-react';
 
 const SDRDashboard: React.FC = () => {
@@ -137,11 +137,8 @@ const SDRDashboard: React.FC = () => {
       </div>
 
 
-      {/* Metas Diárias e Semanais */}
-      <SDRMetasDiarias 
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
-      />
+      {/* Meta de Agendamentos e Comparativo */}
+      <SDRAgendamentosComparativo />
 
       {/* Metas Semanais Detalhadas */}
       <SDRMetasSemanais />
