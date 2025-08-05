@@ -38,7 +38,7 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
   };
   const formatFieldName = (fieldName: string) => {
     const fieldLabels: Record<string, string> = {
-      // Informações Básicas
+      // Informações Básicas  
       'Data de Chegada': 'Data de Chegada do Lead',
       'Nome do Aluno': 'Nome Completo',
       'Email do Aluno': 'Email',
@@ -172,11 +172,20 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
         </div>
       ) : respostas && respostas.length > 0 ? (
         <div className="space-y-4">
-          {Object.entries(groupRespostasByCategory(respostas)).map(([category, categoryRespostas]) => 
-            categoryRespostas.length > 0 && (
-              <div key={category}>
+          {/* Forçar ordem específica das categorias */}
+          {[
+            'Informações Básicas',
+            'Informações do Curso', 
+            'Condições Comerciais',
+            'Origem e Captação',
+            'Observações',
+            'Outras Informações'
+          ].map(categoryName => {
+            const categoryRespostas = groupRespostasByCategory(respostas)[categoryName] || [];
+            return categoryRespostas.length > 0 && (
+              <div key={categoryName}>
                 <h4 className="font-medium text-gray-800 mb-2 text-sm">
-                  {category} ({categoryRespostas.length} campos)
+                  {categoryName} ({categoryRespostas.length} campos)
                 </h4>
                 <div className="bg-gray-50 rounded border">
                   <table className="w-full text-sm">
@@ -195,8 +204,8 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
                   </table>
                 </div>
               </div>
-            )
-          )}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-6 bg-yellow-50 rounded border">
