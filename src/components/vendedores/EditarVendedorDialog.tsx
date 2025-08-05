@@ -119,7 +119,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
       
       // Atualizar grupos de pós-graduações e horário de trabalho
       await UserService.updateProfile(vendedor.id, {
-        grupos_pos_graduacoes: selectedGruposPosGraduacoes,
+        pos_graduacoes: selectedGruposPosGraduacoes,
         horario_trabalho: horarioTrabalho
       });
 
