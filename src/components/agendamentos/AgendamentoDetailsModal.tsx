@@ -244,9 +244,9 @@ const AgendamentoDetailsModal: React.FC<AgendamentoDetailsModalProps> = ({
 
                 {agendamento.data_resultado && (
                   <div className="space-y-1">
-                    <span className="text-sm font-medium">Data do resultado:</span>
+                    <span className="text-sm font-medium">Horário de fechamento:</span>
                     <p className="text-sm">
-                      {format(new Date(agendamento.data_resultado), 'dd/MM/yyyy', { locale: ptBR })}
+                      {format(new Date(agendamento.data_resultado), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
                 )}

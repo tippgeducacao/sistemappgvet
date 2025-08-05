@@ -345,6 +345,15 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                     <p className="mt-1 text-muted-foreground">{agendamentoSelecionado.observacoes_resultado}</p>
                   </div>
                 )}
+
+                {agendamentoSelecionado.data_resultado && (
+                  <div className="text-sm">
+                    <strong>Horário de Fechamento:</strong> 
+                    <p className="mt-1 text-muted-foreground">
+                      {format(new Date(agendamentoSelecionado.data_resultado), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Marcar Resultado - só aparece se não tiver resultado ainda */}
