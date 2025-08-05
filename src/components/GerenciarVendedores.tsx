@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings, KeyRound, Clock, ArrowUpDown } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Upload, Trash2, Users, UserPlus, Camera, Power, PowerOff, User, Edit, Settings, KeyRound, Clock, ArrowUpDown, Search, Filter } from 'lucide-react';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -44,6 +45,11 @@ const GerenciarVendedores: React.FC = () => {
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [currentVendedorId, setCurrentVendedorId] = useState<string>('');
+  
+  // Estados para filtros
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  
   const { toast } = useToast();
   const { isAdmin, isSecretaria, isDiretor } = useUserRoles();
   
@@ -138,6 +144,23 @@ const GerenciarVendedores: React.FC = () => {
       .slice(0, 2);
   };
 
+  // Função para filtrar usuários
+  const filterUsers = (users: Vendedor[]) => {
+    return users.filter(user => {
+      const matchesSearch = searchQuery === '' || 
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesType = filterType === 'all' || user.user_type === filterType;
+      
+      return matchesSearch && matchesType;
+    });
+  };
+
+  // Memoizar listas filtradas
+  const filteredVendedores = useMemo(() => filterUsers(vendedores), [vendedores, searchQuery, filterType]);
+  const filteredAllUsers = useMemo(() => filterUsers(allUsers), [allUsers, searchQuery, filterType]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -184,16 +207,48 @@ const GerenciarVendedores: React.FC = () => {
         </div>
       </div>
 
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 rounded-lg">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Pesquisar por nome ou email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filtrar por tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os tipos</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="diretor">Diretor</SelectItem>
+              <SelectItem value="secretaria">Secretaria</SelectItem>
+              <SelectItem value="vendedor">Vendedor</SelectItem>
+              <SelectItem value="sdr_inbound">SDR Inbound</SelectItem>
+              <SelectItem value="sdr_outbound">SDR Outbound</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
 
       <Tabs defaultValue="ativos" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="ativos" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Usuários Ativos ({vendedores.length})
+            Usuários Ativos ({filteredVendedores.length})
           </TabsTrigger>
           <TabsTrigger value="todos" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Todos os Usuários ({allUsers.length})
+            Todos os Usuários ({filteredAllUsers.length})
           </TabsTrigger>
           <TabsTrigger value="estatisticas">
             Estatísticas
@@ -201,19 +256,24 @@ const GerenciarVendedores: React.FC = () => {
         </TabsList>
 
         <TabsContent value="ativos" className="mt-6">
-          {vendedores.length === 0 ? (
+          {filteredVendedores.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Nenhum usuário ativo
+                {searchQuery || filterType !== 'all' ? 'Nenhum usuário encontrado' : 'Nenhum usuário ativo'}
               </h3>
               <p className="text-gray-600 mb-4">
-                Comece cadastrando o primeiro usuário do sistema
+                {searchQuery || filterType !== 'all' 
+                  ? 'Tente ajustar os filtros de pesquisa'
+                  : 'Comece cadastrando o primeiro usuário do sistema'
+                }
               </p>
-              <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Cadastrar Primeiro Usuário
-              </Button>
+              {!searchQuery && filterType === 'all' && (
+                <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Cadastrar Primeiro Usuário
+                </Button>
+              )}
             </div>
           ) : (
             <div className="border rounded-lg">
@@ -231,7 +291,7 @@ const GerenciarVendedores: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {vendedores.map((vendedor) => (
+                  {filteredVendedores.map((vendedor) => (
                     <TableRow key={vendedor.id} className={!vendedor.ativo ? 'opacity-60' : ''}>
                       <TableCell>
                         <div className="flex items-center space-x-3">
@@ -407,19 +467,24 @@ const GerenciarVendedores: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="todos" className="mt-6">
-          {allUsers.length === 0 ? (
+          {filteredAllUsers.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Nenhum usuário cadastrado
+                {searchQuery || filterType !== 'all' ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
               </h3>
               <p className="text-gray-600 mb-4">
-                Comece cadastrando o primeiro usuário do sistema
+                {searchQuery || filterType !== 'all' 
+                  ? 'Tente ajustar os filtros de pesquisa'
+                  : 'Comece cadastrando o primeiro usuário do sistema'
+                }
               </p>
-              <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Cadastrar Primeiro Usuário
-              </Button>
+              {!searchQuery && filterType === 'all' && (
+                <Button onClick={() => setShowNewVendedorDialog(true)} className="bg-ppgvet-teal hover:bg-ppgvet-teal/90">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Cadastrar Primeiro Usuário
+                </Button>
+              )}
             </div>
           ) : (
             <div className="border rounded-lg">
@@ -437,7 +502,7 @@ const GerenciarVendedores: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allUsers.map((vendedor) => (
+                  {filteredAllUsers.map((vendedor) => (
                     <TableRow key={vendedor.id} className={!vendedor.ativo ? 'opacity-60' : ''}>
                       <TableCell>
                         <div className="flex items-center space-x-3">
