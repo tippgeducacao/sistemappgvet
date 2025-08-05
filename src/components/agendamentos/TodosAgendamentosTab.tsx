@@ -193,7 +193,7 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
                             }>
                               {agendamento.resultado_reuniao === 'comprou' ? 'Comprou' :
                                agendamento.resultado_reuniao === 'nao_compareceu' ? 'Não Compareceu' :
-                               'Compareceu mas não comprou'}
+                               'Compareceu e não comprou'}
                             </Badge>
                             {agendamento.data_resultado && (
                               <span className="ml-2 text-xs text-muted-foreground">

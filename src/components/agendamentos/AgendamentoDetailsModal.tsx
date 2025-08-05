@@ -56,7 +56,7 @@ const AgendamentoDetailsModal: React.FC<AgendamentoDetailsModalProps> = ({
     switch (resultado) {
       case 'comprou': return 'Comprou';
       case 'nao_compareceu': return 'Não Compareceu';
-      case 'compareceu_nao_comprou': return 'Compareceu mas não comprou';
+      case 'compareceu_nao_comprou': return 'Compareceu e não comprou';
       default: return resultado;
     }
   };
