@@ -129,19 +129,21 @@ const SDRRanking: React.FC = () => {
                dataVenda <= fimAno;
       }).length;
 
-      // Agendamentos hoje
+      // Agendamentos hoje com resultado positivo
       const agendamentosHoje = agendamentos.filter(a => {
         const dataAgendamento = new Date(a.data_agendamento);
         return a.sdr_id === sdr.id && 
-               dataAgendamento.toDateString() === hoje.toDateString();
+               dataAgendamento.toDateString() === hoje.toDateString() &&
+               (a.resultado_reuniao === 'comprou' || a.resultado_reuniao === 'compareceu_nao_comprou');
       }).length;
 
-      // Agendamentos na semana
+      // Agendamentos na semana com resultado positivo
       const agendamentosSemana = agendamentos.filter(a => {
         const dataAgendamento = new Date(a.data_agendamento);
         return a.sdr_id === sdr.id && 
                dataAgendamento >= inicioSemana && 
-               dataAgendamento <= fimSemana;
+               dataAgendamento <= fimSemana &&
+               (a.resultado_reuniao === 'comprou' || a.resultado_reuniao === 'compareceu_nao_comprou');
       }).length;
 
       // Metas baseadas no tipo de SDR (reuniões, não vendas)
