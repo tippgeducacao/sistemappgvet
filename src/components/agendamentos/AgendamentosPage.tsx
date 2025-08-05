@@ -1804,7 +1804,18 @@ const AgendamentosPage: React.FC = () => {
 
         <TabsContent value="cancelados">
           <div className="grid gap-4">
-            {agendamentos.filter(ag => ag.status === 'cancelado').length === 0 ? (
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">Agendamentos Cancelados</h3>
+                <p className="text-sm text-muted-foreground">
+                  Visualização dos agendamentos que foram cancelados
+                </p>
+              </div>
+              <Badge variant="outline">
+                {meusAgendamentosSDR.filter(ag => ag.status === 'cancelado').length} cancelado(s)
+              </Badge>
+            </div>
+            {meusAgendamentosSDR.filter(ag => ag.status === 'cancelado').length === 0 ? (
               <Card>
                 <CardContent className="flex items-center justify-center py-8">
                   <div className="text-center">
@@ -1815,8 +1826,9 @@ const AgendamentosPage: React.FC = () => {
                 </CardContent>
               </Card>
             ) : (
-              agendamentos
+              meusAgendamentosSDR
                 .filter(ag => ag.status === 'cancelado') // Apenas cancelados
+                .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()) // Mais recentes primeiro
                 .map((agendamento) => (
                   <Card key={agendamento.id}>
                     <CardContent className="p-6 bg-destructive/5 border-destructive/20 dark:bg-destructive/10">
@@ -1853,13 +1865,12 @@ const AgendamentosPage: React.FC = () => {
                               <p className="font-medium text-foreground">{agendamento.vendedor?.name}</p>
                             </div>
                             <div>
-                              <p className="text-muted-foreground">Data/Horário</p>
+                              <p className="text-muted-foreground">Agendado às</p>
                               <p className="font-medium text-foreground">
-                                {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })} {' '}
-                                {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
+                                {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })} - {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })}
                                 {agendamento.data_fim_agendamento && (
                                   <>
-                                    {' - '}
+                                    {' até '}
                                     {format(new Date(agendamento.data_fim_agendamento), 'HH:mm', { locale: ptBR })}
                                   </>
                                 )}
@@ -1880,7 +1891,7 @@ const AgendamentosPage: React.FC = () => {
                         </div>
 
                         <div className="ml-4 flex flex-col items-end gap-2">
-                          {getStatusBadge(agendamento.status)}
+                          <Badge variant="destructive">Cancelado</Badge>
                         </div>
                       </div>
                     </CardContent>
