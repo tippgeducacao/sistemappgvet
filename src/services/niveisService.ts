@@ -59,9 +59,20 @@ export class NiveisService {
   static async updateVendedorNivel(vendedorId: string, nivel: 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior'): Promise<void> {
     console.log('🔄 Atualizando nível do vendedor:', vendedorId, 'para', nivel);
     
+    // Determinar o user_type baseado no nível
+    let user_type = 'vendedor';
+    if (nivel.includes('sdr_inbound')) {
+      user_type = 'sdr_inbound';
+    } else if (nivel.includes('sdr_outbound')) {
+      user_type = 'sdr_outbound';
+    }
+    
     const { error } = await supabase
       .from('profiles')
-      .update({ nivel })
+      .update({ 
+        nivel,
+        user_type 
+      })
       .eq('id', vendedorId);
 
     if (error) {
@@ -69,7 +80,7 @@ export class NiveisService {
       throw error;
     }
     
-    console.log('✅ Nível do vendedor atualizado com sucesso');
+    console.log('✅ Nível e tipo do vendedor atualizado com sucesso');
   }
 
   static getNivelLabel(nivel: string): string {
