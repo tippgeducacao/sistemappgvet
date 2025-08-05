@@ -24,6 +24,8 @@ export class FormDataMappingService {
       // Informações do Curso
       cursoId: 'Curso ID',
       modalidadeCurso: 'Modalidade Selecionada',
+      turma: 'Turma',
+      abertura: 'Abertura',
       
       // Informações de Pagamento
       valorContrato: 'Valor do Contrato',
