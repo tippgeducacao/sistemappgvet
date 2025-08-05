@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { format, addDays, subDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuthStore } from '@/stores/AuthStore';
-import { useGruposPosGraduacoes } from '@/hooks/useGruposPosGraduacoes';
+import { useCursos } from '@/hooks/useCursos';
 
 interface Vendedor {
   id: string;
@@ -54,13 +54,12 @@ interface AgendaGeralProps {
 
 const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const { profile } = useAuthStore();
-  const { grupos } = useGruposPosGraduacoes();
+  const { cursos } = useCursos();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [vendedoresFiltrados, setVendedoresFiltrados] = useState<Vendedor[]>([]);
   const [loading, setLoading] = useState(false);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-  const [cursos, setCursos] = useState<any[]>([]);
   const [sdrs, setSdrs] = useState<any[]>([]);
   const [filtroGrupo, setFiltroGrupo] = useState<string>('todos');
   const [filtroSDR, setFiltroSDR] = useState<string>('todos');
@@ -160,7 +159,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
       if (cursosError) throw cursosError;
 
-      setCursos(cursosData || []);
+      // setCursos(cursosData || []); // Usando cursos do hook
       setSdrs(sdrsData || []);
       
       // Mapear grupos para vendedores
@@ -168,9 +167,9 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
         ...vendedor,
         horario_trabalho: vendedor.horario_trabalho as any,
         grupos_pos_graduacoes: vendedor.pos_graduacoes || [],
-        cursos: (vendedor.pos_graduacoes || []).map((grupoId: string) => {
-          const grupo = grupos.find(g => g.id === grupoId);
-          return grupo ? grupo.nome : 'Grupo não encontrado';
+        cursos: (vendedor.pos_graduacoes || []).map((cursoId: string) => {
+          const curso = cursos.find(c => c.id === cursoId);
+          return curso ? curso.nome : 'Curso não encontrado';
         })
       })) as Vendedor[];
 

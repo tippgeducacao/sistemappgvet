@@ -22,17 +22,17 @@ export class VendaAssemblyService {
         const aluno = await AlunoLinkingService.findOrCreateAluno(entry, alunos, respostas);
         
         // Debug curso mapping detalhado
+        const curso = entry.curso_id ? cursos.find(c => c.id === entry.curso_id) : null;
+        
         console.log(`🔍 Buscando curso para entry ${entry.id}:`, {
           curso_id: entry.curso_id,
-          cursos_disponiveis: cursos.length,
-          curso_ids_existentes: cursos.slice(0, 3).map(c => ({ id: c.id, nome: c.nome }))
+          curso_encontrado: curso ? curso.nome : 'NÃO ENCONTRADO',
+          total_cursos: cursos.length
         });
-        
-        const curso = entry.curso_id ? cursos.find(c => c.id === entry.curso_id) : null;
         
         if (entry.curso_id && !curso) {
           console.error(`❌ CURSO NÃO ENCONTRADO! ID: ${entry.curso_id}`);
-          console.log('📋 Cursos disponíveis:', cursos.map(c => `${c.id}: ${c.nome}`).slice(0, 5));
+          console.log('📋 Primeiros 5 cursos disponíveis:', cursos.slice(0, 5).map(c => `${c.id}: ${c.nome}`));
         } else if (curso) {
           console.log(`✅ Curso encontrado: ${curso.nome}`);
         }

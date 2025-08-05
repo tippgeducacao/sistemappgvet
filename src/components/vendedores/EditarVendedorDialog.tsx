@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { User, TrendingUp, Save, X, Clock, GraduationCap } from 'lucide-react';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useCursos } from '@/hooks/useCursos';
-import { useGruposPosGraduacoes } from '@/hooks/useGruposPosGraduacoes';
 import { NiveisService } from '@/services/niveisService';
 import { UserService } from '@/services/user/UserService';
 import type { Vendedor } from '@/services/vendedoresService';
@@ -30,11 +29,10 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
   onSuccess
 }) => {
   const { updateVendedorNivel } = useNiveis();
-  const { grupos } = useGruposPosGraduacoes();
   const { cursos } = useCursos();
   const { toast } = useToast();
   const [selectedNivel, setSelectedNivel] = useState<string>('');
-  const [selectedGruposPosGraduacoes, setSelectedGruposPosGraduacoes] = useState<string[]>([]);
+  const [selectedCursosPosGraduacoes, setSelectedCursosPosGraduacoes] = useState<string[]>([]);
   const [horarioTrabalho, setHorarioTrabalho] = useState<HorarioTrabalho>({
     dias_trabalho: 'segunda_sabado',
     segunda_sexta: {
@@ -75,10 +73,9 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
 
       // Carregar grupos de pós-graduações do vendedor - garantir que seja sempre um array válido
       if (vendedor.pos_graduacoes && Array.isArray(vendedor.pos_graduacoes)) {
-        setSelectedGruposPosGraduacoes(vendedor.pos_graduacoes);
+        setSelectedCursosPosGraduacoes(vendedor.pos_graduacoes || []);
       } else {
-        // Limpar seleções se não há dados válidos
-        setSelectedGruposPosGraduacoes([]);
+        setSelectedCursosPosGraduacoes([]);
       }
 
       // Carregar horário de trabalho do vendedor
@@ -109,7 +106,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
     } else {
       // Limpar todos os estados quando não há vendedor
       setSelectedNivel('');
-      setSelectedGruposPosGraduacoes([]);
+      setSelectedCursosPosGraduacoes([]);
       setHorarioTrabalho({
         dias_trabalho: 'segunda_sabado',
         segunda_sexta: {
@@ -141,7 +138,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
       
       // Atualizar grupos de pós-graduações e horário de trabalho
       await UserService.updateProfile(vendedor.id, {
-        pos_graduacoes: selectedGruposPosGraduacoes,
+        pos_graduacoes: selectedCursosPosGraduacoes,
         horario_trabalho: horarioTrabalho
       });
 
@@ -164,16 +161,16 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
     }
   };
 
-  const toggleGrupoPosGraduacao = (grupoId: string) => {
-    setSelectedGruposPosGraduacoes(prev => {
-      if (prev.includes(grupoId)) {
-        return prev.filter(id => id !== grupoId);
-      } else if (prev.length < 10) {
-        return [...prev, grupoId];
+  const toggleCursoPosGraduacao = (cursoId: string) => {
+    setSelectedCursosPosGraduacoes(prev => {
+      if (prev.includes(cursoId)) {
+        return prev.filter(id => id !== cursoId);
+      } else if (prev.length < 20) {
+        return [...prev, cursoId];
       } else {
         toast({
           title: "Limite atingido",
-          description: "Máximo de 10 grupos de pós-graduações por vendedor",
+          description: "Máximo de 20 pós-graduações por vendedor",
           variant: "destructive",
         });
         return prev;
@@ -313,41 +310,36 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-foreground" />
                 <Label className="text-sm font-medium text-foreground">
-                  Grupos que pode vender ({selectedGruposPosGraduacoes.length}/10)
+                  Pós-graduações que pode vender ({selectedCursosPosGraduacoes.length}/20)
                 </Label>
               </div>
               <div className="space-y-2 max-h-32 overflow-y-auto">
-                {grupos.length > 0 ? (
-                  grupos.map((grupo) => (
-                    <div key={grupo.id} className="flex flex-col space-y-1">
+                {posGraduacoes.length > 0 ? (
+                  posGraduacoes.map((curso) => (
+                    <div key={curso.id} className="flex flex-col space-y-1">
                       <div className="flex items-center space-x-2">
                         <Checkbox
-                          id={grupo.id}
-                          checked={selectedGruposPosGraduacoes.includes(grupo.id)}
-                          onCheckedChange={() => toggleGrupoPosGraduacao(grupo.id)}
-                          disabled={!selectedGruposPosGraduacoes.includes(grupo.id) && selectedGruposPosGraduacoes.length >= 10}
+                          id={curso.id}
+                          checked={selectedCursosPosGraduacoes.includes(curso.id)}
+                          onCheckedChange={() => toggleCursoPosGraduacao(curso.id)}
+                          disabled={!selectedCursosPosGraduacoes.includes(curso.id) && selectedCursosPosGraduacoes.length >= 20}
                         />
                         <Label
-                          htmlFor={grupo.id}
+                          htmlFor={curso.id}
                           className={`text-sm cursor-pointer font-medium ${
-                            !selectedGruposPosGraduacoes.includes(grupo.id) && selectedGruposPosGraduacoes.length >= 10
+                            !selectedCursosPosGraduacoes.includes(curso.id) && selectedCursosPosGraduacoes.length >= 20
                               ? 'text-muted-foreground/50' 
                               : 'text-foreground'
                           }`}
                         >
-                          {grupo.nome}
+                          {curso.nome}
                         </Label>
                       </div>
-                      {grupo.cursos && grupo.cursos.length > 0 && (
-                        <div className="ml-6 text-xs text-muted-foreground">
-                          {grupo.cursos.map(curso => curso.nome).join(', ')}
-                        </div>
-                      )}
                     </div>
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
-                    Nenhum grupo de pós-graduação disponível
+                    Nenhuma pós-graduação disponível
                   </p>
                 )}
               </div>

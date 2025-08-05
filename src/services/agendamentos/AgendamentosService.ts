@@ -252,26 +252,7 @@ export class AgendamentosService {
       const cursoId = cursoData.id;
       console.log('✅ Curso encontrado:', cursoId);
 
-      // Buscar em quais grupos este curso está
-      const { data: gruposCursos, error: gruposCursosError } = await supabase
-        .from('grupos_pos_graduacoes_cursos')
-        .select('grupo_id')
-        .eq('curso_id', cursoId);
-
-      if (gruposCursosError) {
-        console.error('Erro ao buscar grupos do curso:', gruposCursosError);
-        return [];
-      }
-
-      const gruposIds = gruposCursos?.map(gc => gc.grupo_id) || [];
-      console.log('📋 Grupos que contêm este curso:', gruposIds);
-
-      if (gruposIds.length === 0) {
-        console.log('⚠️ Curso não está em nenhum grupo');
-        return [];
-      }
-
-      // Buscar vendedores que têm algum desses grupos
+      // Sistema direto: buscar vendedores que vendem este curso específico
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, email, pos_graduacoes, horario_trabalho')
@@ -280,13 +261,13 @@ export class AgendamentosService {
 
       if (error) throw error;
       
-      // Filtrar vendedores que têm pelo menos um dos grupos do curso
+      // Filtrar vendedores que têm este curso específico em suas pós-graduações
       const vendedoresFiltrados = (data || []).filter(vendedor => {
         if (!vendedor.pos_graduacoes || !Array.isArray(vendedor.pos_graduacoes)) {
           return false;
         }
-        // Verificar se o vendedor tem pelo menos um dos grupos que contém este curso
-        return gruposIds.some(grupoId => vendedor.pos_graduacoes.includes(grupoId));
+        // Verificar se o vendedor tem este curso específico
+        return vendedor.pos_graduacoes.includes(cursoId);
       });
 
       console.log('🔍 Vendedores encontrados para', posGraduacao, '(via grupos):', vendedoresFiltrados);
