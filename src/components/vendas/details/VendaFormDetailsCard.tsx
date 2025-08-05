@@ -37,15 +37,15 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
     return value;
   };
   const formatFieldName = (fieldName: string) => {
-    // Mapear os nomes dos campos baseado no que realmente vem do banco
     const fieldLabels: Record<string, string> = {
-      // Informações Básicas
+      // Informações Básicas  
       'Data de Chegada': 'Data de Chegada do Lead',
-      'Nome do Aluno': 'Nome Completo', 
+      'Nome do Aluno': 'Nome Completo',
       'Email do Aluno': 'Email',
       'Telefone do Aluno': 'Telefone',
+      'CRMV': 'CRMV',
       'Formação do Aluno': 'Formação Acadêmica',
-      'IES': 'Instituição de Ensino Superior',
+      'IES': 'IES',
       'Vendedor': 'Vendedor Responsável',
       
       // Informações do Curso
@@ -67,11 +67,15 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
       'Data do Primeiro Pagamento': 'Data do 1º Pagamento',
       'Carência da Primeira Cobrança': 'Carência para 1ª Cobrança',
       'Detalhes da Carência': 'Detalhes da Carência',
+      'Valor das Parcelas': 'Valor das Parcelas',
       
       // Origem e Captação
       'Forma de Captação do Lead': 'Como Chegou o Lead',
+      'Tipo da Venda': 'Tipo da Venda',
       'Venda Casada': 'É Venda Casada?',
+      'Detalhes da Venda Casada': 'Detalhes da Venda Casada',
       'Indicação': 'Foi Indicado?',
+      'Nome de Quem Indicou': 'Nome de Quem Indicou',
       
       // Observações
       'Observações Gerais': 'Observações'
@@ -83,31 +87,42 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
   const groupRespostasByCategory = (respostas: RespostaFormulario[]) => {
     const categories = {
       'Informações Básicas': [
-        'Formação do Aluno',
-        'IES', 
+        'Data de Chegada',
         'Nome do Aluno',
+        'Email do Aluno', 
+        'Telefone do Aluno',
+        'CRMV',
+        'Formação do Aluno',
+        'IES',
         'Vendedor'
       ],
       'Informações do Curso': [
-        'Abertura',
         'Curso ID',
-        'Data de Matrícula',
+        'Modalidade do Curso',
+        'Turma',
+        'Abertura',
         'Lote da Pós-Graduação',
         'Matrícula',
-        'Modalidade do Curso',
-        'Modalidade Selecionada',
-        'Reembolso da Matrícula',
-        'Turma'
+        'Data de Matrícula',
+        'Reembolso da Matrícula'
       ],
       'Condições Comerciais': [
-        'Carência da Primeira Cobrança',
+        'Valor do Contrato',
+        'Percentual de Desconto',
         'Condições de Parcelamento',
-        'Data do Primeiro Pagamento'
+        'Forma de Pagamento',
+        'Data do Primeiro Pagamento',
+        'Carência da Primeira Cobrança',
+        'Detalhes da Carência',
+        'Valor das Parcelas'
       ],
       'Origem e Captação': [
         'Forma de Captação do Lead',
+        'Tipo da Venda',
         'Venda Casada',
-        'Indicação'
+        'Detalhes da Venda Casada',
+        'Indicação',
+        'Nome de Quem Indicou'
       ],
       'Observações': [
         'Observações Gerais'
