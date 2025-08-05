@@ -126,7 +126,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
           <div>
             <div className="text-sm font-medium text-foreground">{person.name}</div>
             <div className="text-xs text-muted-foreground">
-               {person.isSDR ? `${person.weeklySales} cursos` : `${person.points} pts`}
+               {person.isSDR ? `${person.weeklySales} pontos` : `${person.points} pts`}
                {comissaoBloqueada && (
                  <div className="text-white font-bold text-xs mt-1">
                    {weeklyProgress.toFixed(0)}% - COMISSÃO BLOQUEADA
@@ -372,66 +372,74 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     
     if (isSDR) {
       // Para SDRs - buscar dados reais das reuniões usando mesma lógica de semana (quarta a terça)
-      // Filtrar agendamentos do SDR para a semana atual
+      // Para SDRs - contar VENDAS DE CURSOS + reuniões realizadas
+      
+      // 1. VENDAS DE CURSOS que o SDR fez diretamente
+      const vendasSDRSemana = vendasSemanaAtual.filter(v => v.vendedor_id === vendedor.id);
+      const vendasSDRMes = vendasMesAtual.filter(v => v.vendedor_id === vendedor.id);
+      const vendasSDRDia = vendasDiaAtual.filter(v => v.vendedor_id === vendedor.id);
+
+      // 2. REUNIÕES REALIZADAS (compareceu ou comprou)
       const agendamentosSDRSemana = allAgendamentos.filter(agendamento => {
         const dataAgendamento = new Date(agendamento.data_agendamento);
         const isDoSDR = agendamento.sdr_id === vendedor.id;
         const dentroDaSemana = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
-        
-        // Contar apenas agendamentos onde houve comparecimento confirmado
         const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
                            agendamento.resultado_reuniao === 'comprou';
-        
         return isDoSDR && dentroDaSemana && compareceu;
       });
 
-      // Filtrar agendamentos do SDR para o dia atual
       const agendamentosSDRDia = allAgendamentos.filter(agendamento => {
         const dataAgendamento = new Date(agendamento.data_agendamento);
         dataAgendamento.setHours(0, 0, 0, 0);
         const isDoSDR = agendamento.sdr_id === vendedor.id;
         const dentroDoDia = dataAgendamento.getTime() === startOfDay.getTime();
-        
-        // Contar apenas agendamentos onde houve comparecimento confirmado
         const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
                            agendamento.resultado_reuniao === 'comprou';
-        
         return isDoSDR && dentroDoDia && compareceu;
       });
 
-      // Filtrar agendamentos do SDR para o mês atual usando regra de semana
       const agendamentosSDRMes = allAgendamentos.filter(agendamento => {
         const dataAgendamento = new Date(agendamento.data_agendamento);
         const isDoSDR = agendamento.sdr_id === vendedor.id;
-        
-        // Usar regra de semana para determinar se está no mês atual
         const { mes, ano } = getVendaPeriod(dataAgendamento);
         const dentroDoMes = mes === currentMonth && ano === currentYear;
-        
-        // Contar apenas agendamentos onde houve comparecimento confirmado
         const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
                            agendamento.resultado_reuniao === 'comprou';
-        
         return isDoSDR && dentroDoMes && compareceu;
       });
 
-      // Buscar configuração do nível do SDR para meta de vendas de cursos
+      // Buscar meta de vendas de cursos do SDR
       const sdrNivel = vendedor.nivel || 'sdr_inbound_junior';
       const nivelConfig = niveis.find(n => n.nivel === sdrNivel && n.tipo_usuario === 'sdr');
-      const metaSemanalt = nivelConfig?.meta_vendas_cursos || 8;
-      const metaDiariaReunioes = Math.ceil(metaSemanalt / 7);
+      const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
+      
+      // Total de pontos = vendas diretas + reuniões realizadas
+      const pontosSemanaTotais = vendasSDRSemana.length + agendamentosSDRSemana.length;
+      const pontosDiaTotais = vendasSDRDia.length + agendamentosSDRDia.length;
+      const pontosMesTotais = vendasSDRMes.length + agendamentosSDRMes.length;
+
+      console.log(`🎯 SDR ${vendedor.name}:`, {
+        sdrId: vendedor.id,
+        vendasDiretas: { semana: vendasSDRSemana.length, dia: vendasSDRDia.length, mes: vendasSDRMes.length },
+        reunioesRealizadas: { semana: agendamentosSDRSemana.length, dia: agendamentosSDRDia.length, mes: agendamentosSDRMes.length },
+        pontosSemanaTotais,
+        pontosDiaTotais,
+        pontosMesTotais,
+        metaVendasCursos
+      });
 
       return {
         id: vendedor.id,
         name: vendedor.name,
-        weeklySales: agendamentosSDRSemana.length,
-        weeklyTarget: metaSemanalt,
-        dailySales: agendamentosSDRDia.length,
-        dailyTarget: metaDiariaReunioes,
+        weeklySales: pontosSemanaTotais, // Total de pontos (vendas + reuniões)
+        weeklyTarget: metaVendasCursos, // Meta de vendas de cursos
+        dailySales: pontosDiaTotais,
+        dailyTarget: Math.ceil(metaVendasCursos / 7),
         avatar: vendedor.photo_url || '',
-        points: agendamentosSDRSemana.length, // Para ordenação, usar número de reuniões
+        points: pontosSemanaTotais, // Para ordenação
         isSDR: true,
-        monthlyTotal: agendamentosSDRMes.length
+        monthlyTotal: pontosMesTotais
       };
     } else {
       // Para vendedores - usar pontuação em vez de número de vendas
