@@ -127,13 +127,28 @@ const SDRRanking: React.FC = () => {
                dataVenda <= fimAno;
       }).length;
 
-      // Reuniões realizadas do SDR (compareceu ou comprou)
+      // Reuniões realizadas do SDR (comprou ou compareceu_nao_comprou)
       const reunioesSemana = agendamentos.filter(a => {
         const dataAgendamento = new Date(a.data_agendamento);
-        return a.sdr_id === sdr.id && 
-               dataAgendamento >= inicioSemana && 
-               dataAgendamento <= fimSemana &&
-               (a.resultado_reuniao === 'comprou' || a.resultado_reuniao === 'compareceu_nao_comprou');
+        const isSDRMatch = a.sdr_id === sdr.id;
+        const isInWeek = dataAgendamento >= inicioSemana && dataAgendamento <= fimSemana;
+        const hasPositiveResult = a.resultado_reuniao === 'comprou' || a.resultado_reuniao === 'compareceu_nao_comprou';
+        
+        // Debug para Regiane
+        if (sdr.name === 'Regiane') {
+          console.log('Reunião Regiane:', {
+            agendamento_id: a.id,
+            data_agendamento: dataAgendamento,
+            resultado: a.resultado_reuniao,
+            isSDRMatch,
+            isInWeek,
+            hasPositiveResult,
+            inicioSemana,
+            fimSemana
+          });
+        }
+        
+        return isSDRMatch && isInWeek && hasPositiveResult;
       }).length;
 
       const reunioesMes = agendamentos.filter(a => {
