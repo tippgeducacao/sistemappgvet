@@ -113,29 +113,75 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
     
     const categories = {
       'Informações Básicas': [
-        'Data de Chegada', 'dataChegada', 'Nome do Aluno', 'nomeAluno', 'Email do Aluno', 'emailAluno', 
-        'Telefone do Aluno', 'telefone', 'CRMV', 'crmv', 'Formação do Aluno', 'formacaoAluno', 
-        'IES', 'ies', 'Vendedor', 'vendedor'
+        // Data de Chegada do Lead
+        'Data de Chegada', 'dataChegada', 'Data de Chegada do Lead',
+        // Nome Completo
+        'Nome do Aluno', 'nomeAluno', 'Nome Completo', 'nome',
+        // Email 
+        'Email do Aluno', 'emailAluno', 'Email', 'email',
+        // Telefone
+        'Telefone do Aluno', 'telefone', 'Telefone', 'whatsapp',
+        // CRMV
+        'CRMV', 'crmv', 'Número do CRMV',
+        // Formação Acadêmica
+        'Formação do Aluno', 'formacaoAluno', 'Formação Acadêmica', 'formacao',
+        // IES
+        'IES', 'ies', 'Instituição de Ensino Superior',
+        // Vendedor
+        'Vendedor', 'vendedor', 'Vendedor Responsável'
       ],
       'Informações do Curso': [
-        'Curso ID', 'cursoId', 'Curso Selecionado', 'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada',
-        'Turma', 'turma', 'turmaEscolhida', 'turma_escolhida', 'Abertura', 'abertura', 'aberturaEscolhida', 'abertura_escolhida',
-        'Lote da Pós-Graduação', 'lotePos', 'Lote da Pós', 'Matrícula', 'matricula', 'Tipo de Matrícula',
-        'Data de Matrícula', 'dataMatricula', 'Reembolso da Matrícula', 'reembolsoMatricula'
+        // Curso
+        'Curso ID', 'cursoId', 'Curso Selecionado', 'Curso', 'curso',
+        // Modalidade
+        'Modalidade do Curso', 'modalidadeCurso', 'modalidade', 'Modalidade Selecionada', 'Modalidade',
+        // Turma (próximo da Abertura)
+        'Turma', 'turma', 'turmaEscolhida', 'turma_escolhida',
+        // Abertura (próximo da Turma)
+        'Abertura', 'abertura', 'aberturaEscolhida', 'abertura_escolhida',
+        // Lote da Pós (movido para esta seção)
+        'Lote da Pós-Graduação', 'lotePos', 'Lote da Pós', 'lote_pos',
+        // Tipo de Matrícula
+        'Matrícula', 'matricula', 'Tipo de Matrícula', 'tipo_matricula',
+        // Data de Matrícula
+        'Data de Matrícula', 'dataMatricula', 'data_matricula',
+        // Reembolso
+        'Reembolso da Matrícula', 'reembolsoMatricula', 'reembolso_matricula', 'Reembolso de Matrícula'
       ],
       'Condições Comerciais': [
-        'Valor do Contrato', 'valorContrato', 'Percentual de Desconto', 'percentualDesconto', 
-        'Condições de Parcelamento', 'parcelamento', 'Forma de Pagamento', 'pagamento',
-        'Data do Primeiro Pagamento', 'dataPrimeiroPagamento', 'Carência da Primeira Cobrança', 
-        'carenciaPrimeiraCobranca', 'Detalhes da Carência', 'detalhesCarencia'
+        // Valor do Contrato
+        'Valor do Contrato', 'valorContrato', 'valor_contrato', 'Valor Total do Contrato',
+        // Desconto
+        'Percentual de Desconto', 'percentualDesconto', 'desconto', 'Desconto Aplicado (%)', 'Desconto',
+        // Parcelamento
+        'Condições de Parcelamento', 'parcelamento', 'Parcelamento', 'condicoes_parcelamento',
+        // Forma de Pagamento
+        'Forma de Pagamento', 'pagamento', 'forma_pagamento', 'metodoPagamento',
+        // Data do 1º Pagamento
+        'Data do Primeiro Pagamento', 'dataPrimeiroPagamento', 'data_primeiro_pagamento', 'Data do 1º Pagamento',
+        // Carência
+        'Carência da Primeira Cobrança', 'carenciaPrimeiraCobranca', 'carencia', 'Carência para 1ª Cobrança',
+        // Detalhes da Carência
+        'Detalhes da Carência', 'detalhesCarencia', 'detalhes_carencia',
+        // Valor das Parcelas (caso exista)
+        'Valor das Parcelas', 'valorParcelas', 'valor_parcelas'
       ],
       'Origem e Captação': [
-        'Forma de Captação do Lead', 'formaCaptacao', 'Tipo de Venda', 'tipoVenda', 'Venda Casada', 
-        'vendaCasada', 'Detalhes da Venda Casada', 'detalhesVendaCasada', 'Indicação', 'indicacao', 
-        'Nome do Indicador', 'nomeIndicador'
+        // Como chegou
+        'Forma de Captação do Lead', 'formaCaptacao', 'forma_captacao', 'Como Chegou o Lead',
+        // Tipo de Venda
+        'Tipo de Venda', 'tipoVenda', 'tipo_venda', 'Tipo da Venda',
+        // Venda Casada
+        'Venda Casada', 'vendaCasada', 'venda_casada', 'É Venda Casada?',
+        // Detalhes Venda Casada
+        'Detalhes da Venda Casada', 'detalhesVendaCasada', 'detalhes_venda_casada',
+        // Indicação
+        'Indicação', 'indicacao', 'Foi Indicado?', 'foi_indicado',
+        // Nome do Indicador
+        'Nome do Indicador', 'nomeIndicador', 'nome_indicador', 'Nome de Quem Indicou'
       ],
       'Observações': [
-        'Observações Gerais', 'observacoes'
+        'Observações Gerais', 'observacoes', 'Observações', 'observacao'
       ]
     };
 
