@@ -25,7 +25,6 @@ interface SDRProfileModalProps {
     tipo: 'inbound' | 'outbound';
     nivel: string;
     metaReunioesSemanal: number;
-    metaVendasSemanal: number;
   } | null;
 }
 
@@ -102,9 +101,6 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({ isOpen, onClose, sdr 
     return {
       vendas: vendasPeriodo.length,
       agendamentos: agendamentosPeriodo.length,
-      metaVendas: selectedPeriod === 'semana' ? sdr.metaVendasSemanal : 
-                 selectedPeriod === 'mes' ? sdr.metaVendasSemanal * 4 :
-                 sdr.metaVendasSemanal * 52,
       metaReunioes: selectedPeriod === 'semana' ? sdr.metaReunioesSemanal :
                    selectedPeriod === 'mes' ? sdr.metaReunioesSemanal * 4 :
                    sdr.metaReunioesSemanal * 52

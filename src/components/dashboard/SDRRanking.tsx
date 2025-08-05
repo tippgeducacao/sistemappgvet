@@ -20,10 +20,9 @@ interface SDRStats {
   nome: string;
   photo_url?: string;
   tipo: 'inbound' | 'outbound';
-  pontosVendas: number; // 1 ponto por curso vendido
+  reunioesRealizadas: number; // Reuniões com resultado positivo
   metaReunioesSemanal: number; // Meta de reuniões
   metaReunioesdiaria: number; // Meta diária de reuniões
-  metaVendasSemanal: number; // Sempre 10 pontos
   agendamentosHoje: number;
   agendamentosSemana: number;
   nivel: string;
@@ -89,86 +88,29 @@ const SDRRanking: React.FC = () => {
         nivelConfig = niveis.find(n => n.nivel === (sdr.nivel || 'sdr_outbound_junior') && n.tipo_usuario === 'sdr');
       }
 
-      // Vendas de cursos do SDR (incluindo vendas diretas + vendas de agendamentos)
-      const vendasSemana = vendas.filter(v => {
-        // Usar data de aprovação para vendas matriculadas, senão data de envio
-        const dataVenda = v.status === 'matriculado' && v.data_aprovacao 
-          ? new Date(v.data_aprovacao)
-          : v.status === 'matriculado' && v.atualizado_em 
-            ? new Date(v.atualizado_em) 
-            : new Date(v.enviado_em);
-        
-        const isInPeriod = dataVenda >= inicioSemana && dataVenda <= fimSemana;
-        const isMatriculado = v.status === 'matriculado';
-        
-        if (!isInPeriod || !isMatriculado) return false;
-        
-        // 1. Vendas diretas do SDR
-        if (v.vendedor_id === sdr.id) return true;
-        
-        // 2. Vendas de agendamentos do SDR (vendedor marca como "comprou")
-        const agendamentoRelacionado = agendamentos.find(a => 
-          a.sdr_id === sdr.id && 
-          a.resultado_reuniao === 'comprou' &&
-          a.data_resultado &&
-          Math.abs(new Date(a.data_resultado).getTime() - dataVenda.getTime()) < 5 * 60 * 1000 // 5 minutos de diferença
-        );
-        
-        return !!agendamentoRelacionado;
+      // Reuniões realizadas do SDR (compareceu ou comprou)
+      const reunioesSemana = agendamentos.filter(a => {
+        const dataAgendamento = new Date(a.data_agendamento);
+        return a.sdr_id === sdr.id && 
+               dataAgendamento >= inicioSemana && 
+               dataAgendamento <= fimSemana &&
+               (a.resultado_reuniao === 'comprou' || a.resultado_reuniao === 'compareceu_nao_comprou');
       }).length;
 
-      const vendasMes = vendas.filter(v => {
-        // Usar data de aprovação para vendas matriculadas, senão data de envio
-        const dataVenda = v.status === 'matriculado' && v.data_aprovacao 
-          ? new Date(v.data_aprovacao)
-          : v.status === 'matriculado' && v.atualizado_em 
-            ? new Date(v.atualizado_em) 
-            : new Date(v.enviado_em);
-        
-        const isInPeriod = dataVenda >= inicioMes && dataVenda <= fimMes;
-        const isMatriculado = v.status === 'matriculado';
-        
-        if (!isInPeriod || !isMatriculado) return false;
-        
-        // 1. Vendas diretas do SDR
-        if (v.vendedor_id === sdr.id) return true;
-        
-        // 2. Vendas de agendamentos do SDR (vendedor marca como "comprou")
-        const agendamentoRelacionado = agendamentos.find(a => 
-          a.sdr_id === sdr.id && 
-          a.resultado_reuniao === 'comprou' &&
-          a.data_resultado &&
-          Math.abs(new Date(a.data_resultado).getTime() - dataVenda.getTime()) < 5 * 60 * 1000 // 5 minutos de diferença
-        );
-        
-        return !!agendamentoRelacionado;
+      const reunioesMes = agendamentos.filter(a => {
+        const dataAgendamento = new Date(a.data_agendamento);
+        return a.sdr_id === sdr.id && 
+               dataAgendamento >= inicioMes && 
+               dataAgendamento <= fimMes &&
+               (a.resultado_reuniao === 'comprou' || a.resultado_reuniao === 'compareceu_nao_comprou');
       }).length;
 
-      const vendasAno = vendas.filter(v => {
-        // Usar data de aprovação para vendas matriculadas, senão data de envio
-        const dataVenda = v.status === 'matriculado' && v.data_aprovacao 
-          ? new Date(v.data_aprovacao)
-          : v.status === 'matriculado' && v.atualizado_em 
-            ? new Date(v.atualizado_em) 
-            : new Date(v.enviado_em);
-        
-        const isInPeriod = dataVenda >= inicioAno && dataVenda <= fimAno;
-        const isMatriculado = v.status === 'matriculado';
-        
-        if (!isInPeriod || !isMatriculado) return false;
-        
-        // 1. Vendas diretas do SDR
-        if (v.vendedor_id === sdr.id) return true;
-        
-        // 2. Vendas de agendamentos do SDR (vendedor marca como "comprou")
-        const agendamentoRelacionado = agendamentos.find(a => 
-          a.sdr_id === sdr.id && 
-          a.resultado_reuniao === 'comprou' &&
-          a.data_resultado &&
-          Math.abs(new Date(a.data_resultado).getTime() - dataVenda.getTime()) < 5 * 60 * 1000 // 5 minutos de diferença
-        );
-        
-        return !!agendamentoRelacionado;
+      const reunioesAno = agendamentos.filter(a => {
+        const dataAgendamento = new Date(a.data_agendamento);
+        return a.sdr_id === sdr.id && 
+               dataAgendamento >= inicioAno && 
+               dataAgendamento <= fimAno &&
+               (a.resultado_reuniao === 'comprou' || a.resultado_reuniao === 'compareceu_nao_comprou');
       }).length;
 
       // Agendamentos hoje com resultado positivo
@@ -195,23 +137,19 @@ const SDRRanking: React.FC = () => {
 
       const metaDiariaReunioes = Math.ceil(metaSemanaltReunioes / 7);
 
-      // Meta fixa de vendas de cursos baseada no nível do SDR
-      const metaSemanaltVendas = nivelConfig?.meta_vendas_cursos || 8;
-
-      // Pontos do período selecionado
-      let pontosVendas = vendasSemana;
-      if (selectedPeriod === 'mes') pontosVendas = vendasMes;
-      if (selectedPeriod === 'ano') pontosVendas = vendasAno;
+      // Reuniões realizadas do período selecionado
+      let reunioesRealizadas = reunioesSemana;
+      if (selectedPeriod === 'mes') reunioesRealizadas = reunioesMes;
+      if (selectedPeriod === 'ano') reunioesRealizadas = reunioesAno;
 
       return {
         id: sdr.id,
         nome: sdr.name,
         photo_url: sdr.photo_url,
         tipo: (isInbound ? 'inbound' : 'outbound') as 'inbound' | 'outbound',
-        pontosVendas,
+        reunioesRealizadas,
         metaReunioesSemanal: metaSemanaltReunioes,
         metaReunioesdiaria: metaDiariaReunioes,
-        metaVendasSemanal: metaSemanaltVendas,
         agendamentosHoje,
         agendamentosSemana,
         nivel: sdr.nivel || 'junior'
@@ -219,11 +157,11 @@ const SDRRanking: React.FC = () => {
     });
   }, [sdrs, vendas, agendamentos, niveis, selectedPeriod]);
 
-  // Ranking ordenado por pontos de vendas
+  // Ranking ordenado por reuniões realizadas
   const ranking = useMemo(() => {
     return [...sdrStats].sort((a, b) => {
-      if (a.pontosVendas !== b.pontosVendas) {
-        return b.pontosVendas - a.pontosVendas;
+      if (a.reunioesRealizadas !== b.reunioesRealizadas) {
+        return b.reunioesRealizadas - a.reunioesRealizadas;
       }
       return a.nome.localeCompare(b.nome);
     });
@@ -262,7 +200,7 @@ const SDRRanking: React.FC = () => {
               Ranking de SDRs
             </CardTitle>
             <CardDescription>
-              Vendas de cursos - {periodLabels[selectedPeriod]}
+              Reuniões realizadas - {periodLabels[selectedPeriod]}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -297,13 +235,13 @@ const SDRRanking: React.FC = () => {
           <div className="space-y-4">
             {ranking.map((sdr, index) => {
               const position = index + 1;
-              const progressoVendas = selectedPeriod === 'semana' ? 
-                (sdr.pontosVendas / sdr.metaVendasSemanal) * 100 : 
+              const progressoReunioes = selectedPeriod === 'semana' ? 
+                (sdr.reunioesRealizadas / sdr.metaReunioesSemanal) * 100 : 
                 selectedPeriod === 'mes' ?
-                (sdr.pontosVendas / (sdr.metaVendasSemanal * 4)) * 100 :
-                (sdr.pontosVendas / (sdr.metaVendasSemanal * 52)) * 100;
+                (sdr.reunioesRealizadas / (sdr.metaReunioesSemanal * 4)) * 100 :
+                (sdr.reunioesRealizadas / (sdr.metaReunioesSemanal * 52)) * 100;
 
-              const atingiu71Porcento = progressoVendas >= 71;
+              const atingiu71Porcento = progressoReunioes >= 71;
               const comissaoBloqueada = !atingiu71Porcento;
 
               return (
@@ -356,39 +294,39 @@ const SDRRanking: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Pontuação de Vendas */}
+                  {/* Reuniões Realizadas */}
                   <div className="text-right">
                     <div className="flex items-center gap-2">
                       <span className={`text-2xl font-bold ${getSDRColorText(sdr.tipo as 'inbound' | 'outbound')}`}>
-                        {sdr.pontosVendas}
+                        {sdr.reunioesRealizadas}
                       </span>
-                      <span className="text-sm text-muted-foreground">vendas</span>
+                      <span className="text-sm text-muted-foreground">reuniões</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Meta de Vendas: {selectedPeriod === 'semana' ? sdr.metaVendasSemanal : 
-                            selectedPeriod === 'mes' ? sdr.metaVendasSemanal * 4 :
-                            sdr.metaVendasSemanal * 52}
+                      Meta de Reuniões: {selectedPeriod === 'semana' ? sdr.metaReunioesSemanal : 
+                            selectedPeriod === 'mes' ? sdr.metaReunioesSemanal * 4 :
+                            sdr.metaReunioesSemanal * 52}
                     </p>
                     <div className="flex items-center gap-1 mt-1">
-                      <div className={`w-2 h-2 rounded-full ${progressoVendas >= 100 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <div className={`w-2 h-2 rounded-full ${progressoReunioes >= 100 ? 'bg-green-500' : 'bg-red-500'}`}></div>
                       <span className="text-xs text-muted-foreground">
-                        {Math.round(progressoVendas)}% da meta
+                        {Math.round(progressoReunioes)}% da meta
                       </span>
                     </div>
                   </div>
 
-                  {/* Progresso da Meta de Vendas */}
+                  {/* Progresso da Meta de Reuniões */}
                   <div className="w-24">
                     <div className="text-center mb-1">
                       <span className="text-xs font-medium">
-                        {sdr.pontosVendas}/{selectedPeriod === 'semana' ? sdr.metaVendasSemanal : 
-                                           selectedPeriod === 'mes' ? sdr.metaVendasSemanal * 4 :
-                                           sdr.metaVendasSemanal * 52}
+                        {sdr.reunioesRealizadas}/{selectedPeriod === 'semana' ? sdr.metaReunioesSemanal : 
+                                           selectedPeriod === 'mes' ? sdr.metaReunioesSemanal * 4 :
+                                           sdr.metaReunioesSemanal * 52}
                       </span>
                     </div>
-                    <Progress value={Math.min(progressoVendas, 100)} className="h-2" />
+                    <Progress value={Math.min(progressoReunioes, 100)} className="h-2" />
                     <p className="text-xs text-center mt-1 text-muted-foreground">
-                      {Math.round(progressoVendas)}%
+                      {Math.round(progressoReunioes)}%
                     </p>
                   </div>
 
