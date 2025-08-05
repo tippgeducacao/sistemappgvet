@@ -20,7 +20,20 @@ export class VendaAssemblyService {
         console.log(`📋 Processando venda ${index + 1}/${formEntries.length}: ${entry.id}`);
         
         const aluno = await AlunoLinkingService.findOrCreateAluno(entry, alunos, respostas);
+        
+        // Debug curso mapping
+        console.log(`🔍 Buscando curso para entry ${entry.id}:`, {
+          curso_id: entry.curso_id,
+          cursos_disponiveis: cursos.length,
+          primeiro_curso: cursos[0]?.id || 'nenhum'
+        });
+        
         const curso = entry.curso_id ? cursos.find(c => c.id === entry.curso_id) || null : null;
+        
+        if (entry.curso_id && !curso) {
+          console.warn(`⚠️ CURSO NÃO ENCONTRADO! ID: ${entry.curso_id} não existe nos ${cursos.length} cursos disponíveis`);
+        }
+        
         const vendedor = profiles.find(p => p.id === entry.vendedor_id) || null;
 
         // Buscar respostas específicas para esta venda
