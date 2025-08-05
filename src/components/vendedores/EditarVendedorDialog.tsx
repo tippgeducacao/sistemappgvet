@@ -73,9 +73,12 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
         setSelectedNivel('');
       }
 
-      // Carregar grupos de pós-graduações do vendedor
-      if (vendedor.pos_graduacoes) {
+      // Carregar grupos de pós-graduações do vendedor - garantir que seja sempre um array válido
+      if (vendedor.pos_graduacoes && Array.isArray(vendedor.pos_graduacoes)) {
         setSelectedGruposPosGraduacoes(vendedor.pos_graduacoes);
+      } else {
+        // Limpar seleções se não há dados válidos
+        setSelectedGruposPosGraduacoes([]);
       }
 
       // Carregar horário de trabalho do vendedor
@@ -103,8 +106,27 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
           setHorarioTrabalho(horario);
         }
       }
+    } else {
+      // Limpar todos os estados quando não há vendedor
+      setSelectedNivel('');
+      setSelectedGruposPosGraduacoes([]);
+      setHorarioTrabalho({
+        dias_trabalho: 'segunda_sabado',
+        segunda_sexta: {
+          periodo1_inicio: '09:00',
+          periodo1_fim: '12:00',
+          periodo2_inicio: '13:00',
+          periodo2_fim: '18:00'
+        },
+        sabado: {
+          periodo1_inicio: '09:00',
+          periodo1_fim: '12:00',
+          periodo2_inicio: '',
+          periodo2_fim: ''
+        }
+      });
     }
-  }, [vendedor]);
+  }, [vendedor, open]); // Adicionar 'open' como dependência para limpar quando fecha
 
   const handleSave = async () => {
     if (!vendedor) return;
