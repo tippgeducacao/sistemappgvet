@@ -84,10 +84,10 @@ const ReunioesCanceladasSDR: React.FC<ReunioesCanceladasSDRProps> = ({
                     
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="h-3 w-3" />
-                      {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      Agendado às {format(new Date(agendamento.data_agendamento), "HH:mm", { locale: ptBR })} - {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
                       {agendamento.data_fim_agendamento && (
                         <>
-                          {' - '}
+                          {' até '}
                           {format(new Date(agendamento.data_fim_agendamento), 'HH:mm', { locale: ptBR })}
                         </>
                       )}

@@ -150,12 +150,12 @@ const AgendamentosFinalizadosTab: React.FC<AgendamentosFinalizadosTabProps> = ({
                         <Badge className={getStatusColor(agendamento.status)}>
                           {getStatusText(agendamento.status)}
                         </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          {agendamento.data_fim_agendamento && 
-                            ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`
-                          }
-                        </span>
+                      <span className="text-sm text-muted-foreground">
+                        Agendado às {format(new Date(agendamento.data_agendamento), "HH:mm", { locale: ptBR })} - {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
+                        {agendamento.data_fim_agendamento && 
+                          ` até ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`
+                        }
+                      </span>
                       </div>
                       
                       {/* Data e hora de finalização */}

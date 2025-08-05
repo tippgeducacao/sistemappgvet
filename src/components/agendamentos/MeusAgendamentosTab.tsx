@@ -111,9 +111,9 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
                         {getStatusText(agendamento.status)}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        Agendado às {format(new Date(agendamento.data_agendamento), "HH:mm", { locale: ptBR })} - {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
                         {agendamento.data_fim_agendamento && 
-                          ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`
+                          ` até ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`
                         }
                       </span>
                     </div>
