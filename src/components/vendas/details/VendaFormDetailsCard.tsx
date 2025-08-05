@@ -83,33 +83,26 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
   const groupRespostasByCategory = (respostas: RespostaFormulario[]) => {
     const categories = {
       'Informações Básicas': [
-        'Data de Chegada',
-        'Nome do Aluno', 
-        'Email do Aluno',
-        'Telefone do Aluno',
         'Formação do Aluno',
-        'IES',
+        'IES', 
+        'Nome do Aluno',
         'Vendedor'
       ],
       'Informações do Curso': [
+        'Abertura',
         'Curso ID',
-        'Modalidade do Curso',
-        'Modalidade Selecionada',
-        'Turma',
-        'Abertura', 
+        'Data de Matrícula',
         'Lote da Pós-Graduação',
         'Matrícula',
-        'Data de Matrícula',
-        'Reembolso da Matrícula'
+        'Modalidade do Curso',
+        'Modalidade Selecionada',
+        'Reembolso da Matrícula',
+        'Turma'
       ],
       'Condições Comerciais': [
-        'Valor do Contrato',
-        'Percentual de Desconto',
-        'Condições de Parcelamento',
-        'Forma de Pagamento',
-        'Data do Primeiro Pagamento',
         'Carência da Primeira Cobrança',
-        'Detalhes da Carência'
+        'Condições de Parcelamento',
+        'Data do Primeiro Pagamento'
       ],
       'Origem e Captação': [
         'Forma de Captação do Lead',
@@ -128,13 +121,12 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
       grouped[category] = [];
     });
     
-    // Mapear cada resposta para a categoria correta usando o nome formatado
+    // Mapear cada resposta para a categoria correta usando o nome original do campo
     respostas.forEach(resposta => {
-      const formattedName = formatFieldName(resposta.campo_nome);
       let categorized = false;
       
       Object.entries(categories).forEach(([category, expectedFields]) => {
-        if (expectedFields.includes(formattedName)) {
+        if (expectedFields.includes(resposta.campo_nome)) {
           grouped[category].push(resposta);
           categorized = true;
         }
