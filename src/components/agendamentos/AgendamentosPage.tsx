@@ -1865,9 +1865,9 @@ const AgendamentosPage: React.FC = () => {
                               <p className="font-medium text-foreground">{agendamento.vendedor?.name}</p>
                             </div>
                             <div>
-                              <p className="text-muted-foreground">Agendado às</p>
+                              <p className="text-muted-foreground">Agendado para</p>
                               <p className="font-medium text-foreground">
-                                {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })} - {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })}
+                                {format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy', { locale: ptBR })} das {format(new Date(agendamento.data_agendamento), 'HH:mm', { locale: ptBR })}
                                 {agendamento.data_fim_agendamento && (
                                   <>
                                     {' até '}
