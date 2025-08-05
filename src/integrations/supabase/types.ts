@@ -819,6 +819,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      clean_invalid_pos_graduacoes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_weekly_goals_for_vendor: {
         Args: { p_vendedor_id: string; p_ano: number; p_mes: number }
         Returns: undefined
