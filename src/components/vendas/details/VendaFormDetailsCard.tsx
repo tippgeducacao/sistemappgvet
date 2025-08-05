@@ -140,6 +140,17 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
       }
     });
     
+    // Ordenar os campos dentro de cada categoria conforme a ordem definida
+    Object.entries(categories).forEach(([category, expectedFields]) => {
+      if (grouped[category]) {
+        grouped[category].sort((a, b) => {
+          const indexA = expectedFields.indexOf(a.campo_nome);
+          const indexB = expectedFields.indexOf(b.campo_nome);
+          return indexA - indexB;
+        });
+      }
+    });
+    
     return grouped;
   };
 
