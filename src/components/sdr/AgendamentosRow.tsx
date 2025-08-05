@@ -36,13 +36,18 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const data = await getAgendamentosNaSemana(semana);
-      setAgendamentosData(data);
+      try {
+        const data = await getAgendamentosNaSemana(semana);
+        setAgendamentosData(data);
+      } catch (error) {
+        console.error('Erro ao buscar dados da semana:', error);
+        setAgendamentosData({ realizados: 0, meta: 0, percentual: 0 });
+      }
       setLoading(false);
     };
     
     fetchData();
-  }, [semana, getAgendamentosNaSemana]);
+  }, [semana]);
 
   return (
     <tr 

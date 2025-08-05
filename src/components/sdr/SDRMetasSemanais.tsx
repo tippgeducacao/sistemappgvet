@@ -71,17 +71,41 @@ export const SDRMetasSemanais = () => {
 
       if (error) throw error;
 
-      // Buscar meta de agendamentos
-      const { data: nivelData } = await supabase
+      // Buscar meta de agendamentos pelo nível correto do perfil
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('nivel')
+        .eq('id', profile.id)
+        .single();
+
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError);
+        return { realizados: 0, meta: 0, percentual: 0 };
+      }
+
+      const nivel = profileData?.nivel || 'junior';
+      console.log('🔍 Nível do SDR encontrado:', nivel, 'Tipo:', profile.user_type);
+
+      // Buscar meta de agendamentos na tabela niveis_vendedores
+      const { data: nivelData, error: nivelError } = await supabase
         .from('niveis_vendedores')
         .select('meta_semanal_inbound, meta_semanal_outbound')
-        .eq('nivel', (profile as any)?.nivel || 'junior')
+        .eq('nivel', nivel)
         .eq('tipo_usuario', profile.user_type)
-        .maybeSingle();
+        .single();
+
+      if (nivelError) {
+        console.error('Erro ao buscar nível:', nivelError);
+        return { realizados: 0, meta: 0, percentual: 0 };
+      }
+
+      console.log('📊 Dados do nível encontrados:', nivelData);
 
       const metaAgendamentos = profile.user_type === 'sdr_inbound' 
-        ? (nivelData?.meta_semanal_inbound || 5)
-        : (nivelData?.meta_semanal_outbound || 5);
+        ? (nivelData?.meta_semanal_inbound || 0)
+        : (nivelData?.meta_semanal_outbound || 0);
+
+      console.log('🎯 Meta de agendamentos para SDR:', metaAgendamentos);
 
       const realizados = agendamentos?.length || 0;
       const percentual = metaAgendamentos > 0 ? (realizados / metaAgendamentos) * 100 : 0;
@@ -93,7 +117,7 @@ export const SDRMetasSemanais = () => {
       };
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
-      return { realizados: 0, meta: 5, percentual: 0 };
+      return { realizados: 0, meta: 0, percentual: 0 };
     }
   };
 

@@ -75,19 +75,43 @@ export const useSDRAgendamentosMetas = () => {
       const semanaAtual = getSemanaAtual();
       const meta = getMetaSemanalSDR(profile.id, new Date().getFullYear(), semanaAtual);
       
-      const metaSemanalCursos = meta?.meta_vendas_cursos || 0;
+      const metaSemanalCursos = meta?.meta_vendas_cursos || 8;
       
-      // Para agendamentos, precisamos buscar a meta específica na tabela niveis_vendedores
-      const { data: nivelData } = await supabase
+      // Para agendamentos, buscar o nível correto do perfil
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('nivel')
+        .eq('id', profile.id)
+        .single();
+
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError);
+        throw profileError;
+      }
+
+      const nivel = profileData?.nivel || 'junior';
+      console.log('🔍 Nível do SDR encontrado para metas:', nivel, 'Tipo:', profile.user_type);
+
+      // Buscar meta de agendamentos na tabela niveis_vendedores
+      const { data: nivelData, error: nivelError } = await supabase
         .from('niveis_vendedores')
         .select('meta_semanal_inbound, meta_semanal_outbound')
-        .eq('nivel', (profile as any)?.nivel || 'junior')
+        .eq('nivel', nivel)
         .eq('tipo_usuario', profile.user_type)
-        .maybeSingle();
+        .single();
+
+      if (nivelError) {
+        console.error('Erro ao buscar nível para metas:', nivelError);
+        throw nivelError;
+      }
+
+      console.log('📊 Dados do nível para metas:', nivelData);
 
       const metaSemanalAgendamentos = profile.user_type === 'sdr_inbound' 
         ? (nivelData?.meta_semanal_inbound || 0)
         : (nivelData?.meta_semanal_outbound || 0);
+
+      console.log('🎯 Meta semanal de agendamentos:', metaSemanalAgendamentos);
       
       const metaDiariaAgendamentos = Math.ceil(metaSemanalAgendamentos / 7);
 
