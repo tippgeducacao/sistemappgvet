@@ -284,7 +284,7 @@ export const EditarAgendamentoDiretor: React.FC<EditarAgendamentoDiretorProps> =
             </div>
           </div>
 
-          {/* Link da reunião */}
+          {/* Link da Reunião */}
           <div className="space-y-2">
             <Label>Link da Reunião *</Label>
             <Input

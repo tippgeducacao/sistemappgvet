@@ -128,14 +128,14 @@ const RouteRenderer: React.FC = () => {
       );
 
     case 'reunioes':
-      // Apenas vendedores podem acessar reuniões
+      // Apenas vendedores podem acessar Reuniões
       if (isVendedor) {
         return <VendedorReunioes />;
       }
       return (
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
-          <p className="text-gray-600 mt-2">Apenas vendedores podem acessar reuniões.</p>
+          <p className="text-gray-600 mt-2">Apenas vendedores podem acessar Reuniões.</p>
         </div>
       );
 

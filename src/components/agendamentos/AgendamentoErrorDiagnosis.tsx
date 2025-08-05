@@ -23,7 +23,7 @@ const AgendamentoErrorDiagnosis: React.FC<ErrorDiagnosisProps> = ({
     if (errorMessage.includes('já passou')) return 'tempo';
     if (errorMessage.includes('já possui agendamento')) return 'conflito';
     if (errorMessage.includes('não trabalha neste dia')) return 'dia';
-    if (errorMessage.includes('Link da reunião')) return 'link';
+    if (errorMessage.includes('Link da Reunião')) return 'link';
     return 'geral';
   };
 

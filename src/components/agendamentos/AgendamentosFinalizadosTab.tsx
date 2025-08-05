@@ -191,7 +191,7 @@ const AgendamentosFinalizadosTab: React.FC<AgendamentosFinalizadosTabProps> = ({
                         </div>
                       )}
 
-                      {/* Resultado da reunião */}
+                      {/* Resultado da Reunião */}
                       {agendamento.resultado_reuniao && (
                         <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded border">
                           <div className="flex items-center justify-between mb-2">

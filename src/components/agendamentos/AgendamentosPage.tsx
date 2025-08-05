@@ -1745,7 +1745,7 @@ const AgendamentosPage: React.FC = () => {
                     </div>
                     {dayAgendamentos.length > 0 && (
                       <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                        {dayAgendamentos.length} reuniã{dayAgendamentos.length === 1 ? 'o' : 'ões'}
+                        {dayAgendamentos.length} Reuniã{dayAgendamentos.length === 1 ? 'o' : 'ões'}
                       </div>
                     )}
                   </div>

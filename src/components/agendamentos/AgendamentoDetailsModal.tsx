@@ -103,7 +103,7 @@ const AgendamentoDetailsModal: React.FC<AgendamentoDetailsModalProps> = ({
 
               {agendamento.link_reuniao && (
                 <div className="space-y-1">
-                  <span className="text-sm font-medium">Link da reunião:</span>
+                  <span className="text-sm font-medium">Link da Reunião:</span>
                   <div className="flex items-center gap-2">
                     <Link className="h-4 w-4 text-blue-600" />
                     <a 
