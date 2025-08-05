@@ -23,6 +23,12 @@ interface VendedorData {
   points: number;
   isSDR: boolean;
   monthlyTotal: number;
+  // Dados específicos para SDRs
+  reunioesSemana?: number;
+  reunioesDia?: number;
+  reunioesMes?: number;
+  metaReunioesSemanais?: number;
+  metaReunioesEnvioDiario?: number;
 }
 
 interface TVRankingDisplayProps {
@@ -72,6 +78,12 @@ const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
 const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: boolean }> = ({ person, rank, isTopThree = false }) => {
   const weeklyProgress = person.weeklyTarget > 0 ? (person.weeklySales / person.weeklyTarget) * 100 : 0;
   const dailyProgress = person.dailyTarget > 0 ? (person.dailySales / person.dailyTarget) * 100 : 0;
+  
+  // Para SDRs, calcular progresso das reuniões também
+  const reunioesWeeklyProgress = person.isSDR && person.metaReunioesSemanais ? 
+    (person.reunioesSemana! / person.metaReunioesSemanais) * 100 : 0;
+  const reunioesDailyProgress = person.isSDR && person.metaReunioesEnvioDiario ? 
+    (person.reunioesDia! / person.metaReunioesEnvioDiario) * 100 : 0;
   
   // Verificar se é SDR com comissão bloqueada (abaixo de 71%)
   const isSDR = person.isSDR;
@@ -126,7 +138,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
           <div>
             <div className="text-sm font-medium text-foreground">{person.name}</div>
             <div className="text-xs text-muted-foreground">
-               {person.isSDR ? `${person.weeklySales} pontos` : `${person.points} pts`}
+               {person.isSDR ? `${person.weeklySales} cursos` : `${person.points} pts`}
                {comissaoBloqueada && (
                  <div className="text-white font-bold text-xs mt-1">
                    {weeklyProgress.toFixed(0)}% - COMISSÃO BLOQUEADA
@@ -152,31 +164,77 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
       </div>
       
       <div className="space-y-1">
-        <div>
-          <div className="flex items-center justify-between mb-0.5">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Target className="w-2 h-2" />
-              {person.isSDR ? 'Meta Cursos Semanal' : 'Meta Pontos Semanal'}
+        {/* Para SDRs, mostrar duas barras separadas como nos outros rankings */}
+        {person.isSDR ? (
+          <>
+            {/* Vendas de Cursos (azul) */}
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <div className="flex items-center gap-1 text-xs text-blue-600">
+                  <Target className="w-2 h-2" />
+                  vendas cursos
+                </div>
+                <span className="text-xs font-medium text-blue-600">
+                  {person.weeklySales}/{person.weeklyTarget}
+                </span>
+              </div>
+              <Progress value={Math.min(weeklyProgress, 100)} className="h-2 bg-blue-100">
+                <div 
+                  className="h-full bg-blue-500 transition-all duration-300 ease-in-out" 
+                  style={{ width: `${Math.min(weeklyProgress, 100)}%` }}
+                />
+              </Progress>
             </div>
-            <span className="text-xs font-medium">
-              {person.isSDR ? `${person.weeklySales}/${person.weeklyTarget}` : `${person.weeklySales.toFixed(1)}/${person.weeklyTarget}`} ({weeklyProgress.toFixed(0)}%)
-            </span>
-          </div>
-          <Progress value={Math.min(weeklyProgress, 100)} className="h-1" />
-        </div>
-        
-        <div>
-          <div className="flex items-center justify-between mb-0.5">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Calendar className="w-2 h-2" />
-              {person.isSDR ? 'Meta Cursos Diária' : 'Meta Pontos Diária'}
+            
+            {/* Reuniões (rosa/magenta) */}
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <div className="flex items-center gap-1 text-xs text-ppgvet-magenta">
+                  <Users className="w-2 h-2" />
+                  reuniões
+                </div>
+                <span className="text-xs font-medium text-ppgvet-magenta">
+                  {person.reunioesSemana}/{person.metaReunioesSemanais}
+                </span>
+              </div>
+              <Progress value={Math.min(reunioesWeeklyProgress, 100)} className="h-2 bg-purple-100">
+                <div 
+                  className="h-full bg-ppgvet-magenta transition-all duration-300 ease-in-out" 
+                  style={{ width: `${Math.min(reunioesWeeklyProgress, 100)}%` }}
+                />
+              </Progress>
             </div>
-            <span className="text-xs font-medium">
-              {person.isSDR ? `${person.dailySales}/${person.dailyTarget}` : `${person.dailySales.toFixed(1)}/${person.dailyTarget.toFixed(1)}`} ({dailyProgress.toFixed(0)}%)
-            </span>
-          </div>
-          <Progress value={Math.min(dailyProgress, 100)} className="h-1" />
-        </div>
+          </>
+        ) : (
+          <>
+            {/* Vendedores normais */}
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Target className="w-2 h-2" />
+                  Meta Pontos Semanal
+                </div>
+                <span className="text-xs font-medium">
+                  {person.weeklySales.toFixed(1)}/{person.weeklyTarget} ({weeklyProgress.toFixed(0)}%)
+                </span>
+              </div>
+              <Progress value={Math.min(weeklyProgress, 100)} className="h-1" />
+            </div>
+            
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Calendar className="w-2 h-2" />
+                  Meta Pontos Diária
+                </div>
+                <span className="text-xs font-medium">
+                  {person.dailySales.toFixed(1)}/{person.dailyTarget.toFixed(1)} ({dailyProgress.toFixed(0)}%)
+                </span>
+              </div>
+              <Progress value={Math.min(dailyProgress, 100)} className="h-1" />
+            </div>
+          </>
+        )}
       </div>
     </motion.div>
   );
@@ -432,14 +490,20 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       return {
         id: vendedor.id,
         name: vendedor.name,
-        weeklySales: pontosSemanaTotais, // Total de pontos (vendas + reuniões)
+        weeklySales: vendasSDRSemana.length, // Vendas de cursos apenas
         weeklyTarget: metaVendasCursos, // Meta de vendas de cursos
-        dailySales: pontosDiaTotais,
+        dailySales: vendasSDRDia.length,
         dailyTarget: Math.ceil(metaVendasCursos / 7),
         avatar: vendedor.photo_url || '',
-        points: pontosSemanaTotais, // Para ordenação
+        points: vendasSDRSemana.length, // Para ordenação
         isSDR: true,
-        monthlyTotal: pontosMesTotais
+        monthlyTotal: vendasSDRMes.length,
+        // Dados específicos para SDRs - reuniões
+        reunioesSemana: agendamentosSDRSemana.length,
+        reunioesDia: agendamentosSDRDia.length,
+        reunioesMes: agendamentosSDRMes.length,
+        metaReunioesSemanais: nivelConfig?.meta_semanal_vendedor || 55,
+        metaReunioesEnvioDiario: Math.ceil((nivelConfig?.meta_semanal_vendedor || 55) / 7)
       };
     } else {
       // Para vendedores - usar pontuação em vez de número de vendas
