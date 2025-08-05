@@ -15,7 +15,11 @@ export const useFormProgress = () => {
 
   const totalPoints = useMemo(() => {
     if (!rules) return 0;
-    return ScoringCalculationService.calculateTotalPoints(formData, rules);
+    console.log('🔢 FormProgress - Dados do formulário:', formData);
+    console.log('🎯 FormProgress - ModalidadeCurso atual:', formData.modalidadeCurso);
+    const points = ScoringCalculationService.calculateTotalPoints(formData, rules);
+    console.log('📊 FormProgress - Pontos calculados:', points);
+    return points;
   }, [formData, rules]);
 
   return {

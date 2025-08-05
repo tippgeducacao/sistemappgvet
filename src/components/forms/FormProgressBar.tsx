@@ -7,7 +7,7 @@ import { useFormStore } from '@/store/FormStore';
 const FormProgressBar: React.FC = () => {
   const { totalPoints, isLoading } = useFormProgress();
   const { formData } = useFormStore();
-  const basePoints = ScoringCalculationService.getBasePoints(formData.modalidade);
+  const basePoints = ScoringCalculationService.getBasePoints(formData.modalidadeCurso);
 
   if (isLoading) {
     return (

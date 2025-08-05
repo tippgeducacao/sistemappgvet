@@ -20,11 +20,11 @@ export class ScoringCalculationService {
     console.log('📊 Regras disponíveis:', rules.length);
     
     // Verificar se modalidade é "Curso"
-    const modalidade = formData.modalidade;
-    const isCurso = modalidade === 'Curso';
+    const modalidadeCurso = formData.modalidadeCurso;
+    const isCurso = modalidadeCurso === 'Curso';
     
-    let totalPoints = this.getBasePoints(modalidade);
-    console.log(`🎯 Pontos base: ${totalPoints} (modalidade: ${modalidade})`);
+    let totalPoints = this.getBasePoints(modalidadeCurso);
+    console.log(`🎯 Pontos base: ${totalPoints} (modalidadeCurso: ${modalidadeCurso})`);
 
     // Se modalidade é "Curso", não aplicar regras de pontuação
     if (isCurso) {
@@ -50,9 +50,9 @@ export class ScoringCalculationService {
     return totalPoints;
   }
 
-  static getBasePoints(modalidade?: string): number {
+  static getBasePoints(modalidadeCurso?: string): number {
     // Se modalidade é "Curso", retorna 0,2; caso contrário, retorna 1
-    return modalidade === 'Curso' ? 0.2 : 1;
+    return modalidadeCurso === 'Curso' ? 0.2 : 1;
   }
 
   static calculatePointsFromResponses(vendaRespostas: any[], rules: any[]): number {
@@ -62,13 +62,13 @@ export class ScoringCalculationService {
 
     // Verificar se modalidade é "Curso"
     const modalidadeResposta = vendaRespostas.find(r => 
-      r.campo_nome === 'Modalidade' || r.campo_nome === 'Modalidade do Curso'
+      r.campo_nome === 'Modalidade Selecionada' || r.campo_nome === 'Modalidade'
     );
-    const modalidade = modalidadeResposta?.valor_informado;
-    const isCurso = modalidade === 'Curso';
+    const modalidadeCurso = modalidadeResposta?.valor_informado;
+    const isCurso = modalidadeCurso === 'Curso';
 
-    let totalPoints = this.getBasePoints(modalidade);
-    console.log(`🎯 Pontos base: ${totalPoints} (modalidade: ${modalidade})`);
+    let totalPoints = this.getBasePoints(modalidadeCurso);
+    console.log(`🎯 Pontos base: ${totalPoints} (modalidadeCurso: ${modalidadeCurso})`);
 
     // Se modalidade é "Curso", não aplicar regras de pontuação
     if (isCurso) {
