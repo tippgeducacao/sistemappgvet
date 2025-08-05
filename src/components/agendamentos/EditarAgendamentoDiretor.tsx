@@ -69,9 +69,9 @@ export const EditarAgendamentoDiretor: React.FC<EditarAgendamentoDiretorProps> =
       if (leadsError) throw leadsError;
       setLeads(leadsData || []);
 
-      // Carregar pós-graduações
+      // Carregar grupos de pós-graduações
       const { data: posGraduacoesData, error: posGraduacoesError } = await supabase
-        .from('cursos')
+        .from('grupos_pos_graduacoes')
         .select('id, nome')
         .eq('ativo', true)
         .order('nome');
