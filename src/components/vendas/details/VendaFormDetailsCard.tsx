@@ -37,10 +37,11 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
     return value;
   };
   const formatFieldName = (fieldName: string) => {
+    // Mapear os nomes dos campos baseado no que realmente vem do banco
     const fieldLabels: Record<string, string> = {
-      // Informações Básicas  
+      // Informações Básicas
       'Data de Chegada': 'Data de Chegada do Lead',
-      'Nome do Aluno': 'Nome Completo',
+      'Nome do Aluno': 'Nome Completo', 
       'Email do Aluno': 'Email',
       'Telefone do Aluno': 'Telefone',
       'Formação do Aluno': 'Formação Acadêmica',
@@ -82,40 +83,41 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
   const groupRespostasByCategory = (respostas: RespostaFormulario[]) => {
     const categories = {
       'Informações Básicas': [
-        'Data de Chegada do Lead',
-        'Nome Completo', 
-        'Email',
-        'Telefone',
-        'Formação Acadêmica',
-        'Instituição de Ensino Superior',
-        'Vendedor Responsável'
+        'Data de Chegada',
+        'Nome do Aluno', 
+        'Email do Aluno',
+        'Telefone do Aluno',
+        'Formação do Aluno',
+        'IES',
+        'Vendedor'
       ],
       'Informações do Curso': [
-        'Curso Selecionado',
+        'Curso ID',
         'Modalidade do Curso',
+        'Modalidade Selecionada',
         'Turma',
         'Abertura', 
-        'Lote da Pós',
-        'Tipo de Matrícula',
+        'Lote da Pós-Graduação',
+        'Matrícula',
         'Data de Matrícula',
-        'Reembolso de Matrícula'
+        'Reembolso da Matrícula'
       ],
       'Condições Comerciais': [
-        'Valor Total do Contrato',
-        'Desconto Aplicado (%)',
-        'Parcelamento',
+        'Valor do Contrato',
+        'Percentual de Desconto',
+        'Condições de Parcelamento',
         'Forma de Pagamento',
-        'Data do 1º Pagamento',
-        'Carência para 1ª Cobrança',
+        'Data do Primeiro Pagamento',
+        'Carência da Primeira Cobrança',
         'Detalhes da Carência'
       ],
       'Origem e Captação': [
-        'Como Chegou o Lead',
-        'É Venda Casada?',
-        'Foi Indicado?'
+        'Forma de Captação do Lead',
+        'Venda Casada',
+        'Indicação'
       ],
       'Observações': [
-        'Observações'
+        'Observações Gerais'
       ]
     };
 
