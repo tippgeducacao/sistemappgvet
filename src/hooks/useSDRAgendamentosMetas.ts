@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/AuthStore';
+import { useMetasSemanaisSDR } from '@/hooks/useMetasSemanaisSDR';
 
 interface AgendamentoComparativo {
   hoje: number;
@@ -26,6 +27,7 @@ export const useSDRAgendamentosMetas = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useAuthStore();
+  const { getMetaSemanalSDR, getSemanaAtual } = useMetasSemanaisSDR();
 
   const fetchComparativo = async () => {
     if (!profile?.id) return;
@@ -69,23 +71,20 @@ export const useSDRAgendamentosMetas = () => {
 
       if (errorOntem) throw errorOntem;
 
-      // Buscar o nível do perfil e depois a meta semanal do SDR
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('nivel')
-        .eq('id', profile.id)
-        .maybeSingle();
-
-      const nivel = profileData?.nivel || 'junior';
-
+      // Buscar meta usando a mesma lógica da tabela
+      const semanaAtual = getSemanaAtual();
+      const meta = getMetaSemanalSDR(profile.id, new Date().getFullYear(), semanaAtual);
+      
+      const metaSemanalCursos = meta?.meta_vendas_cursos || 0;
+      
+      // Para agendamentos, precisamos buscar a meta específica na tabela niveis_vendedores
       const { data: nivelData } = await supabase
         .from('niveis_vendedores')
-        .select('meta_vendas_cursos, meta_semanal_inbound, meta_semanal_outbound')
-        .eq('nivel', nivel)
+        .select('meta_semanal_inbound, meta_semanal_outbound')
+        .eq('nivel', (profile as any)?.nivel || 'junior')
         .eq('tipo_usuario', profile.user_type)
         .maybeSingle();
 
-      const metaSemanalCursos = nivelData?.meta_vendas_cursos || 0;
       const metaSemanalAgendamentos = profile.user_type === 'sdr_inbound' 
         ? (nivelData?.meta_semanal_inbound || 0)
         : (nivelData?.meta_semanal_outbound || 0);
