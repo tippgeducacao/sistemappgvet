@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, CheckCircle, XCircle, Users } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Users, Search } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
@@ -10,6 +10,7 @@ import PendentesTab from '@/components/vendas/PendentesTab';
 import MatriculadasTab from '@/components/vendas/MatriculadasTab';
 import RejeitadasTab from '@/components/vendas/RejeitadasTab';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 const SecretariaGerenciarVendas: React.FC = () => {
   const { 
@@ -18,18 +19,32 @@ const SecretariaGerenciarVendas: React.FC = () => {
     refetch
   } = useAllVendas();
   
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filtrar vendas por termo de pesquisa (nome ou email)
+  const vendasFiltradas = useMemo(() => {
+    if (!searchTerm.trim()) return vendas;
+    
+    const termLower = searchTerm.toLowerCase().trim();
+    return vendas.filter(venda => {
+      const nome = venda.aluno?.nome?.toLowerCase() || '';
+      const email = venda.aluno?.email?.toLowerCase() || '';
+      return nome.includes(termLower) || email.includes(termLower);
+    });
+  }, [vendas, searchTerm]);
+  
   // Filtrar vendas por status
-  const vendasPendentes = React.useMemo(() => {
-    return vendas.filter(v => v.status === 'pendente');
-  }, [vendas]);
+  const vendasPendentes = useMemo(() => {
+    return vendasFiltradas.filter(v => v.status === 'pendente');
+  }, [vendasFiltradas]);
 
-  const vendasMatriculadas = React.useMemo(() => {
-    return vendas.filter(v => v.status === 'matriculado');
-  }, [vendas]);
+  const vendasMatriculadas = useMemo(() => {
+    return vendasFiltradas.filter(v => v.status === 'matriculado');
+  }, [vendasFiltradas]);
 
-  const vendasRejeitadas = React.useMemo(() => {
-    return vendas.filter(v => v.status === 'desistiu');
-  }, [vendas]);
+  const vendasRejeitadas = useMemo(() => {
+    return vendasFiltradas.filter(v => v.status === 'desistiu');
+  }, [vendasFiltradas]);
 
   if (isLoading) {
     return (
@@ -53,12 +68,24 @@ const SecretariaGerenciarVendas: React.FC = () => {
         <p className="text-gray-600 mt-1">Gerencie todas as vendas do sistema em um só lugar</p>
       </div>
 
+      {/* Campo de pesquisa */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          type="text"
+          placeholder="Pesquisar por nome ou email do aluno..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       {/* Tabs de navegação */}
       <Tabs defaultValue="todas" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="todas" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Todas ({vendas.length})
+            Todas ({vendasFiltradas.length})
           </TabsTrigger>
           <TabsTrigger value="pendentes" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
@@ -80,7 +107,7 @@ const SecretariaGerenciarVendas: React.FC = () => {
             <CardContent className="p-6">
               <div className="text-center">
                 <p className="text-sm text-gray-600">Total</p>
-                <p className="text-3xl font-bold text-blue-600">{vendas.length}</p>
+                <p className="text-3xl font-bold text-blue-600">{vendasFiltradas.length}</p>
               </div>
             </CardContent>
           </Card>
@@ -115,7 +142,7 @@ const SecretariaGerenciarVendas: React.FC = () => {
 
         {/* Conteúdo das abas */}
         <TabsContent value="todas" className="mt-6">
-          <TodasVendasTab vendas={vendas} />
+          <TodasVendasTab vendas={vendasFiltradas} />
         </TabsContent>
 
         <TabsContent value="pendentes" className="mt-6">
