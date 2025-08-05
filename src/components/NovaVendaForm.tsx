@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormStore } from '@/store/FormStore';
 import { useAuthStore } from '@/stores/AuthStore';
 import { FormPersistenceService } from '@/services/form/FormPersistenceService';
+import { supabase } from '@/integrations/supabase/client';
 import { VendasDataService } from '@/services/vendas/VendasDataService';
 import { useFormDetails } from '@/hooks/useFormDetails';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
@@ -231,9 +232,37 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
       // Se a venda veio de uma reunião, marcar como "comprou"
       if (formData.agendamentoId && !editId) {
         console.log('🔄 Marcando reunião como comprou:', formData.agendamentoId);
+        console.log('👤 Usuário atual:', currentUser);
+        
         try {
-          await marcarReuniaoComoComprou(formData.agendamentoId);
-          console.log('✅ Reunião marcada como comprou com sucesso');
+          // Primeiro, verificar se o agendamento existe e se temos permissão
+          const { data: agendamentoData, error: fetchError } = await supabase
+            .from('agendamentos')
+            .select('id, vendedor_id, status, resultado_reuniao')
+            .eq('id', formData.agendamentoId)
+            .single();
+
+          if (fetchError) {
+            console.error('❌ Erro ao buscar agendamento:', fetchError);
+            throw fetchError;
+          }
+
+          console.log('📋 Agendamento encontrado:', agendamentoData);
+
+          // Verificar se o usuário tem permissão para atualizar
+          if (agendamentoData.vendedor_id !== currentUser.id) {
+            console.error('❌ Usuário não tem permissão para atualizar este agendamento');
+            throw new Error('Sem permissão para atualizar este agendamento');
+          }
+
+          // Agora tentar atualizar
+          const updateResult = await marcarReuniaoComoComprou(formData.agendamentoId);
+          
+          if (updateResult) {
+            console.log('✅ Reunião marcada como comprou com sucesso');
+          } else {
+            console.log('❌ Falha ao marcar reunião como comprou');
+          }
         } catch (error) {
           console.error('❌ Erro ao marcar reunião como comprou:', error);
           // Não falhar a venda por causa disso, apenas logar o erro
