@@ -38,86 +38,54 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
   };
   const formatFieldName = (fieldName: string) => {
     const fieldLabels: Record<string, string> = {
+      // Informações Básicas
       'Data de Chegada': 'Data de Chegada do Lead',
-      'dataChegada': 'Data de Chegada do Lead',
       'Nome do Aluno': 'Nome Completo',
-      'nomeAluno': 'Nome Completo',
       'Email do Aluno': 'Email',
-      'emailAluno': 'Email',
       'Telefone do Aluno': 'Telefone',
-      'telefone': 'Telefone',
-      'CRMV': 'Número do CRMV',
-      'crmv': 'Número do CRMV',
       'Formação do Aluno': 'Formação Acadêmica',
-      'formacaoAluno': 'Formação Acadêmica',
-      'Data de Matrícula': 'Data de Matrícula',
-      'dataMatricula': 'Data de Matrícula',
       'IES': 'Instituição de Ensino Superior',
-      'ies': 'Instituição de Ensino Superior',
       'Vendedor': 'Vendedor Responsável',
-      'vendedor': 'Vendedor Responsável',
+      
+      // Informações do Curso
       'Curso ID': 'Curso Selecionado',
-      'cursoId': 'Curso Selecionado',
+      'Modalidade do Curso': 'Modalidade do Curso',
       'Modalidade Selecionada': 'Modalidade do Curso',
-      'modalidadeCurso': 'Modalidade do Curso',
-      'modalidade': 'Modalidade do Curso',
       'Turma': 'Turma',
-      'turma': 'Turma', 
-      'turmaEscolhida': 'Turma',
-      'turma_escolhida': 'Turma',
       'Abertura': 'Abertura',
-      'abertura': 'Abertura',
-      'aberturaEscolhida': 'Abertura',
-      'abertura_escolhida': 'Abertura',
-      'Valor do Contrato': 'Valor Total do Contrato',
-      'valorContrato': 'Valor Total do Contrato',
-      'Percentual de Desconto': 'Desconto Aplicado (%)',
-      'percentualDesconto': 'Desconto Aplicado (%)',
-      'Data do Primeiro Pagamento': 'Data do 1º Pagamento',
-      'dataPrimeiroPagamento': 'Data do 1º Pagamento',
-      'Carência da Primeira Cobrança': 'Carência para 1ª Cobrança',
-      'carenciaPrimeiraCobranca': 'Carência para 1ª Cobrança',
-      'Detalhes da Carência': 'Detalhes da Carência',
-      'detalhesCarencia': 'Detalhes da Carência',
-      'Reembolso da Matrícula': 'Reembolso de Matrícula',
-      'reembolsoMatricula': 'Reembolso de Matrícula',
-      'Indicação': 'Foi Indicado?',
-      'indicacao': 'Foi Indicado?',
-      'Nome do Indicador': 'Nome de Quem Indicou',
-      'nomeIndicador': 'Nome de Quem Indicou',
       'Lote da Pós-Graduação': 'Lote da Pós',
-      'lotePos': 'Lote da Pós',
       'Matrícula': 'Tipo de Matrícula',
-      'matricula': 'Tipo de Matrícula',
+      'Data de Matrícula': 'Data de Matrícula',
+      'Reembolso da Matrícula': 'Reembolso de Matrícula',
+      
+      // Condições Comerciais
+      'Valor do Contrato': 'Valor Total do Contrato',
+      'Percentual de Desconto': 'Desconto Aplicado (%)',
       'Condições de Parcelamento': 'Parcelamento',
-      'parcelamento': 'Parcelamento',
       'Forma de Pagamento': 'Forma de Pagamento',
-      'pagamento': 'Forma de Pagamento',
+      'Data do Primeiro Pagamento': 'Data do 1º Pagamento',
+      'Carência da Primeira Cobrança': 'Carência para 1ª Cobrança',
+      'Detalhes da Carência': 'Detalhes da Carência',
+      
+      // Origem e Captação
       'Forma de Captação do Lead': 'Como Chegou o Lead',
-      'formaCaptacao': 'Como Chegou o Lead',
-      'Tipo de Venda': 'Tipo da Venda',
-      'tipoVenda': 'Tipo da Venda',
       'Venda Casada': 'É Venda Casada?',
-      'vendaCasada': 'É Venda Casada?',
-      'Detalhes da Venda Casada': 'Detalhes da Venda Casada',
-      'detalhesVendaCasada': 'Detalhes da Venda Casada',
-      'Observações Gerais': 'Observações',
-      'observacoes': 'Observações',
+      'Indicação': 'Foi Indicado?',
+      
+      // Observações
+      'Observações Gerais': 'Observações'
     };
     
     return fieldLabels[fieldName] || fieldName;
   };
 
   const groupRespostasByCategory = (respostas: RespostaFormulario[]) => {
-    console.log('📊 DEBUG - Todos os campos recebidos:', respostas.map(r => r.campo_nome));
-    
     const categories = {
       'Informações Básicas': [
         'Data de Chegada do Lead',
         'Nome Completo', 
         'Email',
         'Telefone',
-        'CRMV',
         'Formação Acadêmica',
         'Instituição de Ensino Superior',
         'Vendedor Responsável'
@@ -143,11 +111,8 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
       ],
       'Origem e Captação': [
         'Como Chegou o Lead',
-        'Tipo da Venda',
         'É Venda Casada?',
-        'Detalhes da Venda Casada',
-        'Foi Indicado?',
-        'Nome de Quem Indicou'
+        'Foi Indicado?'
       ],
       'Observações': [
         'Observações'
@@ -166,13 +131,10 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
       const formattedName = formatFieldName(resposta.campo_nome);
       let categorized = false;
       
-      console.log(`📊 DEBUG - Campo original: "${resposta.campo_nome}" -> Formatado: "${formattedName}"`);
-      
       Object.entries(categories).forEach(([category, expectedFields]) => {
         if (expectedFields.includes(formattedName)) {
           grouped[category].push(resposta);
           categorized = true;
-          console.log(`✅ Campo "${formattedName}" adicionado à categoria "${category}"`);
         }
       });
       
@@ -181,13 +143,7 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
           grouped['Outras Informações'] = [];
         }
         grouped['Outras Informações'].push(resposta);
-        console.log(`❌ Campo "${formattedName}" não categorizado - adicionado a "Outras Informações"`);
       }
-    });
-
-    console.log('📊 Resultado final do agrupamento:');
-    Object.entries(grouped).forEach(([cat, items]) => {
-      console.log(`  ${cat}: ${items.length} campos - ${items.map(i => formatFieldName(i.campo_nome)).join(', ')}`);
     });
     
     return grouped;
