@@ -3,13 +3,36 @@ import React from 'react';
 import { useFormProgress } from '@/hooks/useFormProgress';
 import { ScoringCalculationService } from '@/services/scoring/ScoringCalculationService';
 import { useFormStore } from '@/store/FormStore';
+import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
 
 const FormProgressBar: React.FC = () => {
   const { totalPoints, isLoading } = useFormProgress();
   const { formData } = useFormStore();
-  const basePoints = ScoringCalculationService.getBasePoints(formData.modalidadeCurso);
+  const { user } = useAuth();
 
-  if (isLoading) {
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('id', user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id
+  });
+
+  const { data: basePoints = 0 } = useQuery({
+    queryKey: ['base-points', formData.modalidadeCurso, userProfile?.user_type],
+    queryFn: () => ScoringCalculationService.getBasePoints(formData.modalidadeCurso, userProfile?.user_type),
+    enabled: !!userProfile
+  });
+
+  if (isLoading || !userProfile) {
     return (
       <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4">

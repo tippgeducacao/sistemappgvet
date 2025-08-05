@@ -13,7 +13,7 @@ export class ScoringService {
       console.log(`🔢 Recalculando pontuação para venda ${entry.id} (valor atual: ${pontuacaoEsperada})`);
       
       if (vendaRespostas.length > 0 && rules.length > 0) {
-        pontuacaoEsperada = ScoringCalculationService.calculatePointsFromResponses(vendaRespostas, rules);
+        pontuacaoEsperada = await ScoringCalculationService.calculatePointsFromResponses(vendaRespostas, rules, entry.vendedor_id);
         
         if (!isFinite(pontuacaoEsperada) || isNaN(pontuacaoEsperada)) {
           console.warn(`⚠️ Pontuação inválida calculada para venda ${entry.id}, definindo como 0`);

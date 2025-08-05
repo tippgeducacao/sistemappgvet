@@ -1,5 +1,6 @@
 
 import { FormData } from '@/store/FormStore';
+import { supabase } from '@/integrations/supabase/client';
 
 export class ScoringCalculationService {
   // Mapeamento entre campos do formulário e nomes nas regras de pontuação
@@ -14,7 +15,7 @@ export class ScoringCalculationService {
     vendaCasada: 'Venda Casada'
   };
 
-  static calculateTotalPoints(formData: FormData, rules: any[]): number {
+  static async calculateTotalPoints(formData: FormData, rules: any[], userType?: string): Promise<number> {
     console.log('🔢 Calculando pontuação total do formulário');
     console.log('📋 Dados do formulário:', formData);
     console.log('📊 Regras disponíveis:', rules.length);
@@ -23,8 +24,8 @@ export class ScoringCalculationService {
     const modalidadeCurso = formData.modalidadeCurso;
     const isCurso = modalidadeCurso === 'Curso';
     
-    let totalPoints = this.getBasePoints(modalidadeCurso);
-    console.log(`🎯 Pontos base: ${totalPoints} (modalidadeCurso: ${modalidadeCurso})`);
+    let totalPoints = await this.getBasePoints(modalidadeCurso, userType);
+    console.log(`🎯 Pontos base: ${totalPoints} (modalidadeCurso: ${modalidadeCurso}, userType: ${userType})`);
 
     // Se modalidade é "Curso", não aplicar regras de pontuação
     if (isCurso) {
@@ -50,12 +51,36 @@ export class ScoringCalculationService {
     return totalPoints;
   }
 
-  static getBasePoints(modalidadeCurso?: string): number {
-    // Se modalidade é "Curso", retorna 0,2; caso contrário, retorna 1
-    return modalidadeCurso === 'Curso' ? 0.2 : 1;
+  static async getBasePoints(modalidadeCurso?: string, userType?: string): Promise<number> {
+    // Se modalidade é "Curso"
+    if (modalidadeCurso === 'Curso') {
+      // Se não foi passado userType, buscar do usuário atual
+      if (!userType) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('user_type')
+              .eq('id', user.id)
+              .single();
+            userType = profile?.user_type;
+          }
+        } catch (error) {
+          console.warn('Erro ao buscar tipo de usuário:', error);
+        }
+      }
+      
+      // SDRs recebem 1 ponto por curso, vendedores recebem 0.2
+      const isSDR = userType === 'sdr_inbound' || userType === 'sdr_outbound';
+      return isSDR ? 1 : 0.2;
+    }
+    
+    // Para pós-graduação, retorna 1 ponto independente do tipo de usuário
+    return 1;
   }
 
-  static calculatePointsFromResponses(vendaRespostas: any[], rules: any[]): number {
+  static async calculatePointsFromResponses(vendaRespostas: any[], rules: any[], vendedorId?: string): Promise<number> {
     console.log('🔢 Calculando pontos das respostas...');
     console.log('📝 Respostas recebidas:', vendaRespostas.length);
     console.log('📊 Regras disponíveis:', rules.length);
@@ -67,8 +92,23 @@ export class ScoringCalculationService {
     const modalidadeCurso = modalidadeResposta?.valor_informado;
     const isCurso = modalidadeCurso === 'Curso';
 
-    let totalPoints = this.getBasePoints(modalidadeCurso);
-    console.log(`🎯 Pontos base: ${totalPoints} (modalidadeCurso: ${modalidadeCurso})`);
+    // Buscar tipo de usuário se vendedorId foi fornecido
+    let userType: string | undefined;
+    if (vendedorId) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('id', vendedorId)
+          .single();
+        userType = profile?.user_type;
+      } catch (error) {
+        console.warn('Erro ao buscar tipo de usuário do vendedor:', error);
+      }
+    }
+
+    let totalPoints = await this.getBasePoints(modalidadeCurso, userType);
+    console.log(`🎯 Pontos base: ${totalPoints} (modalidadeCurso: ${modalidadeCurso}, userType: ${userType})`);
 
     // Se modalidade é "Curso", não aplicar regras de pontuação
     if (isCurso) {

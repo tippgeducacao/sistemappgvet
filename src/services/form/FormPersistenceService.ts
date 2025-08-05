@@ -146,7 +146,7 @@ export class FormPersistenceService {
       console.log(`📊 ${rules.length} regras carregadas`);
       
       // Calcular pontuação
-      const pontuacao = ScoringCalculationService.calculateTotalPoints(formData, rules);
+      const pontuacao = await ScoringCalculationService.calculateTotalPoints(formData, rules);
       
       // Garantir que a pontuação seja um número válido
       if (!isFinite(pontuacao) || isNaN(pontuacao)) {
