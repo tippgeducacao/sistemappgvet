@@ -119,30 +119,44 @@ export const useAgendamentos = () => {
     observacoes?: string
   ) => {
     try {
+      console.log('🔄 Iniciando atualização do resultado da reunião:', {
+        agendamentoId,
+        resultado,
+        observacoes,
+        userId: profile?.id,
+        userEmail: profile?.email
+      });
+
       // Usar status 'finalizado' para qualquer resultado marcado pelo vendedor
       const novoStatus = 'finalizado';
 
-      const { error } = await supabase
+      const updateData = {
+        resultado_reuniao: resultado,
+        data_resultado: new Date().toISOString(),
+        observacoes_resultado: observacoes || null,
+        status: novoStatus
+      };
+
+      console.log('📝 Dados para atualização:', updateData);
+
+      const { data, error } = await supabase
         .from('agendamentos')
-        .update({
-          resultado_reuniao: resultado,
-          data_resultado: new Date().toISOString(),
-          observacoes_resultado: observacoes || null,
-          status: novoStatus
-        })
-        .eq('id', agendamentoId);
+        .update(updateData)
+        .eq('id', agendamentoId)
+        .select(); // Adicionar select para ver o que foi atualizado
 
       if (error) {
-        console.error('Erro ao atualizar resultado:', error);
+        console.error('❌ Erro ao atualizar resultado:', error);
         toast.error('Erro ao atualizar resultado da reunião');
         return false;
       }
 
+      console.log('✅ Resultado atualizado com sucesso:', data);
       toast.success('Resultado da reunião atualizado com sucesso!');
       await fetchAgendamentos(); // Recarregar lista
       return true;
     } catch (error) {
-      console.error('Erro ao atualizar resultado:', error);
+      console.error('❌ Erro ao atualizar resultado (catch):', error);
       toast.error('Erro ao atualizar resultado da reunião');
       return false;
     }
