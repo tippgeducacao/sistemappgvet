@@ -70,16 +70,25 @@ export const useMetasSemanaisSDR = () => {
     console.log('🔍 Buscando meta de cursos para nível:', nivel);
     console.log('📊 Níveis disponíveis:', niveis);
     
-    const nivelConfig = niveis.find(n => n.nivel === nivel);
+    // Primeiro tentar buscar sem o prefixo
+    let nivelConfig = niveis.find(n => n.nivel === nivel);
+    
+    // Se não encontrar, tentar com o nível base (sem sdr_inbound_ ou sdr_outbound_)
+    if (!nivelConfig) {
+      const nivelBase = nivel.replace('sdr_inbound_', '').replace('sdr_outbound_', '');
+      nivelConfig = niveis.find(n => n.nivel === nivelBase);
+      console.log('⚙️ Tentando buscar nível base:', nivelBase, 'resultado:', nivelConfig);
+    }
+    
     console.log('⚙️ Configuração do nível encontrada:', nivelConfig);
     
     if (!nivelConfig) {
       console.log('❌ Nível não encontrado:', nivel);
-      return 0;
+      return 8; // Meta padrão se não encontrar
     }
     
     // Para SDRs, sempre usar meta_vendas_cursos
-    const meta = nivelConfig.meta_vendas_cursos || 0;
+    const meta = nivelConfig.meta_vendas_cursos || 8;
     console.log('📈 Meta de vendas de cursos encontrada:', meta);
     
     return meta;

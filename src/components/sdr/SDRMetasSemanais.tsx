@@ -7,6 +7,9 @@ import { useMetasSemanaisSDR } from '@/hooks/useMetasSemanaisSDR';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useVendas } from '@/hooks/useVendas';
 import { useComissionamento } from '@/hooks/useComissionamento';
+import { useSDRAgendamentosSemanaCompleto } from '@/hooks/useSDRAgendamentosSemanaCompleto';
+import { supabase } from '@/integrations/supabase/client';
+import AgendamentosRow from './AgendamentosRow';
 import { Calendar } from 'lucide-react';
 
 export const SDRMetasSemanais = () => {
@@ -27,6 +30,7 @@ export const SDRMetasSemanais = () => {
   
   const { vendas } = useVendas(); // Mudança: agora usar vendas ao invés de agendamentos
   const { calcularComissao } = useComissionamento();
+  const { fetchAgendamentosSemanaCompleto } = useSDRAgendamentosSemanaCompleto();
 
   if (!profile) return null;
 
@@ -47,6 +51,50 @@ export const SDRMetasSemanais = () => {
       const dataVenda = new Date(venda.enviado_em);
       return dataVenda >= startDate && dataVenda <= endDate;
     }) || [];
+  };
+
+  const getAgendamentosNaSemana = async (semana: number) => {
+    const startDate = getDataInicioSemana(selectedYear, selectedMonth, semana);
+    const endDate = getDataFimSemana(selectedYear, selectedMonth, semana);
+    
+    if (!profile?.id) return { realizados: 0, meta: 0, percentual: 0 };
+
+    try {
+      // Buscar agendamentos da semana que tiveram resultado positivo
+      const { data: agendamentos, error } = await supabase
+        .from('agendamentos')
+        .select('*')
+        .eq('sdr_id', profile.id)
+        .gte('data_agendamento', startDate.toISOString())
+        .lte('data_agendamento', endDate.toISOString())
+        .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
+
+      if (error) throw error;
+
+      // Buscar meta de agendamentos
+      const { data: nivelData } = await supabase
+        .from('niveis_vendedores')
+        .select('meta_semanal_inbound, meta_semanal_outbound')
+        .eq('nivel', (profile as any)?.nivel || 'junior')
+        .eq('tipo_usuario', profile.user_type)
+        .maybeSingle();
+
+      const metaAgendamentos = profile.user_type === 'sdr_inbound' 
+        ? (nivelData?.meta_semanal_inbound || 5)
+        : (nivelData?.meta_semanal_outbound || 5);
+
+      const realizados = agendamentos?.length || 0;
+      const percentual = metaAgendamentos > 0 ? (realizados / metaAgendamentos) * 100 : 0;
+
+      return {
+        realizados,
+        meta: metaAgendamentos,
+        percentual: Math.round(percentual)
+      };
+    } catch (error) {
+      console.error('Erro ao buscar agendamentos:', error);
+      return { realizados: 0, meta: 5, percentual: 0 };
+    }
   };
 
   const formatPeriodo = (semana: number) => {
@@ -151,7 +199,10 @@ export const SDRMetasSemanais = () => {
                 <th className="text-left p-3 font-medium text-muted-foreground">Período</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Meta Cursos</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Cursos Vendidos</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">%</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">% Cursos</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Meta Agendamentos</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Agendamentos</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">% Agendamentos</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
               </tr>
             </thead>
@@ -160,41 +211,22 @@ export const SDRMetasSemanais = () => {
                 const meta = getMetaSemanalSDR(profile.id, selectedYear, semana);
                 const vendasNaSemana = getVendasNaSemana(semana);
                 const realizado = vendasNaSemana.length;
-                const metaValue = meta?.meta_vendas_cursos || 0;
+                const metaValue = meta?.meta_vendas_cursos || 8; // Meta padrão de 8 cursos
                 const percentual = metaValue > 0 ? (realizado / metaValue) * 100 : 0;
                 const isAtual = isCurrentWeek(semana);
 
                 return (
-                  <tr 
-                    key={semana} 
-                    className={`border-b hover:bg-muted/50 ${isAtual ? 'bg-blue-50 dark:bg-blue-950/20' : ''} ${percentual < 71 && percentual > 0 ? 'bg-red-50 dark:bg-red-950/20' : ''}`}
-                  >
-                    <td className="p-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{semana}</span>
-                        {isAtual && <Badge variant="secondary" className="text-xs">Atual</Badge>}
-                      </div>
-                    </td>
-                    <td className="p-3 text-sm text-muted-foreground">
-                      {formatPeriodo(semana)}
-                    </td>
-                    <td className="p-3">
-                      <Badge variant="outline" className="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-                        {metaValue}
-                      </Badge>
-                    </td>
-                    <td className="p-3">
-                      <span className="font-medium">{realizado}</span>
-                    </td>
-                    <td className="p-3">
-                      <span className={`font-medium ${percentual >= 100 ? 'text-emerald-600' : percentual >= 71 ? 'text-green-600' : 'text-red-600'}`}>
-                        {percentual.toFixed(0)}%
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      {getStatusBadge(percentual, isAtual)}
-                    </td>
-                  </tr>
+                  <AgendamentosRow 
+                    key={semana}
+                    semana={semana}
+                    formatPeriodo={formatPeriodo}
+                    isAtual={isAtual}
+                    percentual={percentual}
+                    metaValue={metaValue}
+                    realizado={realizado}
+                    getStatusBadge={getStatusBadge}
+                    getAgendamentosNaSemana={getAgendamentosNaSemana}
+                  />
                 );
               })}
             </tbody>
@@ -213,6 +245,9 @@ export const SDRMetasSemanais = () => {
                     {percentualTotal.toFixed(0)}%
                   </span>
                 </td>
+                <td className="p-3 font-bold">-</td>
+                <td className="p-3 font-bold">-</td>
+                <td className="p-3 font-bold">-</td>
                 <td className="p-3">-</td>
               </tr>
             </tfoot>
