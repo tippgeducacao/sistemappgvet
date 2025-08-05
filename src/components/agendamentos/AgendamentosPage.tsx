@@ -22,6 +22,7 @@ import AgendaGeral from './AgendaGeral';
 import AgendamentoErrorDiagnosis from './AgendamentoErrorDiagnosis';
 import MeusAgendamentosTab from './MeusAgendamentosTab';
 import TodosAgendamentosTab from './TodosAgendamentosTab';
+import AgendamentosFinalizadosTab from './AgendamentosFinalizadosTab';
 import { useOverdueAppointments } from '@/hooks/useOverdueAppointments';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
@@ -1656,6 +1657,10 @@ const AgendamentosPage: React.FC = () => {
             <Grid className="h-4 w-4" />
             Calendário
           </TabsTrigger>
+          <TabsTrigger value="finalizados" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Finalizados
+          </TabsTrigger>
           <TabsTrigger value="cancelados" className="flex items-center gap-2">
             <X className="h-4 w-4" />
             Cancelados
@@ -1677,6 +1682,16 @@ const AgendamentosPage: React.FC = () => {
             agendamentos={todosAgendamentosSDR}
             sdrs={sdrs}
             onEditarAgendamento={handleEditarAgendamentoDiretor}
+          />
+        </TabsContent>
+
+        <TabsContent value="finalizados">
+          <AgendamentosFinalizadosTab 
+            agendamentos={meusAgendamentosSDR}
+            onRefresh={() => {
+              recarregarMeusAgendamentos();
+              carregarDados();
+            }}
           />
         </TabsContent>
 
