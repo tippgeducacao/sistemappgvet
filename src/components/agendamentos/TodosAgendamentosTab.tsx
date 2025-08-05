@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Users, MapPin, Filter, Eye, Edit2 } from 'lucide-react';
+import { Calendar, Users, MapPin, Filter, Eye, Edit2, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
@@ -19,6 +20,7 @@ interface TodosAgendamentosTabProps {
 const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamentos, sdrs, onEditarAgendamento }) => {
   const [filtroSDR, setFiltroSDR] = useState<string>('todos');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [pesquisaLead, setPesquisaLead] = useState<string>('');
   const [selectedAgendamento, setSelectedAgendamento] = useState<AgendamentoSDR | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const { isDiretor } = useUserRoles();
@@ -27,6 +29,7 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
   const agendamentosFiltrados = agendamentos.filter(agendamento => {
     if (filtroSDR !== 'todos' && agendamento.sdr_id !== filtroSDR) return false;
     if (filtroStatus !== 'todos' && agendamento.status !== filtroStatus) return false;
+    if (pesquisaLead && !agendamento.lead?.nome?.toLowerCase().includes(pesquisaLead.toLowerCase())) return false;
     return true;
   });
 
@@ -72,7 +75,18 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
       </div>
 
       {/* Filtros */}
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-4 md:flex-row">
+        {/* Campo de pesquisa por lead */}
+        <div className="flex items-center gap-2 flex-1">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar por nome do lead..."
+            value={pesquisaLead}
+            onChange={(e) => setPesquisaLead(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
           <Select value={filtroSDR} onValueChange={setFiltroSDR}>
@@ -104,13 +118,14 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
           </SelectContent>
         </Select>
 
-        {(filtroSDR !== 'todos' || filtroStatus !== 'todos') && (
+        {(filtroSDR !== 'todos' || filtroStatus !== 'todos' || pesquisaLead) && (
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => {
               setFiltroSDR('todos');
               setFiltroStatus('todos');
+              setPesquisaLead('');
             }}
           >
             Limpar Filtros

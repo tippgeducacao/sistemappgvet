@@ -30,7 +30,7 @@ export const useAllAgendamentos = () => {
           )
         `)
         .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'cancelado'])
-        .order('data_agendamento', { ascending: false });
+        .order('updated_at', { ascending: false });
 
       if (error) {
         console.error('Erro ao buscar todos os agendamentos:', error);
