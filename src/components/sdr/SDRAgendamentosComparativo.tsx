@@ -74,34 +74,7 @@ const SDRAgendamentosComparativo: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      {/* Meta de Agendamentos Diária */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Meta de Agendamentos</CardTitle>
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold">{dados.hoje}</span>
-              <span className="text-sm text-muted-foreground">/ {dados.metaAgendamentos}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  dados.metaBatida ? 'bg-green-500' : 'bg-primary'
-                }`}
-                style={{ width: `${Math.min((dados.hoje / dados.metaAgendamentos) * 100, 100)}%` }}
-              />
-            </div>
-            <p className={`text-xs font-medium ${dados.metaBatida ? 'text-green-600' : 'text-red-600'}`}>
-              {dados.metaBatida ? '✅ Meta Batida!' : '❌ Abaixo da meta'}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Meta Semanal de Agendamentos */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -128,7 +101,7 @@ const SDRAgendamentosComparativo: React.FC = () => {
       {/* Comparativo de Agendamentos */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Agendamentos - Comparativo Diário</CardTitle>
+          <CardTitle className="text-sm font-medium">Comparativo Diário</CardTitle>
           {dados.diferenca >= 0 ? (
             <TrendingUp className="h-4 w-4 text-green-600" />
           ) : (

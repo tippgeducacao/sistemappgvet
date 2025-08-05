@@ -47,23 +47,25 @@ export const useSDRAgendamentosMetas = () => {
       const fimOntem = new Date(ontem);
       fimOntem.setHours(23, 59, 59, 999);
 
-      // Buscar agendamentos de hoje
+      // Buscar agendamentos de hoje que tiveram resultado positivo
       const { data: agendamentosHoje, error: errorHoje } = await supabase
         .from('agendamentos')
         .select('*')
         .eq('sdr_id', profile.id)
-        .gte('created_at', inicioHoje.toISOString())
-        .lte('created_at', fimHoje.toISOString());
+        .gte('data_agendamento', inicioHoje.toISOString())
+        .lte('data_agendamento', fimHoje.toISOString())
+        .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']); // Apenas comparecimentos válidos
 
       if (errorHoje) throw errorHoje;
 
-      // Buscar agendamentos de ontem
+      // Buscar agendamentos de ontem que tiveram resultado positivo
       const { data: agendamentosOntem, error: errorOntem } = await supabase
         .from('agendamentos')
         .select('*')
         .eq('sdr_id', profile.id)
-        .gte('created_at', inicioOntem.toISOString())
-        .lte('created_at', fimOntem.toISOString());
+        .gte('data_agendamento', inicioOntem.toISOString())
+        .lte('data_agendamento', fimOntem.toISOString())
+        .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']); // Apenas comparecimentos válidos
 
       if (errorOntem) throw errorOntem;
 
