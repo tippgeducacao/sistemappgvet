@@ -284,11 +284,17 @@ const GerenciarVendedores: React.FC = () => {
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {vendedor.nivel || 'Não definido'}
-                        </Badge>
-                      </TableCell>
+                       <TableCell>
+                         {vendedor.nivel ? (
+                           <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel)}>
+                             {NiveisService.getNivelLabel(vendedor.nivel)}
+                           </Badge>
+                         ) : (
+                           <Badge variant="outline" className="capitalize">
+                             Não definido
+                           </Badge>
+                         )}
+                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <Clock className="h-3 w-3 text-gray-500" />
@@ -484,11 +490,17 @@ const GerenciarVendedores: React.FC = () => {
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {vendedor.nivel || 'Não definido'}
-                        </Badge>
-                      </TableCell>
+                       <TableCell>
+                         {vendedor.nivel ? (
+                           <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel)}>
+                             {NiveisService.getNivelLabel(vendedor.nivel)}
+                           </Badge>
+                         ) : (
+                           <Badge variant="outline" className="capitalize">
+                             Não definido
+                           </Badge>
+                         )}
+                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <Clock className="h-3 w-3 text-gray-500" />
@@ -879,8 +891,8 @@ const UserCard: React.FC<UserCardProps> = ({
                  vendedor.user_type === 'sdr_outbound' ? 'SDR Outbound' : 'Vendedor'}
               </Badge>
               
-              {/* Badge de nível para vendedores */}
-              {vendedor.user_type === 'vendedor' && vendedor.nivel && (
+              {/* Badge de nível para vendedores e SDRs */}
+              {(vendedor.user_type === 'vendedor' || vendedor.user_type === 'sdr_inbound' || vendedor.user_type === 'sdr_outbound') && vendedor.nivel && (
                 <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel)}>
                   {NiveisService.getNivelLabel(vendedor.nivel)}
                 </Badge>
