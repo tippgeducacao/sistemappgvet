@@ -9,6 +9,7 @@ interface AgendamentoComparativo {
   percentual: number;
   meta: number;
   metaBatida: boolean;
+  metaSemanalCursos: number;
 }
 
 export const useSDRAgendamentosMetas = () => {
@@ -18,7 +19,8 @@ export const useSDRAgendamentosMetas = () => {
     diferenca: 0,
     percentual: 0,
     meta: 0,
-    metaBatida: false
+    metaBatida: false,
+    metaSemanalCursos: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useAuthStore();
@@ -74,16 +76,13 @@ export const useSDRAgendamentosMetas = () => {
 
       const { data: nivelData } = await supabase
         .from('niveis_vendedores')
-        .select('meta_semanal_inbound, meta_semanal_outbound')
+        .select('meta_vendas_cursos')
         .eq('nivel', nivel)
         .eq('tipo_usuario', profile.user_type)
         .single();
 
-      const metaSemanal = profile.user_type === 'sdr_inbound' 
-        ? (nivelData?.meta_semanal_inbound || 0)
-        : (nivelData?.meta_semanal_outbound || 0);
-      
-      const metaDiaria = Math.ceil(metaSemanal / 5); // Meta semanal dividida por 5 dias úteis
+      const metaSemanalCursos = nivelData?.meta_vendas_cursos || 0;
+      const metaDiaria = Math.ceil(metaSemanalCursos / 7); // Meta de cursos dividida por 7 dias
 
       const qtdHoje = agendamentosHoje?.length || 0;
       const qtdOntem = agendamentosOntem?.length || 0;
@@ -96,7 +95,8 @@ export const useSDRAgendamentosMetas = () => {
         diferenca,
         percentual: Math.round(percentual),
         meta: metaDiaria,
-        metaBatida: qtdHoje >= metaDiaria
+        metaBatida: qtdHoje >= metaDiaria,
+        metaSemanalCursos
       });
 
     } catch (error) {
