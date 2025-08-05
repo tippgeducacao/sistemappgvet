@@ -60,7 +60,7 @@ export const useAgendamentos = () => {
           )
         `)
         .eq('vendedor_id', profile.id)
-        .in('status', ['agendado', 'atrasado', 'realizado']) // Incluir todos os status relevantes
+        .in('status', ['agendado', 'atrasado', 'finalizado']) // Incluir todos os status relevantes
         .order('data_agendamento', { ascending: false });
 
       if (error) {
@@ -119,8 +119,8 @@ export const useAgendamentos = () => {
     observacoes?: string
   ) => {
     try {
-      // Usar status 'realizado' para qualquer resultado marcado
-      const novoStatus = 'realizado';
+      // Usar status 'finalizado' para qualquer resultado marcado pelo vendedor
+      const novoStatus = 'finalizado';
 
       const { error } = await supabase
         .from('agendamentos')
