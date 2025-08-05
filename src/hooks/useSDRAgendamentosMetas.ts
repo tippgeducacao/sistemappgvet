@@ -7,9 +7,10 @@ interface AgendamentoComparativo {
   ontem: number;
   diferenca: number;
   percentual: number;
-  meta: number;
+  metaAgendamentos: number;
   metaBatida: boolean;
   metaSemanalCursos: number;
+  metaSemanalAgendamentos: number;
 }
 
 export const useSDRAgendamentosMetas = () => {
@@ -18,9 +19,10 @@ export const useSDRAgendamentosMetas = () => {
     ontem: 0,
     diferenca: 0,
     percentual: 0,
-    meta: 0,
+    metaAgendamentos: 0,
     metaBatida: false,
-    metaSemanalCursos: 0
+    metaSemanalCursos: 0,
+    metaSemanalAgendamentos: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useAuthStore();
@@ -70,19 +72,23 @@ export const useSDRAgendamentosMetas = () => {
         .from('profiles')
         .select('nivel')
         .eq('id', profile.id)
-        .single();
+        .maybeSingle();
 
       const nivel = profileData?.nivel || 'junior';
 
       const { data: nivelData } = await supabase
         .from('niveis_vendedores')
-        .select('meta_vendas_cursos')
+        .select('meta_vendas_cursos, meta_semanal_inbound, meta_semanal_outbound')
         .eq('nivel', nivel)
         .eq('tipo_usuario', profile.user_type)
-        .single();
+        .maybeSingle();
 
       const metaSemanalCursos = nivelData?.meta_vendas_cursos || 0;
-      const metaDiaria = Math.ceil(metaSemanalCursos / 7); // Meta de cursos dividida por 7 dias
+      const metaSemanalAgendamentos = profile.user_type === 'sdr_inbound' 
+        ? (nivelData?.meta_semanal_inbound || 0)
+        : (nivelData?.meta_semanal_outbound || 0);
+      
+      const metaDiariaAgendamentos = Math.ceil(metaSemanalAgendamentos / 7);
 
       const qtdHoje = agendamentosHoje?.length || 0;
       const qtdOntem = agendamentosOntem?.length || 0;
@@ -94,9 +100,10 @@ export const useSDRAgendamentosMetas = () => {
         ontem: qtdOntem,
         diferenca,
         percentual: Math.round(percentual),
-        meta: metaDiaria,
-        metaBatida: qtdHoje >= metaDiaria,
-        metaSemanalCursos
+        metaAgendamentos: metaDiariaAgendamentos,
+        metaBatida: qtdHoje >= metaDiariaAgendamentos,
+        metaSemanalCursos,
+        metaSemanalAgendamentos
       });
 
     } catch (error) {
