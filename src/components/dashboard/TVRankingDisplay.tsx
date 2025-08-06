@@ -788,7 +788,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
           {/* SEÇÃO DOS SDRs - SEMPRE EMBAIXO E SEPARADA */}
           {sdrsOnly.length > 0 && (
             <div>
-              <h2 className="text-xl font-bold text-foreground mb-4 text-center">SDRs - Vendas de Cursos</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4 text-center">SDR</h2>
               <div className="grid grid-cols-5 gap-4">
                 {sdrsOnly.map((person, index) => (
                   <VendedorCard
