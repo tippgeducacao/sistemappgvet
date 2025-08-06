@@ -7,6 +7,7 @@ import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAllVendas } from '@/hooks/useVendas';
+import { useNiveis } from '@/hooks/useNiveis';
 import { Calendar, Target } from 'lucide-react';
 
 interface SDRMetasDiariasProps {
@@ -20,7 +21,7 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
 }) => {
   console.log('🚀 SDRMetasDiarias: Componente iniciado', { selectedMonth, selectedYear });
   
-  const { profile } = useAuthStore();
+  const { profile, currentUser } = useAuthStore();
   const { 
     getMetaSemanalSDR, 
     getSemanaAtual, 
@@ -29,6 +30,7 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
   const { agendamentos } = useAgendamentosSDR();
   const { metasSemanais, getSemanaAtual: getSemanaAtualVendedor } = useMetasSemanais();
   const { vendas } = useAllVendas();
+  const { niveis } = useNiveis();
   
   console.log('📊 SDRMetasDiarias: Dados do usuário', { 
     profile: { id: profile?.id, user_type: profile?.user_type }, 
@@ -141,41 +143,28 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
     const percentual71 = 71;
     const atingiu71Porcento = progressoSemanal >= percentual71;
 
+    // Calcular agendamentos da semana atual
+    const agendamentosRealizadosSemana = agendamentos?.filter(agendamento => {
+      const dataAgendamento = new Date(agendamento.data_agendamento);
+      const dentroDoPeriodo = dataAgendamento >= inicioSemana && dataAgendamento <= fimSemana;
+      const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                         agendamento.resultado_reuniao === 'comprou';
+      
+      return dentroDoPeriodo && compareceu;
+    })?.length || 0;
+
+    // Buscar meta de agendamentos baseada no nível do SDR
+    const nivel = (currentUser as any)?.nivel || (profile as any)?.nivel || 'junior';
+    const metaAgendamentos = profile?.user_type === 'sdr_inbound' ? 
+      (niveis.find(n => n.nivel === nivel)?.meta_semanal_inbound || 0) :
+      (niveis.find(n => n.nivel === nivel)?.meta_semanal_outbound || 0);
+    
+    const progressoAgendamentos = metaAgendamentos > 0 ? 
+      Math.min((agendamentosRealizadosSemana / metaAgendamentos) * 100, 100) : 0;
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Meta Diária SDR */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Meta Diária de Cursos
-              </div>
-              <Badge variant={metaBatidaHoje ? "default" : "secondary"}>
-                {metaBatidaHoje ? "Atingida" : "Em Progresso"}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Cursos Vendidos Hoje</span>
-              <span className="text-lg font-semibold">
-                {vendasCursosHojeCount} / {metaDiaria}
-              </span>
-            </div>
-            
-            <Progress 
-              value={progressoDiario} 
-              className="h-2"
-            />
-            
-            <div className="text-xs text-muted-foreground">
-              {Math.round(progressoDiario)}% da meta diária concluída
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Meta Semanal SDR */}
+        {/* Meta Semanal de Cursos SDR */}
         <Card className={!atingiu71Porcento ? "border-red-500 bg-red-50 dark:bg-red-950/20" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -204,16 +193,57 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
               className={`h-2 ${!atingiu71Porcento ? '[&>div]:bg-red-500' : ''}`}
             />
             
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">
-                {Math.round(progressoSemanal)}% da meta semanal concluída
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {Math.round(progressoSemanal)}% da meta semanal
+              </span>
+              <span className={`font-semibold ${progressoSemanal >= 100 ? 'text-green-600' : progressoSemanal >= 71 ? 'text-green-600' : 'text-red-600'}`}>
+                {Math.round(progressoSemanal)}%
+              </span>
+            </div>
+            
+            <div className={`text-xs font-medium ${atingiu71Porcento ? 'text-green-600' : 'text-red-600'}`}>
+              {atingiu71Porcento 
+                ? `✅ Acima de 71% - Comissão desbloqueada` 
+                : `❌ Abaixo de 71% - Comissão bloqueada (faltam ${Math.ceil((percentual71 * (metaSemanal?.meta_vendas_cursos || 0) / 100) - vendasCursosSemanaCount)} cursos)`
+              }
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Meta Semanal de Reuniões SDR */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Meta Semanal de Reuniões
               </div>
-              <div className={`text-xs font-medium ${atingiu71Porcento ? 'text-green-600' : 'text-red-600'}`}>
-                {atingiu71Porcento 
-                  ? `✅ Acima de 71% - Comissão desbloqueada` 
-                  : `❌ Abaixo de 71% - Comissão bloqueada (faltam ${Math.ceil((percentual71 * (metaSemanal?.meta_vendas_cursos || 0) / 100) - vendasCursosSemanaCount)} cursos)`
-                }
-              </div>
+              <Badge variant={agendamentosRealizadosSemana >= metaAgendamentos ? "default" : "secondary"}>
+                {agendamentosRealizadosSemana >= metaAgendamentos ? "Atingida" : "Em Progresso"}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Reuniões Realizadas Esta Semana</span>
+              <span className="text-lg font-semibold">
+                {agendamentosRealizadosSemana} / {metaAgendamentos}
+              </span>
+            </div>
+            
+            <Progress 
+              value={progressoAgendamentos} 
+              className="h-2"
+            />
+            
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {Math.round(progressoAgendamentos)}% da meta semanal
+              </span>
+              <span className={`font-semibold ${progressoAgendamentos >= 100 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                {Math.round(progressoAgendamentos)}%
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -287,39 +317,7 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
     const metaBatidaSemana = pontosSemana >= metaPontosSemanal;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Meta Diária Vendedor */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Meta Diária
-              </div>
-              <Badge variant={metaBatidaHoje ? "default" : "secondary"}>
-                {metaBatidaHoje ? "Atingida" : "Em Progresso"}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Pontos Hoje</span>
-              <span className="text-lg font-semibold">
-                {pontosHoje.toFixed(1)} / {metaPontosDiaria.toFixed(1)}
-              </span>
-            </div>
-            
-            <Progress 
-              value={progressoDiario} 
-              className="h-2"
-            />
-            
-            <div className="text-xs text-muted-foreground">
-              {Math.round(progressoDiario)}% da meta diária concluída
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 gap-6">
         {/* Meta Semanal Vendedor */}
         <Card>
           <CardHeader>
@@ -346,8 +344,13 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
               className="h-2"
             />
             
-            <div className="text-xs text-muted-foreground">
-              {Math.round(progressoSemanal)}% da meta semanal concluída
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {Math.round(progressoSemanal)}% da meta semanal concluída
+              </span>
+              <span className={`font-semibold ${progressoSemanal >= 100 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                {Math.round(progressoSemanal)}%
+              </span>
             </div>
           </CardContent>
         </Card>
