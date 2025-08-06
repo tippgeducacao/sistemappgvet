@@ -8,7 +8,92 @@ export interface VendedorConversionData {
   taxaConversao: number; // percentual de reuniões realizadas que resultaram em matrícula
 }
 
+export interface VendedorWeeklyConversionData {
+  vendedorId: string;
+  semana: number;
+  ano: number;
+  totalReunioes: number;
+  reunioesComComparecimento: number;
+  reunioesComVenda: number;
+  taxaComparecimento: number;
+  taxaConversao: number;
+}
+
 export class VendedorConversionService {
+  /**
+   * Calcula taxa de conversão semanal de um vendedor (quarta a terça)
+   */
+  static async calcularTaxaConversaoVendedorSemanal(vendedorId: string, ano: number, semana: number): Promise<VendedorWeeklyConversionData> {
+    // Calcular datas da semana (quarta a terça)
+    const startOfYear = new Date(ano, 0, 1);
+    let dataInicioSemana = new Date(startOfYear.getTime() + (semana - 1) * 7 * 24 * 60 * 60 * 1000);
+    
+    // Ajustar para começar na quarta-feira
+    while (dataInicioSemana.getDay() !== 3) { // 3 = quarta-feira
+      dataInicioSemana.setDate(dataInicioSemana.getDate() + 1);
+    }
+    
+    const dataFimSemana = new Date(dataInicioSemana);
+    dataFimSemana.setDate(dataFimSemana.getDate() + 6); // terça-feira
+    dataFimSemana.setHours(23, 59, 59, 999);
+
+    // Buscar agendamentos do vendedor na semana especificada
+    const { data: agendamentos, error: agendamentosError } = await supabase
+      .from('agendamentos')
+      .select(`
+        id,
+        vendedor_id,
+        data_agendamento,
+        resultado_reuniao,
+        status
+      `)
+      .eq('vendedor_id', vendedorId)
+      .gte('data_agendamento', dataInicioSemana.toISOString())
+      .lte('data_agendamento', dataFimSemana.toISOString());
+
+    if (agendamentosError) {
+      console.error('❌ Erro ao buscar agendamentos:', agendamentosError);
+      throw agendamentosError;
+    }
+
+    const totalReunioes = agendamentos?.length || 0;
+    
+    // Contar reuniões com comparecimento (que o vendedor atendeu)
+    const reunioesComComparecimento = agendamentos?.filter(ag => 
+      ag.resultado_reuniao && ['presente', 'compareceu', 'realizada'].includes(ag.resultado_reuniao.toLowerCase())
+    ).length || 0;
+
+    // Buscar vendas matriculadas do vendedor na mesma semana
+    const { data: vendas, error: vendasError } = await supabase
+      .from('form_entries')
+      .select('id, status, vendedor_id, created_at')
+      .eq('vendedor_id', vendedorId)
+      .gte('created_at', dataInicioSemana.toISOString())
+      .lte('created_at', dataFimSemana.toISOString())
+      .eq('status', 'matriculado');
+
+    if (vendasError) {
+      console.error('❌ Erro ao buscar vendas:', vendasError);
+      throw vendasError;
+    }
+
+    const reunioesComVenda = vendas?.length || 0;
+
+    const taxaComparecimento = totalReunioes > 0 ? (reunioesComComparecimento / totalReunioes) * 100 : 0;
+    const taxaConversao = reunioesComComparecimento > 0 ? (reunioesComVenda / reunioesComComparecimento) * 100 : 0;
+
+    return {
+      vendedorId,
+      semana,
+      ano,
+      totalReunioes,
+      reunioesComComparecimento,
+      reunioesComVenda,
+      taxaComparecimento,
+      taxaConversao
+    };
+  }
+
   /**
    * Calcula taxa de conversão de um vendedor para um período específico
    * Taxa = (Matrículas / Reuniões Realizadas) * 100

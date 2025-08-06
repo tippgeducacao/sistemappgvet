@@ -19,6 +19,7 @@ import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { useAvaliacaoSemanal } from '@/hooks/useAvaliacaoSemanal';
 import { useVendedoresWeeklyConversions } from '@/hooks/useVendedorConversion';
+import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
@@ -86,92 +87,12 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   const isLoading = vendasLoading || vendedoresLoading || metasLoading || niveisLoading;
 
-  // CÁLCULO DIRETO DE CONVERSÃO - SEM HOOK
-  const [conversionsData, setConversionsData] = useState<any[]>([]);
+  // Calcular conversões semanais atuais
+  const vendedorIds = vendedores.filter(v => v.user_type === 'vendedor').map(v => v.id);
+  const sdrIds = vendedores.filter(v => ['sdr_inbound', 'sdr_outbound'].includes(v.user_type)).map(v => v.id);
   
-  useEffect(() => {
-    const calcularConversoesDiretamente = async () => {
-      const vendedorIds = vendedores.filter(v => v.user_type === 'vendedor').map(v => v.id);
-      const startOfAllTime = new Date('2020-01-01');
-      const endOfAllTime = new Date();
-      
-      try {
-        const conversoes = await Promise.all(
-          vendedorIds.map(async (vendedorId) => {
-            // Buscar reuniões do vendedor
-            const { data: agendamentos } = await supabase
-              .from('agendamentos')
-              .select('*')
-              .eq('vendedor_id', vendedorId)
-              .gte('data_agendamento', startOfAllTime.toISOString())
-              .lte('data_agendamento', endOfAllTime.toISOString());
-
-            const totalReunioes = agendamentos?.length || 0;
-            // CORREÇÃO: Reuniões realizadas = apenas as que têm resultado marcado (não canceladas)
-            const reunioesRealizadas = agendamentos?.filter(ag => 
-              ag.resultado_reuniao !== null && 
-              ag.resultado_reuniao !== undefined &&
-              ag.resultado_reuniao.trim() !== '' &&
-              (ag.resultado_reuniao === 'nao_compareceu' ||
-               ag.resultado_reuniao === 'compareceu_nao_comprou' ||
-               ag.resultado_reuniao === 'comprou')
-            ).length || 0;
-
-            // Buscar vendas do vendedor
-            const { data: vendas } = await supabase
-              .from('form_entries')
-              .select('*')
-              .eq('vendedor_id', vendedorId)
-              .eq('status', 'matriculado')
-              .gte('created_at', startOfAllTime.toISOString())
-              .lte('created_at', endOfAllTime.toISOString());
-
-            const matriculas = vendas?.length || 0;
-            
-            // CORREÇÃO: Conversões = reuniões que resultaram em compra
-            const reunioesComVenda = agendamentos?.filter(ag => 
-              ag.resultado_reuniao === 'comprou'
-            ).length || 0;
-            
-            // AJUSTE: Taxa de conversão baseada em reuniões realizadas vs reuniões que geraram venda
-            let taxaConversao = 0;
-            if (reunioesRealizadas > 0) {
-              // Cálculo: reuniões que resultaram em compra / reuniões realizadas
-              taxaConversao = (reunioesComVenda / reunioesRealizadas) * 100;
-            } else if (matriculas > 0) {
-              // Se não há reuniões mas há vendas, considerar como vendas diretas (100% conversão)
-              taxaConversao = 100;
-            }
-
-            console.log(`📊 CONVERSÃO DIRETA ${vendedorId}:`, {
-              totalReunioes,
-              reunioesRealizadas, 
-              matriculas,
-              taxaConversao: `${taxaConversao.toFixed(1)}%`
-            });
-
-            return {
-              vendedorId,
-              totalReunioes,
-              reunioesRealizadas,
-              matriculas,
-              taxaConversao
-            };
-          })
-        );
-        
-        setConversionsData(conversoes);
-        console.log('✅ CONVERSÕES CALCULADAS:', conversoes.length);
-      } catch (error) {
-        console.error('❌ Erro no cálculo direto:', error);
-      }
-    };
-
-    if (vendedores.length > 0) {
-      calcularConversoesDiretamente();
-    }
-  }, [vendedores]);
-
+  const { data: vendedorConversions } = useCurrentWeekConversions(vendedorIds, 'vendedor');
+  const { data: sdrConversions } = useCurrentWeekConversions(sdrIds, 'sdr');
   // Filtrar vendedores - apenas vendedores ativos e remover "Vendedor teste" exceto para admin específico
   const vendedoresFiltrados = useMemo(() => {
     const userEmail = profile?.email || currentUser?.email;
@@ -394,20 +315,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const progressoSemanaAtual = getCurrentWeekProgress(vendedor.id);
     const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
     
-    // Buscar taxa de conversão em tempo real baseada em reuniões vs matrículas
-    const conversaoData = conversionsData?.find(c => c.vendedorId === vendedor.id);
+    // Buscar taxa de conversão semanal atual
+    const conversaoData = vendedorConversions?.find(c => 'vendedorId' in c && c.vendedorId === vendedor.id);
     const taxaConversao = conversaoData?.taxaConversao || 0;
-    
-    // Debug log para verificar dados de conversão
-    if (vendedor.name === 'Vendedor Teste') {
-      console.log('🐛 DEBUG CONVERSÃO Vendedor Teste:', {
-        vendedorId: vendedor.id,
-        conversionsData: conversionsData?.length || 0,
-        conversaoData,
-        taxaConversao,
-        allConversionsIds: conversionsData?.map(c => ({ id: c.vendedorId, taxa: c.taxaConversao })) || []
-      });
-    }
     
     // Calcular meta diária dinâmica baseada no progresso da semana atual
     const metaDiariaRestante = calculateDynamicDailyGoal(metaSemanal, progressoSemanaAtual.pontos);

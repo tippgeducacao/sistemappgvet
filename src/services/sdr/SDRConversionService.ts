@@ -9,7 +9,101 @@ export interface SDRConversionData {
   taxaConversao: number; // percentual de reuniões que resultaram em venda
 }
 
+export interface SDRWeeklyConversionData {
+  sdrId: string;
+  semana: number;
+  ano: number;
+  totalReunioes: number;
+  reunioesComComparecimento: number;
+  reunioesComVenda: number;
+  taxaComparecimento: number;
+  taxaConversao: number;
+}
+
 export class SDRConversionService {
+  /**
+   * Calcula taxa de conversão semanal de um SDR (quarta a terça)
+   */
+  static async calcularTaxaConversaoSDRSemanal(sdrId: string, ano: number, semana: number): Promise<SDRWeeklyConversionData> {
+    // Calcular datas da semana (quarta a terça)
+    const startOfYear = new Date(ano, 0, 1);
+    let dataInicioSemana = new Date(startOfYear.getTime() + (semana - 1) * 7 * 24 * 60 * 60 * 1000);
+    
+    // Ajustar para começar na quarta-feira
+    while (dataInicioSemana.getDay() !== 3) { // 3 = quarta-feira
+      dataInicioSemana.setDate(dataInicioSemana.getDate() + 1);
+    }
+    
+    const dataFimSemana = new Date(dataInicioSemana);
+    dataFimSemana.setDate(dataFimSemana.getDate() + 6); // terça-feira
+    dataFimSemana.setHours(23, 59, 59, 999);
+
+    // Buscar agendamentos do SDR na semana especificada
+    const { data: agendamentos, error: agendamentosError } = await supabase
+      .from('agendamentos')
+      .select(`
+        id,
+        sdr_id,
+        vendedor_id,
+        data_agendamento,
+        resultado_reuniao,
+        status
+      `)
+      .eq('sdr_id', sdrId)
+      .gte('data_agendamento', dataInicioSemana.toISOString())
+      .lte('data_agendamento', dataFimSemana.toISOString());
+
+    if (agendamentosError) {
+      console.error('❌ Erro ao buscar agendamentos:', agendamentosError);
+      throw agendamentosError;
+    }
+
+    const totalReunioes = agendamentos?.length || 0;
+    
+    // Contar reuniões com comparecimento
+    const reunioesComComparecimento = agendamentos?.filter(ag => 
+      ag.resultado_reuniao && ['presente', 'compareceu', 'realizada'].includes(ag.resultado_reuniao.toLowerCase())
+    ).length || 0;
+
+    // Para cada agendamento com comparecimento, verificar se houve venda pelo vendedor na mesma semana
+    let reunioesComVenda = 0;
+    
+    if (reunioesComComparecimento > 0) {
+      const agendamentosComComparecimento = agendamentos?.filter(ag => 
+        ag.resultado_reuniao && ['presente', 'compareceu', 'realizada'].includes(ag.resultado_reuniao.toLowerCase())
+      ) || [];
+
+      for (const agendamento of agendamentosComComparecimento) {
+        // Verificar se há venda do vendedor do agendamento na mesma semana
+        const { data: vendas, error: vendasError } = await supabase
+          .from('form_entries')
+          .select('id, status, vendedor_id, created_at')
+          .eq('vendedor_id', agendamento.vendedor_id)
+          .gte('created_at', dataInicioSemana.toISOString())
+          .lte('created_at', dataFimSemana.toISOString())
+          .eq('status', 'matriculado');
+
+        if (!vendasError && vendas && vendas.length > 0) {
+          reunioesComVenda++;
+        }
+      }
+    }
+
+    const taxaComparecimento = totalReunioes > 0 ? (reunioesComComparecimento / totalReunioes) * 100 : 0;
+    const taxaConversao = reunioesComComparecimento > 0 ? (reunioesComVenda / reunioesComComparecimento) * 100 : 0;
+
+    return {
+      sdrId,
+      semana,
+      ano,
+      totalReunioes,
+      reunioesComComparecimento,
+      reunioesComVenda,
+      taxaComparecimento,
+      taxaConversao
+    };
+  }
+
   /**
    * Calcula taxa de conversão de um SDR para um período específico
    */
