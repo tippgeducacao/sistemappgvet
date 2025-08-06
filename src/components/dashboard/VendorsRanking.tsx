@@ -793,7 +793,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       const nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
       
       // Buscar a meta correta baseada no nível do SDR (vendas de cursos)
-      const metaSemanal = nivelConfig?.meta_vendas_cursos || 8;
+      const metaSemanal = nivelConfig?.meta_vendas_cursos || 55;
       
       const metaMensal = metaSemanal * weeks.length;
       
