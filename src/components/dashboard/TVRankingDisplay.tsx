@@ -90,9 +90,13 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
   const comissaoBloqueada = isSDR && weeklyProgress < 71;
 
   const getTopThreeStyle = () => {
-    // Se for SDR com comissão bloqueada, usar borda vermelha
-    if (comissaoBloqueada) {
-      return 'bg-card border-red-500 border-2 shadow-lg text-foreground';
+    // Se for SDR, usar borda verde quando atingir 71% da meta, vermelha quando não
+    if (isSDR) {
+      if (weeklyProgress >= 71) {
+        return 'bg-card border-green-500 border-2 shadow-lg text-foreground';
+      } else {
+        return 'bg-card border-red-500 border-2 shadow-lg text-foreground';
+      }
     }
     
     if (!isTopThree) return 'bg-card border-border';
@@ -116,14 +120,6 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
       transition={{ delay: rank * 0.05 }}
       className={`relative border rounded-lg p-3 hover:shadow-md transition-shadow ${getTopThreeStyle()}`}
     >
-      {/* Badge para SDR com comissão bloqueada */}
-      {comissaoBloqueada && (
-        <div className="absolute top-1 right-1 z-10">
-          <div className="bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">
-            BLOQUEADO
-          </div>
-        </div>
-      )}
       
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
@@ -138,12 +134,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
           <div>
             <div className="text-sm font-medium text-foreground">{person.name}</div>
             <div className="text-xs text-muted-foreground">
-               {person.isSDR ? `${person.weeklySales} cursos` : `${person.points} pts`}
-               {comissaoBloqueada && (
-                 <div className="text-red-600 font-bold text-xs mt-1">
-                   {weeklyProgress.toFixed(0)}% - COMISSÃO BLOQUEADA
-                 </div>
-               )}
+               {person.isSDR ? '' : `${person.points} pts`}
             </div>
             <div className="flex items-center gap-1 mt-1">
               <div className={`w-1.5 h-1.5 rounded-full ${weeklyProgress >= 100 ? 'bg-green-500' : 'bg-red-500'}`}></div>
