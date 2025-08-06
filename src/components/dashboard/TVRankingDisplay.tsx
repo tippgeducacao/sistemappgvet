@@ -197,7 +197,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
                   {person.reunioesSemana}/{person.metaReunioesSemanais}
                 </span>
               </div>
-              <Progress value={Math.min(reunioesWeeklyProgress, 100)} className="h-2 bg-purple-100">
+              <Progress value={Math.min(reunioesWeeklyProgress, 100)} className="h-2 bg-muted/20">{/* Mudou de bg-purple-100 para bg-muted/20 */}
                 <div 
                   className="h-full bg-ppgvet-magenta transition-all duration-300 ease-in-out" 
                   style={{ width: `${Math.min(reunioesWeeklyProgress, 100)}%` }}
