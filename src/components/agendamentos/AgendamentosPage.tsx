@@ -604,8 +604,31 @@ const AgendamentosPage: React.FC = () => {
 
   // Função para criar agendamento forçado
   const handleCreateForceSchedule = async () => {
-    if (!forceScheduleData.vendedor_id || !forceScheduleData.lead_id) {
-      toast.error('Selecione um vendedor');
+    // Validação de campos obrigatórios
+    const camposObrigatorios = [];
+    
+    if (!forceScheduleData.vendedor_id) {
+      camposObrigatorios.push('Vendedor');
+    }
+    
+    if (!forceScheduleData.lead_id) {
+      camposObrigatorios.push('Lead');
+    }
+    
+    if (!forceScheduleData.data_agendamento) {
+      camposObrigatorios.push('Data e horário');
+    }
+    
+    if (!forceScheduleData.pos_graduacao_interesse) {
+      camposObrigatorios.push('Pós-graduação');
+    }
+    
+    if (!forceScheduleData.link_reuniao?.trim()) {
+      camposObrigatorios.push('Link da reunião');
+    }
+
+    if (camposObrigatorios.length > 0) {
+      toast.error(`Os seguintes campos são obrigatórios: ${camposObrigatorios.join(', ')}`);
       return;
     }
 
@@ -632,7 +655,13 @@ const AgendamentosPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Erro ao criar agendamento forçado:', error);
-      toast.error('Erro ao criar agendamento forçado');
+      
+      let errorMessage = 'Erro ao criar agendamento forçado';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
