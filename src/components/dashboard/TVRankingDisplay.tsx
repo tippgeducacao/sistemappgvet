@@ -11,6 +11,7 @@ import { useNiveis } from '@/hooks/useNiveis';
 import { useAuthStore } from '@/stores/AuthStore';
 import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
 
 interface VendedorData {
   id: string;
@@ -30,6 +31,8 @@ interface VendedorData {
   // Novos dados para vendedores - pontuação diária
   pontosOntem?: number;
   pontosHoje?: number;
+  // Taxa de conversão semanal
+  taxaConversaoSemanal?: number;
 }
 
 interface TVRankingDisplayProps {
@@ -141,6 +144,15 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
               <span className="text-xs text-muted-foreground">
                 {weeklyProgress.toFixed(0)}%
               </span>
+              {/* Bolinha da taxa de conversão para SDRs */}
+              {person.isSDR && person.taxaConversaoSemanal !== undefined && (
+                <>
+                  <div className={`w-1.5 h-1.5 rounded-full ml-2 ${person.taxaConversaoSemanal >= 50 ? 'bg-emerald-500' : person.taxaConversaoSemanal >= 30 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                  <span className="text-xs text-muted-foreground">
+                    {person.taxaConversaoSemanal.toFixed(1)}%
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -529,6 +541,28 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       const nivelConfig = niveis.find(n => n.nivel === sdrNivel && n.tipo_usuario === 'sdr');
       const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
       
+      // CALCULAR TAXA DE CONVERSÃO SEMANAL (quarta a terça)
+      // Para SDRs: quantas reuniões comparecidas foram convertidas em vendas pelo vendedor
+      const agendamentosComparecidos = allAgendamentos.filter(agendamento => {
+        const dataAgendamento = new Date(agendamento.data_agendamento);
+        const isDoSDR = agendamento.sdr_id === vendedor.id;
+        const dentroDaSemana = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
+        const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                           agendamento.resultado_reuniao === 'comprou';
+        return isDoSDR && dentroDaSemana && compareceu;
+      });
+
+      const agendamentosConvertidos = allAgendamentos.filter(agendamento => {
+        const dataAgendamento = new Date(agendamento.data_agendamento);
+        const isDoSDR = agendamento.sdr_id === vendedor.id;
+        const dentroDaSemana = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
+        const converteu = agendamento.resultado_reuniao === 'comprou';
+        return isDoSDR && dentroDaSemana && converteu;
+      });
+
+      const taxaConversaoSemanal = agendamentosComparecidos.length > 0 ? 
+        (agendamentosConvertidos.length / agendamentosComparecidos.length) * 100 : 0;
+      
       // Total de pontos = vendas diretas + reuniões realizadas
       const pontosSemanaTotais = vendasSDRSemana.length + agendamentosSDRSemana.length;
       const pontosMesTotais = vendasSDRMes.length + agendamentosSDRMes.length;
@@ -537,6 +571,9 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         sdrId: vendedor.id,
         vendasDiretas: { semana: vendasSDRSemana.length, mes: vendasSDRMes.length },
         reunioesRealizadas: { semana: agendamentosSDRSemana.length, mes: agendamentosSDRMes.length },
+        agendamentosComparecidos: agendamentosComparecidos.length,
+        agendamentosConvertidos: agendamentosConvertidos.length,
+        taxaConversaoSemanal: taxaConversaoSemanal.toFixed(1) + '%',
         pontosSemanaTotais,
         pontosMesTotais,
         metaVendasCursos
@@ -556,7 +593,9 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         reunioesDia: agendamentosSDRDia.length,
         reunioesMes: agendamentosSDRMes.length,
         metaReunioesSemanais: nivelConfig?.meta_semanal_vendedor || 55,
-        metaReunioesEnvioDiario: Math.ceil((nivelConfig?.meta_semanal_vendedor || 55) / 7)
+        metaReunioesEnvioDiario: Math.ceil((nivelConfig?.meta_semanal_vendedor || 55) / 7),
+        // Taxa de conversão semanal
+        taxaConversaoSemanal
       };
     } else {
       // Para vendedores - usar pontuação em vez de número de vendas
