@@ -581,6 +581,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       'Vendedor',
       'Nível',
       'Meta Semanal',
+      'Comissão Semanal',
       ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
       'Total Pontos',
       'Atingimento %',
@@ -610,6 +611,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         vendedor.nome,
         vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
         nivelConfig?.meta_semanal_vendedor || 6,
+        DataFormattingService.formatCurrency(nivelConfig?.variavel_semanal || 0),
         ...weeklyCommissionStrings,
         totalPoints,
         `${achievementPercentage.toFixed(1)}%`,
@@ -651,6 +653,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         'Tipo',
         'Nível',
         'Meta Semanal',
+        'Comissão Semanal',
         ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
         'Total Reuniões',
         'Atingimento %'
@@ -666,7 +669,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         const nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
         
         // Buscar a meta correta baseada no nível do SDR (vendas de cursos)
-        const metaSemanal = nivelConfig?.meta_vendas_cursos || 8;
+        const metaSemanal = nivelConfig?.meta_vendas_cursos || 55;
         const metaMensal = metaSemanal * weeks.length;
         
         // Calcular reuniões por semana
@@ -700,6 +703,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           sdrType === 'inbound' ? 'Inbound' : 'Outbound',
           sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
           metaSemanal,
+          DataFormattingService.formatCurrency(nivelConfig?.variavel_semanal || 0),
           ...weeklyMeetingsStrings,
           totalReunioes,
           `${achievementPercentage.toFixed(1)}%`
