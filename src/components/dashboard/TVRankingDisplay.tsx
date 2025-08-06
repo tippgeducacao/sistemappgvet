@@ -114,7 +114,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.05 }}
-      className={`border rounded-lg p-3 hover:shadow-md transition-shadow ${getTopThreeStyle()}`}
+      className={`relative border rounded-lg p-3 hover:shadow-md transition-shadow ${getTopThreeStyle()}`}
     >
       {/* Badge para SDR com comissão bloqueada */}
       {comissaoBloqueada && (
@@ -263,7 +263,12 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
   );
 };
 
-const TotalSalesCard: React.FC<{ weeklyTotal: number; monthlyTotal: number }> = ({ weeklyTotal, monthlyTotal }) => {
+const VendasReunioesSummaryCard: React.FC<{ 
+  vendasSemana: number; 
+  vendasMes: number; 
+  reunioesSemana: number; 
+  reunioesMes: number; 
+}> = ({ vendasSemana, vendasMes, reunioesSemana, reunioesMes }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -271,16 +276,33 @@ const TotalSalesCard: React.FC<{ weeklyTotal: number; monthlyTotal: number }> = 
       className="bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 border border-blue-400 dark:border-blue-300 rounded-lg p-4 shadow-xl text-white"
     >
       <div className="text-center">
-        <h3 className="text-lg font-bold mb-2">Pontos Totais</h3>
-        <div className="space-y-2">
-          <div>
-            <div className="text-sm opacity-90">Esta Semana</div>
-            <div className="text-2xl font-bold">{weeklyTotal.toFixed(1)}</div>
+        <h3 className="text-lg font-bold mb-3">Resumo Geral</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="text-sm opacity-90 font-medium">Vendas</div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-xs opacity-80">Semana:</span>
+                <span className="text-lg font-bold">{vendasSemana}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs opacity-80">Mês:</span>
+                <span className="text-lg font-bold">{vendasMes}</span>
+              </div>
+            </div>
           </div>
-          <div className="h-px bg-white/20"></div>
-          <div>
-            <div className="text-sm opacity-90">Este Mês</div>
-            <div className="text-2xl font-bold">{monthlyTotal.toFixed(1)}</div>
+          <div className="space-y-2">
+            <div className="text-sm opacity-90 font-medium">Reuniões</div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-xs opacity-80">Semana:</span>
+                <span className="text-lg font-bold">{reunioesSemana}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs opacity-80">Mês:</span>
+                <span className="text-lg font-bold">{reunioesMes}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -644,8 +666,41 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const topThreeVendedores = vendedoresOnly.slice(0, 3);
   const remainingVendedores = vendedoresOnly.slice(3);
 
-  const totalWeeklySales = vendedoresOnly.reduce((sum, person) => sum + person.weeklySales, 0);
-  const totalMonthlySales = vendedoresOnly.reduce((sum, person) => sum + person.monthlyTotal, 0);
+  // Calcular totais de vendas da semana e mês atual
+  const totalVendasSemana = vendas.filter(v => {
+    if (v.status !== 'matriculado') return false;
+    const dataVenda = v.data_aprovacao ? new Date(v.data_aprovacao) : new Date(v.enviado_em || v.atualizado_em);
+    return dataVenda >= startOfWeek && dataVenda <= endOfWeek;
+  }).length;
+  
+  // Mês atual
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+  
+  const totalVendasMes = vendas.filter(v => {
+    if (v.status !== 'matriculado') return false;
+    const dataVenda = v.data_aprovacao ? new Date(v.data_aprovacao) : new Date(v.enviado_em || v.atualizado_em);
+    return dataVenda >= startOfMonth && dataVenda <= endOfMonth;
+  }).length;
+
+  // Calcular reuniões realizadas (sem "não compareceu")
+  const totalReunioesSemana = allAgendamentos.filter(agendamento => {
+    const dataAgendamento = new Date(agendamento.data_agendamento);
+    const dentroDaSemana = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
+    const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                       agendamento.resultado_reuniao === 'comprou';
+    
+    return dentroDaSemana && compareceu;
+  }).length;
+
+  const totalReunioesMes = allAgendamentos.filter(agendamento => {
+    const dataAgendamento = new Date(agendamento.data_agendamento);
+    const dentroDoMes = dataAgendamento >= startOfMonth && dataAgendamento <= endOfMonth;
+    const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                       agendamento.resultado_reuniao === 'comprou';
+    
+    return dentroDoMes && compareceu;
+  }).length;
 
   if (!isOpen) return null;
 
@@ -712,11 +767,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
                 />
               ))}
               
-              {/* Card de pontos totais no lugar do 4º card */}
+              {/* Card de vendas e reuniões no lugar do 4º card */}
               <div className="col-span-2">
-                <TotalSalesCard 
-                  weeklyTotal={totalWeeklySales} 
-                  monthlyTotal={totalMonthlySales} 
+                <VendasReunioesSummaryCard 
+                  vendasSemana={totalVendasSemana}
+                  vendasMes={totalVendasMes}
+                  reunioesSemana={totalReunioesSemana}
+                  reunioesMes={totalReunioesMes}
                 />
               </div>
               
