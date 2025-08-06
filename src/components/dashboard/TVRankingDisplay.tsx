@@ -218,7 +218,12 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
                   {person.weeklySales.toFixed(1)}/{person.weeklyTarget} ({weeklyProgress.toFixed(0)}%)
                 </span>
               </div>
-              <Progress value={Math.min(weeklyProgress, 100)} className="h-1" />
+              <div className="h-1 bg-muted rounded-full">
+                <div 
+                  className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(weeklyProgress, 100)}%` }}
+                />
+              </div>
             </div>
             
             <div>
