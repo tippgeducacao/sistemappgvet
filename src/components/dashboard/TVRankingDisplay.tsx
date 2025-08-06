@@ -27,6 +27,9 @@ interface VendedorData {
   reunioesMes?: number;
   metaReunioesSemanais?: number;
   metaReunioesEnvioDiario?: number;
+  // Novos dados para vendedores - pontuação diária
+  pontosOntem?: number;
+  pontosHoje?: number;
 }
 
 interface TVRankingDisplayProps {
@@ -216,6 +219,42 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
                 </span>
               </div>
               <Progress value={Math.min(weeklyProgress, 100)} className="h-1" />
+            </div>
+            
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Calendar className="w-2 h-2" />
+                  Ontem
+                </div>
+                <span className="text-xs font-medium">
+                  {(person.pontosOntem || 0).toFixed(1)} pts
+                </span>
+              </div>
+              <div className="h-1 bg-muted rounded-full">
+                <div 
+                  className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(((person.pontosOntem || 0) / Math.max(person.weeklyTarget / 7, 1)) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Calendar className="w-2 h-2" />
+                  Hoje
+                </div>
+                <span className="text-xs font-medium">
+                  {(person.pontosHoje || 0).toFixed(1)} pts
+                </span>
+              </div>
+              <div className="h-1 bg-muted rounded-full">
+                <div 
+                  className="h-full bg-green-500 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(((person.pontosHoje || 0) / Math.max(person.weeklyTarget / 7, 1)) * 100, 100)}%` }}
+                />
+              </div>
             </div>
           </>
         )}
@@ -506,6 +545,36 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       const vendasVendedorSemana = vendasSemanaAtual.filter(v => v.vendedor_id === vendedor.id);
       const vendasVendedorMes = vendasMesAtual.filter(v => v.vendedor_id === vendedor.id);
       
+      // Calcular vendas de hoje
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const amanha = new Date(hoje);
+      amanha.setDate(amanha.getDate() + 1);
+      
+      const vendasVendedorHoje = vendas.filter(venda => {
+        if (venda.vendedor_id !== vendedor.id) return false;
+        if (venda.status !== 'matriculado') return false;
+        
+        const dataVenda = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
+        dataVenda.setHours(0, 0, 0, 0);
+        
+        return dataVenda.getTime() === hoje.getTime();
+      });
+      
+      // Calcular vendas de ontem
+      const ontem = new Date(hoje);
+      ontem.setDate(ontem.getDate() - 1);
+      
+      const vendasVendedorOntem = vendas.filter(venda => {
+        if (venda.vendedor_id !== vendedor.id) return false;
+        if (venda.status !== 'matriculado') return false;
+        
+        const dataVenda = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
+        dataVenda.setHours(0, 0, 0, 0);
+        
+        return dataVenda.getTime() === ontem.getTime();
+      });
+      
       // Buscar meta semanal baseada no nível do vendedor (da tabela niveis_vendedores)
       const vendedorNivel = vendedor.nivel || 'junior';
       const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
@@ -514,13 +583,19 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       // Calcular pontos obtidos usando a pontuação real das vendas (validada ou esperada)
       const pontosSemana = vendasVendedorSemana.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       const pontosMes = vendasVendedorMes.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+      const pontosHoje = vendasVendedorHoje.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+      const pontosOntem = vendasVendedorOntem.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       
       console.log(`💰 Vendedor ${vendedor.name}:`, {
         vendedorId: vendedor.id,
         vendasSemana: vendasVendedorSemana.length,
         vendasMes: vendasVendedorMes.length,
+        vendasHoje: vendasVendedorHoje.length,
+        vendasOntem: vendasVendedorOntem.length,
         pontosSemana,
         pontosMes,
+        pontosHoje,
+        pontosOntem,
         metaSemanal,
         vendasDetalhes: vendasVendedorSemana.map(v => ({
           id: v.id,
@@ -538,7 +613,9 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         avatar: vendedor.photo_url || '',
         points: pontosSemana, // Pontos para ordenação
         isSDR: false,
-        monthlyTotal: pontosMes // Pontos do mês, não número de vendas
+        monthlyTotal: pontosMes, // Pontos do mês, não número de vendas
+        pontosHoje: pontosHoje, // Pontos de hoje
+        pontosOntem: pontosOntem // Pontos de ontem
       };
     }
   });
