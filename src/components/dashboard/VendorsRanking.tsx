@@ -744,7 +744,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       const row: any = {
         'Vendedor': vendedor.nome,
         'Nível': vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
-        'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 6
+        'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 6,
+        'Comissão Semanal': DataFormattingService.formatCurrency(nivelConfig?.variavel_semanal || 0)
       };
       
       // Adicionar colunas das semanas com pontos, porcentagem, multiplicadores e valores
@@ -825,7 +826,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         'SDR': sdr.name,
         'Tipo': sdrType === 'inbound' ? 'Inbound' : 'Outbound',
         'Nível': sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
-        'Meta Semanal': metaSemanal
+        'Meta Semanal': metaSemanal,
+        'Comissão Semanal': DataFormattingService.formatCurrency(nivelConfig?.variavel_semanal || 0)
       };
       
       // Adicionar colunas das semanas com reuniões e porcentagem
