@@ -444,6 +444,22 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         const dentroDaSemana = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
         const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
                            agendamento.resultado_reuniao === 'comprou';
+        
+        // Debug para Regiane
+        if (vendedor.name === 'Regiane') {
+          console.log('🔍 DEBUG REGIANE - Agendamento:', {
+            id: agendamento.id,
+            data_agendamento: agendamento.data_agendamento,
+            resultado_reuniao: agendamento.resultado_reuniao,
+            status: agendamento.status,
+            isDoSDR,
+            dentroDaSemana,
+            compareceu,
+            startOfWeek: startOfWeek.toISOString(),
+            endOfWeek: endOfWeek.toISOString()
+          });
+        }
+        
         return isDoSDR && dentroDaSemana && compareceu;
       });
 
