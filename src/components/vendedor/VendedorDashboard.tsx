@@ -7,7 +7,7 @@ import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useVendas } from '@/hooks/useVendas';
 import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards';
 import VendedorMetas from '@/components/dashboard/VendedorMetas';
-import VendedorMetasDiarias from '@/components/dashboard/VendedorMetasDiarias';
+
 import SemanasConsecutivasCard from '@/components/dashboard/SemanasConsecutivasCard';
 import ReuniaoAtrasadaModal from '@/components/vendedor/ReuniaoAtrasadaModal';
 import { useReuniaoAtrasada } from '@/hooks/useReuniaoAtrasada';
@@ -104,12 +104,6 @@ const VendedorDashboard: React.FC = () => {
 
       {/* Semanas Consecutivas */}
       <SemanasConsecutivasCard vendedorId={profile?.id} />
-
-      {/* Metas Diárias */}
-      <VendedorMetasDiarias
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
-      />
 
       {/* Metas do Vendedor */}
       <VendedorMetas
