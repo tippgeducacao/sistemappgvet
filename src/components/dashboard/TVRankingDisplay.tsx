@@ -90,20 +90,20 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
   const comissaoBloqueada = isSDR && weeklyProgress < 71;
 
   const getTopThreeStyle = () => {
-    // Se for SDR com comissão bloqueada, sempre usar fundo vermelho
+    // Se for SDR com comissão bloqueada, usar borda vermelha
     if (comissaoBloqueada) {
-      return 'bg-red-500 border-red-400 shadow-xl shadow-red-500/50 text-white';
+      return 'bg-card border-red-500 border-2 shadow-lg text-foreground';
     }
     
     if (!isTopThree) return 'bg-card border-border';
     
     switch (rank) {
       case 1:
-        return 'bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 dark:from-yellow-600 dark:via-yellow-700 dark:to-yellow-800 border-yellow-500 dark:border-yellow-400 shadow-xl shadow-yellow-500/30';
+        return 'bg-card border-yellow-500 border-2 shadow-lg shadow-yellow-500/20';
       case 2:
-        return 'bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500 dark:from-gray-500 dark:via-gray-600 dark:to-gray-700 border-gray-400 dark:border-gray-300 shadow-xl shadow-gray-500/30';
+        return 'bg-card border-gray-400 border-2 shadow-lg shadow-gray-500/20';
       case 3:
-        return 'bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 dark:from-orange-600 dark:via-orange-700 dark:to-orange-800 border-orange-500 dark:border-orange-400 shadow-xl shadow-orange-500/30';
+        return 'bg-card border-orange-500 border-2 shadow-lg shadow-orange-500/20';
       default:
         return 'bg-card border-border';
     }
@@ -119,7 +119,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
       {/* Badge para SDR com comissão bloqueada */}
       {comissaoBloqueada && (
         <div className="absolute top-1 right-1 z-10">
-          <div className="bg-white text-red-600 px-1 py-0.5 rounded text-xs font-bold animate-pulse">
+          <div className="bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">
             BLOQUEADO
           </div>
         </div>
@@ -140,7 +140,7 @@ const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: 
             <div className="text-xs text-muted-foreground">
                {person.isSDR ? `${person.weeklySales} cursos` : `${person.points} pts`}
                {comissaoBloqueada && (
-                 <div className="text-white font-bold text-xs mt-1">
+                 <div className="text-red-600 font-bold text-xs mt-1">
                    {weeklyProgress.toFixed(0)}% - COMISSÃO BLOQUEADA
                  </div>
                )}
