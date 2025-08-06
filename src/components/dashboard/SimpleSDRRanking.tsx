@@ -291,6 +291,64 @@ const SimpleSDRRanking: React.FC = () => {
                       </p>
                     </div>
                   </div>
+
+                  {/* Pontuação Ontem e Hoje */}
+                  <div className="text-center min-w-[120px]">
+                    {(() => {
+                      // Calcular pontuação de ontem
+                      const ontem = new Date();
+                      ontem.setDate(ontem.getDate() - 1);
+                      const startOfYesterday = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate());
+                      const endOfYesterday = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate(), 23, 59, 59);
+                      
+                      const pontosOntem = vendas.filter(venda => {
+                        if (venda.vendedor_id !== sdr.id || venda.status !== 'matriculado') return false;
+                        const vendaDate = new Date(venda.enviado_em);
+                        return vendaDate >= startOfYesterday && vendaDate <= endOfYesterday;
+                      }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                      
+                      // Calcular pontuação de hoje
+                      const hoje = new Date();
+                      const startOfToday = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+                      const endOfToday = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59);
+                      
+                      const pontosHoje = vendas.filter(venda => {
+                        if (venda.vendedor_id !== sdr.id || venda.status !== 'matriculado') return false;
+                        const vendaDate = new Date(venda.enviado_em);
+                        return vendaDate >= startOfToday && vendaDate <= endOfToday;
+                      }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                      
+                      return (
+                        <div className="space-y-2">
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Ontem:</p>
+                            <div className="text-sm font-bold text-blue-600">{pontosOntem.toFixed(0)} pts</div>
+                            <div className="w-20 mx-auto">
+                              <div className="w-full bg-muted rounded-full h-2">
+                                <div 
+                                  className="bg-blue-500 h-2 rounded-full transition-all"
+                                  style={{ width: pontosOntem > 0 ? `${Math.min(pontosOntem * 10, 100)}%` : '2px' }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Hoje:</p>
+                            <div className="text-sm font-bold text-green-600">{pontosHoje.toFixed(0)} pts</div>
+                            <div className="w-20 mx-auto">
+                              <div className="w-full bg-muted rounded-full h-2">
+                                <div 
+                                  className="bg-green-500 h-2 rounded-full transition-all"
+                                  style={{ width: pontosHoje > 0 ? `${Math.min(pontosHoje * 10, 100)}%` : '2px' }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               );
             })}

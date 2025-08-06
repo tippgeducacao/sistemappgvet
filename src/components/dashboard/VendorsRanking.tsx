@@ -1013,23 +1013,63 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                            </p>
                          </div>
                         
-                        {/* Mini barras para o top 3 */}
-                        <div className="flex gap-2 mt-3">
-                          <div className="flex-1">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs font-medium text-muted-foreground">Meta Semana</span>
-                              <span className="text-xs text-muted-foreground">{DataFormattingService.formatPoints(vendedor.pontuacao)}/{vendedor.metaSemanal} pts</span>
-                            </div>
-                            <Progress value={Math.min(vendedor.progressoSemanal, 100)} className="h-1.5" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs font-medium text-muted-foreground">Meta Dia</span>
-                              <span className="text-xs text-muted-foreground">{DataFormattingService.formatPoints(vendedor.metaDiariaRestante)} pts/dia</span>
-                            </div>
-                            <Progress value={Math.min(vendedor.progressoDiario, 100)} className="h-1.5" />
-                          </div>
-                        </div>
+                         {/* Barrinhas Ontem e Hoje */}
+                         <div className="space-y-2 mt-3">
+                           {(() => {
+                             // Calcular pontuação de ontem
+                             const ontem = new Date();
+                             ontem.setDate(ontem.getDate() - 1);
+                             const startOfYesterday = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate());
+                             const endOfYesterday = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate(), 23, 59, 59);
+                             
+                             const pontosOntem = vendas.filter(venda => {
+                               if (venda.vendedor_id !== vendedor.id || venda.status !== 'matriculado') return false;
+                               const vendaDate = new Date(venda.enviado_em);
+                               return vendaDate >= startOfYesterday && vendaDate <= endOfYesterday;
+                             }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                             
+                             // Calcular pontuação de hoje
+                             const hoje = new Date();
+                             const startOfToday = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+                             const endOfToday = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59);
+                             
+                             const pontosHoje = vendas.filter(venda => {
+                               if (venda.vendedor_id !== vendedor.id || venda.status !== 'matriculado') return false;
+                               const vendaDate = new Date(venda.enviado_em);
+                               return vendaDate >= startOfToday && vendaDate <= endOfToday;
+                             }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                             
+                             return (
+                               <>
+                                 <div className="space-y-1">
+                                   <div className="flex justify-between items-center">
+                                     <span className="text-xs text-muted-foreground">Ontem:</span>
+                                     <span className="text-xs font-medium text-foreground">{pontosOntem.toFixed(0)} pts</span>
+                                   </div>
+                                   <div className="w-full bg-muted rounded-full h-2">
+                                     <div 
+                                       className="bg-blue-500 h-2 rounded-full transition-all"
+                                       style={{ width: pontosOntem > 0 ? `${Math.min((pontosOntem / vendedor.metaSemanal) * 100 * 7, 100)}%` : '2px' }}
+                                     />
+                                   </div>
+                                 </div>
+                                 
+                                 <div className="space-y-1">
+                                   <div className="flex justify-between items-center">
+                                     <span className="text-xs text-muted-foreground">Hoje:</span>
+                                     <span className="text-xs font-medium text-foreground">{pontosHoje.toFixed(0)} pts</span>
+                                   </div>
+                                   <div className="w-full bg-muted rounded-full h-2">
+                                     <div 
+                                       className="bg-green-500 h-2 rounded-full transition-all"
+                                       style={{ width: pontosHoje > 0 ? `${Math.min((pontosHoje / vendedor.metaSemanal) * 100 * 7, 100)}%` : '2px' }}
+                                     />
+                                   </div>
+                                 </div>
+                               </>
+                             );
+                           })()}
+                         </div>
                       </div>
                     );
                   })}
