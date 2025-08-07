@@ -98,6 +98,7 @@ const VendedorReunioes: React.FC = () => {
           <ReunioesPlanilha 
             agendamentos={agendamentos}
             onAtualizarResultado={atualizarResultadoReuniao}
+            onRefresh={() => window.location.reload()}
           />
         </TabsContent>
 

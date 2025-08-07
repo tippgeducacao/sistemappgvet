@@ -20,12 +20,14 @@ import { toast } from '@/hooks/use-toast';
 interface ReunioesPlanilhaProps {
   agendamentos: Agendamento[];
   onAtualizarResultado: (id: string, resultado: 'nao_compareceu' | 'compareceu_nao_comprou' | 'comprou', observacoes?: string) => Promise<boolean>;
+  onRefresh?: () => void;
 }
 
 
 const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   agendamentos,
-  onAtualizarResultado
+  onAtualizarResultado,
+  onRefresh
 }) => {
   const [dialogAberto, setDialogAberto] = useState(false);
   const [novaVendaAberto, setNovaVendaAberto] = useState(false);
@@ -209,8 +211,10 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       setRemarcarDialogAberto(false);
       setAgendamentoSelecionado(null);
       
-      // Recarregar dados (pode adicionar callback aqui se necessário)
-      window.location.reload();
+      // Recarregar dados usando callback se disponível
+      if (onRefresh) {
+        onRefresh();
+      }
       
     } catch (error) {
       console.error('Erro ao remarcar reunião:', error);
