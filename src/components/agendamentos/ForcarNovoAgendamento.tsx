@@ -31,6 +31,18 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
   const [vendedores, setVendedores] = useState<any[]>([]);
   const [conflitos, setConflitos] = useState<string[]>([]);
   
+  // Lead search state
+  const [searchType, setSearchType] = useState<'nome' | 'email' | 'whatsapp'>('nome');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filtered leads based on search
+  const filteredLeads = searchTerm 
+    ? leads.filter(lead => {
+        const searchValue = lead[searchType]?.toLowerCase() || '';
+        return searchValue.includes(searchTerm.toLowerCase());
+      })
+    : leads;
+  
   // New lead form state
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
   const [newLeadData, setNewLeadData] = useState({
@@ -199,6 +211,8 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
     setObservacoes('Agendamento forçado - ignora restrições de pós-graduação');
     setConflitos([]);
     setShowNewLeadForm(false);
+    setSearchType('nome');
+    setSearchTerm('');
     setNewLeadData({
       nome: '',
       email: '',
@@ -341,21 +355,58 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
             )}
             
             {!showNewLeadForm && (
-              <Select value={selectedLead} onValueChange={setSelectedLead}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um lead" />
-                </SelectTrigger>
-                <SelectContent>
-                  {leads.map((lead) => (
-                    <SelectItem key={lead.id} value={lead.id}>
-                      <div className="flex flex-col">
-                        <span>{lead.nome}</span>
-                        <span className="text-sm text-muted-foreground">{lead.email}</span>
+              <>
+                <div className="flex gap-2">
+                  <Select value={searchType} onValueChange={(value: 'nome' | 'email' | 'whatsapp') => setSearchType(value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nome">Nome</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Input
+                    placeholder={`Buscar por ${searchType}...`}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+
+                {/* Lista de leads com scroll - sempre visível se há leads */}
+                {filteredLeads.length > 0 && (
+                  <div className="border rounded-lg max-h-40 overflow-y-auto">
+                    {filteredLeads.map((lead) => (
+                      <div
+                        key={lead.id}
+                        className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${
+                          selectedLead === lead.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
+                        }`}
+                        onClick={() => setSelectedLead(lead.id)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{lead.nome}</p>
+                            {lead.email && <p className="text-xs text-muted-foreground">{lead.email}</p>}
+                            {lead.whatsapp && <p className="text-xs text-muted-foreground">{lead.whatsapp}</p>}
+                          </div>
+                        </div>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    ))}
+                  </div>
+                )}
+
+                {/* Mensagem quando não há leads */}
+                {filteredLeads.length === 0 && searchTerm && (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <p>Nenhum lead encontrado para "{searchTerm}"</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
