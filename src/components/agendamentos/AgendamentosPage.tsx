@@ -139,9 +139,9 @@ const AgendamentosPage: React.FC = () => {
   // Estado para SDRs
   const [sdrs, setSdrs] = useState<any[]>([]);
 
-  // Hook para verificar se é diretor
+  // Hook para verificar se é SDR
   const { user } = useAuth();
-  const [isDiretor, setIsDiretor] = useState(false);
+  const [isSDR, setIsSDR] = useState(false);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -153,7 +153,7 @@ const AgendamentosPage: React.FC = () => {
           .single();
         
         if (!error && data) {
-          setIsDiretor(data.user_type === 'diretor');
+          setIsSDR(['sdr_inbound', 'sdr_outbound'].includes(data.user_type));
         }
       }
     };
@@ -925,14 +925,16 @@ const AgendamentosPage: React.FC = () => {
             <Plus className="h-4 w-4" />
             Novo Agendamento
           </Button>
-          <Button 
-            onClick={() => setShowForcarAgendamento(true)} 
-            variant="outline"
-            className="flex items-center gap-2 border-orange-200 text-orange-700 hover:bg-orange-50"
-          >
-            <Plus className="h-4 w-4" />
-            Forçar Novo Agendamento
-          </Button>
+          {isSDR && (
+            <Button 
+              onClick={() => setShowForcarAgendamento(true)} 
+              variant="outline"
+              className="flex items-center gap-2 border-orange-200 text-orange-700 hover:bg-orange-50"
+            >
+              <Plus className="h-4 w-4" />
+              Forçar Novo Agendamento
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1810,7 +1812,7 @@ const AgendamentosPage: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             {getStatusBadge(agendamento.status)}
-                            {isDiretor && (
+                            {isSDR && (
                               <Button
                                 variant="outline"
                                 size="sm"
