@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List, Edit, Edit2, X, FileSpreadsheet } from 'lucide-react';
+import { Calendar, Plus, User, Clock, MapPin, Phone, CheckCircle, Mail, Eye, Grid, List, Edit, Edit2, X, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
 import { VendedorConversionService } from '@/services/vendedor/VendedorConversionService';
@@ -913,6 +913,14 @@ const AgendamentosPage: React.FC = () => {
           <p className="text-muted-foreground">Gerencie Reuniões entre SDRs, leads e vendedores</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            onClick={() => window.location.reload()} 
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </Button>
           <Button 
             variant="outline" 
             onClick={() => setShowAgendaGeral(true)} 
