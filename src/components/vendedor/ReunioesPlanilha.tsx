@@ -61,7 +61,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     }
     
     // Não criar status "pendente" visual - usar apenas status válidos do banco
-    const statusValidos = ['agendado', 'atrasado', 'cancelado', 'realizado', 'reagendado'];
+    const statusValidos = ['agendado', 'atrasado', 'cancelado', 'realizado', 'reagendado', 'remarcado'];
     const status = agendamento.status?.toLowerCase().trim();
     
     if (!status || !statusValidos.includes(status)) {
@@ -80,6 +80,8 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
         return <Badge variant="secondary">Realizado</Badge>;
       case 'reagendado':
         return <Badge variant="outline">Reagendado</Badge>;
+      case 'remarcado':
+        return <Badge variant="secondary">Remarcado</Badge>;
       default:
         return <Badge variant="outline">Agendado</Badge>;
   };
@@ -193,7 +195,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
         .update({
           data_agendamento: novaDataAgendamento.toISOString(),
           data_fim_agendamento: novaDataFim?.toISOString() || null,
-          status: 'reagendado'
+          status: 'remarcado'
         })
         .eq('id', agendamentoSelecionado.id);
 
