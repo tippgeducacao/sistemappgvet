@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertTriangle, Clock, User, Calendar } from 'lucide-react';
+import { AlertTriangle, Clock, User, Calendar, Plus, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
+import { useCreateLead } from '@/hooks/useCreateLead';
 import { toast } from 'sonner';
 
 interface ForcarNovoAgendamentoProps {
@@ -30,6 +31,17 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
   const [vendedores, setVendedores] = useState<any[]>([]);
   const [conflitos, setConflitos] = useState<string[]>([]);
   
+  // New lead form state
+  const [showNewLeadForm, setShowNewLeadForm] = useState(false);
+  const [newLeadData, setNewLeadData] = useState({
+    nome: '',
+    email: '',
+    whatsapp: '',
+    observacoes: '',
+    fonte_referencia: 'Agendamentos Forçados',
+    status: 'novo'
+  });
+  
   // Form fields
   const [selectedLead, setSelectedLead] = useState('');
   const [selectedVendedor, setSelectedVendedor] = useState('');
@@ -39,6 +51,8 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
   const [selectedEndTime, setSelectedEndTime] = useState('');
   const [linkReuniao, setLinkReuniao] = useState('');
   const [observacoes, setObservacoes] = useState('Agendamento forçado - ignora restrições de pós-graduação');
+
+  const { mutate: createLead, isPending: isCreatingLead } = useCreateLead();
 
   // Carregar todos os vendedores ativos
   useEffect(() => {
@@ -93,6 +107,39 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
 
     verificarConflitos();
   }, [selectedVendedor, selectedDate, selectedTime, selectedEndTime]);
+
+  const handleCreateNewLead = async () => {
+    try {
+      if (!newLeadData.nome || !newLeadData.email || !newLeadData.whatsapp) {
+        toast.error('Nome, email e WhatsApp são obrigatórios');
+        return;
+      }
+
+      createLead(newLeadData, {
+        onSuccess: (leadCriado) => {
+          toast.success('Lead criado com sucesso!');
+          setSelectedLead(leadCriado.id);
+          setShowNewLeadForm(false);
+          setNewLeadData({
+            nome: '',
+            email: '',
+            whatsapp: '',
+            observacoes: '',
+            fonte_referencia: 'Agendamentos Forçados',
+            status: 'novo'
+          });
+          onSuccess(); // Recarregar leads
+        },
+        onError: (error) => {
+          console.error('Erro ao criar lead:', error);
+          toast.error('Erro ao criar lead');
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao criar lead:', error);
+      toast.error('Erro ao criar lead');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,6 +198,15 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
     setLinkReuniao('');
     setObservacoes('Agendamento forçado - ignora restrições de pós-graduação');
     setConflitos([]);
+    setShowNewLeadForm(false);
+    setNewLeadData({
+      nome: '',
+      email: '',
+      whatsapp: '',
+      observacoes: '',
+      fonte_referencia: 'Agendamentos Forçados',
+      status: 'novo'
+    });
   };
 
   const handleClose = () => {
@@ -180,22 +236,127 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Lead Selection */}
           <div className="space-y-2">
-            <Label htmlFor="lead">Lead *</Label>
-            <Select value={selectedLead} onValueChange={setSelectedLead}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um lead" />
-              </SelectTrigger>
-              <SelectContent>
-                {leads.map((lead) => (
-                  <SelectItem key={lead.id} value={lead.id}>
-                    <div className="flex flex-col">
-                      <span>{lead.nome}</span>
-                      <span className="text-sm text-muted-foreground">{lead.email}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="lead">Lead *</Label>
+              <Button 
+                type="button"
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowNewLeadForm(true)}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-3 w-3" />
+                Novo Lead
+              </Button>
+            </div>
+            
+            {/* Formulário de novo lead */}
+            {showNewLeadForm && (
+              <div className="border rounded-lg p-4 bg-muted/20">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-medium">Criar Novo Lead</h4>
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setShowNewLeadForm(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="newLeadNome">Nome *</Label>
+                    <Input
+                      id="newLeadNome"
+                      value={newLeadData.nome}
+                      onChange={(e) => setNewLeadData(prev => ({ ...prev, nome: e.target.value }))}
+                      placeholder="Nome completo"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="newLeadEmail">Email *</Label>
+                    <Input
+                      id="newLeadEmail"
+                      type="email"
+                      value={newLeadData.email}
+                      onChange={(e) => setNewLeadData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="email@exemplo.com"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="newLeadWhatsapp">WhatsApp *</Label>
+                    <Input
+                      id="newLeadWhatsapp"
+                      value={newLeadData.whatsapp}
+                      onChange={(e) => setNewLeadData(prev => ({ ...prev, whatsapp: e.target.value }))}
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="newLeadObservacoes">Observações</Label>
+                    <Textarea
+                      id="newLeadObservacoes"
+                      value={newLeadData.observacoes}
+                      onChange={(e) => setNewLeadData(prev => ({ ...prev, observacoes: e.target.value }))}
+                      placeholder="Informações adicionais..."
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setShowNewLeadForm(false);
+                      setNewLeadData({
+                        nome: '',
+                        email: '',
+                        whatsapp: '',
+                        observacoes: '',
+                        fonte_referencia: 'Agendamentos Forçados',
+                        status: 'novo'
+                      });
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    type="button"
+                    size="sm"
+                    onClick={handleCreateNewLead}
+                    disabled={isCreatingLead}
+                  >
+                    {isCreatingLead ? 'Criando...' : 'Criar Lead'}
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {!showNewLeadForm && (
+              <Select value={selectedLead} onValueChange={setSelectedLead}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um lead" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leads.map((lead) => (
+                    <SelectItem key={lead.id} value={lead.id}>
+                      <div className="flex flex-col">
+                        <span>{lead.nome}</span>
+                        <span className="text-sm text-muted-foreground">{lead.email}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Vendedor Selection */}
