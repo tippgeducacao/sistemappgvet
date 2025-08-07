@@ -29,6 +29,7 @@ import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
 import { useAllAgendamentos } from '@/hooks/useAllAgendamentos';
 
 import { EditarAgendamentoDiretor } from './EditarAgendamentoDiretor';
+import ForcarNovoAgendamento from './ForcarNovoAgendamento';
 
 const AgendamentosPage: React.FC = () => {
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
@@ -84,6 +85,9 @@ const AgendamentosPage: React.FC = () => {
   
   // Agenda Geral state
   const [showAgendaGeral, setShowAgendaGeral] = useState(false);
+  
+  // Forçar agendamento state
+  const [showForcarAgendamento, setShowForcarAgendamento] = useState(false);
   
   // Error diagnosis state
   const [lastError, setLastError] = useState<string | null>(null);
@@ -920,6 +924,14 @@ const AgendamentosPage: React.FC = () => {
           <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Novo Agendamento
+          </Button>
+          <Button 
+            onClick={() => setShowForcarAgendamento(true)} 
+            variant="outline"
+            className="flex items-center gap-2 border-orange-200 text-orange-700 hover:bg-orange-50"
+          >
+            <Plus className="h-4 w-4" />
+            Forçar Novo Agendamento
           </Button>
         </div>
       </div>
@@ -2014,6 +2026,15 @@ const AgendamentosPage: React.FC = () => {
       <AgendaGeral 
         isOpen={showAgendaGeral} 
         onClose={() => setShowAgendaGeral(false)} 
+      />
+
+      {/* Forçar Novo Agendamento Modal */}
+      <ForcarNovoAgendamento
+        isOpen={showForcarAgendamento}
+        onClose={() => setShowForcarAgendamento(false)}
+        onSuccess={carregarDados}
+        leads={leads}
+        posGraduacoes={posGraduacoes}
       />
 
       {/* Modal de Edição para Diretores */}

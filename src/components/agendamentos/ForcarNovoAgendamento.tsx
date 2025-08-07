@@ -1,0 +1,328 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertTriangle, Clock, User, Calendar } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { AgendamentosService } from '@/services/agendamentos/AgendamentosService';
+import { toast } from 'sonner';
+
+interface ForcarNovoAgendamentoProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  leads: any[];
+  posGraduacoes: any[];
+}
+
+const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  leads,
+  posGraduacoes
+}) => {
+  const [loading, setLoading] = useState(false);
+  const [vendedores, setVendedores] = useState<any[]>([]);
+  const [conflitos, setConflitos] = useState<string[]>([]);
+  
+  // Form fields
+  const [selectedLead, setSelectedLead] = useState('');
+  const [selectedVendedor, setSelectedVendedor] = useState('');
+  const [selectedPosGraduacao, setSelectedPosGraduacao] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedEndTime, setSelectedEndTime] = useState('');
+  const [linkReuniao, setLinkReuniao] = useState('');
+  const [observacoes, setObservacoes] = useState('Agendamento forçado - ignora restrições de pós-graduação');
+
+  // Carregar todos os vendedores ativos
+  useEffect(() => {
+    const carregarVendedores = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name, email, pos_graduacoes')
+          .eq('user_type', 'vendedor')
+          .eq('ativo', true)
+          .order('name');
+
+        if (error) throw error;
+        setVendedores(data || []);
+      } catch (error) {
+        console.error('Erro ao carregar vendedores:', error);
+        toast.error('Erro ao carregar vendedores');
+      }
+    };
+
+    if (isOpen) {
+      carregarVendedores();
+    }
+  }, [isOpen]);
+
+  // Verificar conflitos quando vendedor, data ou horário mudarem
+  useEffect(() => {
+    const verificarConflitos = async () => {
+      if (selectedVendedor && selectedDate && selectedTime) {
+        try {
+          const dataHora = `${selectedDate}T${selectedTime}:00.000-03:00`;
+          const dataHoraFim = selectedEndTime 
+            ? `${selectedDate}T${selectedEndTime}:00.000-03:00`
+            : new Date(new Date(dataHora).getTime() + 60 * 60 * 1000).toISOString();
+
+          const temConflito = await AgendamentosService.verificarConflitosAgenda(
+            selectedVendedor,
+            dataHora,
+            dataHoraFim
+          );
+
+          if (temConflito) {
+            setConflitos(['Este horário conflita com outro agendamento do vendedor']);
+          } else {
+            setConflitos([]);
+          }
+        } catch (error) {
+          console.error('Erro ao verificar conflitos:', error);
+        }
+      }
+    };
+
+    verificarConflitos();
+  }, [selectedVendedor, selectedDate, selectedTime, selectedEndTime]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (conflitos.length > 0) {
+      toast.error('Não é possível agendar: existe conflito de horário');
+      return;
+    }
+
+    if (!selectedLead || !selectedVendedor || !selectedPosGraduacao || !selectedDate || !selectedTime || !linkReuniao) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const dataHora = `${selectedDate}T${selectedTime}:00.000-03:00`;
+      const dataHoraFim = selectedEndTime 
+        ? `${selectedDate}T${selectedEndTime}:00.000-03:00`
+        : undefined;
+
+      const agendamento = await AgendamentosService.criarAgendamento({
+        lead_id: selectedLead,
+        vendedor_id: selectedVendedor,
+        pos_graduacao_interesse: selectedPosGraduacao,
+        data_agendamento: dataHora,
+        data_fim_agendamento: dataHoraFim,
+        link_reuniao: linkReuniao,
+        observacoes
+      }, true); // forçar agendamento = true
+
+      if (agendamento) {
+        toast.success('Agendamento forçado criado com sucesso!');
+        onSuccess();
+        onClose();
+        resetForm();
+      } else {
+        toast.error('Erro ao criar agendamento');
+      }
+    } catch (error: any) {
+      console.error('Erro ao criar agendamento forçado:', error);
+      toast.error(error.message || 'Erro ao criar agendamento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedLead('');
+    setSelectedVendedor('');
+    setSelectedPosGraduacao('');
+    setSelectedDate('');
+    setSelectedTime('');
+    setSelectedEndTime('');
+    setLinkReuniao('');
+    setObservacoes('Agendamento forçado - ignora restrições de pós-graduação');
+    setConflitos([]);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-orange-500" />
+            Forçar Novo Agendamento
+          </DialogTitle>
+        </DialogHeader>
+
+        <Card className="border-orange-200 bg-orange-50/50">
+          <CardHeader className="pb-3">
+            <CardDescription className="text-orange-700 font-medium">
+              ⚠️ Este recurso permite agendar reuniões ignorando as restrições de pós-graduação do vendedor.
+              Use apenas em casos excepcionais!
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Lead Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="lead">Lead *</Label>
+            <Select value={selectedLead} onValueChange={setSelectedLead}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um lead" />
+              </SelectTrigger>
+              <SelectContent>
+                {leads.map((lead) => (
+                  <SelectItem key={lead.id} value={lead.id}>
+                    <div className="flex flex-col">
+                      <span>{lead.nome}</span>
+                      <span className="text-sm text-muted-foreground">{lead.email}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Vendedor Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="vendedor">Vendedor *</Label>
+            <Select value={selectedVendedor} onValueChange={setSelectedVendedor}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um vendedor" />
+              </SelectTrigger>
+              <SelectContent>
+                {vendedores.map((vendedor) => (
+                  <SelectItem key={vendedor.id} value={vendedor.id}>
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      {vendedor.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Pós-graduação Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="pos-graduacao">Pós-graduação de Interesse *</Label>
+            <Select value={selectedPosGraduacao} onValueChange={setSelectedPosGraduacao}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma pós-graduação" />
+              </SelectTrigger>
+              <SelectContent>
+                {posGraduacoes.map((pg) => (
+                  <SelectItem key={pg.id} value={pg.nome}>
+                    {pg.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Date and Time */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="data">Data *</Label>
+              <Input
+                id="data"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="horario">Horário Início *</Label>
+              <Input
+                id="horario"
+                type="time"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="horario-fim">Horário Fim</Label>
+              <Input
+                id="horario-fim"
+                type="time"
+                value={selectedEndTime}
+                onChange={(e) => setSelectedEndTime(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Conflict Warning */}
+          {conflitos.length > 0 && (
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-red-700">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span className="font-medium">Conflito de Horário</span>
+                </div>
+                <p className="text-sm text-red-600 mt-1">
+                  {conflitos[0]}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Meeting Link */}
+          <div className="space-y-2">
+            <Label htmlFor="link">Link da Reunião *</Label>
+            <Input
+              id="link"
+              type="url"
+              placeholder="https://meet.google.com/abc-defg-hij"
+              value={linkReuniao}
+              onChange={(e) => setLinkReuniao(e.target.value)}
+            />
+          </div>
+
+          {/* Observations */}
+          <div className="space-y-2">
+            <Label htmlFor="observacoes">Observações</Label>
+            <Textarea
+              id="observacoes"
+              placeholder="Observações adicionais..."
+              value={observacoes}
+              onChange={(e) => setObservacoes(e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={loading || conflitos.length > 0}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {loading ? 'Agendando...' : 'Forçar Agendamento'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default ForcarNovoAgendamento;
