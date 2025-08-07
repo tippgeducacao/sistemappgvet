@@ -14,7 +14,8 @@ import { ReunioesChart } from '@/components/dashboard/ReunioesChart';
 import SemanasConsecutivasCard from '@/components/dashboard/SemanasConsecutivasCard';
 import SDRAgendamentosComparativo from './SDRAgendamentosComparativo';
 import { SDRComissionamentoSemanal } from './SDRComissionamentoSemanal';
-import { FileText, Users, Calendar, TrendingUp, X, History, DollarSign } from 'lucide-react';
+import { GerenciarComissionamentoSDR } from './GerenciarComissionamentoSDR';
+import { FileText, Users, Calendar, TrendingUp, X, History, DollarSign, Settings } from 'lucide-react';
 
 const SDRDashboard: React.FC = () => {
   const { profile } = useAuthStore();
@@ -158,6 +159,10 @@ const SDRDashboard: React.FC = () => {
             <DollarSign className="h-4 w-4" />
             Comissionamento
           </TabsTrigger>
+          <TabsTrigger value="gerenciar-comissionamento" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Gerenciar Comissionamento
+          </TabsTrigger>
           <TabsTrigger value="historico" className="flex items-center gap-2">
             <History className="h-4 w-4" />
             Histórico
@@ -219,6 +224,10 @@ const SDRDashboard: React.FC = () => {
 
         <TabsContent value="comissionamento">
           <SDRComissionamentoSemanal />
+        </TabsContent>
+
+        <TabsContent value="gerenciar-comissionamento">
+          <GerenciarComissionamentoSDR />
         </TabsContent>
 
         <TabsContent value="historico">
