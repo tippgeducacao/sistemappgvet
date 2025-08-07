@@ -4,15 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, User, Phone, Mail, ExternalLink, Plus } from 'lucide-react';
+import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import NovaVendaForm from '@/components/NovaVendaForm';
 import { useFormStore } from '@/store/FormStore';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface ReunioesPlanilhaProps {
   agendamentos: Agendamento[];
@@ -26,8 +29,12 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
 }) => {
   const [dialogAberto, setDialogAberto] = useState(false);
   const [novaVendaAberto, setNovaVendaAberto] = useState(false);
+  const [remarcarDialogAberto, setRemarcarDialogAberto] = useState(false);
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
   const [observacoes, setObservacoes] = useState('');
+  const [novaData, setNovaData] = useState('');
+  const [novaHoraInicio, setNovaHoraInicio] = useState('');
+  const [novaHoraFim, setNovaHoraFim] = useState('');
   const { updateField, clearForm } = useFormStore();
 
   // Separar reuniões em agendadas (sem resultado) e histórico (com resultado)
@@ -145,6 +152,74 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     setNovaVendaAberto(true);
   };
 
+  const abrirRemarcarDialog = (agendamento: Agendamento, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAgendamentoSelecionado(agendamento);
+    
+    // Preencher com valores atuais
+    const dataAtual = format(new Date(agendamento.data_agendamento), "yyyy-MM-dd");
+    const horaInicio = format(new Date(agendamento.data_agendamento), "HH:mm");
+    const horaFim = agendamento.data_fim_agendamento 
+      ? format(new Date(agendamento.data_fim_agendamento), "HH:mm")
+      : '';
+    
+    setNovaData(dataAtual);
+    setNovaHoraInicio(horaInicio);
+    setNovaHoraFim(horaFim);
+    setRemarcarDialogAberto(true);
+  };
+
+  const handleRemarcarReuniao = async () => {
+    if (!agendamentoSelecionado || !novaData || !novaHoraInicio) {
+      toast({
+        title: "Erro",
+        description: "Preencha pelo menos a data e hora de início",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Construir nova data de agendamento
+      const novaDataAgendamento = new Date(`${novaData}T${novaHoraInicio}:00`);
+      let novaDataFim = null;
+      
+      if (novaHoraFim) {
+        novaDataFim = new Date(`${novaData}T${novaHoraFim}:00`);
+      }
+
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({
+          data_agendamento: novaDataAgendamento.toISOString(),
+          data_fim_agendamento: novaDataFim?.toISOString() || null,
+          status: 'reagendado'
+        })
+        .eq('id', agendamentoSelecionado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Reunião remarcada com sucesso!",
+      });
+
+      setRemarcarDialogAberto(false);
+      setAgendamentoSelecionado(null);
+      
+      // Recarregar dados (pode adicionar callback aqui se necessário)
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Erro ao remarcar reunião:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remarcar a reunião. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const renderTabela = (listaAgendamentos: Agendamento[], mostrarAcoes: boolean = true) => (
     listaAgendamentos.length === 0 ? (
       <Card>
@@ -211,18 +286,31 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                   </TableCell>
                   {mostrarAcoes && (
                     <TableCell className="text-right">
-                      {!agendamento.resultado_reuniao && (
-                        <Button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            abrirDialog(agendamento);
-                          }}
-                          size="sm"
-                          variant="outline"
-                        >
-                          Marcar Resultado
-                        </Button>
-                      )}
+                      <div className="flex gap-2 justify-end">
+                        {!agendamento.resultado_reuniao && (
+                          <>
+                            <Button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                abrirDialog(agendamento);
+                              }}
+                              size="sm"
+                              variant="outline"
+                            >
+                              Marcar Resultado
+                            </Button>
+                            <Button 
+                              onClick={(e) => abrirRemarcarDialog(agendamento, e)}
+                              size="sm"
+                              variant="ghost"
+                              className="flex items-center gap-1"
+                            >
+                              <Edit className="h-3 w-3" />
+                              Remarcar
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>
@@ -405,6 +493,72 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Remarcar Reunião */}
+      <Dialog open={remarcarDialogAberto} onOpenChange={setRemarcarDialogAberto}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remarcar Reunião</DialogTitle>
+          </DialogHeader>
+          
+          {agendamentoSelecionado && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                <strong>Lead:</strong> {agendamentoSelecionado.lead?.nome}
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="nova-data">Nova Data</Label>
+                  <Input
+                    id="nova-data"
+                    type="date"
+                    value={novaData}
+                    onChange={(e) => setNovaData(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="nova-hora-inicio">Hora Início</Label>
+                    <Input
+                      id="nova-hora-inicio"
+                      type="time"
+                      value={novaHoraInicio}
+                      onChange={(e) => setNovaHoraInicio(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="nova-hora-fim">Hora Fim (opcional)</Label>
+                    <Input
+                      id="nova-hora-fim"
+                      type="time"
+                      value={novaHoraFim}
+                      onChange={(e) => setNovaHoraFim(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setRemarcarDialogAberto(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={handleRemarcarReuniao}>
+                  Remarcar
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
