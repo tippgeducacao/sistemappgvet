@@ -83,9 +83,13 @@ const ScoringRulesSection: React.FC = () => {
                 <SelectValue placeholder="Selecione o lote" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Lote 3 - LOTE INTEGRAL">
-                  Lote 3 - LOTE INTEGRAL
-                  {getSelectItemPoints('Lote da Pós-Graduação', 'Lote 3 - LOTE INTEGRAL')}
+                <SelectItem value="LOTE INTEGRAL">
+                  LOTE INTEGRAL
+                  {getSelectItemPoints('Lote da Pós-Graduação', 'LOTE INTEGRAL')}
+                </SelectItem>
+                <SelectItem value="LOTE 3">
+                  LOTE 3
+                  {getSelectItemPoints('Lote da Pós-Graduação', 'LOTE 3')}
                 </SelectItem>
                 <SelectItem value="Lote 2">
                   Lote 2
