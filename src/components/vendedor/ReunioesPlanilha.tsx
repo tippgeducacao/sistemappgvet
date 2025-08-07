@@ -408,7 +408,28 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                   <div>
                     <strong>Status:</strong> {getStatusBadge(agendamentoSelecionado)}
                   </div>
+                  <div>
+                    <strong>Criado em:</strong> {format(new Date(agendamentoSelecionado.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </div>
+                  {agendamentoSelecionado.status === 'remarcado' && (
+                    <div>
+                      <strong>Última atualização:</strong> {format(new Date(agendamentoSelecionado.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </div>
+                  )}
                 </div>
+
+                {/* Informação sobre remarcação */}
+                {agendamentoSelecionado.status === 'remarcado' && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm font-medium">
+                      <Calendar className="h-4 w-4" />
+                      Reunião Remarcada pelo Vendedor
+                    </div>
+                    <p className="text-blue-600 dark:text-blue-400 text-xs mt-1">
+                      Esta reunião foi remarcada em {format(new Date(agendamentoSelecionado.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                )}
 
                 {agendamentoSelecionado.link_reuniao && (
                   <div className="flex items-center gap-2 text-sm">
