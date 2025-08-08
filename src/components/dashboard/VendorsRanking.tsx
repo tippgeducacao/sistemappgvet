@@ -887,14 +887,19 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                     const positions = ['#1', '#2', '#3'];
                     
                     return (
-                      <div 
+<div 
                         key={vendedor.id} 
                         className="bg-card dark:bg-card border border-border cursor-pointer hover:shadow-lg dark:hover:shadow-lg transition-shadow rounded-lg p-4"
-                        onClick={() => setSelectedVendedorForGoals({
-                          id: vendedor.id,
-                          name: vendedor.nome,
-                          photo_url: vendedor.photo_url
-                        })}
+                        onClick={() => {
+                          const vendedorCompleto = vendedores.find(v => v.id === vendedor.id);
+                          setSelectedVendedorForProfile({
+                            id: vendedor.id,
+                            nome: vendedor.nome,
+                            photo_url: vendedor.photo_url,
+                            nivel: vendedorCompleto?.nivel,
+                            user_type: vendedorCompleto?.user_type || 'vendedor'
+                          });
+                        }}
                       >
                         <div className="flex items-center gap-3 mb-3">
                           <div className={`flex items-center justify-center w-10 h-10 ${bgColors[index]} rounded-full`}>

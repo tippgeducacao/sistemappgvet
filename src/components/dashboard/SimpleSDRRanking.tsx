@@ -9,6 +9,7 @@ import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
+import { getVendaPeriod } from '@/utils/semanaUtils';
 
 interface SimpleSDRStats {
   id: string;
@@ -58,8 +59,11 @@ const SimpleSDRRanking: React.FC = () => {
     const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
     const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
 
-    const inicioAno = new Date(hoje.getFullYear(), 0, 1);
-    const fimAno = new Date(hoje.getFullYear(), 11, 31);
+const inicioAno = new Date(hoje.getFullYear(), 0, 1);
+const fimAno = new Date(hoje.getFullYear(), 11, 31);
+
+// Usar mesma regra de "mês por semana (qua-ter)" da TV
+const { mes: mesAtualSemana, ano: anoAtualSemana } = getVendaPeriod(hoje);
 
     return sdrs.map(sdr => {
       const isInbound = sdr.user_type === 'sdr_inbound';
@@ -81,14 +85,13 @@ const SimpleSDRRanking: React.FC = () => {
         return dataVenda >= inicioSemana && dataVenda <= fimSemana;
       }).length;
 
-      const vendasMes = vendas.filter(v => {
+const vendasMes = vendas.filter(v => {
         if (v.vendedor_id !== sdr.id || v.status !== 'matriculado') return false;
-        
         const dataVenda = v.data_aprovacao 
           ? new Date(v.data_aprovacao)
           : new Date(v.enviado_em);
-        
-        return dataVenda >= inicioMes && dataVenda <= fimMes;
+        const { mes, ano } = getVendaPeriod(dataVenda);
+        return mes === mesAtualSemana && ano === anoAtualSemana;
       }).length;
 
       const vendasAno = vendas.filter(v => {
@@ -110,11 +113,12 @@ const SimpleSDRRanking: React.FC = () => {
                (a.resultado_reuniao === 'comprou' || a.resultado_reuniao === 'compareceu_nao_comprou');
       }).length;
 
-      const reunioesMes = agendamentos.filter(a => {
+const reunioesMes = agendamentos.filter(a => {
         const dataAgendamento = new Date(a.data_agendamento);
+        const { mes, ano } = getVendaPeriod(dataAgendamento);
         return a.sdr_id === sdr.id && 
-               dataAgendamento >= inicioMes && 
-               dataAgendamento <= fimMes &&
+               mes === mesAtualSemana && 
+               ano === anoAtualSemana &&
                (a.resultado_reuniao === 'comprou' || a.resultado_reuniao === 'compareceu_nao_comprou');
       }).length;
 
@@ -127,10 +131,8 @@ const SimpleSDRRanking: React.FC = () => {
       }).length;
 
       // Metas baseadas no nível
-      const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
-      const metaReunioes = isInbound ? 
-        (nivelConfig?.meta_semanal_inbound || 10) : 
-        (nivelConfig?.meta_semanal_outbound || 10);
+const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
+      const metaReunioes = nivelConfig?.meta_semanal_vendedor || 55;
 
       // Valores do período selecionado
       let vendasCursos = vendasSemana;
