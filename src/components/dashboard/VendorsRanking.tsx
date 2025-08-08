@@ -572,13 +572,14 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
       // Dados da tabela de SDRs
       const sdrsTableData = await Promise.all(sdrsVendedores.map(async (sdr) => {
-        const sdrNivel = (sdr.nivel || 'junior').toLowerCase();
+        const baseNivel = (sdr.nivel || 'junior').toLowerCase();
         const sdrTipoUsuario = sdr.user_type; // 'sdr_inbound' | 'sdr_outbound'
         const sdrType = sdrTipoUsuario === 'sdr_inbound' ? 'inbound' : 'outbound';
         
-        // Buscar configuração de nível combinando tipo de usuário ('sdr') e nível completo
-        const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;
+        // Se o nível não tiver o prefixo sdr_, compor corretamente com o tipo (inbound/outbound)
+        const nivelCompleto = baseNivel.startsWith('sdr_') ? baseNivel : `sdr_${sdrType}_${baseNivel}`;
         const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel.toLowerCase() === nivelCompleto);
+        const nivelLabel = nivelCompleto.charAt(0).toUpperCase() + nivelCompleto.slice(1);
         
         // Meta semanal correta por tipo de SDR
         const metaSemanal = sdrTipoUsuario === 'sdr_inbound'
@@ -626,7 +627,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         return [
           sdr.name,
           sdrType === 'inbound' ? 'Inbound' : 'Outbound',
-          sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
+          nivelLabel,
           metaSemanal,
           DataFormattingService.formatCurrency(variavelSemanal),
           ...weeklyMeetingsStrings,
