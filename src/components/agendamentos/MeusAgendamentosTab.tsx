@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Trash2, Clock, Users, MapPin, Eye } from 'lucide-react';
+import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale';
 import { useAuthStore } from '@/stores/AuthStore';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
 import AgendamentoDetailsModal from './AgendamentoDetailsModal';
+import EditarHorarioSDRDialog from './EditarHorarioSDRDialog';
 
 interface MeusAgendamentosTabProps {
   agendamentos: AgendamentoSDR[];
@@ -21,7 +22,9 @@ interface MeusAgendamentosTabProps {
 const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos, onRefresh }) => {
   const { profile } = useAuthStore();
   const [selectedAgendamento, setSelectedAgendamento] = useState<AgendamentoSDR | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+const [modalOpen, setModalOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingAgendamento, setEditingAgendamento] = useState<AgendamentoSDR | null>(null);
 
 
   // Filtrar apenas os agendamentos do SDR logado que não foram finalizados
@@ -157,7 +160,7 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-4">
+<div className="flex items-center gap-2 ml-4">
                     <Button
                       variant="outline"
                       size="sm"
@@ -169,6 +172,20 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+                    {(['agendado','atrasado'].includes(agendamento.status)) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingAgendamento(agendamento);
+                          setEditOpen(true);
+                        }}
+                        title="Editar horário da reunião"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
@@ -211,6 +228,13 @@ const MeusAgendamentosTab: React.FC<MeusAgendamentosTabProps> = ({ agendamentos,
         agendamento={selectedAgendamento}
         open={modalOpen}
         onOpenChange={setModalOpen}
+      />
+
+      <EditarHorarioSDRDialog
+        agendamento={editingAgendamento}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={onRefresh}
       />
     </div>
   );
