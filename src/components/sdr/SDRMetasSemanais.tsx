@@ -83,28 +83,33 @@ export const SDRMetasSemanais = () => {
         return { realizados: 0, meta: 0, percentual: 0 };
       }
 
-      const nivel = profileData?.nivel || 'junior';
-      console.log('🔍 Nível do SDR encontrado:', nivel, 'Tipo:', profile.user_type);
+      const nivelFromProfile = profileData?.nivel || 'junior';
+      const userType = profile.user_type; // 'sdr_inbound' | 'sdr_outbound'
+      const nivelBase = nivelFromProfile.replace('sdr_inbound_', '').replace('sdr_outbound_', '');
+      const nivelCompleto = userType?.startsWith('sdr_') ? `${userType}_${nivelBase}` : nivelBase;
+      console.log('🔍 Nível SDR:', { nivelFromProfile, userType, nivelBase, nivelCompleto });
 
-      // Buscar meta de agendamentos na tabela niveis_vendedores
-      // O tipo_usuario na tabela é sempre 'sdr' para SDRs
-      const { data: nivelData, error: nivelError } = await supabase
+      // Buscar configuração do nível considerando diferentes formas de armazenamento
+      const { data: niveisRows, error: nivelError } = await supabase
         .from('niveis_vendedores')
-        .select('meta_semanal_inbound, meta_semanal_outbound')
-        .eq('nivel', nivel)
-        .eq('tipo_usuario', 'sdr')
-        .maybeSingle();
+        .select('nivel, tipo_usuario, meta_semanal_inbound, meta_semanal_outbound')
+        .in('nivel', [nivelCompleto, nivelBase])
+        .in('tipo_usuario', ['sdr', 'sdr_inbound', 'sdr_outbound']);
 
       if (nivelError) {
         console.error('Erro ao buscar nível:', nivelError);
         return { realizados: 0, meta: 0, percentual: 0 };
       }
 
-      console.log('📊 Dados do nível encontrados:', nivelData);
+      const nivelConfig = (niveisRows || []).find(n => n.nivel === nivelCompleto)
+        || (niveisRows || []).find(n => n.nivel === nivelBase)
+        || null;
 
-      const metaAgendamentos = profile.user_type === 'sdr_inbound' 
-        ? (nivelData?.meta_semanal_inbound || 0)
-        : (nivelData?.meta_semanal_outbound || 0);
+      console.log('📊 Config de nível encontrada:', nivelConfig);
+
+      const metaAgendamentos = userType === 'sdr_inbound'
+        ? (nivelConfig?.meta_semanal_inbound ?? 0)
+        : (nivelConfig?.meta_semanal_outbound ?? 0);
 
       console.log('🎯 Meta de agendamentos para SDR:', metaAgendamentos);
 
