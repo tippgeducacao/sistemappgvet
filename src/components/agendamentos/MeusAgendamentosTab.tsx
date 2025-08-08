@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit } from 'lucide-react';
+import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -88,9 +88,19 @@ const [modalOpen, setModalOpen] = useState(false);
             Agendamentos que você criou - você pode cancelar
           </p>
         </div>
-        <Badge variant="outline">
-          {meusAgendamentos.length} agendamento(s)
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRefresh}
+            title="Atualizar agendamentos"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Badge variant="outline">
+            {meusAgendamentos.length} agendamento(s)
+          </Badge>
+        </div>
       </div>
 
       {meusAgendamentos.length === 0 ? (
