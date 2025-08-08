@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -20,10 +20,11 @@ const PendingVendasAlert: React.FC = () => {
   }
 
   return (
-    <Alert className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30">
-      <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-      <AlertDescription className="text-orange-800 dark:text-orange-200">
-        <span className="font-semibold">ATENÇÃO SECRETARIA:</span> Há {vendasPendentes} {vendasPendentes === 1 ? 'venda aguardando' : 'vendas aguardando'} análise e aprovação
+    <Alert variant="default" className="bg-muted border border-border">
+      <AlertTriangle className="h-4 w-4 text-primary" />
+      <AlertTitle className="text-foreground">Atenção Secretaria</AlertTitle>
+      <AlertDescription className="text-muted-foreground">
+        Há {vendasPendentes} {vendasPendentes === 1 ? 'venda aguardando' : 'vendas aguardando'} análise e aprovação
       </AlertDescription>
     </Alert>
   );

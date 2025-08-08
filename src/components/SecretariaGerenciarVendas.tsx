@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, CheckCircle, XCircle, Users, Search } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
+
 import TodasVendasTab from '@/components/vendas/TodasVendasTab';
 import PendentesTab from '@/components/vendas/PendentesTab';
 import MatriculadasTab from '@/components/vendas/MatriculadasTab';
@@ -59,9 +59,6 @@ const SecretariaGerenciarVendas: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Alerta de vendas pendentes */}
-      <PendingVendasAlert />
-
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Gerenciar Vendas</h1>
