@@ -566,21 +566,26 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         'Comissão Semanal',
         ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
         'Total Reuniões',
-        'Atingimento %'
+        'Atingimento %',
+        'Comissão Total'
       ];
 
       // Dados da tabela de SDRs
-      const sdrsTableData = sdrsVendedores.map(sdr => {
-        const sdrNivel = sdr.nivel || 'junior';
-        const sdrType = sdr.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+      const sdrsTableData = await Promise.all(sdrsVendedores.map(async (sdr) => {
+        const sdrNivel = (sdr.nivel || 'junior').toLowerCase();
+        const sdrTipoUsuario = sdr.user_type; // 'sdr_inbound' | 'sdr_outbound'
+        const sdrType = sdrTipoUsuario === 'sdr_inbound' ? 'inbound' : 'outbound';
         
-        // Montar o nível completo exatamente como está na tabela niveis_vendedores
+        // Buscar configuração de nível combinando tipo de usuário ('sdr') e nível completo
         const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;
-        const nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
+        const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel.toLowerCase() === nivelCompleto);
         
-        // Buscar a meta correta baseada no nível do SDR (vendas de cursos)
-        const metaSemanal = nivelConfig?.meta_vendas_cursos || 55;
+        // Meta semanal correta por tipo de SDR
+        const metaSemanal = sdrTipoUsuario === 'sdr_inbound'
+          ? (nivelConfig?.meta_semanal_inbound ?? 55)
+          : (nivelConfig?.meta_semanal_outbound ?? 55);
         const metaMensal = metaSemanal * weeks.length;
+        const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
         
         // Calcular reuniões por semana
         const reunioesPorSemana = weeks.map(week => {
@@ -589,7 +594,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           
           const reunioesNaSemana = agendamentos?.filter(agendamento => {
             if (agendamento.sdr_id !== sdr.id) return false;
-            // Contar apenas reuniões onde houve comparecimento confirmado (mesma lógica do TV)
+            // Contar apenas reuniões com comparecimento confirmado
             const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
                               agendamento.resultado_reuniao === 'comprou';
             if (!compareceu) return false;
@@ -603,9 +608,19 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
         const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
         
+        // Comissão por semana usando regras do tipo de SDR correspondente
+        const weeklyCommissions = await Promise.all(
+          reunioesPorSemana.map(reunioes => 
+            ComissionamentoService.calcularComissao(reunioes, metaSemanal, variavelSemanal, 'sdr')
+          )
+        );
+        const totalCommission = weeklyCommissions.reduce((sum, c) => sum + c.valor, 0);
+        
         const weeklyMeetingsStrings = reunioesPorSemana.map((reunioes, index) => {
           const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : '0.0';
-          return `${reunioes} Reuniões (${percentage}%)`;
+          const commission = weeklyCommissions[index];
+          const valorFormatado = DataFormattingService.formatCurrency(commission.valor);
+          return `${reunioes} Reuniões (${percentage}%) (x${commission.multiplicador}) = ${valorFormatado}`;
         });
         
         return [
@@ -613,12 +628,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           sdrType === 'inbound' ? 'Inbound' : 'Outbound',
           sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
           metaSemanal,
-          DataFormattingService.formatCurrency(nivelConfig?.variavel_semanal || 0),
+          DataFormattingService.formatCurrency(variavelSemanal),
           ...weeklyMeetingsStrings,
           totalReunioes,
-          `${achievementPercentage.toFixed(1)}%`
+          `${achievementPercentage.toFixed(1)}%`,
+          DataFormattingService.formatCurrency(totalCommission)
         ];
-      });
+      }));
 
       autoTable(doc, {
         head: [sdrsHeaders],
