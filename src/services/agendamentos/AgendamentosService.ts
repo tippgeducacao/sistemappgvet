@@ -278,7 +278,7 @@ export class AgendamentosService {
     }
   }
 
-  static async verificarConflitosAgenda(vendedorId: string, dataAgendamento: string, dataFimAgendamento?: string): Promise<boolean> {
+  static async verificarConflitosAgenda(vendedorId: string, dataAgendamento: string, dataFimAgendamento?: string, ignoreAgendamentoId?: string): Promise<boolean> {
     try {
       console.log('🔍 VERIFICANDO CONFLITOS DE AGENDA:', {
         vendedorId,
@@ -318,12 +318,15 @@ export class AgendamentosService {
       console.log('📋 Agendamentos encontrados para verificação:', data?.length || 0);
       
       // Verificar sobreposição de horários usando lógica rigorosa
-      for (const agendamento of data || []) {
-        const agendamentoInicio = new Date(agendamento.data_agendamento);
-        const agendamentoFim = agendamento.data_fim_agendamento 
-          ? new Date(agendamento.data_fim_agendamento)
-          : new Date(agendamentoInicio.getTime() + 45 * 60 * 1000);
-        
+        for (const agendamento of data || []) {
+          if (ignoreAgendamentoId && agendamento.id === ignoreAgendamentoId) {
+            continue;
+          }
+          const agendamentoInicio = new Date(agendamento.data_agendamento);
+          const agendamentoFim = agendamento.data_fim_agendamento 
+            ? new Date(agendamento.data_fim_agendamento)
+            : new Date(agendamentoInicio.getTime() + 45 * 60 * 1000);
+          
         console.log('🔍 Verificando conflito com agendamento:', {
           id: agendamento.id,
           status: agendamento.status,
@@ -574,6 +577,17 @@ export class AgendamentosService {
         
         if (!verificacaoHorario.valido) {
           throw new Error(verificacaoHorario.motivo || 'Horário inválido');
+        }
+
+        // Verificar conflitos de agenda (ignorando o próprio agendamento)
+        const temConflito = await this.verificarConflitosAgenda(
+          agendamento.vendedor_id,
+          dados.data_agendamento,
+          dados.data_fim_agendamento,
+          id
+        );
+        if (temConflito) {
+          throw new Error('Vendedor já possui agendamento neste horário');
         }
       }
 
