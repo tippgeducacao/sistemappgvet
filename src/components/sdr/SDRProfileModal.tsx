@@ -132,10 +132,20 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({
     }
   };
 
-  const getNivelLabel = (nivel: string) => {
-    if (nivel?.includes('junior')) return 'Júnior';
-    if (nivel?.includes('pleno')) return 'Pleno';
-    if (nivel?.includes('senior')) return 'Sênior';
+  const getNivelLabel = (nivel: string, userType?: string) => {
+    const base = (nivel || '').toLowerCase();
+    if ((userType === 'sdr_inbound' || userType === 'sdr_outbound') && !base.startsWith('sdr_')) {
+      return `${userType === 'sdr_inbound' ? 'SDR Inbound' : 'SDR Outbound'} ${base.includes('junior') ? 'Júnior' : base.includes('pleno') ? 'Pleno' : base.includes('senior') ? 'Sênior' : nivel}`;
+    }
+    if (base.includes('sdr_inbound_junior')) return 'SDR Inbound Júnior';
+    if (base.includes('sdr_inbound_pleno')) return 'SDR Inbound Pleno';
+    if (base.includes('sdr_inbound_senior')) return 'SDR Inbound Sênior';
+    if (base.includes('sdr_outbound_junior')) return 'SDR Outbound Júnior';
+    if (base.includes('sdr_outbound_pleno')) return 'SDR Outbound Pleno';
+    if (base.includes('sdr_outbound_senior')) return 'SDR Outbound Sênior';
+    if (base.includes('junior')) return 'Júnior';
+    if (base.includes('pleno')) return 'Pleno';
+    if (base.includes('senior')) return 'Sênior';
     return nivel;
   };
 

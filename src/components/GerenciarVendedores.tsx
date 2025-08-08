@@ -345,15 +345,21 @@ const GerenciarVendedores: React.FC = () => {
                         </div>
                       </TableCell>
                        <TableCell>
-                         {vendedor.nivel ? (
-                           <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel)}>
-                             {NiveisService.getNivelLabel(vendedor.nivel)}
-                           </Badge>
-                         ) : (
-                           <Badge variant="outline" className="capitalize">
-                             Não definido
-                           </Badge>
-                         )}
+                        {(() => {
+                          const baseNivel = (vendedor.nivel || 'junior').toLowerCase();
+                          const isSdr = vendedor.user_type === 'sdr_inbound' || vendedor.user_type === 'sdr_outbound';
+                          const sdrType = vendedor.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+                          const nivelCompleto = isSdr && !baseNivel.startsWith('sdr_') ? `sdr_${sdrType}_${baseNivel}` : baseNivel;
+                          return vendedor.nivel ? (
+                            <Badge variant="outline" className={NiveisService.getNivelColor(nivelCompleto)}>
+                              {NiveisService.getNivelLabel(nivelCompleto)}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="capitalize">
+                              Não definido
+                            </Badge>
+                          );
+                        })()}
                        </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
@@ -556,15 +562,21 @@ const GerenciarVendedores: React.FC = () => {
                         </div>
                       </TableCell>
                        <TableCell>
-                         {vendedor.nivel ? (
-                           <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel)}>
-                             {NiveisService.getNivelLabel(vendedor.nivel)}
-                           </Badge>
-                         ) : (
-                           <Badge variant="outline" className="capitalize">
-                             Não definido
-                           </Badge>
-                         )}
+                        {(() => {
+                          const baseNivel = (vendedor.nivel || 'junior').toLowerCase();
+                          const isSdr = vendedor.user_type === 'sdr_inbound' || vendedor.user_type === 'sdr_outbound';
+                          const sdrType = vendedor.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+                          const nivelCompleto = isSdr && !baseNivel.startsWith('sdr_') ? `sdr_${sdrType}_${baseNivel}` : baseNivel;
+                          return vendedor.nivel ? (
+                            <Badge variant="outline" className={NiveisService.getNivelColor(nivelCompleto)}>
+                              {NiveisService.getNivelLabel(nivelCompleto)}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="capitalize">
+                              Não definido
+                            </Badge>
+                          );
+                        })()}
                        </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
@@ -957,12 +969,18 @@ const UserCard: React.FC<UserCardProps> = ({
               </Badge>
               
               {/* Badge de nível para vendedores e SDRs */}
-              {(vendedor.user_type === 'vendedor' || vendedor.user_type === 'sdr_inbound' || vendedor.user_type === 'sdr_outbound') && vendedor.nivel && (
-                <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel)}>
-                  {NiveisService.getNivelLabel(vendedor.nivel)}
-                </Badge>
-              )}
-              
+              {(() => {
+                const baseNivel = (vendedor.nivel || 'junior').toLowerCase();
+                const isSdr = vendedor.user_type === 'sdr_inbound' || vendedor.user_type === 'sdr_outbound';
+                const sdrType = vendedor.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+                const nivelCompleto = isSdr && !baseNivel.startsWith('sdr_') ? `sdr_${sdrType}_${baseNivel}` : baseNivel;
+                return (
+                  <Badge variant="outline" className={NiveisService.getNivelColor(nivelCompleto)}>
+                    {NiveisService.getNivelLabel(nivelCompleto)}
+                  </Badge>
+                );
+              })()}
+
               <Badge variant={vendedor.ativo ? "default" : "secondary"} className={
                 vendedor.ativo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
               }>
