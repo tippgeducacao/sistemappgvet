@@ -75,7 +75,8 @@ const EditarHorarioSDRDialog: React.FC<EditarHorarioSDRDialogProps> = ({
       }
     } catch (e) {
       console.error(e);
-      toast.error('Erro ao atualizar agendamento');
+      const message = e instanceof Error ? e.message : 'Erro ao atualizar agendamento';
+      toast.error(message);
     } finally {
       setSaving(false);
     }
