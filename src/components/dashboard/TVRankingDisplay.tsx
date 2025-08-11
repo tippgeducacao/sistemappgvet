@@ -744,11 +744,10 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return dentroDoMes && compareceu;
   }).length;
 
-  // Função para calcular as semanas do mês com datas (só até a semana atual)
+  // Função para calcular as semanas do mês com datas (todas as semanas do mês)
   const getWeeksOfMonth = (year: number, month: number) => {
     const weeks = [];
     let weekNumber = 1;
-    const today = new Date();
     
     // Encontrar a primeira terça-feira do mês
     const firstDay = new Date(year, month - 1, 1);
@@ -765,7 +764,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     
     let currentTuesday = new Date(firstTuesday);
     
-    // Adicionar todas as terças-feiras que estão no mês E que já passaram ou estão na semana atual
+    // Adicionar todas as terças-feiras que estão no mês
     while (currentTuesday.getMonth() === month - 1 && currentTuesday.getFullYear() === year) {
       const startOfWeek = new Date(currentTuesday);
       startOfWeek.setDate(startOfWeek.getDate() - 6); // Quarta anterior
@@ -773,19 +772,14 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       const endOfWeek = new Date(currentTuesday); // Terça atual
       endOfWeek.setHours(23, 59, 59, 999); // Final do dia da terça
       
-      // Só incluir semanas que já começaram (quarta-feira já passou)
-      // ou seja, semanas onde hoje >= quarta-feira da semana
-      if (today >= startOfWeek) {
-        weeks.push({
-          week: weekNumber,
-          startDate: startOfWeek,
-          endDate: endOfWeek,
-          label: `${startOfWeek.getDate().toString().padStart(2, '0')}/${(startOfWeek.getMonth() + 1).toString().padStart(2, '0')} - ${endOfWeek.getDate().toString().padStart(2, '0')}/${(endOfWeek.getMonth() + 1).toString().padStart(2, '0')}`
-        });
-        
-        weekNumber++;
-      }
+      weeks.push({
+        week: weekNumber,
+        startDate: startOfWeek,
+        endDate: endOfWeek,
+        label: `${startOfWeek.getDate().toString().padStart(2, '0')}/${(startOfWeek.getMonth() + 1).toString().padStart(2, '0')} - ${endOfWeek.getDate().toString().padStart(2, '0')}/${(endOfWeek.getMonth() + 1).toString().padStart(2, '0')}`
+      });
       
+      weekNumber++;
       currentTuesday.setDate(currentTuesday.getDate() + 7);
     }
     
