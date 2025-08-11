@@ -22,6 +22,16 @@ const GerenciarNiveis: React.FC = () => {
   const niveisSDRInbound = niveis.filter(n => n.tipo_usuario === 'sdr_inbound');
   const niveisSDROutbound = niveis.filter(n => n.tipo_usuario === 'sdr_outbound');
 
+  // Debug log para verificar os dados
+  console.log('🔍 Debug Níveis:', {
+    total: niveis.length,
+    vendedores: niveisVendedores.length,
+    sdr: niveisSDR.length,
+    sdr_inbound: niveisSDRInbound.length,
+    sdr_outbound: niveisSDROutbound.length,
+    todosNiveis: niveis.map(n => ({ nivel: n.nivel, tipo: n.tipo_usuario }))
+  });
+
   const handleEditNivel = (nivel: NivelVendedor) => {
     setEditingNivel(nivel);
     setIsEditDialogOpen(true);
@@ -75,9 +85,11 @@ const GerenciarNiveis: React.FC = () => {
           <CardTitle className="text-lg">
             {NiveisService.getNivelLabel(nivel.nivel)}
           </CardTitle>
-          <Badge variant="outline" className={NiveisService.getNivelColor(nivel.nivel)}>
-            {nivel.tipo_usuario === 'vendedor' ? 'Vendedor' : 'SDR'}
-          </Badge>
+           <Badge variant="outline" className={NiveisService.getNivelColor(nivel.nivel)}>
+             {nivel.tipo_usuario === 'vendedor' ? 'Vendedor' : 
+              nivel.tipo_usuario === 'sdr' ? 'SDR' :
+              nivel.tipo_usuario === 'sdr_inbound' ? 'SDR Inbound' : 'SDR Outbound'}
+           </Badge>
         </div>
         <Button
           variant="outline"
