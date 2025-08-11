@@ -2,8 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface NivelVendedor {
   id: string;
-  nivel: 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior';
-  tipo_usuario: 'vendedor' | 'sdr_inbound' | 'sdr_outbound' | 'sdr';
+  nivel: 'junior' | 'pleno' | 'senior';
+  tipo_usuario: 'vendedor' | 'sdr';
   fixo_mensal: number;
   vale: number;
   variavel_semanal: number;
@@ -34,8 +34,8 @@ export class NiveisService {
     console.log('✅ Níveis encontrados:', data?.length);
     return (data || []).map(item => ({
       ...item,
-      nivel: item.nivel as 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior',
-      tipo_usuario: item.tipo_usuario as 'vendedor' | 'sdr_inbound' | 'sdr_outbound' | 'sdr'
+      nivel: item.nivel as 'junior' | 'pleno' | 'senior',
+      tipo_usuario: item.tipo_usuario as 'vendedor' | 'sdr'
     }));
   }
 
@@ -56,16 +56,22 @@ export class NiveisService {
     console.log('✅ Nível atualizado com sucesso:', data);
   }
 
-  static async updateVendedorNivel(vendedorId: string, nivel: 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior'): Promise<void> {
+  static async updateVendedorNivel(vendedorId: string, nivel: 'junior' | 'pleno' | 'senior'): Promise<void> {
     console.log('🔄 Atualizando nível do vendedor:', vendedorId, 'para', nivel);
     
-    // Determinar o user_type baseado no nível
-    let user_type = 'vendedor';
-    if (nivel.includes('sdr_inbound')) {
-      user_type = 'sdr_inbound';
-    } else if (nivel.includes('sdr_outbound')) {
-      user_type = 'sdr_outbound';
+    // Manter o user_type existente, apenas atualizar o nível
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('user_type')
+      .eq('id', vendedorId)
+      .single();
+    
+    if (profileError) {
+      console.error('❌ Erro ao buscar perfil:', profileError);
+      throw profileError;
     }
+    
+    const user_type = profileData.user_type;
     
     const { error } = await supabase
       .from('profiles')
@@ -84,19 +90,21 @@ export class NiveisService {
   }
 
   static getNivelLabel(nivel: string, tipoUsuario?: string): string {
-    // Para níveis SDR simples, usar o tipo de usuário para determinar o label
+    // Se for SDR, mostrar apenas "Junior", "Pleno" ou "Senior"
     if (tipoUsuario === 'sdr') {
       switch (nivel) {
         case 'junior':
-          return 'SDR Júnior';
+          return 'Junior';
         case 'pleno':
-          return 'SDR Pleno';
+          return 'Pleno';
         case 'senior':
-          return 'SDR Sênior';
+          return 'Senior';
+        default:
+          return 'Junior'; // Default para SDR
       }
     }
     
-    // Para outros tipos, manter a lógica original
+    // Para vendedores, usar o padrão
     switch (nivel) {
       case 'junior':
         return 'Vendedor Júnior';
@@ -104,18 +112,6 @@ export class NiveisService {
         return 'Vendedor Pleno';
       case 'senior':
         return 'Vendedor Sênior';
-      case 'sdr_inbound_junior':
-        return 'SDR Inbound Júnior';
-      case 'sdr_inbound_pleno':
-        return 'SDR Inbound Pleno';
-      case 'sdr_inbound_senior':
-        return 'SDR Inbound Sênior';
-      case 'sdr_outbound_junior':
-        return 'SDR Outbound Júnior';
-      case 'sdr_outbound_pleno':
-        return 'SDR Outbound Pleno';
-      case 'sdr_outbound_senior':
-        return 'SDR Outbound Sênior';
       default:
         return 'Indefinido';
     }
@@ -129,18 +125,6 @@ export class NiveisService {
         return 'bg-blue-100 text-blue-800';
       case 'senior':
         return 'bg-purple-100 text-purple-800';
-      case 'sdr_inbound_junior':
-        return 'bg-emerald-100 text-emerald-800';
-      case 'sdr_inbound_pleno':
-        return 'bg-teal-100 text-teal-800';
-      case 'sdr_inbound_senior':
-        return 'bg-cyan-100 text-cyan-800';
-      case 'sdr_outbound_junior':
-        return 'bg-amber-100 text-amber-800';
-      case 'sdr_outbound_pleno':
-        return 'bg-orange-100 text-orange-800';
-      case 'sdr_outbound_senior':
-        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }

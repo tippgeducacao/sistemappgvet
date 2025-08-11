@@ -342,22 +342,16 @@ const GerenciarVendedores: React.FC = () => {
                           </Badge>
                         </div>
                       </TableCell>
-                       <TableCell>
-                        {(() => {
-                          const baseNivel = (vendedor.nivel || 'junior').toLowerCase();
-                          const isSdr = vendedor.user_type === 'sdr';
-                          const sdrType = 'unified';
-                          const nivelCompleto = isSdr && !baseNivel.startsWith('sdr_') ? `sdr_${sdrType}_${baseNivel}` : baseNivel;
-                          return vendedor.nivel ? (
-                            <Badge variant="outline" className={NiveisService.getNivelColor(nivelCompleto)}>
-                              {NiveisService.getNivelLabel(nivelCompleto)}
+                        <TableCell>
+                          {vendedor.nivel ? (
+                            <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel)}>
+                              {NiveisService.getNivelLabel(vendedor.nivel, vendedor.user_type)}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="capitalize">
                               Não definido
                             </Badge>
-                          );
-                        })()}
+                          )}
                        </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
@@ -559,21 +553,15 @@ const GerenciarVendedores: React.FC = () => {
                         </div>
                       </TableCell>
                        <TableCell>
-                        {(() => {
-                          const baseNivel = (vendedor.nivel || 'junior').toLowerCase();
-                          const isSdr = vendedor.user_type === 'sdr';
-                          const sdrType = 'unified';
-                          const nivelCompleto = isSdr && !baseNivel.startsWith('sdr_') ? `sdr_${sdrType}_${baseNivel}` : baseNivel;
-                          return vendedor.nivel ? (
-                            <Badge variant="outline" className={NiveisService.getNivelColor(nivelCompleto)}>
-                              {NiveisService.getNivelLabel(nivelCompleto)}
+                          {vendedor.nivel ? (
+                            <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel)}>
+                              {NiveisService.getNivelLabel(vendedor.nivel, vendedor.user_type)}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="capitalize">
                               Não definido
                             </Badge>
-                          );
-                        })()}
+                          )}
                        </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
@@ -964,17 +952,9 @@ const UserCard: React.FC<UserCardProps> = ({
               </Badge>
               
               {/* Badge de nível para vendedores e SDRs */}
-              {(() => {
-                const baseNivel = (vendedor.nivel || 'junior').toLowerCase();
-                const isSdr = vendedor.user_type === 'sdr';
-                const sdrType = 'unified';
-                const nivelCompleto = isSdr && !baseNivel.startsWith('sdr_') ? `sdr_${sdrType}_${baseNivel}` : baseNivel;
-                return (
-                  <Badge variant="outline" className={NiveisService.getNivelColor(nivelCompleto)}>
-                    {NiveisService.getNivelLabel(nivelCompleto)}
-                  </Badge>
-                );
-              })()}
+              <Badge variant="outline" className={NiveisService.getNivelColor(vendedor.nivel || 'junior')}>
+                {NiveisService.getNivelLabel(vendedor.nivel || 'junior', vendedor.user_type)}
+              </Badge>
 
               <Badge variant={vendedor.ativo ? "default" : "secondary"} className={
                 vendedor.ativo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
