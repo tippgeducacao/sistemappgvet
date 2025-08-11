@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut, Download } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useAllVendas } from '@/hooks/useVendas';
@@ -12,6 +12,8 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
+import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
 
 interface VendedorData {
   id: string;
@@ -737,6 +739,33 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return dentroDoMes && compareceu;
   }).length;
 
+  // Função para exportar dados para planilha
+  const exportToExcel = () => {
+    const allData = [...vendedoresOnly, ...sdrsOnly];
+    
+    const data = allData.map((pessoa, index) => ({
+      'Posição': index + 1,
+      'Nome': pessoa.name,
+      'Tipo': pessoa.isSDR ? 'SDR' : 'Vendedor',
+      'Meta Semanal': pessoa.isSDR ? `${pessoa.weeklyTarget} vendas de cursos` : `${pessoa.weeklyTarget} pontos`,
+      'Realizado Semana': pessoa.isSDR ? `${pessoa.weeklySales} vendas` : `${pessoa.weeklySales} pontos`,
+      'Progresso (%)': pessoa.weeklyTarget > 0 ? ((pessoa.weeklySales / pessoa.weeklyTarget) * 100).toFixed(1) : '0',
+      'Reuniões Semana': pessoa.isSDR ? pessoa.reunioesSemana || 0 : 'N/A',
+      'Taxa Conversão (%)': pessoa.isSDR && pessoa.taxaConversaoSemanal !== undefined ? 
+        pessoa.taxaConversaoSemanal.toFixed(1) : 'N/A',
+      'Total Mensal': pessoa.isSDR ? `${pessoa.monthlyTotal} vendas` : `${pessoa.monthlyTotal} pontos`,
+      'Pontos Hoje': !pessoa.isSDR ? (pessoa.pontosHoje || 0).toFixed(1) : 'N/A',
+      'Pontos Ontem': !pessoa.isSDR ? (pessoa.pontosOntem || 0).toFixed(1) : 'N/A'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Ranking de Vendas');
+    
+    const filename = `ranking_vendas_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.xlsx`;
+    XLSX.writeFile(wb, filename);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -840,6 +869,14 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
               </div>
             </div>
           )}
+
+          {/* Botão de exportar planilha */}
+          <div className="mt-8 flex justify-center">
+            <Button onClick={exportToExcel} className="gap-2 bg-primary hover:bg-primary/90">
+              <Download className="h-4 w-4" />
+              Exportar Ranking para Excel
+            </Button>
+          </div>
         </div>
       </div>
     </div>
