@@ -743,117 +743,184 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return dentroDoMes && compareceu;
   }).length;
 
+  // Função para calcular as semanas que terminam no mês (quarta a terça)
+  const getWeeksInMonth = (year: number, month: number) => {
+    const weeks = [];
+    
+    // Encontrar a primeira terça-feira do mês
+    const firstDayOfMonth = new Date(year, month - 1, 1);
+    let firstTuesday = new Date(firstDayOfMonth);
+    while (firstTuesday.getDay() !== 2) {
+      firstTuesday.setDate(firstTuesday.getDate() + 1);
+    }
+    
+    // Se a primeira terça-feira é muito tarde no mês, usar a anterior
+    if (firstTuesday.getDate() > 7) {
+      firstTuesday.setDate(firstTuesday.getDate() - 7);
+    }
+    
+    let currentTuesday = new Date(firstTuesday);
+    
+    // Gerar todas as terças-feiras que terminam semanas dentro ou que afetam o mês
+    while (currentTuesday.getMonth() <= month - 1) {
+      const weekStart = new Date(currentTuesday);
+      weekStart.setDate(weekStart.getDate() - 6); // Quarta-feira (6 dias antes da terça)
+      
+      const weekEnd = new Date(currentTuesday);
+      weekEnd.setHours(23, 59, 59, 999);
+      
+      weeks.push({
+        start: weekStart,
+        end: weekEnd,
+        weekNumber: weeks.length + 1
+      });
+      
+      currentTuesday.setDate(currentTuesday.getDate() + 7);
+      
+      // Parar se já temos 5 semanas ou se passou muito do mês
+      if (weeks.length >= 5 || currentTuesday.getDate() > 31) break;
+    }
+    
+    return weeks;
+  };
+
   const exportToPDF = () => {
     const doc = new jsPDF();
+    const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     
     // Título
     doc.setFontSize(16);
-    doc.text('Ranking de Vendas Semanal', 14, 15);
+    doc.text(`Ranking de Vendedores - ${monthNames[currentMonth - 1]} de ${currentYear}`, 14, 15);
     
-    // Data do relatório e período
+    // Data do relatório
     const today = new Date();
     doc.setFontSize(10);
     doc.text(`Gerado em: ${today.toLocaleDateString('pt-BR')}`, 14, 25);
-    doc.text(`Período: ${startOfWeek.toLocaleDateString('pt-BR')} a ${endOfWeek.toLocaleDateString('pt-BR')}`, 14, 32);
     
-    // Dados dos vendedores
-    const vendedoresTableData = vendedoresOnly.map((vendedor, index) => [
-      index + 1,
-      vendedor.name,
-      vendedor.nivel || '-',
-      vendedor.weeklySales.toFixed(1),
-      vendedor.weeklyTarget,
-      `${vendedor.weeklyTarget > 0 ? ((vendedor.weeklySales / vendedor.weeklyTarget) * 100).toFixed(0) : 0}%`
-    ]);
+    // Obter semanas do mês
+    const weeks = getWeeksInMonth(currentYear, currentMonth);
     
-    // Tabela dos vendedores
-    autoTable(doc, {
-      head: [['Pos', 'Nome', 'Nível', 'Pontos', 'Meta', 'Progresso']],
-      body: vendedoresTableData,
-      startY: 45,
-      theme: 'striped',
-      headStyles: { fillColor: [59, 130, 246] },
-      margin: { left: 14, right: 14 }
+    // Preparar dados dos vendedores com informações semanais
+    const vendedoresTableData = vendedoresOnly.map((vendedor, index) => {
+      const weeklyData = weeks.map(week => {
+        const vendasDaSemana = vendas.filter(venda => {
+          if (venda.vendedor_id !== vendedor.id || venda.status !== 'matriculado') return false;
+          const vendaDate = new Date(venda.enviado_em);
+          return vendaDate >= week.start && vendaDate <= week.end;
+        });
+        
+        const pontosDaSemana = vendasDaSemana.reduce((sum, venda) => 
+          sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+        const progressoPorcentagem = vendedor.weeklyTarget > 0 ? 
+          ((pontosDaSemana / vendedor.weeklyTarget) * 100).toFixed(1) : '0.0';
+        
+        return `${pontosDaSemana.toFixed(1)}pts ${progressoPorcentagem}% (x0) = ${pontosDaSemana.toFixed(2)}`;
+      });
+      
+      const totalPontos = vendedor.points;
+      const atingimentoTotal = vendedor.weeklyTarget > 0 ? 
+        ((totalPontos / (vendedor.weeklyTarget * weeks.length)) * 100).toFixed(1) : '0.0';
+      
+      return [
+        vendedor.name,
+        vendedor.nivel || 'Junior',
+        vendedor.weeklyTarget,
+        `R$ ${(vendedor.weeklyTarget * 65).toFixed(2)}`, // Comissão estimada
+        ...weeklyData,
+        totalPontos.toFixed(1),
+        `${atingimentoTotal}%`,
+        `R$ ${(totalPontos * 65).toFixed(2)}` // Comissão total
+      ];
     });
     
-    // Se houver SDRs, adicionar nova seção
-    if (sdrsOnly.length > 0) {
-      const finalY = (doc as any).lastAutoTable.finalY || 45;
-      
-      doc.setFontSize(12);
-      doc.text('SDRs', 14, finalY + 15);
-      
-      const sdrsTableData = sdrsOnly.map((sdr, index) => [
-        vendedoresOnly.length + index + 1,
-        sdr.name,
-        sdr.nivel || '-',
-        sdr.weeklySales,
-        sdr.weeklyTarget,
-        `${sdr.weeklyTarget > 0 ? ((sdr.weeklySales / sdr.weeklyTarget) * 100).toFixed(0) : 0}%`,
-        sdr.reunioesSemana || 0
-      ]);
-      
-      autoTable(doc, {
-        head: [['Pos', 'Nome', 'Nível', 'Vendas', 'Meta', 'Progresso', 'Reuniões']],
-        body: sdrsTableData,
-        startY: finalY + 20,
-        theme: 'striped',
-        headStyles: { fillColor: [168, 85, 247] },
-        margin: { left: 14, right: 14 }
-      });
-    }
+    // Cabeçalhos da tabela
+    const headers = [
+      'Vendedor', 'Nível', 'Meta\nSemanal', 'Comissão\nSemanal',
+      ...weeks.map((week, i) => `Semana ${i + 1}\n${week.start.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})} - ${week.end.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}`),
+      'Total\nPontos', 'Atingimento\n%', 'Comissão\nTotal'
+    ];
+    
+    // Configurar tabela
+    autoTable(doc, {
+      head: [headers],
+      body: vendedoresTableData,
+      startY: 35,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [59, 130, 246],
+        fontSize: 8,
+        textColor: [255, 255, 255]
+      },
+      bodyStyles: { fontSize: 7 },
+      columnStyles: {
+        0: { cellWidth: 25 }, // Nome
+        1: { cellWidth: 15 }, // Nível
+        2: { cellWidth: 12 }, // Meta
+        3: { cellWidth: 15 }, // Comissão
+      },
+      margin: { left: 5, right: 5 }
+    });
     
     // Salvar arquivo
-    const fileName = `ranking-vendas-semanal-${startOfWeek.toISOString().split('T')[0]}.pdf`;
+    const fileName = `ranking-vendedores-${monthNames[currentMonth - 1].toLowerCase()}-${currentYear}.pdf`;
     doc.save(fileName);
   };
 
   const exportToSpreadsheet = () => {
-    // Dados dos vendedores
-    const vendedoresData = vendedoresOnly.map((vendedor, index) => ({
-      'Posição': index + 1,
-      'Nome': vendedor.name,
-      'Nível': vendedor.nivel || '-',
-      'Pontos Semana': vendedor.weeklySales.toFixed(1),
-      'Meta Semanal': vendedor.weeklyTarget,
-      'Progresso %': vendedor.weeklyTarget > 0 ? ((vendedor.weeklySales / vendedor.weeklyTarget) * 100).toFixed(0) + '%' : '0%',
-      'Pontos Mês': vendedor.monthlyTotal?.toFixed(1) || '0',
-      'Tipo': 'Vendedor'
-    }));
+    const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     
-    // Dados dos SDRs
-    const sdrsData = sdrsOnly.map((sdr, index) => ({
-      'Posição': vendedoresOnly.length + index + 1,
-      'Nome': sdr.name,
-      'Nível': sdr.nivel || '-',
-      'Vendas Semana': sdr.weeklySales,
-      'Meta Vendas': sdr.weeklyTarget,
-      'Progresso %': sdr.weeklyTarget > 0 ? ((sdr.weeklySales / sdr.weeklyTarget) * 100).toFixed(0) + '%' : '0%',
-      'Reuniões Semana': sdr.reunioesSemana || 0,
-      'Taxa Conversão': sdr.taxaConversaoSemanal ? sdr.taxaConversaoSemanal.toFixed(1) + '%' : '0%',
-      'Tipo': 'SDR'
-    }));
+    // Obter semanas do mês
+    const weeks = getWeeksInMonth(currentYear, currentMonth);
+    
+    // Preparar dados dos vendedores
+    const vendedoresData = vendedoresOnly.map((vendedor, index) => {
+      const baseData = {
+        'Vendedor': vendedor.name,
+        'Nível': vendedor.nivel || 'Junior',
+        'Meta Semanal': vendedor.weeklyTarget,
+        'Comissão Semanal': `R$ ${(vendedor.weeklyTarget * 65).toFixed(2)}`
+      };
+      
+      // Adicionar dados de cada semana
+      const weeklyData: any = {};
+      weeks.forEach((week, i) => {
+        const vendasDaSemana = vendas.filter(venda => {
+          if (venda.vendedor_id !== vendedor.id || venda.status !== 'matriculado') return false;
+          const vendaDate = new Date(venda.enviado_em);
+          return vendaDate >= week.start && vendaDate <= week.end;
+        });
+        
+        const pontosDaSemana = vendasDaSemana.reduce((sum, venda) => 
+          sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+        const progressoPorcentagem = vendedor.weeklyTarget > 0 ? 
+          ((pontosDaSemana / vendedor.weeklyTarget) * 100).toFixed(1) : '0.0';
+        
+        weeklyData[`Semana ${i + 1} ${week.start.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})} - ${week.end.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}`] = 
+          `${pontosDaSemana.toFixed(1)}pts ${progressoPorcentagem}% (x0) = ${pontosDaSemana.toFixed(2)}`;
+      });
+      
+      const totalPontos = vendedor.points;
+      const atingimentoTotal = vendedor.weeklyTarget > 0 ? 
+        ((totalPontos / (vendedor.weeklyTarget * weeks.length)) * 100).toFixed(1) : '0.0';
+      
+      return {
+        ...baseData,
+        ...weeklyData,
+        'Total Pontos': totalPontos.toFixed(1),
+        'Atingimento %': `${atingimentoTotal}%`,
+        'Comissão Total': `R$ ${(totalPontos * 65).toFixed(2)}`
+      };
+    });
     
     const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(vendedoresData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, `${monthNames[currentMonth - 1]} ${currentYear}`);
     
-    // Aba dos vendedores
-    if (vendedoresData.length > 0) {
-      const vendedoresSheet = XLSX.utils.json_to_sheet(vendedoresData);
-      XLSX.utils.book_append_sheet(workbook, vendedoresSheet, 'Vendedores');
-    }
-    
-    // Aba dos SDRs
-    if (sdrsData.length > 0) {
-      const sdrsSheet = XLSX.utils.json_to_sheet(sdrsData);
-      XLSX.utils.book_append_sheet(workbook, sdrsSheet, 'SDRs');
-    }
-    
-    // Aba combinada
-    const allData = [...vendedoresData, ...sdrsData];
-    const allSheet = XLSX.utils.json_to_sheet(allData);
-    XLSX.utils.book_append_sheet(workbook, allSheet, 'Ranking Completo');
-    
-    const fileName = `ranking-vendas-semanal-${startOfWeek.toISOString().split('T')[0]}.xlsx`;
+    const fileName = `ranking-vendedores-${monthNames[currentMonth - 1].toLowerCase()}-${currentYear}.xlsx`;
     XLSX.writeFile(workbook, fileName);
   };
 
