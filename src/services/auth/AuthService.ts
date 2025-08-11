@@ -11,6 +11,7 @@ export interface Profile {
   email: string;
   name: string;
   user_type: 'secretaria' | 'vendedor' | 'admin' | 'diretor' | 'sdr_inbound' | 'sdr_outbound' | 'sdr';
+  nivel?: string;
 }
 
 export class AuthService {

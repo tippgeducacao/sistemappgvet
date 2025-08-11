@@ -71,45 +71,26 @@ export const SDRMetasSemanais = () => {
 
       if (error) throw error;
 
-      // Buscar meta de agendamentos pelo nível correto do perfil
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('nivel')
-        .eq('id', profile.id)
-        .single();
+      // Buscar configuração do nível diretamente do perfil
+      const nivelSDR = profile?.nivel || 'junior';
+      console.log('🔍 Nível SDR do perfil:', nivelSDR);
 
-      if (profileError) {
-        console.error('Erro ao buscar perfil:', profileError);
-        return { realizados: 0, meta: 0, percentual: 0 };
-      }
-
-      const nivelFromProfile = profileData?.nivel || 'junior';
-      const userType = profile.user_type; // 'sdr'
-      const nivelBase = nivelFromProfile.replace('sdr_', '').replace('inbound_', '').replace('outbound_', '');
-      const nivelCompleto = userType?.startsWith('sdr_') ? `${userType}_${nivelBase}` : nivelBase;
-      console.log('🔍 Nível SDR:', { nivelFromProfile, userType, nivelBase, nivelCompleto });
-
-      // Buscar configuração do nível considerando diferentes formas de armazenamento
-      const { data: niveisRows, error: nivelError } = await supabase
+      // Buscar configuração do nível para SDR
+      const { data: nivelConfig, error: nivelError } = await supabase
         .from('niveis_vendedores')
-        .select('nivel, tipo_usuario, meta_semanal_inbound, meta_semanal_outbound')
-        .in('nivel', [nivelCompleto, nivelBase])
-        .in('tipo_usuario', ['sdr']);
+        .select('meta_semanal_inbound')
+        .eq('nivel', nivelSDR)
+        .eq('tipo_usuario', 'sdr')
+        .single();
 
       if (nivelError) {
         console.error('Erro ao buscar nível:', nivelError);
         return { realizados: 0, meta: 0, percentual: 0 };
       }
 
-      const nivelConfig = (niveisRows || []).find(n => n.nivel === nivelCompleto)
-        || (niveisRows || []).find(n => n.nivel === nivelBase)
-        || null;
-
       console.log('📊 Config de nível encontrada:', nivelConfig);
 
-      const metaAgendamentos = nivelFromProfile?.includes('inbound')
-        ? (nivelConfig?.meta_semanal_inbound ?? 0)
-        : (nivelConfig?.meta_semanal_outbound ?? 0);
+      const metaAgendamentos = nivelConfig?.meta_semanal_inbound || 0;
 
       console.log('🎯 Meta de agendamentos para SDR:', metaAgendamentos);
 
@@ -241,7 +222,7 @@ export const SDRMetasSemanais = () => {
                 const meta = getMetaSemanalSDR(profile.id, selectedYear, semana);
                 const vendasNaSemana = getVendasNaSemana(semana);
                 const realizado = vendasNaSemana.length;
-                const metaValue = meta?.meta_vendas_cursos || 8; // Meta padrão de 8 cursos
+                const metaValue = meta?.meta_vendas_cursos || 0; // Usar meta do banco de dados
                 const percentual = metaValue > 0 ? (realizado / metaValue) * 100 : 0;
                 const isAtual = isCurrentWeek(semana);
 
