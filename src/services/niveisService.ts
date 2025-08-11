@@ -8,7 +8,8 @@ export interface NivelVendedor {
   vale: number;
   variavel_semanal: number;
   meta_semanal_vendedor: number;
-  meta_semanal_sdr: number;
+  meta_semanal_inbound: number;
+  meta_semanal_outbound: number;
   meta_vendas_cursos: number;
   created_at: string;
   updated_at: string;
@@ -34,8 +35,7 @@ export class NiveisService {
     return (data || []).map(item => ({
       ...item,
       nivel: item.nivel as 'junior' | 'pleno' | 'senior',
-      tipo_usuario: item.tipo_usuario as 'vendedor' | 'sdr',
-      meta_semanal_sdr: item.meta_semanal_inbound || 55
+      tipo_usuario: item.tipo_usuario as 'vendedor' | 'sdr'
     }));
   }
 

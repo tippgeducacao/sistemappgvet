@@ -712,7 +712,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     })));
     console.log('📊 Níveis disponíveis para SDRs:', niveis.filter(n => n.nivel.includes('sdr')).map(n => ({
       nivel: n.nivel,
-      meta_sdr: n.meta_semanal_sdr
+      meta_inbound: n.meta_semanal_inbound
     })));
     console.log('📅 Total de agendamentos disponíveis:', agendamentos?.length || 0);
     console.log('📋 Agendamentos com resultado:', agendamentos?.filter(a => a.resultado_reuniao).length || 0);

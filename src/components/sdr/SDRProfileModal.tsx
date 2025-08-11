@@ -44,7 +44,7 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({
   const nivelConfig = niveis.find(n => n.nivel === sdrNivel && n.tipo_usuario === 'sdr');
   
   // Meta semanal de reuniões baseada no nível do SDR
-  const metaReunioesSemanal = nivelConfig?.meta_semanal_sdr || 55;
+  const metaReunioesSemanal = nivelConfig?.meta_semanal_inbound || 55;
 
   // Função para calcular as semanas que terminam no mês (quarta a terça)
   const getWeeksInMonth = (year: number, month: number) => {
