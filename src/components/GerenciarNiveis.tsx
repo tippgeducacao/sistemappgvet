@@ -140,7 +140,7 @@ const GerenciarNiveis: React.FC = () => {
       </div>
 
       <Tabs defaultValue="vendedores" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="vendedores" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Vendedores
@@ -148,14 +148,6 @@ const GerenciarNiveis: React.FC = () => {
           <TabsTrigger value="sdr" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
             SDR
-          </TabsTrigger>
-          <TabsTrigger value="sdr-inbound" className="flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            SDR Inbound
-          </TabsTrigger>
-          <TabsTrigger value="sdr-outbound" className="flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            SDR Outbound
           </TabsTrigger>
           <TabsTrigger value="comissionamento" className="flex items-center gap-2">
             <Calculator className="h-4 w-4" />
@@ -192,42 +184,6 @@ const GerenciarNiveis: React.FC = () => {
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {niveisSDR.map((nivel) => (
-                  <NivelCard key={nivel.id} nivel={nivel} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="sdr-inbound" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Níveis de SDR Inbound
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {niveisSDRInbound.map((nivel) => (
-                  <NivelCard key={nivel.id} nivel={nivel} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="sdr-outbound" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Níveis de SDR Outbound
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {niveisSDROutbound.map((nivel) => (
                   <NivelCard key={nivel.id} nivel={nivel} />
                 ))}
               </div>
