@@ -69,7 +69,7 @@ const MiniTVDisplay: React.FC<MiniTVDisplayProps> = ({
         return vendaDate.getMonth() + 1 === mesAtual && vendaDate.getFullYear() === anoAtual;
       });
 
-      const nivel = niveis.find(n => n.nivel === vendedor.nivel);
+      const nivel = niveis.find(n => n.nivel === vendedor.nivel && n.tipo_usuario === 'vendedor');
       const metaSemanal = nivel?.meta_semanal_vendedor || 7;
       const pontosPorVenda = 1;
 

@@ -868,7 +868,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     const vendedoresTableData = await Promise.all(vendedoresOnly.map(async vendedor => {
       const vendedorData = vendedores.find(v => v.id === vendedor.id);
       const vendedorNivel = vendedorData?.nivel || 'junior';
-      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
       const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
       const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
       const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;
@@ -1010,7 +1010,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     const vendedoresData = await Promise.all(vendedoresOnly.map(async vendedor => {
       const vendedorData = vendedores.find(v => v.id === vendedor.id);
       const vendedorNivel = vendedorData?.nivel || 'junior';
-      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
       const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
       const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
       const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;

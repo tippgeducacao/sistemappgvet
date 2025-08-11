@@ -319,7 +319,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     
     // Buscar meta semanal baseada no nível do vendedor
     const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
-    const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+    const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
     
     // Obter progresso da semana atual
     const progressoSemanaAtual = getCurrentWeekProgress(vendedor.id);
@@ -512,7 +512,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     // Dados da tabela de vendedores
     const vendedoresTableData = await Promise.all(ranking.map(async vendedor => {
       const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
-      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
       const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
       const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
       const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;
@@ -675,7 +675,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     // Dados dos Vendedores
     const vendedoresData = await Promise.all(ranking.map(async vendedor => {
       const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
-      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
       const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
       const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
       const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;

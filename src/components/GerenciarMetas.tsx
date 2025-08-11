@@ -65,7 +65,7 @@ const GerenciarMetas = () => {
       const novosVendedoresInfo = vendedores
         .filter(vendedor => ['vendedor', 'sdr'].includes(vendedor.user_type))
         .map(vendedor => {
-          const nivelVendedor = niveis.find(n => n.nivel === vendedor.nivel);
+          const nivelVendedor = niveis.find(n => n.nivel === vendedor.nivel && n.tipo_usuario === 'vendedor');
           
           return {
             vendedorId: vendedor.id,

@@ -53,7 +53,7 @@ const VendedorExportTableRow: React.FC<VendedorExportTableRowProps> = ({
 
   const vendedorData = vendedores.find(v => v.id === vendedor.id);
   const vendedorNivel = vendedorData?.nivel || 'junior';
-  const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+  const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
   const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
   const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
   const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
