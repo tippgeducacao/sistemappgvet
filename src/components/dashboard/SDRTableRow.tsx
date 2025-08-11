@@ -48,7 +48,7 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
   
   console.log('📊 SDR Row - Configuração do nível encontrada:', nivelConfig);
   
-  const metaSemanal = nivelConfig?.meta_vendas_cursos ?? 8;
+  const metaSemanal = nivelConfig?.meta_semanal_inbound ?? 55;
   
   const metaMensal = metaSemanal * weeks.length;
   const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
