@@ -1,11 +1,11 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { User, LogOut, Building2 } from 'lucide-react';
 import { SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/AuthStore';
+import UserProfileModal from '@/components/UserProfileModal';
 import type { UserType } from '@/types/user';
 
 interface SidebarFooterComponentProps {
@@ -19,6 +19,10 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
 }) => {
   const { signOut } = useAuth();
   const { profile, currentUser } = useAuthStore();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  
+  // Usar currentUser se disponível, senão profile
+  const user = currentUser || profile;
   
   const userEmail = profile?.email || currentUser?.email;
   const isComercialUser = userEmail === 'comercial@ppgvet.com';
@@ -80,38 +84,59 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
   };
 
   return (
-    <SidebarFooter className="border-t border-ppgvet-teal/20 p-3 bg-gradient-to-r from-ppgvet-teal/5 to-ppgvet-magenta/5 dark:from-ppgvet-teal/10 dark:to-ppgvet-magenta/10">
-      <div className="space-y-3">
-        <div className="flex items-center space-x-3 p-2.5 rounded-lg bg-card/60 backdrop-blur-sm border border-ppgvet-teal/20 shadow-sm">
-          <div className="flex-shrink-0">
-            <Avatar className="h-7 w-7 ring-2 ring-ppgvet-teal/20">
-              <AvatarImage src={getProfileImage() || undefined} alt={userName} />
-              <AvatarFallback className="bg-ppgvet-teal/10 text-ppgvet-teal text-xs font-bold">
-                {getUserInitials()}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {userName}
-            </p>
-            <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-ppgvet-teal/10 text-ppgvet-teal border-ppgvet-teal/30 dark:bg-ppgvet-teal/20 dark:text-ppgvet-teal`}>
-              {getUserTypeLabel()}
+    <>
+      <SidebarFooter className="border-t border-ppgvet-teal/20 p-3 bg-gradient-to-r from-ppgvet-teal/5 to-ppgvet-magenta/5 dark:from-ppgvet-teal/10 dark:to-ppgvet-magenta/10">
+        <div className="space-y-3">
+          <div className="flex items-center space-x-3 p-2.5 rounded-lg bg-card/60 backdrop-blur-sm border border-ppgvet-teal/20 shadow-sm">
+            <div className="flex-shrink-0">
+              <Avatar className="h-7 w-7 ring-2 ring-ppgvet-teal/20">
+                <AvatarImage src={getProfileImage() || undefined} alt={userName} />
+                <AvatarFallback className="bg-ppgvet-teal/10 text-ppgvet-teal text-xs font-bold">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                {userName}
+              </p>
+              <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-ppgvet-teal/10 text-ppgvet-teal border-ppgvet-teal/30 dark:bg-ppgvet-teal/20 dark:text-ppgvet-teal`}>
+                {getUserTypeLabel()}
+              </div>
             </div>
           </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsProfileOpen(true)}
+            className="w-full justify-start gap-2 rounded-lg border-ppgvet-teal/30 hover:bg-ppgvet-teal/10 hover:text-ppgvet-teal hover:border-ppgvet-teal/50 transition-all duration-200"
+          >
+            <User className="h-4 w-4 stroke-[1.5]" />
+            Ver Perfil
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={signOut}
+            className="w-full justify-start gap-2 rounded-lg border-ppgvet-teal/30 hover:bg-ppgvet-teal/10 hover:text-ppgvet-teal hover:border-ppgvet-teal/50 transition-all duration-200"
+          >
+            <LogOut className="h-4 w-4 stroke-[1.5]" />
+            Sair
+          </Button>
         </div>
-        
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={signOut}
-          className="w-full justify-start gap-2 rounded-lg border-ppgvet-teal/30 hover:bg-ppgvet-teal/10 hover:text-ppgvet-teal hover:border-ppgvet-teal/50 transition-all duration-200"
-        >
-          <LogOut className="h-4 w-4 stroke-[1.5]" />
-          Sair
-        </Button>
-      </div>
-    </SidebarFooter>
+      </SidebarFooter>
+      
+      {user && (
+        <UserProfileModal
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          user={user}
+          canEdit={true}
+        />
+      )}
+    </>
   );
 };
 

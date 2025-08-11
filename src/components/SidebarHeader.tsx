@@ -63,12 +63,6 @@ const SidebarHeaderComponent: React.FC<SidebarHeaderComponentProps> = ({ userTyp
           </div>
         </div>
 
-        {/* Botão do perfil do usuário */}
-        {(profile || currentUser) && (
-          <div className="pt-2 border-t border-ppgvet-teal/20">
-            <UserProfileButton />
-          </div>
-        )}
       </div>
     </SidebarHeader>
   );
