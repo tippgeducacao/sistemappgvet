@@ -412,6 +412,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     return weeks;
   };
 
+
   // Função para calcular pontos por semana do vendedor
   const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
     return weeks.map((week, index) => {
@@ -913,6 +914,29 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                       const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
                       const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
                       
+                      // Calcular comissão total usando o hook de efeito
+                      const [totalCommission, setTotalCommission] = React.useState(0);
+                      const [weeklyCommissions, setWeeklyCommissions] = React.useState<number[]>([]);
+                      
+                      React.useEffect(() => {
+                        const calculateCommissions = async () => {
+                          const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+                          const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+                          
+                          const commissions = await Promise.all(
+                            weeklyPoints.map(points => calculateWeeklyCommission(points, metaSemanal, variavelSemanal))
+                          );
+                          
+                          const total = commissions.reduce((sum, c) => sum + c.valor, 0);
+                          setTotalCommission(total);
+                          setWeeklyCommissions(commissions.map(c => c.valor));
+                        };
+                        
+                        if (weeklyPoints.length > 0) {
+                          calculateCommissions();
+                        }
+                      }, [weeklyPoints, nivelConfig]);
+                      
                       return (
                         <tr key={vendedor.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
                           <td className="p-2 font-medium">{vendedor.name}</td>
@@ -922,16 +946,17 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                           {weeklyPoints.map((points, weekIndex) => {
                             const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
                             const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : "0.0";
+                            const weeklyCommission = weeklyCommissions[weekIndex] || 0;
                             return (
                               <td key={weekIndex} className="p-2 text-xs">
-                                <div>{points.toFixed(1)}pts</div>
-                                <div className="opacity-70">{percentage}%</div>
+                                <div>{points.toFixed(1)}pts ({percentage}%)</div>
+                                <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
                               </td>
                             );
                           })}
                           <td className="p-2 font-semibold">{totalPoints.toFixed(1)}</td>
                           <td className="p-2 font-semibold">{achievementPercentage.toFixed(1)}%</td>
-                          <td className="p-2 font-semibold">R$ 0.00</td>
+                          <td className="p-2 font-semibold text-green-600">R$ {totalCommission.toFixed(2)}</td>
                         </tr>
                       );
                     })}
@@ -1004,6 +1029,28 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                       const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
                       const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
                       
+                      // Calcular comissão total usando estado
+                      const [totalSDRCommission, setTotalSDRCommission] = React.useState(0);
+                      const [weeklySDRCommissions, setWeeklySDRCommissions] = React.useState<number[]>([]);
+                      
+                      React.useEffect(() => {
+                        const calculateSDRCommissions = async () => {
+                          const commissions = await Promise.all(
+                            reunioesPorSemana.map(reunioes => 
+                              ComissionamentoService.calcularComissao(reunioes, metaSemanal, variavelSemanal, 'sdr')
+                            )
+                          );
+                          
+                          const total = commissions.reduce((sum, c) => sum + c.valor, 0);
+                          setTotalSDRCommission(total);
+                          setWeeklySDRCommissions(commissions.map(c => c.valor));
+                        };
+                        
+                        if (reunioesPorSemana.length > 0) {
+                          calculateSDRCommissions();
+                        }
+                      }, [reunioesPorSemana]);
+                      
                       return (
                         <tr key={sdr.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
                           <td className="p-2 font-medium">{sdr.name}</td>
@@ -1013,16 +1060,17 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                           <td className="p-2">R$ {variavelSemanal.toFixed(2)}</td>
                           {reunioesPorSemana.map((reunioes, weekIndex) => {
                             const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : "0.0";
+                            const weeklyCommission = weeklySDRCommissions[weekIndex] || 0;
                             return (
                               <td key={weekIndex} className="p-2 text-xs">
-                                <div>{reunioes} reuniões</div>
-                                <div className="opacity-70">{percentage}%</div>
+                                <div>{reunioes} reuniões ({percentage}%)</div>
+                                <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
                               </td>
                             );
                           })}
                           <td className="p-2 font-semibold">{totalReunioes}</td>
                           <td className="p-2 font-semibold">{achievementPercentage.toFixed(1)}%</td>
-                          <td className="p-2 font-semibold">R$ 0.00</td>
+                          <td className="p-2 font-semibold text-green-600">R$ {totalSDRCommission.toFixed(2)}</td>
                         </tr>
                       );
                     })}
