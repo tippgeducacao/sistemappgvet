@@ -24,7 +24,7 @@ export class VendedoresService {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_type', ['vendedor', 'admin', 'sdr_inbound', 'sdr_outbound'])
+        .in('user_type', ['vendedor', 'admin', 'sdr'])
         .eq('ativo', true)
         .order('name');
 
@@ -85,15 +85,15 @@ export class VendedoresService {
         vendedorData.userType
       );
       
-      // Depois, criar a role no contexto do diretor (se necessário)
-      if (vendedorData.userType !== 'vendedor') {
+      // Depois, criar a role no contexto do diretor (apenas para admin)
+      if (vendedorData.userType === 'admin') {
         console.log('🔧 Criando role para usuário no contexto do diretor:', { userType: vendedorData.userType, userId: newUserId });
         
         const { error: roleCreateError } = await supabase
           .from('user_roles')
           .insert({
             user_id: newUserId,
-            role: vendedorData.userType as 'admin' | 'sdr_inbound' | 'sdr_outbound',
+            role: vendedorData.userType as 'admin',
             created_by: currentUser.user.id
           });
 
@@ -289,7 +289,7 @@ export class VendedoresService {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_type', ['vendedor', 'admin', 'sdr_inbound', 'sdr_outbound'])
+        .in('user_type', ['vendedor', 'admin', 'sdr'])
         .order('name');
 
       if (error) {
