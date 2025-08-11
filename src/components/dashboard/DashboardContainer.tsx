@@ -4,7 +4,7 @@ import DashboardMetricsCards from './DashboardMetricsCards';
 import SalesChart from './SalesChart';
 import StatusDistributionChart from './StatusDistributionChart';
 import SalesByCourseChart from './SalesByCourseChart';
-import VendorsRanking from './VendorsRanking';
+import MiniRankingDisplay from './MiniRankingDisplay';
 import RecentSales from './RecentSales';
 import VendedorMetas from './VendedorMetas';
 import WeeklyApprovedSalesChart from './WeeklyApprovedSalesChart';
@@ -118,8 +118,7 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
 
         <ReunioesAdminChart selectedSDR={selectedVendedor} />
 
-        <VendorsRanking 
-          selectedVendedor={selectedVendedor}
+        <MiniRankingDisplay 
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
         />

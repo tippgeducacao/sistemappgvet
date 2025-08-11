@@ -1133,11 +1133,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         />
 
       </CardContent>
-      
-      {/* Ranking de SDRs - Posicionado abaixo do ranking de vendedores */}
-      <div className="mt-6">
-        <SimpleSDRRanking />
-      </div>
     </Card>
   );
 };
