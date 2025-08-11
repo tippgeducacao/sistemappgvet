@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tv, Trophy, Crown, Medal } from 'lucide-react';
+import { Tv, Trophy, Crown, Medal, FileSpreadsheet, FileText } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import TVRankingDisplay from './TVRankingDisplay';
@@ -102,6 +105,60 @@ const MiniRankingDisplay: React.FC<MiniRankingDisplayProps> = ({
 
   const topVendedores = ranking.slice(0, 5); // Mostrar apenas top 5
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Título
+    doc.setFontSize(16);
+    doc.text('Ranking de Vendas', 14, 15);
+    
+    // Data do relatório
+    const today = new Date();
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${today.toLocaleDateString('pt-BR')}`, 14, 25);
+    
+    // Dados para a tabela
+    const tableData = ranking.map((vendedor, index) => [
+      index + 1,
+      vendedor.nome,
+      vendedor.nivel || '-',
+      vendedor.vendas,
+      vendedor.pontuacao.toFixed(1)
+    ]);
+    
+    // Configurar tabela
+    autoTable(doc, {
+      head: [['Posição', 'Nome', 'Nível', 'Vendas', 'Pontuação']],
+      body: tableData,
+      startY: 35,
+      theme: 'striped',
+      headStyles: { fillColor: [59, 130, 246] }
+    });
+    
+    // Salvar arquivo
+    const fileName = `ranking-vendas-${today.toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  };
+
+  const exportToSpreadsheet = () => {
+    const data = ranking.map((vendedor, index) => ({
+      'Posição': index + 1,
+      'Nome': vendedor.nome,
+      'Nível': vendedor.nivel || '-',
+      'Vendas': vendedor.vendas,
+      'Pontuação': vendedor.pontuacao.toFixed(1),
+      'Tipo': vendedor.user_type
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Ranking');
+    
+    const today = new Date();
+    const fileName = `ranking-vendas-${today.toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -139,15 +196,35 @@ const MiniRankingDisplay: React.FC<MiniRankingDisplayProps> = ({
               <Trophy className="h-5 w-5 text-primary" />
               Ranking de Vendas - Top 5
             </CardTitle>
-            <Button
-              onClick={() => setIsTVMode(true)}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <Tv className="h-4 w-4" />
-              Expandir
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={exportToPDF}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                PDF
+              </Button>
+              <Button
+                onClick={exportToSpreadsheet}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Excel
+              </Button>
+              <Button
+                onClick={() => setIsTVMode(true)}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Tv className="h-4 w-4" />
+                Expandir
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
