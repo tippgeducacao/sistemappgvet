@@ -81,7 +81,7 @@ export class SemanasConsecutivasService {
       .from('niveis_vendedores')
       .select('meta_semanal_inbound, meta_semanal_outbound, tipo_usuario')
       .eq('nivel', nivel)
-      .eq('tipo_usuario', 'sdr_inbound') // Vamos usar como base e ajustar depois
+      .eq('tipo_usuario', 'sdr') // Buscar SDR independente do tipo específico
       .single();
 
     if (nivelError) {
