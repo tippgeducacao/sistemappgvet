@@ -28,7 +28,7 @@ export class SDRComissionamentoService {
         .from('profiles')
         .select('name, nivel, user_type')
         .eq('id', sdrId)
-        .eq('user_type', 'sdr_inbound')
+        .eq('user_type', 'sdr')
         .single();
 
       if (sdrError || !sdrData) {
@@ -39,7 +39,7 @@ export class SDRComissionamentoService {
       // Buscar dados do nível do SDR
       const { data: nivelData, error: nivelError } = await supabase
         .from('niveis_vendedores')
-        .select('meta_semanal_inbound, variavel_semanal')
+        .select('meta_semanal_outbound, variavel_semanal')
         .eq('nivel', sdrData.nivel)
         .eq('tipo_usuario', 'sdr')
         .single();
@@ -82,7 +82,7 @@ export class SDRComissionamentoService {
       }
 
       const reunioesRealizadas = agendamentos?.length || 0;
-      const metaSemanalReunioes = nivelData.meta_semanal_inbound;
+      const metaSemanalReunioes = nivelData.meta_semanal_outbound;
       const variabelSemanal = nivelData.variavel_semanal;
 
       // Calcular percentual de atingimento
@@ -128,7 +128,7 @@ export class SDRComissionamentoService {
       const { data: sdrs, error: sdrsError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('user_type', 'sdr_inbound')
+        .eq('user_type', 'sdr')
         .eq('ativo', true);
 
       if (sdrsError || !sdrs) {

@@ -38,23 +38,15 @@ export const useSDRAgendamentosSemanaCompleto = () => {
 
       if (error) throw error;
 
-      // Buscar meta de agendamentos do perfil
-      const nivelRaw = (profile as any)?.nivel || 'junior';
-      let nivelCompleto = '';
+      // Buscar meta de agendamentos do perfil usando apenas o nível básico
+      const nivelUsuario = (profile as any)?.nivel || 'junior';
       
-      // Se o nível já contém o prefixo, usar direto, senão construir
-      if (nivelRaw.includes('sdr_')) {
-        nivelCompleto = nivelRaw;
-      } else {
-        nivelCompleto = `sdr_${nivelRaw}`;
-      }
-
-      console.log('🔍 Buscando meta de agendamentos para:', { nivelRaw, nivelCompleto, userType: profile.user_type });
+      console.log('🔍 Buscando meta de agendamentos para SDR:', { nivel: nivelUsuario, userType: profile.user_type });
 
       const { data: nivelData } = await supabase
         .from('niveis_vendedores')
-        .select('meta_semanal_inbound, meta_semanal_outbound, nivel')
-        .eq('nivel', nivelCompleto)
+        .select('meta_semanal_outbound, nivel')
+        .eq('nivel', nivelUsuario)
         .eq('tipo_usuario', 'sdr')
         .maybeSingle();
 

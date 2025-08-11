@@ -39,19 +39,16 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
   const [totalSDRCommission, setTotalSDRCommission] = useState(0);
   const [weeklySDRCommissions, setWeeklySDRCommissions] = useState<number[]>([]);
 
-  // Determinar tipo de SDR
-  const sdrType = sdr.nivel?.includes('inbound') ? 'inbound' : 'outbound';
   const sdrTipoUsuario = sdr.user_type;
   
-  // Processar nível do SDR
-  const baseNivel = sdr.nivel || 'junior';
-  const nivelCompleto = baseNivel.startsWith('sdr_') ? baseNivel : `sdr_${sdrType}_${baseNivel}`;
-  const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel.toLowerCase() === nivelCompleto);
-  const nivelLabel = nivelCompleto.charAt(0).toUpperCase() + nivelCompleto.slice(1);
+  console.log('🔍 SDR Row - Dados do SDR:', { nivel: sdr.nivel, userType: sdr.user_type });
   
-  const metaSemanal = sdr.nivel?.includes('inbound')
-    ? (nivelConfig?.meta_semanal_inbound ?? 55)
-    : (nivelConfig?.meta_semanal_outbound ?? 55);
+  // Buscar configuração do nível diretamente usando apenas o nível básico
+  const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel === sdr.nivel);
+  
+  console.log('📊 SDR Row - Configuração do nível encontrada:', nivelConfig);
+  
+  const metaSemanal = nivelConfig?.meta_semanal_outbound ?? 30;
   
   const metaMensal = metaSemanal * weeks.length;
   const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
@@ -107,8 +104,8 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
           <span>{sdr.name}</span>
         </div>
       </td>
-      <td className="p-2">{sdrType === 'inbound' ? 'Inbound' : 'Outbound'}</td>
-      <td className="p-2">{nivelLabel}</td>
+      <td className="p-2">SDR</td>
+      <td className="p-2">{sdr.nivel || 'junior'}</td>
       <td className="p-2">{metaSemanal}</td>
       <td className="p-2">R$ {variavelSemanal.toFixed(2)}</td>
       {reunioesPorSemana.map((reunioes, weekIndex) => {
