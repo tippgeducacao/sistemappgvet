@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import HistoricoMensalManager from './HistoricoMensalManager';
 import DashboardMetricsCards from './DashboardMetricsCards';
 import SalesChart from './SalesChart';
 import StatusDistributionChart from './StatusDistributionChart';
@@ -129,6 +130,8 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
         />
+
+        <HistoricoMensalManager />
       </div>
     );
   }

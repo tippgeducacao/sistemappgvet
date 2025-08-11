@@ -378,6 +378,48 @@ export type Database = {
           },
         ]
       }
+      historico_mensal_planilhas: {
+        Row: {
+          ano: number
+          created_at: string
+          data_fechamento: string | null
+          fechado_por: string | null
+          id: string
+          mes: number
+          snapshot_metas: Json
+          snapshot_niveis: Json
+          snapshot_regras_comissionamento: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          data_fechamento?: string | null
+          fechado_por?: string | null
+          id?: string
+          mes: number
+          snapshot_metas?: Json
+          snapshot_niveis?: Json
+          snapshot_regras_comissionamento?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          data_fechamento?: string | null
+          fechado_por?: string | null
+          id?: string
+          mes?: number
+          snapshot_metas?: Json
+          snapshot_niveis?: Json
+          snapshot_regras_comissionamento?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       historico_validacoes: {
         Row: {
           acao: string
@@ -827,6 +869,10 @@ export type Database = {
         Args: { p_vendedor_id: string; p_ano: number; p_mes: number }
         Returns: undefined
       }
+      criar_snapshot_mensal: {
+        Args: { p_ano: number; p_mes: number }
+        Returns: boolean
+      }
       delete_venda_cascade: {
         Args: { venda_id: string }
         Returns: boolean
@@ -869,6 +915,10 @@ export type Database = {
           last_accessed_at: string
           metadata: Json
         }[]
+      }
+      reabrir_mes_planilha: {
+        Args: { p_ano: number; p_mes: number }
+        Returns: boolean
       }
       recalculate_all_vendas: {
         Args: Record<PropertyKey, never>

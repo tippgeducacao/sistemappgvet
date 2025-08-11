@@ -29,6 +29,9 @@ import VendedorProfileModal from './VendedorProfileModal';
 import VendedoresTableRow from './VendedoresTableRow';
 import VendedorExportTableRow from './VendedorExportTableRow';
 import SDRTableRow from './SDRTableRow';
+import FechamentoMensalDialog from './FechamentoMensalDialog';
+import { useMesFechado } from '@/hooks/useHistoricoMensal';
+import { Archive, Calendar } from 'lucide-react';
 
 
 import jsPDF from 'jspdf';
@@ -57,9 +60,12 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     return `${ano}-${String(mes).padStart(2, '0')}`;
   });
   
-  // Hook para metas semanais
+  // Hook para verificar se o mês está fechado
   const currentMonth = propSelectedMonth || parseInt(internalSelectedMonth?.split('-')[1] || '1');
   const currentYear = propSelectedYear || parseInt(internalSelectedMonth?.split('-')[0] || '2025');
+  const { data: isMesFechado } = useMesFechado(currentYear, currentMonth);
+  
+  // Hook para metas semanais
   const { metasSemanais, loading: metasSemanaisLoading } = useMetasSemanais();
 
   // Estado para modal de metas semanais
