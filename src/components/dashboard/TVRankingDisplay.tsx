@@ -641,7 +641,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       // Buscar meta semanal baseada no nível do vendedor (da tabela niveis_vendedores)
       const vendedorNivel = vendedor.nivel || 'junior';
       const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
-      const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+      const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
 
       // Calcular pontos obtidos usando a pontuação real das vendas (validada ou esperada)
       const pontosSemana = vendasVendedorSemana.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
@@ -825,7 +825,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   // Função para calcular comissão total (copiada do VendorsRanking)
   const calculateTotalCommission = async (vendedorId: string, weeks: any[], nivelConfig: any) => {
     const weeklyPoints = getVendedorWeeklyPoints(vendedorId, weeks);
-    const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+    const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
     const variavelSemanal = nivelConfig?.variavel_semanal || 0;
     
     const weeklyCommissions = await Promise.all(
@@ -871,12 +871,12 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
       const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
       const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
-      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
+      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;
       const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
       const commissionData = await calculateTotalCommission(vendedor.id, weeks, nivelConfig);
       
       const weeklyCommissionStrings = await Promise.all(weeklyPoints.map(async (points, index) => {
-        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
         const variavelSemanal = nivelConfig?.variavel_semanal || 0;
         const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
         const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
@@ -887,7 +887,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       return [
         vendedor.name,
         vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
-        nivelConfig?.meta_semanal_vendedor || 6,
+        nivelConfig?.meta_semanal_vendedor || 7,
         `R$ ${(nivelConfig?.variavel_semanal || 0).toFixed(2)}`,
         ...weeklyCommissionStrings,
         totalPoints,
@@ -1013,21 +1013,21 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
       const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
       const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
-      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
+      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;
       const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
       const commissionData = await calculateTotalCommission(vendedor.id, weeks, nivelConfig);
       
       const row: any = {
         'Vendedor': vendedor.name,
         'Nível': vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
-        'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 6,
+        'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 7,
         'Comissão Semanal': `R$ ${(nivelConfig?.variavel_semanal || 0).toFixed(2)}`
       };
       
       // Adicionar colunas das semanas com pontos, porcentagem, multiplicadores e valores
       for (let i = 0; i < weeklyPoints.length; i++) {
         const points = weeklyPoints[i];
-        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
         const variavelSemanal = nivelConfig?.variavel_semanal || 0;
         const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
         const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';

@@ -57,7 +57,7 @@ const VendedorExportTableRow: React.FC<VendedorExportTableRowProps> = ({
   const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
   const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
   const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
-  const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
+  const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;
   const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
 
   const currentYear = parseInt(selectedMonth.split('-')[0]);
@@ -65,7 +65,7 @@ const VendedorExportTableRow: React.FC<VendedorExportTableRowProps> = ({
 
   useEffect(() => {
     const calculateCommissions = async () => {
-      const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+      const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
       const variavelSemanal = nivelConfig?.variavel_semanal || 0;
       
       // Calcular comissões
@@ -106,10 +106,10 @@ const VendedorExportTableRow: React.FC<VendedorExportTableRowProps> = ({
         </div>
       </td>
       <td className="p-2">{vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1)}</td>
-      <td className="p-2">{nivelConfig?.meta_semanal_vendedor || 6}</td>
+      <td className="p-2">{nivelConfig?.meta_semanal_vendedor || 7}</td>
       <td className="p-2">R$ {(nivelConfig?.variavel_semanal || 0).toFixed(2)}</td>
       {weeklyPoints.map((points, weekIndex) => {
-        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
         const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : "0.0";
         const weeklyCommission = weeklyCommissions[weekIndex] || 0;
         const multiplicador = weeklyMultipliers[weekIndex] || 0;

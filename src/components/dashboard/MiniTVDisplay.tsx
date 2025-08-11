@@ -70,7 +70,7 @@ const MiniTVDisplay: React.FC<MiniTVDisplayProps> = ({
       });
 
       const nivel = niveis.find(n => n.nivel === vendedor.nivel);
-      const metaSemanal = nivel?.meta_semanal_vendedor || 5;
+      const metaSemanal = nivel?.meta_semanal_vendedor || 7;
       const pontosPorVenda = 1;
 
       return {
