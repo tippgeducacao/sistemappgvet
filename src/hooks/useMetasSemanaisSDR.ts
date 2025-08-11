@@ -45,19 +45,21 @@ export const useMetasSemanaisSDR = () => {
       profile: profile ? { id: profile.id, user_type: profile.user_type, nivel: (profile as any).nivel } : null 
     });
     
-    if (!nivelCompleto) {
-      console.log('❌ getMetaSemanalSDR: Nível completo não encontrado');
-      return undefined;
-    }
+    // Para SDRs, buscar meta direto do banco baseado no nível atual
+    const nivel = (profile as any)?.nivel || 'junior';
+    console.log('🔍 Buscando meta para SDR nível:', nivel);
     
-    const metaCursos = getMetaPadraoSDR(nivelCompleto);
+    const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
+    const metaCursos = nivelConfig?.meta_vendas_cursos || 8;
+    
+    console.log('📊 Meta de cursos encontrada:', metaCursos, 'para nível:', nivel);
     
     const resultado = {
       id: `${vendedorId}-${ano}-${semana}`,
       vendedor_id: vendedorId,
       ano,
       semana,
-      meta_vendas_cursos: metaCursos, // Mudança: agora representa vendas de cursos
+      meta_vendas_cursos: metaCursos,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

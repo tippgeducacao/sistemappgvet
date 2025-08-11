@@ -78,17 +78,17 @@ export const SDRMetasSemanais = () => {
       // Buscar configuração do nível para SDR
       const { data: nivelConfig, error: nivelError } = await supabase
         .from('niveis_vendedores')
-        .select('meta_semanal_inbound')
+        .select('meta_semanal_inbound, meta_vendas_cursos')
         .eq('nivel', nivelSDR)
         .eq('tipo_usuario', 'sdr')
         .single();
 
       if (nivelError) {
-        console.error('Erro ao buscar nível:', nivelError);
+        console.error('❌ Erro ao buscar nível SDR:', nivelError);
         return { realizados: 0, meta: 0, percentual: 0 };
       }
 
-      console.log('📊 Config de nível encontrada:', nivelConfig);
+      console.log('📊 Config de nível SDR encontrada:', nivelConfig);
 
       const metaAgendamentos = nivelConfig?.meta_semanal_inbound || 0;
 
