@@ -96,7 +96,7 @@ export const useSDRAgendamentosMetas = () => {
       // Buscar meta de agendamentos na tabela niveis_vendedores
       const { data: nivelData, error: nivelError } = await supabase
         .from('niveis_vendedores')
-        .select('meta_semanal_outbound, nivel')
+        .select('meta_semanal_inbound, nivel')
         .eq('nivel', nivelUsuario)
         .eq('tipo_usuario', 'sdr')
         .maybeSingle();
@@ -108,7 +108,7 @@ export const useSDRAgendamentosMetas = () => {
 
       console.log('📊 Dados do nível para metas:', nivelData);
 
-      const metaSemanalAgendamentos = nivelData?.meta_semanal_outbound || 30; // Meta padrão de 30 para SDRs
+      const metaSemanalAgendamentos = nivelData?.meta_semanal_inbound || 55; // Meta correta do banco
 
       console.log('🎯 Meta semanal de agendamentos:', metaSemanalAgendamentos);
       
