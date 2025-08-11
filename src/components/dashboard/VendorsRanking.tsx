@@ -582,19 +582,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
       // Dados da tabela de SDRs
       const sdrsTableData = await Promise.all(sdrsVendedores.map(async (sdr) => {
-        const baseNivel = (sdr.nivel || 'junior').toLowerCase();
-        const sdrTipoUsuario = sdr.user_type; // 'sdr'
-        const sdrType = sdr.nivel?.includes('inbound') ? 'inbound' : 'outbound';
+        const sdrNivel = sdr.nivel || 'junior';
+        const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel === sdrNivel);
         
-        // Se o nível não tiver o prefixo sdr_, compor corretamente com o tipo (inbound/outbound)
-        const nivelCompleto = baseNivel.startsWith('sdr_') ? baseNivel : `sdr_${sdrType}_${baseNivel}`;
-        const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel.toLowerCase() === nivelCompleto);
-        const nivelLabel = nivelCompleto.charAt(0).toUpperCase() + nivelCompleto.slice(1);
-        
-        // Meta semanal correta por tipo de SDR
-        const metaSemanal = sdr.nivel?.includes('inbound')
-          ? (nivelConfig?.meta_semanal_inbound ?? 55)
-          : (nivelConfig?.meta_semanal_outbound ?? 55);
+        // Para SDRs, usar meta_vendas_cursos como meta semanal
+        const metaSemanal = nivelConfig?.meta_vendas_cursos ?? 8;
         const metaMensal = metaSemanal * weeks.length;
         const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
         
@@ -636,8 +628,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         
         return [
           sdr.name,
-          sdrType === 'inbound' ? 'Inbound' : 'Outbound',
-          nivelLabel,
+          'SDR',
+          sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
           metaSemanal,
           DataFormattingService.formatCurrency(variavelSemanal),
           ...weeklyMeetingsStrings,
@@ -728,14 +720,10 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     
     const sdrsData = sdrsVendedores.map(sdr => {
       const sdrNivel = sdr.nivel || 'junior';
-      const sdrType = sdr.nivel?.includes('inbound') ? 'inbound' : 'outbound';
+      const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel === sdrNivel);
       
-      // Montar o nível completo exatamente como está na tabela niveis_vendedores
-      const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;
-      const nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
-      
-      // Buscar a meta correta baseada no nível do SDR (vendas de cursos)
-      const metaSemanal = nivelConfig?.meta_vendas_cursos || 55;
+      // Para SDRs, usar meta_vendas_cursos como meta semanal
+      const metaSemanal = nivelConfig?.meta_vendas_cursos || 8;
       
       const metaMensal = metaSemanal * weeks.length;
       
@@ -765,7 +753,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       
       const row: any = {
         'SDR': sdr.name,
-        'Tipo': sdrType === 'inbound' ? 'Inbound' : 'Outbound',
+        'Tipo': 'SDR',
         'Nível': sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
         'Meta Semanal': metaSemanal,
         'Comissão Semanal': DataFormattingService.formatCurrency(nivelConfig?.variavel_semanal || 0)
