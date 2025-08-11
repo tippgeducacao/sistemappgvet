@@ -85,6 +85,31 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
     }
   };
 
+  const getResultadoColor = (resultado: string) => {
+    switch (resultado) {
+      case 'comprou': return 'bg-green-100 text-green-800';
+      case 'compareceu_nao_comprou': return 'bg-purple-100 text-purple-800';
+      case 'nao_compareceu': return 'bg-red-100 text-red-800';
+      case 'reagendou': return 'bg-yellow-100 text-yellow-800';
+      case 'cancelou': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getResultadoText = (resultado: string) => {
+    switch (resultado) {
+      case 'comprou': return 'Comprou';
+      case 'compareceu_nao_comprou': return 'Compareceu - Não Comprou';
+      case 'nao_compareceu': return 'Não Compareceu';
+      case 'reagendou': return 'Reagendou';
+      case 'cancelou': return 'Cancelou';
+      case '': return 'Sem resultado';
+      case null: return 'Sem resultado';
+      case undefined: return 'Sem resultado';
+      default: return resultado || 'Sem resultado';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -190,7 +215,15 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
                       <div>
                         <div className="text-muted-foreground">Resultado</div>
                         <div className="font-medium">
-                          {agendamento.resultado_reuniao || 'Sem resultado'}
+                          {agendamento.resultado_reuniao ? (
+                            <Badge className={getResultadoColor(agendamento.resultado_reuniao)}>
+                              {getResultadoText(agendamento.resultado_reuniao)}
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-gray-100 text-gray-800">
+                              Sem resultado
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <div>
