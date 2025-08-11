@@ -121,8 +121,8 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
   return (
     <div className="space-y-4">
       {/* Filtros e Exportação */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
@@ -172,12 +172,12 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
               </div>
             </PopoverContent>
           </Popover>
-        </div>
 
-        <Button onClick={exportToExcel} className="gap-2">
-          <Download className="h-4 w-4" />
-          Exportar Excel
-        </Button>
+          <Button onClick={exportToExcel} className="gap-2 w-full sm:w-auto">
+            <Download className="h-4 w-4" />
+            Exportar Excel
+          </Button>
+        </div>
       </div>
 
       {/* Lista de reuniões */}
