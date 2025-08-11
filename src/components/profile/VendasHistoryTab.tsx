@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, Search, Download } from 'lucide-react';
+import { CalendarIcon, Search, Download, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -21,6 +22,7 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
   const { vendas, isLoading } = useAllVendas();
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [selectedVenda, setSelectedVenda] = useState<any>(null);
 
   // Filtrar vendas do usuário
   const filteredVendas = useMemo(() => {
@@ -79,6 +81,98 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const VendaDetailsModal = ({ venda }: { venda: any }) => (
+    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Detalhes da Venda</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Data de Envio</label>
+            <p className="text-sm">{format(new Date(venda.enviado_em), 'dd/MM/yyyy HH:mm')}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Status</label>
+            <Badge className={getStatusColor(venda.status)}>{venda.status}</Badge>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Aluno</label>
+            <p className="text-sm">{venda.aluno?.nome || 'Não informado'}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Email do Aluno</label>
+            <p className="text-sm">{venda.aluno?.email || 'Não informado'}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Curso</label>
+            <p className="text-sm">{venda.curso?.nome || 'Não informado'}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Modalidade</label>
+            <p className="text-sm">{venda.curso?.modalidade || 'Não informado'}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Turma</label>
+            <p className="text-sm">{venda.turma || 'Não informado'}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Abertura</label>
+            <p className="text-sm">{venda.abertura || 'Não informado'}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Pontuação Esperada</label>
+            <p className="text-sm">{venda.pontuacao_esperada || 0} pts</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Pontuação Validada</label>
+            <p className="text-sm">{venda.pontuacao_validada || 0} pts</p>
+          </div>
+        </div>
+
+        {venda.data_aprovacao && (
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Data de Aprovação</label>
+            <p className="text-sm">{format(new Date(venda.data_aprovacao), 'dd/MM/yyyy HH:mm')}</p>
+          </div>
+        )}
+
+        {venda.motivo_pendencia && (
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Motivo da Pendência</label>
+            <p className="text-sm">{venda.motivo_pendencia}</p>
+          </div>
+        )}
+
+        {venda.observacoes && (
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Observações</label>
+            <p className="text-sm">{venda.observacoes}</p>
+          </div>
+        )}
+
+        {venda.documento_comprobatorio && (
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Documento Comprobatório</label>
+            <p className="text-sm">{venda.documento_comprobatorio}</p>
+          </div>
+        )}
+      </div>
+    </DialogContent>
+  );
 
   if (isLoading) {
     return (
@@ -195,6 +289,17 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
                         </div>
                       </div>
                     </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <Eye className="h-4 w-4" />
+                          Ver Detalhes
+                        </Button>
+                      </DialogTrigger>
+                      <VendaDetailsModal venda={venda} />
+                    </Dialog>
                   </div>
                 </div>
               </CardContent>
