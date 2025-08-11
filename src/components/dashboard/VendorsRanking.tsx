@@ -812,68 +812,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-3">
-              Ranking de Vendedores
-            </CardTitle>
-            <CardDescription>
-              Todos os {ranking.length} vendedores por pontos - {mesAtualSelecionado}
-            </CardDescription>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {/* Botão TV */}
-            <button
-              onClick={() => setIsTVMode(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors"
-              title="Exibir em tela cheia (Modo TV)"
-            >
-              <Tv className="h-5 w-5" />
-            </button>
-            {/* Botão de Exportar */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Exportar
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => exportToPDF()}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Exportar PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportToExcel()}>
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Exportar Planilha
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {/* Mostrar filtro de mês apenas se não houver filtros externos */}
-            {!propSelectedMonth && !propSelectedYear && (
-              <>
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <Select value={internalSelectedMonth} onValueChange={setInternalSelectedMonth}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mesesDisponiveis.map((mes) => (
-                      <SelectItem key={mes.value} value={mes.value}>
-                        {mes.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
 
         {/* Planilha Detalhada - Debug */}
         {(() => {
