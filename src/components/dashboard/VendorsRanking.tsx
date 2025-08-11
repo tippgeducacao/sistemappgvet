@@ -1132,70 +1132,81 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           selectedYear={propSelectedYear || parseInt(selectedMonth.split('-')[0])}
         />
 
-        {/* Planilha Detalhada */}
-        {vendedoresFiltrados.length > 0 || vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').length > 0 ? (
+        {/* Planilha Detalhada - Debug */}
+        {(() => {
+          console.log('🔍 DEBUG Planilha:');
+          console.log('- vendedoresFiltrados.length:', vendedoresFiltrados.length);
+          console.log('- vendedoresFiltrados:', vendedoresFiltrados.map(v => ({ id: v.id, name: v.name, user_type: v.user_type })));
+          console.log('- SDRs count:', vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').length);
+          console.log('- SDRs:', vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').map(v => ({ id: v.id, name: v.name, user_type: v.user_type })));
+          console.log('- Condição planilha:', vendedoresFiltrados.length > 0 || vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').length > 0);
+          return null;
+        })()}
+        
         <div className="mt-8">
           <h2 className="text-xl font-bold text-foreground mb-4">Planilha Detalhada</h2>
           
           {/* Tabela de Vendedores */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Vendedores</h3>
-            <div className="overflow-x-auto bg-card/50 backdrop-blur-sm rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="p-2 text-left font-semibold">Vendedor</th>
-                    <th className="p-2 text-left font-semibold">Nível</th>
-                    <th className="p-2 text-left font-semibold">Meta Semanal</th>
-                    <th className="p-2 text-left font-semibold">Comissão Semanal</th>
-                    {getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1])).map(week => (
-                      <th key={week.week} className="p-2 text-left font-semibold text-xs">
-                        Semana {week.week}<br />
-                        <span className="text-xs opacity-70">{week.label}</span>
-                      </th>
-                    ))}
-                    <th className="p-2 text-left font-semibold">Total Pontos</th>
-                    <th className="p-2 text-left font-semibold">Atingimento %</th>
-                    <th className="p-2 text-left font-semibold">Comissão Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vendedoresFiltrados.map((vendedor, index) => {
-                    const vendedorData = vendedores.find(v => v.id === vendedor.id);
-                    const vendedorNivel = vendedorData?.nivel || 'junior';
-                    const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
-                    const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
-                    const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
-                    const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
-                    const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
-                    const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
-                    
-                    return (
-                      <tr key={vendedor.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
-                        <td className="p-2 font-medium">{vendedor.name}</td>
-                        <td className="p-2">{vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1)}</td>
-                        <td className="p-2">{nivelConfig?.meta_semanal_vendedor || 6}</td>
-                        <td className="p-2">R$ {(nivelConfig?.variavel_semanal || 0).toFixed(2)}</td>
-                        {weeklyPoints.map((points, weekIndex) => {
-                          const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
-                          const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : "0.0";
-                          return (
-                            <td key={weekIndex} className="p-2 text-xs">
-                              <div>{points.toFixed(1)}pts</div>
-                              <div className="opacity-70">{percentage}%</div>
-                            </td>
-                          );
-                        })}
-                        <td className="p-2 font-semibold">{totalPoints.toFixed(1)}</td>
-                        <td className="p-2 font-semibold">{achievementPercentage.toFixed(1)}%</td>
-                        <td className="p-2 font-semibold">R$ 0.00</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {vendedoresFiltrados.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Vendedores</h3>
+              <div className="overflow-x-auto bg-card/50 backdrop-blur-sm rounded-lg border border-border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="p-2 text-left font-semibold">Vendedor</th>
+                      <th className="p-2 text-left font-semibold">Nível</th>
+                      <th className="p-2 text-left font-semibold">Meta Semanal</th>
+                      <th className="p-2 text-left font-semibold">Comissão Semanal</th>
+                      {getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1])).map(week => (
+                        <th key={week.week} className="p-2 text-left font-semibold text-xs">
+                          Semana {week.week}<br />
+                          <span className="text-xs opacity-70">{week.label}</span>
+                        </th>
+                      ))}
+                      <th className="p-2 text-left font-semibold">Total Pontos</th>
+                      <th className="p-2 text-left font-semibold">Atingimento %</th>
+                      <th className="p-2 text-left font-semibold">Comissão Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vendedoresFiltrados.map((vendedor, index) => {
+                      const vendedorData = vendedores.find(v => v.id === vendedor.id);
+                      const vendedorNivel = vendedorData?.nivel || 'junior';
+                      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+                      const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
+                      const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
+                      const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
+                      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
+                      const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
+                      
+                      return (
+                        <tr key={vendedor.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
+                          <td className="p-2 font-medium">{vendedor.name}</td>
+                          <td className="p-2">{vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1)}</td>
+                          <td className="p-2">{nivelConfig?.meta_semanal_vendedor || 6}</td>
+                          <td className="p-2">R$ {(nivelConfig?.variavel_semanal || 0).toFixed(2)}</td>
+                          {weeklyPoints.map((points, weekIndex) => {
+                            const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+                            const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : "0.0";
+                            return (
+                              <td key={weekIndex} className="p-2 text-xs">
+                                <div>{points.toFixed(1)}pts</div>
+                                <div className="opacity-70">{percentage}%</div>
+                              </td>
+                            );
+                          })}
+                          <td className="p-2 font-semibold">{totalPoints.toFixed(1)}</td>
+                          <td className="p-2 font-semibold">{achievementPercentage.toFixed(1)}%</td>
+                          <td className="p-2 font-semibold">R$ 0.00</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Tabela de SDRs */}
           {vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').length > 0 && (
@@ -1288,11 +1299,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
             </div>
           )}
         </div>
-        ) : (
-          <div className="mt-8 p-8 text-center text-muted-foreground">
-            <p>Nenhum dado disponível para exibir na planilha.</p>
-          </div>
-        )}
 
       </CardContent>
     </Card>
