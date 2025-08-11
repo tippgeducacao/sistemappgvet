@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut, FileText, FileSpreadsheet } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useAllVendas } from '@/hooks/useVendas';
@@ -740,6 +743,119 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return dentroDoMes && compareceu;
   }).length;
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Título
+    doc.setFontSize(16);
+    doc.text('Ranking de Vendas Semanal', 14, 15);
+    
+    // Data do relatório e período
+    const today = new Date();
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${today.toLocaleDateString('pt-BR')}`, 14, 25);
+    doc.text(`Período: ${startOfWeek.toLocaleDateString('pt-BR')} a ${endOfWeek.toLocaleDateString('pt-BR')}`, 14, 32);
+    
+    // Dados dos vendedores
+    const vendedoresTableData = vendedoresOnly.map((vendedor, index) => [
+      index + 1,
+      vendedor.name,
+      vendedor.nivel || '-',
+      vendedor.weeklySales.toFixed(1),
+      vendedor.weeklyTarget,
+      `${vendedor.weeklyTarget > 0 ? ((vendedor.weeklySales / vendedor.weeklyTarget) * 100).toFixed(0) : 0}%`
+    ]);
+    
+    // Tabela dos vendedores
+    autoTable(doc, {
+      head: [['Pos', 'Nome', 'Nível', 'Pontos', 'Meta', 'Progresso']],
+      body: vendedoresTableData,
+      startY: 45,
+      theme: 'striped',
+      headStyles: { fillColor: [59, 130, 246] },
+      margin: { left: 14, right: 14 }
+    });
+    
+    // Se houver SDRs, adicionar nova seção
+    if (sdrsOnly.length > 0) {
+      const finalY = (doc as any).lastAutoTable.finalY || 45;
+      
+      doc.setFontSize(12);
+      doc.text('SDRs', 14, finalY + 15);
+      
+      const sdrsTableData = sdrsOnly.map((sdr, index) => [
+        vendedoresOnly.length + index + 1,
+        sdr.name,
+        sdr.nivel || '-',
+        sdr.weeklySales,
+        sdr.weeklyTarget,
+        `${sdr.weeklyTarget > 0 ? ((sdr.weeklySales / sdr.weeklyTarget) * 100).toFixed(0) : 0}%`,
+        sdr.reunioesSemana || 0
+      ]);
+      
+      autoTable(doc, {
+        head: [['Pos', 'Nome', 'Nível', 'Vendas', 'Meta', 'Progresso', 'Reuniões']],
+        body: sdrsTableData,
+        startY: finalY + 20,
+        theme: 'striped',
+        headStyles: { fillColor: [168, 85, 247] },
+        margin: { left: 14, right: 14 }
+      });
+    }
+    
+    // Salvar arquivo
+    const fileName = `ranking-vendas-semanal-${startOfWeek.toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  };
+
+  const exportToSpreadsheet = () => {
+    // Dados dos vendedores
+    const vendedoresData = vendedoresOnly.map((vendedor, index) => ({
+      'Posição': index + 1,
+      'Nome': vendedor.name,
+      'Nível': vendedor.nivel || '-',
+      'Pontos Semana': vendedor.weeklySales.toFixed(1),
+      'Meta Semanal': vendedor.weeklyTarget,
+      'Progresso %': vendedor.weeklyTarget > 0 ? ((vendedor.weeklySales / vendedor.weeklyTarget) * 100).toFixed(0) + '%' : '0%',
+      'Pontos Mês': vendedor.monthlyTotal?.toFixed(1) || '0',
+      'Tipo': 'Vendedor'
+    }));
+    
+    // Dados dos SDRs
+    const sdrsData = sdrsOnly.map((sdr, index) => ({
+      'Posição': vendedoresOnly.length + index + 1,
+      'Nome': sdr.name,
+      'Nível': sdr.nivel || '-',
+      'Vendas Semana': sdr.weeklySales,
+      'Meta Vendas': sdr.weeklyTarget,
+      'Progresso %': sdr.weeklyTarget > 0 ? ((sdr.weeklySales / sdr.weeklyTarget) * 100).toFixed(0) + '%' : '0%',
+      'Reuniões Semana': sdr.reunioesSemana || 0,
+      'Taxa Conversão': sdr.taxaConversaoSemanal ? sdr.taxaConversaoSemanal.toFixed(1) + '%' : '0%',
+      'Tipo': 'SDR'
+    }));
+    
+    const workbook = XLSX.utils.book_new();
+    
+    // Aba dos vendedores
+    if (vendedoresData.length > 0) {
+      const vendedoresSheet = XLSX.utils.json_to_sheet(vendedoresData);
+      XLSX.utils.book_append_sheet(workbook, vendedoresSheet, 'Vendedores');
+    }
+    
+    // Aba dos SDRs
+    if (sdrsData.length > 0) {
+      const sdrsSheet = XLSX.utils.json_to_sheet(sdrsData);
+      XLSX.utils.book_append_sheet(workbook, sdrsSheet, 'SDRs');
+    }
+    
+    // Aba combinada
+    const allData = [...vendedoresData, ...sdrsData];
+    const allSheet = XLSX.utils.json_to_sheet(allData);
+    XLSX.utils.book_append_sheet(workbook, allSheet, 'Ranking Completo');
+    
+    const fileName = `ranking-vendas-semanal-${startOfWeek.toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
 
   if (!isOpen) return null;
 
@@ -756,6 +872,24 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       <div className="relative z-10 flex justify-between items-center p-4 backdrop-blur-md border-b border-white/20">
         <h1 className="text-2xl font-bold text-foreground">Ranking de Vendas - TV</h1>
         <div className="flex gap-2">
+          <Button
+            onClick={exportToPDF}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            PDF
+          </Button>
+          <Button
+            onClick={exportToSpreadsheet}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            Excel
+          </Button>
           <Button 
             onClick={() => setZoom(Math.max(10, zoom - 10))} 
             variant="outline" 
