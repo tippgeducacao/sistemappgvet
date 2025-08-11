@@ -5,7 +5,8 @@ export class NavigationService {
     GERENCIAR_PONTUACOES: 'gerenciar-pontuacoes',
     GERENCIAR_CURSOS: 'gerenciar-cursos',
     GERENCIAR_VENDAS: 'gerenciar-vendas',
-    GESTAO_LEADS: 'gestao-leads', // Nova seção para leads
+    GESTAO_LEADS: 'gestao-leads',
+    GERENCIAR_PERFIS: 'gerenciar-perfis', // Nova seção para perfis
   } as const;
 
   static navigateTo(section: string) {

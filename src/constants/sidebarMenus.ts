@@ -23,6 +23,11 @@ export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
     icon: 'GraduationCap'
   },
   {
+    title: 'Perfis de Usuários',
+    section: 'gerenciar-perfis',
+    icon: 'UserCog'
+  },
+  {
     title: 'Gerenciar Usuários',
     section: 'gerenciar-vendedores',
     icon: 'Users'
@@ -49,6 +54,11 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     title: 'Dashboard',
     section: 'dashboard',
     icon: 'BarChart3'
+  },
+  {
+    title: 'Perfis de Usuários',
+    section: 'gerenciar-perfis',
+    icon: 'UserCog'
   },
   {
     title: 'Gerenciar Vendas',

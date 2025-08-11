@@ -127,6 +127,23 @@ const RouteRenderer: React.FC = () => {
         </div>
       );
 
+    case 'gerenciar-perfis':
+      // Apenas admin e diretor podem gerenciar perfis
+      if (isAdmin || isDiretor) {
+        const GerenciarPerfis = React.lazy(() => import('@/components/GerenciarPerfis'));
+        return (
+          <React.Suspense fallback={<div>Carregando...</div>}>
+            <GerenciarPerfis />
+          </React.Suspense>
+        );
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Apenas administradores e diretores podem gerenciar perfis.</p>
+        </div>
+      );
+
     case 'reunioes':
       // Apenas vendedores podem acessar Reuniões
       if (isVendedor) {
