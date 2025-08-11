@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -18,10 +19,14 @@ import {
   Save, 
   X,
   Shield,
-  Award
+  Award,
+  TrendingUp,
+  Users
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import VendasHistoryTab from '@/components/profile/VendasHistoryTab';
+import ReuniaoHistoryTab from '@/components/profile/ReuniaoHistoryTab';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -103,9 +108,13 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
     setIsEditing(false);
   };
 
+  const showHistoryTabs = user.user_type === 'vendedor' || 
+                         user.user_type === 'sdr_inbound' || 
+                         user.user_type === 'sdr_outbound';
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -113,200 +122,235 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Header com avatar e informações básicas */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={user.photo_url} alt={user.name} />
-                  <AvatarFallback className="text-lg">
-                    {user.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+        <Tabs defaultValue="perfil" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="perfil">
+              <User className="h-4 w-4 mr-2" />
+              Perfil
+            </TabsTrigger>
+            {showHistoryTabs && (
+              <>
+                <TabsTrigger value="vendas">
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Histórico de Vendas
+                </TabsTrigger>
+                <TabsTrigger value="reunioes">
+                  <Users className="h-4 w-4 mr-2" />
+                  Histórico de Reuniões
+                </TabsTrigger>
+              </>
+            )}
+          </TabsList>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    {isEditing ? (
-                      <Input
-                        value={editedUser.name}
-                        onChange={(e) => setEditedUser(prev => ({ ...prev, name: e.target.value }))}
-                        className="text-lg font-semibold"
-                      />
-                    ) : (
-                      <h2 className="text-lg font-semibold">{user.name}</h2>
-                    )}
-                    
-                    {canEdit && !isEditing && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <Badge className={getUserTypeColor(user.user_type)}>
-                      <Shield className="h-3 w-3 mr-1" />
-                      {getUserTypeLabel(user.user_type)}
-                    </Badge>
-                    {user.nivel && (
-                      <Badge variant="outline">
-                        <Award className="h-3 w-3 mr-1" />
-                        {user.nivel}
-                      </Badge>
-                    )}
-                    {!user.ativo && (
-                      <Badge variant="destructive">
-                        Inativo
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4" />
-                    {user.email}
-                  </div>
-                </div>
-
-                {isEditing && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCancel}
-                      disabled={isLoading}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={isLoading}
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Informações detalhadas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Informações básicas */}
+          <TabsContent value="perfil" className="space-y-6">
+            {/* Header com avatar e informações básicas */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Informações Básicas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">ID:</span>
-                  <span className="text-muted-foreground font-mono">
-                    {user.id.substring(0, 8)}...
-                  </span>
-                </div>
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={(user as any).photo_url} alt={user.name} />
+                    <AvatarFallback className="text-lg">
+                      {user.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
 
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Criado em:</span>
-                  <span className="text-muted-foreground">
-                    {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                  </span>
-                </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      {isEditing ? (
+                        <Input
+                          value={editedUser.name}
+                          onChange={(e) => setEditedUser(prev => ({ ...prev, name: e.target.value }))}
+                          className="text-lg font-semibold"
+                        />
+                      ) : (
+                        <h2 className="text-lg font-semibold">{user.name}</h2>
+                      )}
+                      
+                      {canEdit && !isEditing && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsEditing(true)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
 
-                {user.updated_at && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Atualizado em:</span>
-                    <span className="text-muted-foreground">
-                      {new Date(user.updated_at).toLocaleDateString('pt-BR')}
-                    </span>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <Badge className={getUserTypeColor(user.user_type)}>
+                        <Shield className="h-3 w-3 mr-1" />
+                        {getUserTypeLabel(user.user_type)}
+                      </Badge>
+                      {user.nivel && (
+                        <Badge variant="outline">
+                          <Award className="h-3 w-3 mr-1" />
+                          {user.nivel}
+                        </Badge>
+                      )}
+                      {!user.ativo && (
+                        <Badge variant="destructive">
+                          Inativo
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      {user.email}
+                    </div>
                   </div>
-                )}
 
-                <Separator />
-
-                <div>
-                  <Label className="text-sm font-medium">Nível</Label>
-                  {isEditing ? (
-                    <Input
-                      value={editedUser.nivel || ''}
-                      onChange={(e) => setEditedUser(prev => ({ ...prev, nivel: e.target.value }))}
-                      placeholder="Ex: junior, pleno, senior"
-                      className="mt-1"
-                    />
-                  ) : (
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      {user.nivel || 'Não informado'}
+                  {isEditing && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancel}
+                        disabled={isLoading}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSave}
+                        disabled={isLoading}
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Horário de trabalho */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Horário de Trabalho</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {user.horario_trabalho ? (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">Manhã:</span>
-                      <span className="text-muted-foreground">
-                        {user.horario_trabalho.manha_inicio} - {user.horario_trabalho.manha_fim}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">Tarde:</span>
-                      <span className="text-muted-foreground">
-                        {user.horario_trabalho.tarde_inicio} - {user.horario_trabalho.tarde_fim}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground">
-                    Horário não configurado
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Informações adicionais */}
-          {(user.semanas_consecutivas_meta > 0 || user.pos_graduacoes?.length > 0) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Informações Adicionais</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {user.semanas_consecutivas_meta > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">Semanas consecutivas na meta:</span>
-                    <span className="text-green-600 font-medium">
-                      {user.semanas_consecutivas_meta}
+            {/* Informações detalhadas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Informações básicas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Informações Básicas</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">ID:</span>
+                    <span className="text-muted-foreground font-mono">
+                      {user.id.substring(0, 8)}...
                     </span>
                   </div>
-                )}
 
-                {user.pos_graduacoes?.length > 0 && (
-                  <div>
-                    <span className="text-sm font-medium">Pós-graduações:</span>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      {user.pos_graduacoes.length} grupo(s) atribuído(s)
-                    </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Criado em:</span>
+                    <span className="text-muted-foreground">
+                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                    </span>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+
+                  {user.updated_at && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">Atualizado em:</span>
+                      <span className="text-muted-foreground">
+                        {new Date(user.updated_at).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  <div>
+                    <Label className="text-sm font-medium">Nível</Label>
+                    {isEditing ? (
+                      <Input
+                        value={editedUser.nivel || ''}
+                        onChange={(e) => setEditedUser(prev => ({ ...prev, nivel: e.target.value }))}
+                        placeholder="Ex: junior, pleno, senior"
+                        className="mt-1"
+                      />
+                    ) : (
+                      <div className="mt-1 text-sm text-muted-foreground">
+                        {user.nivel || 'Não informado'}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Horário de trabalho */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Horário de Trabalho</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {user.horario_trabalho ? (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">Manhã:</span>
+                        <span className="text-muted-foreground">
+                          {user.horario_trabalho.manha_inicio} - {user.horario_trabalho.manha_fim}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">Tarde:</span>
+                        <span className="text-muted-foreground">
+                          {user.horario_trabalho.tarde_inicio} - {user.horario_trabalho.tarde_fim}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Horário não configurado
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Informações adicionais */}
+            {(user.semanas_consecutivas_meta > 0 || user.pos_graduacoes?.length > 0) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Informações Adicionais</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {user.semanas_consecutivas_meta > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Semanas consecutivas na meta:</span>
+                      <span className="text-green-600 font-medium">
+                        {user.semanas_consecutivas_meta}
+                      </span>
+                    </div>
+                  )}
+
+                  {user.pos_graduacoes?.length > 0 && (
+                    <div>
+                      <span className="text-sm font-medium">Pós-graduações:</span>
+                      <div className="mt-1 text-sm text-muted-foreground">
+                        {user.pos_graduacoes.length} grupo(s) atribuído(s)
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Aba de Histórico de Vendas */}
+          {showHistoryTabs && (
+            <TabsContent value="vendas">
+              <VendasHistoryTab userId={user.id} />
+            </TabsContent>
           )}
-        </div>
+
+          {/* Aba de Histórico de Reuniões */}
+          {showHistoryTabs && (
+            <TabsContent value="reunioes">
+              <ReuniaoHistoryTab userId={user.id} userType={user.user_type} />
+            </TabsContent>
+          )}
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
