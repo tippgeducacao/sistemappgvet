@@ -63,7 +63,7 @@ const GerenciarMetas = () => {
   useEffect(() => {
     if (vendedores.length > 0 && niveis.length > 0) {
       const novosVendedoresInfo = vendedores
-        .filter(vendedor => ['vendedor', 'sdr_inbound', 'sdr_outbound'].includes(vendedor.user_type))
+        .filter(vendedor => ['vendedor', 'sdr'].includes(vendedor.user_type))
         .map(vendedor => {
           const nivelVendedor = niveis.find(n => n.nivel === vendedor.nivel);
           

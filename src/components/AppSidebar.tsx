@@ -16,8 +16,7 @@ const AppSidebar: React.FC = () => {
     if (isDiretor) return 'diretor';
     if (isAdmin) return 'admin';
     if (isSecretaria) return 'secretaria';
-    if (isSDRInbound) return 'sdr_inbound';
-    if (isSDROutbound) return 'sdr_outbound';
+    if (profile?.user_type === 'sdr') return 'sdr';
     if (isVendedor) return 'vendedor';
     return 'vendedor'; // fallback
   };
