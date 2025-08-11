@@ -340,7 +340,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Aba de Histórico de Vendas */}
           {showHistoryTabs && (
             <TabsContent value="vendas">
-              <VendasHistoryTab userId={user.id} />
+              <VendasHistoryTab userId={user.id} userType={user.user_type} />
             </TabsContent>
           )}
 
