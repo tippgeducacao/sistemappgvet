@@ -6,6 +6,7 @@ import StatusDistributionChart from './StatusDistributionChart';
 import SalesByCourseChart from './SalesByCourseChart';
 import MiniTVDisplay from './MiniTVDisplay';
 import RecentSales from './RecentSales';
+import VendorsRanking from './VendorsRanking';
 import VendedorMetas from './VendedorMetas';
 import WeeklyApprovedSalesChart from './WeeklyApprovedSalesChart';
 import GoalsAchievementChart from './GoalsAchievementChart';
@@ -119,6 +120,12 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
         <ReunioesAdminChart selectedSDR={selectedVendedor} />
 
         <MiniTVDisplay 
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+        />
+
+        <VendorsRanking
+          selectedVendedor={selectedVendedor}
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
         />
