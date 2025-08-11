@@ -84,8 +84,8 @@ export const SDRMetasSemanais = () => {
       }
 
       const nivelFromProfile = profileData?.nivel || 'junior';
-      const userType = profile.user_type; // 'sdr_inbound' | 'sdr_outbound'
-      const nivelBase = nivelFromProfile.replace('sdr_inbound_', '').replace('sdr_outbound_', '');
+      const userType = profile.user_type; // 'sdr'
+      const nivelBase = nivelFromProfile.replace('sdr_', '').replace('inbound_', '').replace('outbound_', '');
       const nivelCompleto = userType?.startsWith('sdr_') ? `${userType}_${nivelBase}` : nivelBase;
       console.log('🔍 Nível SDR:', { nivelFromProfile, userType, nivelBase, nivelCompleto });
 
@@ -94,7 +94,7 @@ export const SDRMetasSemanais = () => {
         .from('niveis_vendedores')
         .select('nivel, tipo_usuario, meta_semanal_inbound, meta_semanal_outbound')
         .in('nivel', [nivelCompleto, nivelBase])
-        .in('tipo_usuario', ['sdr', 'sdr_inbound', 'sdr_outbound']);
+        .in('tipo_usuario', ['sdr']);
 
       if (nivelError) {
         console.error('Erro ao buscar nível:', nivelError);
@@ -107,7 +107,7 @@ export const SDRMetasSemanais = () => {
 
       console.log('📊 Config de nível encontrada:', nivelConfig);
 
-      const metaAgendamentos = userType === 'sdr_inbound'
+      const metaAgendamentos = nivelFromProfile?.includes('inbound')
         ? (nivelConfig?.meta_semanal_inbound ?? 0)
         : (nivelConfig?.meta_semanal_outbound ?? 0);
 

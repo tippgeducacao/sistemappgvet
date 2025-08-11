@@ -47,7 +47,7 @@ export const useAuthManager = () => {
                   id: profileData.id,
                   name: profileData.name,
                   email: profileData.email,
-                  user_type: profileData.user_type as 'secretaria' | 'vendedor' | 'admin' | 'diretor' | 'sdr_inbound' | 'sdr_outbound' | 'sdr',
+                  user_type: profileData.user_type as 'secretaria' | 'vendedor' | 'admin' | 'diretor' | 'sdr',
                   created_at: profileData.created_at,
                   updated_at: profileData.updated_at,
                   photo_url: profileData.photo_url

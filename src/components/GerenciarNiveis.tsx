@@ -39,13 +39,9 @@ const GerenciarNiveis: React.FC = () => {
 
     if (editingNivel.tipo_usuario === 'sdr') {
       dados.meta_semanal_inbound = parseInt(formData.get('meta_semanal_inbound') as string);
-      dados.meta_vendas_cursos = parseInt(formData.get('meta_vendas_cursos') as string);
-    } else if (editingNivel.tipo_usuario === 'sdr_inbound') {
-      dados.meta_semanal_inbound = parseInt(formData.get('meta_semanal_inbound') as string);
-      dados.meta_vendas_cursos = parseInt(formData.get('meta_vendas_cursos') as string);
-    } else if (editingNivel.tipo_usuario === 'sdr_outbound') {
       dados.meta_semanal_outbound = parseInt(formData.get('meta_semanal_outbound') as string);
       dados.meta_vendas_cursos = parseInt(formData.get('meta_vendas_cursos') as string);
+    // Para SDR, usar somente as configurações já definidas acima
     } else {
       dados.meta_semanal_vendedor = parseInt(formData.get('meta_semanal_vendedor') as string);
     }

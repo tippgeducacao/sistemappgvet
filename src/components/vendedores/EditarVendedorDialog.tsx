@@ -61,9 +61,9 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
       // Não definir nível para admin
       if (vendedor.user_type !== 'admin') {
         const nivelMap: Record<string, string> = {
-          'sdr_junior': 'sdr_inbound_junior',
-          'sdr_pleno': 'sdr_inbound_pleno', 
-          'sdr_senior': 'sdr_inbound_senior'
+          'sdr_junior': 'junior',
+          'sdr_pleno': 'pleno', 
+          'sdr_senior': 'senior'
         };
         const novoNivel = nivelMap[vendedor.nivel] || vendedor.nivel || 'junior';
         setSelectedNivel(novoNivel);
@@ -223,12 +223,9 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                     <SelectItem value="junior">Vendedor Júnior</SelectItem>
                     <SelectItem value="pleno">Vendedor Pleno</SelectItem>
                     <SelectItem value="senior">Vendedor Sênior</SelectItem>
-                    <SelectItem value="sdr_inbound_junior">SDR Inbound Júnior</SelectItem>
-                    <SelectItem value="sdr_inbound_pleno">SDR Inbound Pleno</SelectItem>
-                    <SelectItem value="sdr_inbound_senior">SDR Inbound Sênior</SelectItem>
-                    <SelectItem value="sdr_outbound_junior">SDR Outbound Júnior</SelectItem>
-                    <SelectItem value="sdr_outbound_pleno">SDR Outbound Pleno</SelectItem>
-                    <SelectItem value="sdr_outbound_senior">SDR Outbound Sênior</SelectItem>
+                     <SelectItem value="junior">SDR Júnior</SelectItem>
+                     <SelectItem value="pleno">SDR Pleno</SelectItem>
+                     <SelectItem value="senior">SDR Sênior</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

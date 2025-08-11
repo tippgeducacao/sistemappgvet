@@ -93,10 +93,10 @@ export const useSDRAgendamentosMetas = () => {
       let nivelCompleto = '';
       
       // Se o nível já contém o prefixo, usar direto, senão construir
-      if (nivelRaw.includes('sdr_inbound_') || nivelRaw.includes('sdr_outbound_')) {
+      if (nivelRaw.includes('sdr_')) {
         nivelCompleto = nivelRaw;
       } else {
-        nivelCompleto = profile.user_type === 'sdr_inbound' ? `sdr_inbound_${nivelRaw}` : `sdr_outbound_${nivelRaw}`;
+        nivelCompleto = `sdr_${nivelRaw}`;
       }
 
       console.log('🔍 Nível do SDR encontrado para metas:', { nivelRaw, nivelCompleto, userType: profile.user_type });
@@ -116,7 +116,7 @@ export const useSDRAgendamentosMetas = () => {
 
       console.log('📊 Dados do nível para metas:', nivelData);
 
-      const metaSemanalAgendamentos = profile.user_type === 'sdr_inbound' 
+      const metaSemanalAgendamentos = nivelCompleto?.includes('inbound') 
         ? (nivelData?.meta_semanal_inbound || 55) // Meta padrão de 55 para SDR inbound junior
         : (nivelData?.meta_semanal_outbound || 30); // Meta padrão de 30 para SDR outbound junior
 

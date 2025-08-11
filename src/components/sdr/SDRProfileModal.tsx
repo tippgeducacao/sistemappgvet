@@ -44,7 +44,7 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({
   const nivelConfig = niveis.find(n => n.nivel === sdrNivel && n.tipo_usuario === 'sdr');
   
   // Meta semanal de reuniões baseada no nível e tipo de SDR
-  const metaReunioesSemanal = sdrUserType === 'sdr_inbound' 
+  const metaReunioesSemanal = sdrNivel?.includes('inbound') 
     ? nivelConfig?.meta_semanal_inbound || 0
     : nivelConfig?.meta_semanal_outbound || 0;
 
@@ -123,10 +123,8 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({
 
   const getSDRTypeLabel = (userType: string) => {
     switch (userType) {
-      case 'sdr_inbound':
-        return 'SDR Inbound';
-      case 'sdr_outbound':
-        return 'SDR Outbound';
+      case 'sdr':
+        return 'SDR';
       default:
         return 'SDR';
     }
@@ -134,15 +132,16 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({
 
   const getNivelLabel = (nivel: string, userType?: string) => {
     const base = (nivel || '').toLowerCase();
-    if ((userType === 'sdr_inbound' || userType === 'sdr_outbound') && !base.startsWith('sdr_')) {
-      return `${userType === 'sdr_inbound' ? 'SDR Inbound' : 'SDR Outbound'} ${base.includes('junior') ? 'Júnior' : base.includes('pleno') ? 'Pleno' : base.includes('senior') ? 'Sênior' : nivel}`;
+    if (userType === 'sdr' && !base.startsWith('sdr_')) {
+      const tipoSDR = nivel?.includes('inbound') ? 'Inbound' : 'Outbound';
+      return `SDR ${tipoSDR} ${base.includes('junior') ? 'Júnior' : base.includes('pleno') ? 'Pleno' : base.includes('senior') ? 'Sênior' : nivel}`;
     }
-    if (base.includes('sdr_inbound_junior')) return 'SDR Inbound Júnior';
-    if (base.includes('sdr_inbound_pleno')) return 'SDR Inbound Pleno';
-    if (base.includes('sdr_inbound_senior')) return 'SDR Inbound Sênior';
-    if (base.includes('sdr_outbound_junior')) return 'SDR Outbound Júnior';
-    if (base.includes('sdr_outbound_pleno')) return 'SDR Outbound Pleno';
-    if (base.includes('sdr_outbound_senior')) return 'SDR Outbound Sênior';
+    if (base.includes('inbound_junior')) return 'SDR Inbound Júnior';
+    if (base.includes('inbound_pleno')) return 'SDR Inbound Pleno';
+    if (base.includes('inbound_senior')) return 'SDR Inbound Sênior';
+    if (base.includes('outbound_junior')) return 'SDR Outbound Júnior';
+    if (base.includes('outbound_pleno')) return 'SDR Outbound Pleno';
+    if (base.includes('outbound_senior')) return 'SDR Outbound Sênior';
     if (base.includes('junior')) return 'Júnior';
     if (base.includes('pleno')) return 'Pleno';
     if (base.includes('senior')) return 'Sênior';

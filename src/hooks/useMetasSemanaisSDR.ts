@@ -24,20 +24,14 @@ export const useMetasSemanaisSDR = () => {
     const userType = profile?.user_type;
     const nivelRaw = (currentUser as any)?.nivel || (profile as any)?.nivel || 'junior';
     
-    // Se o nível já contém o prefixo (ex: sdr_inbound_junior), usar direto
+    // Se o nível já contém sdr_ (ex: sdr_junior), usar direto
     // Se não, construir o nível completo baseado no user_type
     let nivelCompleto = '';
-    if (nivelRaw.includes('sdr_inbound_') || nivelRaw.includes('sdr_outbound_')) {
-      nivelCompleto = nivelRaw; // Já tem o prefixo
+    if (nivelRaw.includes('sdr_')) {
+      nivelCompleto = nivelRaw;
     } else {
-      // Construir o nível baseado no user_type
-      if (userType === 'sdr_inbound') {
-        nivelCompleto = `sdr_inbound_${nivelRaw}`;
-      } else if (userType === 'sdr_outbound') {
-        nivelCompleto = `sdr_outbound_${nivelRaw}`;
-      } else {
-        nivelCompleto = nivelRaw; // Para vendedores normais
-      }
+      // Compor o nível baseado no tipo de usuário
+      nivelCompleto = `sdr_${nivelRaw}`;
     }
     
     console.log('🔍 getMetaSemanalSDR: Buscando meta', { 
@@ -77,12 +71,12 @@ export const useMetasSemanaisSDR = () => {
     console.log('🔍 Buscando meta de cursos para nível:', nivel);
     console.log('📊 Níveis disponíveis:', niveis);
     
-    // Primeiro tentar buscar exato (ex: sdr_inbound_junior)
+    // Primeiro tentar buscar exato (ex: sdr_junior)
     let nivelConfig = niveis.find(n => n.nivel === nivel);
     
-    // Se não encontrar, tentar com o nível base (sem sdr_inbound_ ou sdr_outbound_)
-    if (!nivelConfig) {
-      const nivelBase = nivel.replace('sdr_inbound_', '').replace('sdr_outbound_', '');
+    // Se não encontrar, tentar com o nível base (sem sdr_)
+    if (!nivelConfig && nivel.includes('sdr_')) {
+      const nivelBase = nivel.replace('sdr_', '');
       nivelConfig = niveis.find(n => n.nivel === nivelBase && n.tipo_usuario === 'vendedor');
       console.log('⚙️ Tentando buscar nível base:', nivelBase, 'resultado:', nivelConfig);
     }
