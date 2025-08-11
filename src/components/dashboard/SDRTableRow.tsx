@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 
 // Regras de comissionamento SDR fixas para performance
@@ -95,7 +96,17 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
 
   return (
     <tr key={sdr.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
-      <td className="p-2 font-medium">{sdr.name}</td>
+      <td className="p-2 font-medium">
+        <div className="flex items-center gap-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={sdr.photo_url} alt={sdr.name} />
+            <AvatarFallback className="text-xs">
+              {sdr.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+            </AvatarFallback>
+          </Avatar>
+          <span>{sdr.name}</span>
+        </div>
+      </td>
       <td className="p-2">{sdrType === 'inbound' ? 'Inbound' : 'Outbound'}</td>
       <td className="p-2">{nivelLabel}</td>
       <td className="p-2">{metaSemanal}</td>

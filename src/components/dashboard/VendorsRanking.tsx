@@ -32,6 +32,7 @@ import SDRTableRow from './SDRTableRow';
 // Importação removida - fechamento automático por data
 import { useMesFechado } from '@/hooks/useHistoricoMensal';
 import { Archive, Calendar } from 'lucide-react';
+import MonthYearSelector from '@/components/common/MonthYearSelector';
 
 
 import jsPDF from 'jspdf';
@@ -813,6 +814,23 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   return (
     <Card>
       <CardContent className="pt-6">
+        {/* Filtro de Mês/Ano */}
+        <div className="mb-6 flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Planilha Detalhada</h2>
+          <MonthYearSelector
+            selectedMonth={parseInt(selectedMonth.split('-')[1])}
+            selectedYear={parseInt(selectedMonth.split('-')[0])}
+            onMonthChange={(month) => {
+              const year = selectedMonth.split('-')[0];
+              setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+            }}
+            onYearChange={(year) => {
+              const month = selectedMonth.split('-')[1];
+              setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+            }}
+            showAll={false}
+          />
+        </div>
 
         {/* Planilha Detalhada - Debug */}
         {(() => {

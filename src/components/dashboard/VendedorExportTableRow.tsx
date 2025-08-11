@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { HistoricoMensalService } from '@/services/HistoricoMensalService';
 
 // Regras de comissionamento fixas para performance quando não há histórico
@@ -93,7 +94,17 @@ const VendedorExportTableRow: React.FC<VendedorExportTableRowProps> = ({
 
   return (
     <tr key={vendedor.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
-      <td className="p-2 font-medium">{vendedor.name}</td>
+      <td className="p-2 font-medium">
+        <div className="flex items-center gap-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={vendedorData?.photo_url} alt={vendedor.name} />
+            <AvatarFallback className="text-xs">
+              {vendedor.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+            </AvatarFallback>
+          </Avatar>
+          <span>{vendedor.name}</span>
+        </div>
+      </td>
       <td className="p-2">{vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1)}</td>
       <td className="p-2">{nivelConfig?.meta_semanal_vendedor || 6}</td>
       <td className="p-2">R$ {(nivelConfig?.variavel_semanal || 0).toFixed(2)}</td>
