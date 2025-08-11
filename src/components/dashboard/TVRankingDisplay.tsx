@@ -12,9 +12,10 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useAuthStore } from '@/stores/AuthStore';
-import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
+import { isVendaInPeriod, getVendaPeriod, getMesAnoSemanaAtual } from '@/utils/semanaUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
+import { ComissionamentoService } from '@/services/comissionamentoService';
 
 interface VendedorData {
   id: string;
@@ -743,184 +744,351 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return dentroDoMes && compareceu;
   }).length;
 
-  // Função para calcular as semanas que terminam no mês (quarta a terça)
-  const getWeeksInMonth = (year: number, month: number) => {
+  // Função para calcular as semanas do mês com datas (copiada do VendorsRanking)
+  const getWeeksOfMonth = (year: number, month: number) => {
     const weeks = [];
+    let weekNumber = 1;
     
     // Encontrar a primeira terça-feira do mês
-    const firstDayOfMonth = new Date(year, month - 1, 1);
-    let firstTuesday = new Date(firstDayOfMonth);
-    while (firstTuesday.getDay() !== 2) {
+    const firstDay = new Date(year, month - 1, 1);
+    let firstTuesday = new Date(firstDay);
+    
+    while (firstTuesday.getDay() !== 2) { // 2 = terça-feira
       firstTuesday.setDate(firstTuesday.getDate() + 1);
     }
     
-    // Se a primeira terça-feira é muito tarde no mês, usar a anterior
+    // Se a primeira terça está muito tarde no mês, verificar semana anterior
     if (firstTuesday.getDate() > 7) {
       firstTuesday.setDate(firstTuesday.getDate() - 7);
     }
     
     let currentTuesday = new Date(firstTuesday);
     
-    // Gerar todas as terças-feiras que terminam semanas dentro ou que afetam o mês
-    while (currentTuesday.getMonth() <= month - 1) {
-      const weekStart = new Date(currentTuesday);
-      weekStart.setDate(weekStart.getDate() - 6); // Quarta-feira (6 dias antes da terça)
+    // Adicionar todas as terças-feiras que estão no mês
+    while (currentTuesday.getMonth() === month - 1 && currentTuesday.getFullYear() === year) {
+      const startOfWeek = new Date(currentTuesday);
+      startOfWeek.setDate(startOfWeek.getDate() - 6); // Quarta anterior
       
-      const weekEnd = new Date(currentTuesday);
-      weekEnd.setHours(23, 59, 59, 999);
+      const endOfWeek = new Date(currentTuesday); // Terça atual
       
       weeks.push({
-        start: weekStart,
-        end: weekEnd,
-        weekNumber: weeks.length + 1
+        week: weekNumber,
+        startDate: startOfWeek,
+        endDate: endOfWeek,
+        label: `${startOfWeek.getDate().toString().padStart(2, '0')}/${(startOfWeek.getMonth() + 1).toString().padStart(2, '0')} - ${endOfWeek.getDate().toString().padStart(2, '0')}/${(endOfWeek.getMonth() + 1).toString().padStart(2, '0')}`
       });
       
+      weekNumber++;
       currentTuesday.setDate(currentTuesday.getDate() + 7);
-      
-      // Parar se já temos 5 semanas ou se passou muito do mês
-      if (weeks.length >= 5 || currentTuesday.getDate() > 31) break;
     }
     
     return weeks;
   };
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
+  // Função para calcular pontos por semana do vendedor (copiada do VendorsRanking)
+  const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
+    return weeks.map((week, index) => {
+      const weekPoints = vendas
+        .filter(venda => {
+          if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
+          
+          const vendaDate = new Date(venda.enviado_em);
+          const isInRange = vendaDate >= week.startDate && vendaDate <= week.endDate;
+          
+          return isInRange;
+        })
+        .reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+      
+      return weekPoints;
+    });
+  };
+
+  // Função para calcular comissão POR SEMANA usando as regras de comissionamento (copiada do VendorsRanking)
+  const calculateWeeklyCommission = async (points: number, metaSemanal: number, variavelSemanal: number) => {
+    const achievementPercentage = (points / metaSemanal) * 100;
+    
+    try {
+      const { valor, multiplicador } = await ComissionamentoService.calcularComissao(
+        points, 
+        metaSemanal, 
+        variavelSemanal, 
+        'vendedor'
+      );
+      return { valor, multiplicador, percentual: achievementPercentage };
+    } catch (error) {
+      console.error('Erro ao calcular comissão:', error);
+      return { valor: 0, multiplicador: 0, percentual: achievementPercentage };
+    }
+  };
+
+  // Função para calcular comissão total (copiada do VendorsRanking)
+  const calculateTotalCommission = async (vendedorId: string, weeks: any[], nivelConfig: any) => {
+    const weeklyPoints = getVendedorWeeklyPoints(vendedorId, weeks);
+    const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+    const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+    
+    const weeklyCommissions = await Promise.all(
+      weeklyPoints.map(points => calculateWeeklyCommission(points, metaSemanal, variavelSemanal))
+    );
+    
+    const totalWeeklyCommission = weeklyCommissions.reduce((total, commission) => {
+      return total + commission.valor;
+    }, 0);
+    
+    return { total: totalWeeklyCommission, weeklyCommissions };
+  };
+
+  const exportToPDF = async () => {
     const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const mesAtualSelecionado = `${monthNames[currentMonth - 1]} de ${currentYear}`;
     
-    // Título
+    const doc = new jsPDF('l', 'mm', 'a4'); // landscape
+    const weeks = getWeeksOfMonth(currentYear, currentMonth);
+    
+    // PÁGINA 1: VENDEDORES
     doc.setFontSize(16);
-    doc.text(`Ranking de Vendedores - ${monthNames[currentMonth - 1]} de ${currentYear}`, 14, 15);
+    doc.text(`Ranking de Vendedores - ${mesAtualSelecionado}`, 20, 20);
     
-    // Data do relatório
-    const today = new Date();
-    doc.setFontSize(10);
-    doc.text(`Gerado em: ${today.toLocaleDateString('pt-BR')}`, 14, 25);
+    // Cabeçalhos da tabela de vendedores
+    const vendedoresHeaders = [
+      'Vendedor',
+      'Nível',
+      'Meta Semanal',
+      'Comissão Semanal',
+      ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
+      'Total Pontos',
+      'Atingimento %',
+      'Comissão Total'
+    ];
     
-    // Obter semanas do mês
-    const weeks = getWeeksInMonth(currentYear, currentMonth);
-    
-    // Preparar dados dos vendedores com informações semanais
-    const vendedoresTableData = vendedoresOnly.map((vendedor, index) => {
-      const weeklyData = weeks.map(week => {
-        const vendasDaSemana = vendas.filter(venda => {
-          if (venda.vendedor_id !== vendedor.id || venda.status !== 'matriculado') return false;
-          const vendaDate = new Date(venda.enviado_em);
-          return vendaDate >= week.start && vendaDate <= week.end;
-        });
-        
-        const pontosDaSemana = vendasDaSemana.reduce((sum, venda) => 
-          sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-        const progressoPorcentagem = vendedor.weeklyTarget > 0 ? 
-          ((pontosDaSemana / vendedor.weeklyTarget) * 100).toFixed(1) : '0.0';
-        
-        return `${pontosDaSemana.toFixed(1)}pts ${progressoPorcentagem}% (x0) = ${pontosDaSemana.toFixed(2)}`;
-      });
+    // Dados da tabela de vendedores
+    const vendedoresTableData = await Promise.all(vendedoresOnly.map(async vendedor => {
+      const vendedorData = vendedores.find(v => v.id === vendedor.id);
+      const vendedorNivel = vendedorData?.nivel || 'junior';
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+      const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
+      const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
+      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
+      const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
+      const commissionData = await calculateTotalCommission(vendedor.id, weeks, nivelConfig);
       
-      const totalPontos = vendedor.points;
-      const atingimentoTotal = vendedor.weeklyTarget > 0 ? 
-        ((totalPontos / (vendedor.weeklyTarget * weeks.length)) * 100).toFixed(1) : '0.0';
+      const weeklyCommissionStrings = await Promise.all(weeklyPoints.map(async (points, index) => {
+        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+        const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+        const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
+        const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
+        const valorFormatado = `R$ ${commission.valor.toFixed(2)}`;
+        return `${points.toFixed(1)}pts ${percentage}% (x${commission.multiplicador}) = ${valorFormatado}`;
+      }));
       
       return [
         vendedor.name,
-        vendedor.nivel || 'Junior',
-        vendedor.weeklyTarget,
-        `R$ ${(vendedor.weeklyTarget * 65).toFixed(2)}`, // Comissão estimada
-        ...weeklyData,
-        totalPontos.toFixed(1),
-        `${atingimentoTotal}%`,
-        `R$ ${(totalPontos * 65).toFixed(2)}` // Comissão total
+        vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
+        nivelConfig?.meta_semanal_vendedor || 6,
+        `R$ ${(nivelConfig?.variavel_semanal || 0).toFixed(2)}`,
+        ...weeklyCommissionStrings,
+        totalPoints,
+        `${achievementPercentage.toFixed(1)}%`,
+        `R$ ${commissionData.total.toFixed(2)}`
       ];
-    });
+    }));
     
-    // Cabeçalhos da tabela
-    const headers = [
-      'Vendedor', 'Nível', 'Meta\nSemanal', 'Comissão\nSemanal',
-      ...weeks.map((week, i) => `Semana ${i + 1}\n${week.start.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})} - ${week.end.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}`),
-      'Total\nPontos', 'Atingimento\n%', 'Comissão\nTotal'
-    ];
-    
-    // Configurar tabela
     autoTable(doc, {
-      head: [headers],
+      head: [vendedoresHeaders],
       body: vendedoresTableData,
-      startY: 35,
-      theme: 'striped',
-      headStyles: { 
-        fillColor: [59, 130, 246],
-        fontSize: 8,
-        textColor: [255, 255, 255]
-      },
-      bodyStyles: { fontSize: 7 },
+      startY: 30,
+      styles: { fontSize: 8 },
       columnStyles: {
-        0: { cellWidth: 25 }, // Nome
-        1: { cellWidth: 15 }, // Nível
-        2: { cellWidth: 12 }, // Meta
-        3: { cellWidth: 15 }, // Comissão
-      },
-      margin: { left: 5, right: 5 }
+        0: { cellWidth: 30 }, // Vendedor
+      }
     });
+
+    // PÁGINA 2: SDRs
+    if (sdrsOnly.length > 0) {
+      // Nova página para SDRs
+      doc.addPage();
+      doc.setFontSize(16);
+      doc.text(`Ranking de SDRs - ${mesAtualSelecionado}`, 20, 20);
+
+      // Cabeçalhos da tabela de SDRs
+      const sdrsHeaders = [
+        'SDR',
+        'Tipo',
+        'Nível',
+        'Meta Semanal',
+        'Comissão Semanal',
+        ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
+        'Total Reuniões',
+        'Atingimento %',
+        'Comissão Total'
+      ];
+
+      // Dados da tabela de SDRs
+      const sdrsTableData = sdrsOnly.map((sdr) => {
+        const sdrData = vendedores.find(v => v.id === sdr.id);
+        const baseNivel = (sdrData?.nivel || 'junior').toLowerCase();
+        const sdrTipoUsuario = sdrData?.user_type; // 'sdr_inbound' | 'sdr_outbound'
+        const sdrType = sdrTipoUsuario === 'sdr_inbound' ? 'inbound' : 'outbound';
+        
+        // Se o nível não tiver o prefixo sdr_, compor corretamente com o tipo (inbound/outbound)
+        const nivelCompleto = baseNivel.startsWith('sdr_') ? baseNivel : `sdr_${sdrType}_${baseNivel}`;
+        const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel.toLowerCase() === nivelCompleto);
+        const nivelLabel = nivelCompleto.charAt(0).toUpperCase() + nivelCompleto.slice(1);
+        
+        // Meta semanal correta por tipo de SDR
+        const metaSemanal = sdrTipoUsuario === 'sdr_inbound'
+          ? (nivelConfig?.meta_semanal_inbound ?? 55)
+          : (nivelConfig?.meta_semanal_outbound ?? 55);
+        const metaMensal = metaSemanal * weeks.length;
+        const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
+        
+        // Calcular reuniões por semana
+        const reunioesPorSemana = weeks.map(week => {
+          const startDate = new Date(week.startDate);
+          const endDate = new Date(week.endDate);
+          
+          return sdr.reunioesSemana || 0; // Usar dados já calculados
+        });
+        
+        const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
+        const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
+        
+        const weeklyMeetingsStrings = reunioesPorSemana.map((reunioes, index) => {
+          const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : '0.0';
+          return `${reunioes} Reuniões (${percentage}%)`;
+        });
+        
+        return [
+          sdr.name,
+          sdrType === 'inbound' ? 'Inbound' : 'Outbound',
+          nivelLabel,
+          metaSemanal,
+          `R$ ${variavelSemanal.toFixed(2)}`,
+          ...weeklyMeetingsStrings,
+          totalReunioes,
+          `${achievementPercentage.toFixed(1)}%`,
+          `R$ 0.00` // TODO: Implementar cálculo de comissão para SDRs
+        ];
+      });
+
+      autoTable(doc, {
+        head: [sdrsHeaders],
+        body: sdrsTableData,
+        startY: 30,
+        styles: { fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 30 }, // SDR
+        }
+      });
+    }
     
-    // Salvar arquivo
-    const fileName = `ranking-vendedores-${monthNames[currentMonth - 1].toLowerCase()}-${currentYear}.pdf`;
-    doc.save(fileName);
+    doc.save(`ranking-vendedores-sdrs-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.pdf`);
   };
 
-  const exportToSpreadsheet = () => {
+  const exportToSpreadsheet = async () => {
     const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const mesAtualSelecionado = `${monthNames[currentMonth - 1]} de ${currentYear}`;
     
-    // Obter semanas do mês
-    const weeks = getWeeksInMonth(currentYear, currentMonth);
+    const weeks = getWeeksOfMonth(currentYear, currentMonth);
     
-    // Preparar dados dos vendedores
-    const vendedoresData = vendedoresOnly.map((vendedor, index) => {
-      const baseData = {
+    // Dados dos Vendedores
+    const vendedoresData = await Promise.all(vendedoresOnly.map(async vendedor => {
+      const vendedorData = vendedores.find(v => v.id === vendedor.id);
+      const vendedorNivel = vendedorData?.nivel || 'junior';
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
+      const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
+      const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
+      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
+      const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
+      const commissionData = await calculateTotalCommission(vendedor.id, weeks, nivelConfig);
+      
+      const row: any = {
         'Vendedor': vendedor.name,
-        'Nível': vendedor.nivel || 'Junior',
-        'Meta Semanal': vendedor.weeklyTarget,
-        'Comissão Semanal': `R$ ${(vendedor.weeklyTarget * 65).toFixed(2)}`
+        'Nível': vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
+        'Meta Semanal': nivelConfig?.meta_semanal_vendedor || 6,
+        'Comissão Semanal': `R$ ${(nivelConfig?.variavel_semanal || 0).toFixed(2)}`
       };
       
-      // Adicionar dados de cada semana
-      const weeklyData: any = {};
-      weeks.forEach((week, i) => {
-        const vendasDaSemana = vendas.filter(venda => {
-          if (venda.vendedor_id !== vendedor.id || venda.status !== 'matriculado') return false;
-          const vendaDate = new Date(venda.enviado_em);
-          return vendaDate >= week.start && vendaDate <= week.end;
-        });
+      // Adicionar colunas das semanas com pontos, porcentagem, multiplicadores e valores
+      for (let i = 0; i < weeklyPoints.length; i++) {
+        const points = weeklyPoints[i];
+        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
+        const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+        const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
+        const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
+        const valorFormatado = `R$ ${commission.valor.toFixed(2)}`;
         
-        const pontosDaSemana = vendasDaSemana.reduce((sum, venda) => 
-          sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-        const progressoPorcentagem = vendedor.weeklyTarget > 0 ? 
-          ((pontosDaSemana / vendedor.weeklyTarget) * 100).toFixed(1) : '0.0';
-        
-        weeklyData[`Semana ${i + 1} ${week.start.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})} - ${week.end.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}`] = 
-          `${pontosDaSemana.toFixed(1)}pts ${progressoPorcentagem}% (x0) = ${pontosDaSemana.toFixed(2)}`;
-      });
+        row[`Semana ${weeks[i].week} (${weeks[i].label})`] = `${points.toFixed(1)}pts ${percentage}% (x${commission.multiplicador}) = ${valorFormatado}`;
+      }
       
-      const totalPontos = vendedor.points;
-      const atingimentoTotal = vendedor.weeklyTarget > 0 ? 
-        ((totalPontos / (vendedor.weeklyTarget * weeks.length)) * 100).toFixed(1) : '0.0';
+      // Adicionar colunas finais na ordem correta
+      row['Total Pontos'] = totalPoints;
+      row['Atingimento %'] = parseFloat(achievementPercentage.toFixed(1));
+      row['Comissão Total'] = parseFloat(commissionData.total.toFixed(2));
       
-      return {
-        ...baseData,
-        ...weeklyData,
-        'Total Pontos': totalPontos.toFixed(1),
-        'Atingimento %': `${atingimentoTotal}%`,
-        'Comissão Total': `R$ ${(totalPontos * 65).toFixed(2)}`
+      return row;
+    }));
+
+    // Dados dos SDRs
+    const sdrsData = sdrsOnly.map(sdr => {
+      const sdrData = vendedores.find(v => v.id === sdr.id);
+      const sdrNivel = sdrData?.nivel || 'junior';
+      const sdrType = sdrData?.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+      
+      // Montar o nível completo exatamente como está na tabela niveis_vendedores
+      const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;
+      const nivelConfig = niveis.find(n => n.nivel === nivelCompleto);
+      
+      // Buscar a meta correta baseada no nível do SDR (vendas de cursos)
+      const metaSemanal = nivelConfig?.meta_vendas_cursos || 55;
+      const metaMensal = metaSemanal * weeks.length;
+      
+      // Calcular reuniões por semana (usando dados já calculados)
+      const reunioesPorSemana = weeks.map(week => sdr.reunioesSemana || 0);
+      
+      const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
+      const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
+      
+      const row: any = {
+        'SDR': sdr.name,
+        'Tipo': sdrType === 'inbound' ? 'Inbound' : 'Outbound',
+        'Nível': sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
+        'Meta Semanal': metaSemanal,
+        'Comissão Semanal': `R$ ${(nivelConfig?.variavel_semanal || 0).toFixed(2)}`
       };
+      
+      // Adicionar colunas das semanas com reuniões e porcentagem
+      for (let i = 0; i < reunioesPorSemana.length; i++) {
+        const reunioes = reunioesPorSemana[i];
+        const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : '0.0';
+        
+        row[`Semana ${weeks[i].week} (${weeks[i].label})`] = `${reunioes} Reuniões (${percentage}%)`;
+      }
+      
+      // Adicionar colunas finais
+      row['Total Reuniões'] = totalReunioes;
+      row['Atingimento %'] = parseFloat(achievementPercentage.toFixed(1));
+      
+      return row;
     });
     
     const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(vendedoresData);
-    XLSX.utils.book_append_sheet(workbook, worksheet, `${monthNames[currentMonth - 1]} ${currentYear}`);
     
-    const fileName = `ranking-vendedores-${monthNames[currentMonth - 1].toLowerCase()}-${currentYear}.xlsx`;
+    // Adicionar aba dos Vendedores
+    const vendedoresWorksheet = XLSX.utils.json_to_sheet(vendedoresData);
+    XLSX.utils.book_append_sheet(workbook, vendedoresWorksheet, 'Ranking Vendedores');
+    
+    // Adicionar aba dos SDRs
+    if (sdrsData.length > 0) {
+      const sdrsWorksheet = XLSX.utils.json_to_sheet(sdrsData);
+      XLSX.utils.book_append_sheet(workbook, sdrsWorksheet, 'Ranking SDRs');
+    }
+    
+    const fileName = `ranking-vendedores-sdrs-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.xlsx`;
     XLSX.writeFile(workbook, fileName);
   };
 
