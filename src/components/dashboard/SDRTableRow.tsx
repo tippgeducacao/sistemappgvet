@@ -1,6 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 
+// Regras de comissionamento SDR fixas para performance
+const REGRAS_COMISSIONAMENTO_SDR = [
+  { percentual_minimo: 0, percentual_maximo: 50, multiplicador: 0.0 },
+  { percentual_minimo: 51, percentual_maximo: 70, multiplicador: 0.0 },
+  { percentual_minimo: 71, percentual_maximo: 84, multiplicador: 0.5 },
+  { percentual_minimo: 85, percentual_maximo: 99, multiplicador: 0.7 },
+  { percentual_minimo: 100, percentual_maximo: 119, multiplicador: 1.0 },
+  { percentual_minimo: 120, percentual_maximo: 150, multiplicador: 1.2 },
+  { percentual_minimo: 151, percentual_maximo: 200, multiplicador: 1.8 },
+  { percentual_minimo: 201, percentual_maximo: 999, multiplicador: 2.0 }
+];
+
+const getMultiplicadorSDR = (percentual: number): number => {
+  const regra = REGRAS_COMISSIONAMENTO_SDR.find(r => 
+    percentual >= r.percentual_minimo && percentual <= r.percentual_maximo
+  );
+  return regra?.multiplicador || 0;
+};
+
 interface SDRTableRowProps {
   sdr: any;
   index: number;
@@ -84,10 +103,14 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
       {reunioesPorSemana.map((reunioes, weekIndex) => {
         const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : "0.0";
         const weeklyCommission = weeklySDRCommissions[weekIndex] || 0;
-        const fatorComissao = variavelSemanal > 0 ? (variavelSemanal / 100).toFixed(1) : "0.0";
+        
+        // Calcular o multiplicador correto baseado na porcentagem atingida
+        const percentualAtingido = metaSemanal > 0 ? (reunioes / metaSemanal) * 100 : 0;
+        const multiplicador = getMultiplicadorSDR(percentualAtingido);
+        
         return (
           <td key={weekIndex} className="p-2 text-xs">
-            <div>{reunioes} reuniões ({percentage}%) x {fatorComissao}</div>
+            <div>{reunioes} reuniões ({percentage}%) x {multiplicador.toFixed(1)}</div>
             <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
           </td>
         );
