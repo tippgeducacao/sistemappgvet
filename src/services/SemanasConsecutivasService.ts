@@ -172,16 +172,31 @@ export class SemanasConsecutivasService {
 
   private static getSemanaAtual(): number {
     const hoje = new Date();
-    const primeiroDiaAno = new Date(hoje.getFullYear(), 0, 1);
-    const diasPassados = Math.floor((hoje.getTime() - primeiroDiaAno.getTime()) / (24 * 60 * 60 * 1000));
-    return Math.ceil((diasPassados + primeiroDiaAno.getDay() + 1) / 7);
+    // Usar a lógica padrão do sistema (quarta a terça)
+    const { semana } = this.getAnoSemanaFromDate(hoje);
+    return semana;
   }
 
   private static getAnoSemanaFromDate(data: Date): { ano: number; semana: number } {
     const ano = data.getFullYear();
-    const primeiroDiaAno = new Date(ano, 0, 1);
-    const diasPassados = Math.floor((data.getTime() - primeiroDiaAno.getTime()) / (24 * 60 * 60 * 1000));
-    const semana = Math.ceil((diasPassados + primeiroDiaAno.getDay() + 1) / 7);
+    
+    // Encontrar a primeira terça-feira do ano
+    const primeiraTerca = new Date(ano, 0, 1);
+    while (primeiraTerca.getDay() !== 2) { // 2 = terça-feira
+      primeiraTerca.setDate(primeiraTerca.getDate() + 1);
+    }
+    
+    // Se a data for antes da primeira terça, pertence ao ano anterior
+    if (data < primeiraTerca) {
+      return this.getAnoSemanaFromDate(new Date(ano - 1, 11, 31));
+    }
+    
+    // Calcular diferença em milissegundos
+    const diffMs = data.getTime() - primeiraTerca.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    // Calcular número da semana (cada 7 dias = 1 semana)
+    const semana = Math.floor(diffDays / 7) + 1;
     
     return { ano, semana };
   }
