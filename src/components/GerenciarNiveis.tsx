@@ -38,7 +38,7 @@ const GerenciarNiveis: React.FC = () => {
     };
 
     if (editingNivel.tipo_usuario === 'sdr') {
-      dados.meta_semanal_inbound = parseInt(formData.get('meta_semanal_inbound') as string);
+      dados.meta_semanal_sdr = parseInt(formData.get('meta_semanal_sdr') as string);
       dados.meta_vendas_cursos = parseInt(formData.get('meta_vendas_cursos') as string);
     // Para SDR, usar somente as configurações já definidas acima
     } else {
@@ -104,7 +104,7 @@ const GerenciarNiveis: React.FC = () => {
             </Label>
             {nivel.tipo_usuario === 'sdr' ? (
               <div className="space-y-1">
-                <p className="text-sm font-medium">Reuniões: {nivel.meta_semanal_inbound} por semana</p>
+                <p className="text-sm font-medium">Reuniões: {nivel.meta_semanal_sdr} por semana</p>
                 <p className="text-sm font-medium text-orange-600">Cursos: {nivel.meta_vendas_cursos} por semana</p>
               </div>
             ) : (
@@ -244,12 +244,12 @@ const GerenciarNiveis: React.FC = () => {
                {editingNivel.tipo_usuario === 'sdr' && (
                 <>
                   <div>
-                    <Label htmlFor="meta_semanal_inbound">Meta de Reuniões (por semana)</Label>
+                    <Label htmlFor="meta_semanal_sdr">Meta de Reuniões (por semana)</Label>
                     <Input
-                      id="meta_semanal_inbound"
-                      name="meta_semanal_inbound"
+                      id="meta_semanal_sdr"
+                      name="meta_semanal_sdr"
                       type="number"
-                      defaultValue={editingNivel.meta_semanal_inbound}
+                      defaultValue={editingNivel.meta_semanal_sdr}
                       required
                     />
                   </div>

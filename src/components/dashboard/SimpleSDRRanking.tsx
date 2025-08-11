@@ -132,7 +132,7 @@ const reunioesMes = agendamentos.filter(a => {
 
       // Metas baseadas no nível
 const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
-      const metaReunioes = nivelConfig?.meta_semanal_outbound || 55;
+      const metaReunioes = nivelConfig?.meta_semanal_sdr || 55;
 
       // Valores do período selecionado
       let vendasCursos = vendasSemana;

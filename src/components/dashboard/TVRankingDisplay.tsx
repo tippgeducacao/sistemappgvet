@@ -598,8 +598,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         reunioesSemana: agendamentosSDRSemana.length,
         reunioesDia: agendamentosSDRDia.length,
         reunioesMes: agendamentosSDRMes.length,
-        metaReunioesSemanais: nivelConfig?.meta_semanal_outbound || 55,
-        metaReunioesEnvioDiario: Math.ceil((nivelConfig?.meta_semanal_outbound || 55) / 7),
+        metaReunioesSemanais: nivelConfig?.meta_semanal_sdr || 55,
+        metaReunioesEnvioDiario: Math.ceil((nivelConfig?.meta_semanal_sdr || 55) / 7),
         // Taxa de conversão semanal
         taxaConversaoSemanal
       };
@@ -938,10 +938,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel.toLowerCase() === nivelCompleto);
         const nivelLabel = nivelCompleto.charAt(0).toUpperCase() + nivelCompleto.slice(1);
         
-        // Meta semanal correta por tipo de SDR
-        const metaSemanal = sdrData?.nivel?.includes('inbound')
-          ? (nivelConfig?.meta_semanal_inbound ?? 55)
-          : (nivelConfig?.meta_semanal_outbound ?? 55);
+        // Meta semanal para SDRs
+        const metaSemanal = nivelConfig?.meta_semanal_sdr ?? 55;
         const metaMensal = metaSemanal * weeks.length;
         const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
         
