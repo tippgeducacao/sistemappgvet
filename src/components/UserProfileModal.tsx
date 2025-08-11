@@ -185,7 +185,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
                           {user.nivel}
                         </Badge>
                       )}
-                      {!user.ativo && (
+                      {user.ativo === false && (
                         <Badge variant="destructive">
                           Inativo
                         </Badge>
