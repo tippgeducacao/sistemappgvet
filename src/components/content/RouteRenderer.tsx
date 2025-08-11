@@ -18,7 +18,7 @@ import VendedorReunioes from '@/components/vendedor/VendedorReunioes';
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
-  const { isDiretor, isAdmin, isSecretaria, isVendedor, isSDRInbound, isSDROutbound } = useUserRoles();
+  const { isDiretor, isAdmin, isSecretaria, isVendedor, isSDR } = useUserRoles();
 
   console.log('🔄 RouteRenderer: Estado atual:', { 
     activeSection, 
@@ -40,7 +40,7 @@ const RouteRenderer: React.FC = () => {
       if (isVendedor) {
         return <VendedorDashboard />;
       }
-      if (isSDRInbound || isSDROutbound) {
+      if (isSDR) {
         return <SDRDashboard />;
       }
       // Para diretor, admin e secretaria, usar o DashboardContainer completo
@@ -90,7 +90,7 @@ const RouteRenderer: React.FC = () => {
 
     case 'nova-venda':
       // Vendedores e SDRs podem acessar - diretores, admins e secretarias não podem
-      if ((isVendedor || isSDRInbound || isSDROutbound) && !isDiretor && !isAdmin && !isSecretaria) {
+      if ((isVendedor || isSDR) && !isDiretor && !isAdmin && !isSecretaria) {
         return <NovaVendaForm onCancel={() => {}} />;
       }
       return (
@@ -105,7 +105,7 @@ const RouteRenderer: React.FC = () => {
 
     case 'agendamentos':
       // SDRs (inbound e outbound) e diretores podem acessar agendamentos
-      if (isSDRInbound || isSDROutbound || isDiretor) {
+      if (isSDR || isDiretor) {
         return <AgendamentosPage />;
       }
       return (

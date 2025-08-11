@@ -61,16 +61,20 @@ export class UserRoleService {
     return this.hasRole(userId, 'admin');
   }
 
-  static async isSDRInbound(userId: string): Promise<boolean> {
-    return this.hasRole(userId, 'sdr_inbound');
-  }
-
-  static async isSDROutbound(userId: string): Promise<boolean> {
-    return this.hasRole(userId, 'sdr_outbound');
-  }
-
   static async isSDR(userId: string): Promise<boolean> {
-    return (await this.hasRole(userId, 'sdr_inbound')) || (await this.hasRole(userId, 'sdr_outbound'));
+    // Agora verifica apenas o user_type diretamente
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_type')
+      .eq('id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Erro ao verificar se usuário é SDR:', error);
+      return false;
+    }
+    
+    return data?.user_type === 'sdr';
   }
 
   static async addRole(userId: string, role: AppRole): Promise<boolean> {

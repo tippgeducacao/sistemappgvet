@@ -41,10 +41,8 @@ export const useUserRoles = () => {
                      (profile?.user_type === 'vendedor' || currentUser?.user_type === 'vendedor')) && 
                      !isSecretariaByProfile && !hasRole('admin') && !isDiretor;
   
-  // SDR: quem tem user_type sdr (mas não é vendedor, secretaria, admin nem diretor)
-  const isSDR = ((hasRolesFallback && userType === 'sdr') ||
-                 (profile?.user_type === 'sdr' || currentUser?.user_type === 'sdr')) && 
-                 !hasRole('vendedor') && !isSecretariaByProfile && !hasRole('admin') && !isDiretor;
+  // SDR: quem tem user_type sdr
+  const isSDR = profile?.user_type === 'sdr' || currentUser?.user_type === 'sdr';
 
   // Funções auxiliares para SDR (agora unificadas)
   const isSDRInbound = false; // Será determinado por outras características se necessário

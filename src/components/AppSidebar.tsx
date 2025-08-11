@@ -9,7 +9,7 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 
 const AppSidebar: React.FC = () => {
   const { profile, currentUser } = useAuthStore();
-  const { isDiretor, isAdmin, isSecretaria, isVendedor, isSDRInbound, isSDROutbound } = useUserRoles();
+  const { isDiretor, isAdmin, isSecretaria, isVendedor, isSDR } = useUserRoles();
   
   // Determinar o tipo de usuário baseado nas roles (ordem de prioridade)
   const getUserType = () => {
