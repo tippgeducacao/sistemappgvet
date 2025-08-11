@@ -1,0 +1,101 @@
+import React, { useState, useEffect } from 'react';
+import { ComissionamentoService } from '@/services/comissionamentoService';
+
+interface SDRTableRowProps {
+  sdr: any;
+  index: number;
+  weeks: any[];
+  agendamentos?: any[];
+  niveis: any[];
+}
+
+const SDRTableRow: React.FC<SDRTableRowProps> = ({
+  sdr,
+  index,
+  weeks,
+  agendamentos,
+  niveis
+}) => {
+  const [totalSDRCommission, setTotalSDRCommission] = useState(0);
+  const [weeklySDRCommissions, setWeeklySDRCommissions] = useState<number[]>([]);
+
+  // Determinar tipo de SDR
+  const sdrType = sdr.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+  const sdrTipoUsuario = sdr.user_type;
+  
+  // Processar nível do SDR
+  const baseNivel = sdr.nivel || 'junior';
+  const nivelCompleto = baseNivel.startsWith('sdr_') ? baseNivel : `sdr_${sdrType}_${baseNivel}`;
+  const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel.toLowerCase() === nivelCompleto);
+  const nivelLabel = nivelCompleto.charAt(0).toUpperCase() + nivelCompleto.slice(1);
+  
+  const metaSemanal = sdrTipoUsuario === 'sdr_inbound'
+    ? (nivelConfig?.meta_semanal_inbound ?? 55)
+    : (nivelConfig?.meta_semanal_outbound ?? 55);
+  
+  const metaMensal = metaSemanal * weeks.length;
+  const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
+  
+  // Calcular reuniões por semana
+  const reunioesPorSemana = weeks.map(week => {
+    const startDate = new Date(week.startDate);
+    const endDate = new Date(week.endDate);
+    
+    const reunioesNaSemana = agendamentos?.filter(agendamento => {
+      const dataAgendamento = new Date(agendamento.data_agendamento);
+      const isDoSDR = agendamento.sdr_id === sdr.id;
+      const dentroDaSemana = dataAgendamento >= startDate && dataAgendamento <= endDate;
+      const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                         agendamento.resultado_reuniao === 'comprou';
+      return isDoSDR && dentroDaSemana && compareceu;
+    }).length || 0;
+    
+    return reunioesNaSemana;
+  });
+  
+  const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
+  const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
+  
+  useEffect(() => {
+    const calculateSDRCommissions = async () => {
+      const commissions = await Promise.all(
+        reunioesPorSemana.map(reunioes => 
+          ComissionamentoService.calcularComissao(reunioes, metaSemanal, variavelSemanal, 'sdr')
+        )
+      );
+      
+      const total = commissions.reduce((sum, c) => sum + c.valor, 0);
+      setTotalSDRCommission(total);
+      setWeeklySDRCommissions(commissions.map(c => c.valor));
+    };
+    
+    if (reunioesPorSemana.length > 0) {
+      calculateSDRCommissions();
+    }
+  }, [reunioesPorSemana, metaSemanal, variavelSemanal]);
+
+  return (
+    <tr key={sdr.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
+      <td className="p-2 font-medium">{sdr.name}</td>
+      <td className="p-2">{sdrType === 'inbound' ? 'Inbound' : 'Outbound'}</td>
+      <td className="p-2">{nivelLabel}</td>
+      <td className="p-2">{metaSemanal}</td>
+      <td className="p-2">R$ {variavelSemanal.toFixed(2)}</td>
+      {reunioesPorSemana.map((reunioes, weekIndex) => {
+        const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : "0.0";
+        const weeklyCommission = weeklySDRCommissions[weekIndex] || 0;
+        return (
+          <td key={weekIndex} className="p-2 text-xs">
+            <div>{reunioes} reuniões ({percentage}%)</div>
+            <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
+          </td>
+        );
+      })}
+      <td className="p-2 font-semibold">{totalReunioes}</td>
+      <td className="p-2 font-semibold">{achievementPercentage.toFixed(1)}%</td>
+      <td className="p-2 font-semibold text-green-600">R$ {totalSDRCommission.toFixed(2)}</td>
+    </tr>
+  );
+};
+
+export default SDRTableRow;

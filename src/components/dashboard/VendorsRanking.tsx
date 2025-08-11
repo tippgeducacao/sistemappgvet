@@ -26,6 +26,9 @@ import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
 import SimpleSDRRanking from './SimpleSDRRanking';
 import VendedorProfileModal from './VendedorProfileModal';
+import VendedoresTableRow from './VendedoresTableRow';
+import VendedorExportTableRow from './VendedorExportTableRow';
+import SDRTableRow from './SDRTableRow';
 
 
 import jsPDF from 'jspdf';
@@ -904,62 +907,19 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                     </tr>
                   </thead>
                   <tbody>
-                    {vendedoresFiltrados.map((vendedor, index) => {
-                      const vendedorData = vendedores.find(v => v.id === vendedor.id);
-                      const vendedorNivel = vendedorData?.nivel || 'junior';
-                      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel);
-                      const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
-                      const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
-                      const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
-                      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 6) * weeks.length;
-                      const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
-                      
-                      // Calcular comissão total usando o hook de efeito
-                      const [totalCommission, setTotalCommission] = React.useState(0);
-                      const [weeklyCommissions, setWeeklyCommissions] = React.useState<number[]>([]);
-                      
-                      React.useEffect(() => {
-                        const calculateCommissions = async () => {
-                          const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
-                          const variavelSemanal = nivelConfig?.variavel_semanal || 0;
-                          
-                          const commissions = await Promise.all(
-                            weeklyPoints.map(points => calculateWeeklyCommission(points, metaSemanal, variavelSemanal))
-                          );
-                          
-                          const total = commissions.reduce((sum, c) => sum + c.valor, 0);
-                          setTotalCommission(total);
-                          setWeeklyCommissions(commissions.map(c => c.valor));
-                        };
-                        
-                        if (weeklyPoints.length > 0) {
-                          calculateCommissions();
-                        }
-                      }, [weeklyPoints, nivelConfig]);
-                      
-                      return (
-                        <tr key={vendedor.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
-                          <td className="p-2 font-medium">{vendedor.name}</td>
-                          <td className="p-2">{vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1)}</td>
-                          <td className="p-2">{nivelConfig?.meta_semanal_vendedor || 6}</td>
-                          <td className="p-2">R$ {(nivelConfig?.variavel_semanal || 0).toFixed(2)}</td>
-                          {weeklyPoints.map((points, weekIndex) => {
-                            const metaSemanal = nivelConfig?.meta_semanal_vendedor || 6;
-                            const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : "0.0";
-                            const weeklyCommission = weeklyCommissions[weekIndex] || 0;
-                            return (
-                              <td key={weekIndex} className="p-2 text-xs">
-                                <div>{points.toFixed(1)}pts ({percentage}%)</div>
-                                <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
-                              </td>
-                            );
-                          })}
-                          <td className="p-2 font-semibold">{totalPoints.toFixed(1)}</td>
-                          <td className="p-2 font-semibold">{achievementPercentage.toFixed(1)}%</td>
-                          <td className="p-2 font-semibold text-green-600">R$ {totalCommission.toFixed(2)}</td>
-                        </tr>
-                      );
-                    })}
+                    {vendedoresFiltrados.map((vendedor, index) => (
+                      <VendedorExportTableRow
+                        key={vendedor.id}
+                        vendedor={vendedor}
+                        index={index}
+                        vendedores={vendedores}
+                        niveis={niveis}
+                        selectedMonth={selectedMonth}
+                        getVendedorWeeklyPoints={getVendedorWeeklyPoints}
+                        getWeeksOfMonth={getWeeksOfMonth}
+                        calculateWeeklyCommission={calculateWeeklyCommission}
+                      />
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -991,89 +951,16 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                     </tr>
                   </thead>
                   <tbody>
-                    {vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').map((sdr, index) => {
-                      const sdrData = vendedores.find(v => v.id === sdr.id);
-                      const baseNivel = (sdrData?.nivel || 'junior').toLowerCase();
-                      const sdrTipoUsuario = sdrData?.user_type;
-                      const sdrType = sdrTipoUsuario === 'sdr_inbound' ? 'inbound' : 'outbound';
-                      
-                      const nivelCompleto = baseNivel.startsWith('sdr_') ? baseNivel : `sdr_${sdrType}_${baseNivel}`;
-                      const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel.toLowerCase() === nivelCompleto);
-                      const nivelLabel = nivelCompleto.charAt(0).toUpperCase() + nivelCompleto.slice(1);
-                      
-                      const metaSemanal = sdrTipoUsuario === 'sdr_inbound'
-                        ? (nivelConfig?.meta_semanal_inbound ?? 55)
-                        : (nivelConfig?.meta_semanal_outbound ?? 55);
-                      
-                      const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
-                      const metaMensal = metaSemanal * weeks.length;
-                      const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
-                      
-                      // Calcular reuniões por semana
-                      const reunioesPorSemana = weeks.map(week => {
-                        const startDate = new Date(week.startDate);
-                        const endDate = new Date(week.endDate);
-                        
-                        const reunioesNaSemana = agendamentos?.filter(agendamento => {
-                          const dataAgendamento = new Date(agendamento.data_agendamento);
-                          const isDoSDR = agendamento.sdr_id === sdr.id;
-                          const dentroDaSemana = dataAgendamento >= startDate && dataAgendamento <= endDate;
-                          const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                                             agendamento.resultado_reuniao === 'comprou';
-                          return isDoSDR && dentroDaSemana && compareceu;
-                        }).length || 0;
-                        
-                        return reunioesNaSemana;
-                      });
-                      
-                      const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
-                      const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
-                      
-                      // Calcular comissão total usando estado
-                      const [totalSDRCommission, setTotalSDRCommission] = React.useState(0);
-                      const [weeklySDRCommissions, setWeeklySDRCommissions] = React.useState<number[]>([]);
-                      
-                      React.useEffect(() => {
-                        const calculateSDRCommissions = async () => {
-                          const commissions = await Promise.all(
-                            reunioesPorSemana.map(reunioes => 
-                              ComissionamentoService.calcularComissao(reunioes, metaSemanal, variavelSemanal, 'sdr')
-                            )
-                          );
-                          
-                          const total = commissions.reduce((sum, c) => sum + c.valor, 0);
-                          setTotalSDRCommission(total);
-                          setWeeklySDRCommissions(commissions.map(c => c.valor));
-                        };
-                        
-                        if (reunioesPorSemana.length > 0) {
-                          calculateSDRCommissions();
-                        }
-                      }, [reunioesPorSemana]);
-                      
-                      return (
-                        <tr key={sdr.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
-                          <td className="p-2 font-medium">{sdr.name}</td>
-                          <td className="p-2">{sdrType === 'inbound' ? 'Inbound' : 'Outbound'}</td>
-                          <td className="p-2">{nivelLabel}</td>
-                          <td className="p-2">{metaSemanal}</td>
-                          <td className="p-2">R$ {variavelSemanal.toFixed(2)}</td>
-                          {reunioesPorSemana.map((reunioes, weekIndex) => {
-                            const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : "0.0";
-                            const weeklyCommission = weeklySDRCommissions[weekIndex] || 0;
-                            return (
-                              <td key={weekIndex} className="p-2 text-xs">
-                                <div>{reunioes} reuniões ({percentage}%)</div>
-                                <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
-                              </td>
-                            );
-                          })}
-                          <td className="p-2 font-semibold">{totalReunioes}</td>
-                          <td className="p-2 font-semibold">{achievementPercentage.toFixed(1)}%</td>
-                          <td className="p-2 font-semibold text-green-600">R$ {totalSDRCommission.toFixed(2)}</td>
-                        </tr>
-                      );
-                    })}
+                    {vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').map((sdr, index) => (
+                      <SDRTableRow
+                        key={sdr.id}
+                        sdr={sdr}
+                        index={index}
+                        weeks={getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]))}
+                        agendamentos={agendamentos}
+                        niveis={niveis}
+                      />
+                    ))}
                   </tbody>
                 </table>
               </div>
