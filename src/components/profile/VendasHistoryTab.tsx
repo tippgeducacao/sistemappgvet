@@ -3,13 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, Search, TrendingUp, DollarSign, Download, Users } from 'lucide-react';
+import { CalendarIcon, Search, Download } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format, startOfWeek, endOfWeek, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAllVendas } from '@/hooks/useVendas';
-import { useAllAgendamentos } from '@/hooks/useAllAgendamentos';
 import type { DateRange } from 'react-day-picker';
 import * as XLSX from 'xlsx';
 
@@ -18,215 +17,51 @@ interface VendasHistoryTabProps {
   userType: string;
 }
 
-interface WeeklyStats {
-  week: string;
-  weekStart: Date;
-  weekEnd: Date;
-  totalReunioes: number;
-  reunioesRealizadas: number;
-  reunioesConvertidas: number;
-  vendas: number;
-  taxaComparecimento: number;
-  taxaConversao: number;
-  pontos: number;
-}
-
 const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType }) => {
-  const { vendas, isLoading: vendasLoading } = useAllVendas();
-  const { agendamentos, isLoading: agendamentosLoading } = useAllAgendamentos();
+  const { vendas, isLoading } = useAllVendas();
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-  const isLoading = vendasLoading || agendamentosLoading;
-
-  // Função para obter início da semana (quarta-feira)
-  const getWeekStart = (date: Date) => {
-    const day = date.getDay(); // 0 = domingo, 3 = quarta
-    const diff = day >= 3 ? day - 3 : day + 4; // Dias para voltar até quarta
-    return addDays(date, -diff);
-  };
-
-  // Função para obter fim da semana (terça-feira)
-  const getWeekEnd = (date: Date) => {
-    const weekStart = getWeekStart(date);
-    return addDays(weekStart, 6); // Quarta + 6 dias = terça
-  };
-
-  // Filtrar dados do usuário
-  const userData = useMemo(() => {
-    if (!vendas || !agendamentos) return { vendas: [], agendamentos: [] };
+  // Filtrar vendas do usuário
+  const filteredVendas = useMemo(() => {
+    if (!vendas) return [];
     
-    const isSDR = userType === 'sdr_inbound' || userType === 'sdr_outbound';
-    
-    // Para vendedores: reuniões onde ele é o vendedor
-    // Para SDRs: reuniões onde ele é o SDR
-    const userAgendamentos = agendamentos.filter(a => 
-      isSDR ? a.sdr_id === userId : a.vendedor_id === userId
-    );
-
-    const userVendas = vendas.filter(v => v.vendedor_id === userId);
-
-    return { vendas: userVendas, agendamentos: userAgendamentos };
-  }, [vendas, agendamentos, userId, userType]);
-
-  // Calcular estatísticas semanais
-  const weeklyStats = useMemo(() => {
-    const { vendas: userVendas, agendamentos: userAgendamentos } = userData;
-    const statsMap = new Map<string, WeeklyStats>();
-
-    // Processar agendamentos
-    userAgendamentos.forEach(agendamento => {
-      const agendamentoDate = new Date(agendamento.data_agendamento);
-      const weekStart = getWeekStart(agendamentoDate);
-      const weekEnd = getWeekEnd(agendamentoDate);
-      const weekKey = format(weekStart, 'yyyy-MM-dd');
-
-      if (!statsMap.has(weekKey)) {
-        statsMap.set(weekKey, {
-          week: `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')}`,
-          weekStart,
-          weekEnd,
-          totalReunioes: 0,
-          reunioesRealizadas: 0,
-          reunioesConvertidas: 0,
-          vendas: 0,
-          taxaComparecimento: 0,
-          taxaConversao: 0,
-          pontos: 0
-        });
-      }
-
-      const stats = statsMap.get(weekKey)!;
-      stats.totalReunioes++;
-
-      // Reunião realizada (não foi "não compareceu")
-      if (agendamento.resultado_reuniao && agendamento.resultado_reuniao !== 'nao_compareceu') {
-        stats.reunioesRealizadas++;
-      }
-
-      // Verificar se a reunião resultou em venda
-      // Buscar vendas do mesmo lead na mesma semana ou logo após
-      const vendasRelacionadas = userVendas.filter(venda => {
+    return vendas.filter(venda => {
+      // Filtrar por vendedor
+      if (venda.vendedor_id !== userId) return false;
+      
+      // Filtrar por período
+      if (dateRange?.from || dateRange?.to) {
         const vendaDate = new Date(venda.enviado_em);
-        const vendaWeekStart = getWeekStart(vendaDate);
-        // Considera vendas na mesma semana ou na semana seguinte
-        return vendaDate >= weekStart && vendaDate <= addDays(weekEnd, 7) &&
-               venda.status === 'matriculado';
-      });
-
-      if (vendasRelacionadas.length > 0) {
-        stats.reunioesConvertidas++;
+        if (dateRange.from && vendaDate < dateRange.from) return false;
+        if (dateRange.to && vendaDate > dateRange.to) return false;
       }
-    });
-
-    // Processar vendas para contabilizar pontos
-    userVendas.forEach(venda => {
-      if (venda.status !== 'matriculado') return;
       
-      const vendaDate = new Date(venda.enviado_em);
-      const weekStart = getWeekStart(vendaDate);
-      const weekEnd = getWeekEnd(vendaDate);
-      const weekKey = format(weekStart, 'yyyy-MM-dd');
-
-      if (!statsMap.has(weekKey)) {
-        statsMap.set(weekKey, {
-          week: `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')}`,
-          weekStart,
-          weekEnd,
-          totalReunioes: 0,
-          reunioesRealizadas: 0,
-          reunioesConvertidas: 0,
-          vendas: 0,
-          taxaComparecimento: 0,
-          taxaConversao: 0,
-          pontos: 0
-        });
+      // Filtro por busca
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          venda.aluno?.nome?.toLowerCase().includes(searchLower) ||
+          venda.curso?.nome?.toLowerCase().includes(searchLower) ||
+          venda.status?.toLowerCase().includes(searchLower)
+        );
       }
-
-      const stats = statsMap.get(weekKey)!;
-      stats.vendas++;
-      stats.pontos += venda.pontuacao_validada || venda.pontuacao_esperada || 1;
-    });
-
-    // Calcular taxas
-    statsMap.forEach(stats => {
-      stats.taxaComparecimento = stats.totalReunioes > 0 
-        ? (stats.reunioesRealizadas / stats.totalReunioes) * 100 
-        : 0;
       
-      stats.taxaConversao = stats.reunioesRealizadas > 0 
-        ? (stats.reunioesConvertidas / stats.reunioesRealizadas) * 100 
-        : 0;
-    });
-
-    return Array.from(statsMap.values())
-      .sort((a, b) => b.weekStart.getTime() - a.weekStart.getTime());
-  }, [userData]);
-
-  // Filtrar estatísticas por período
-  const filteredStats = useMemo(() => {
-    if (!dateRange?.from && !dateRange?.to) return weeklyStats;
-    
-    return weeklyStats.filter(stat => {
-      if (dateRange.from && stat.weekEnd < dateRange.from) return false;
-      if (dateRange.to && stat.weekStart > dateRange.to) return false;
       return true;
     });
-  }, [weeklyStats, dateRange]);
-
-  // Estatísticas totais
-  const totalStats = useMemo(() => {
-    const stats = filteredStats.length > 0 ? filteredStats : weeklyStats;
-    
-    const totals = stats.reduce((acc, week) => ({
-      totalReunioes: acc.totalReunioes + week.totalReunioes,
-      reunioesRealizadas: acc.reunioesRealizadas + week.reunioesRealizadas,
-      reunioesConvertidas: acc.reunioesConvertidas + week.reunioesConvertidas,
-      vendas: acc.vendas + week.vendas,
-      pontos: acc.pontos + week.pontos
-    }), {
-      totalReunioes: 0,
-      reunioesRealizadas: 0,
-      reunioesConvertidas: 0,
-      vendas: 0,
-      pontos: 0
-    });
-
-    return {
-      ...totals,
-      taxaComparecimento: totals.totalReunioes > 0 
-        ? (totals.reunioesRealizadas / totals.totalReunioes) * 100 
-        : 0,
-      taxaConversao: totals.reunioesRealizadas > 0 
-        ? (totals.reunioesConvertidas / totals.reunioesRealizadas) * 100 
-        : 0
-    };
-  }, [filteredStats, weeklyStats]);
+  }, [vendas, userId, searchTerm, dateRange]);
 
   // Exportar para Excel
   const exportToExcel = () => {
-    const data = filteredStats.map(stat => ({
-      'Semana': stat.week,
-      'Total Reuniões': stat.totalReunioes,
-      'Reuniões Realizadas': stat.reunioesRealizadas,
-      'Reuniões Convertidas': stat.reunioesConvertidas,
-      'Taxa Comparecimento (%)': stat.taxaComparecimento.toFixed(1),
-      'Taxa Conversão (%)': stat.taxaConversao.toFixed(1),
-      'Vendas': stat.vendas,
-      'Pontos': stat.pontos.toFixed(1)
+    const data = filteredVendas.map(venda => ({
+      'Data Envio': format(new Date(venda.enviado_em), 'dd/MM/yyyy'),
+      'Aluno': venda.aluno?.nome || 'Não informado',
+      'Curso': venda.curso?.nome || 'Não informado',
+      'Status': venda.status,
+      'Pontuação Esperada': venda.pontuacao_esperada || 0,
+      'Pontuação Validada': venda.pontuacao_validada || 0,
+      'Observações': venda.observacoes || ''
     }));
-
-    // Adicionar linha de totais
-    data.push({
-      'Semana': 'TOTAL',
-      'Total Reuniões': totalStats.totalReunioes,
-      'Reuniões Realizadas': totalStats.reunioesRealizadas,
-      'Reuniões Convertidas': totalStats.reunioesConvertidas,
-      'Taxa Comparecimento (%)': totalStats.taxaComparecimento.toFixed(1),
-      'Taxa Conversão (%)': totalStats.taxaConversao.toFixed(1),
-      'Vendas': totalStats.vendas,
-      'Pontos': totalStats.pontos.toFixed(1)
-    });
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -234,6 +69,15 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
     
     const filename = `historico_vendas_${userId}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
     XLSX.writeFile(wb, filename);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'matriculado': return 'bg-green-100 text-green-800';
+      case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      case 'rejeitado': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (isLoading) {
@@ -246,64 +90,19 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
 
   return (
     <div className="space-y-4">
-      {/* Estatísticas totais */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-600" />
-              <div>
-                <div className="text-2xl font-bold">{totalStats.totalReunioes}</div>
-                <div className="text-xs text-muted-foreground">Total Reuniões</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-              <div>
-                <div className="text-2xl font-bold text-green-600">
-                  {totalStats.taxaComparecimento.toFixed(1)}%
-                </div>
-                <div className="text-xs text-muted-foreground">Taxa Comparecimento</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              <div>
-                <div className="text-2xl font-bold text-primary">
-                  {totalStats.taxaConversao.toFixed(1)}%
-                </div>
-                <div className="text-xs text-muted-foreground">Taxa Conversão</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-purple-600" />
-              <div>
-                <div className="text-2xl font-bold text-purple-600">{totalStats.vendas}</div>
-                <div className="text-xs text-muted-foreground">Vendas Convertidas</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Filtros e Exportação */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="flex flex-col sm:flex-row gap-4 flex-1">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Buscar por aluno, curso ou status..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -351,52 +150,48 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
         </Button>
       </div>
 
-      {/* Lista de estatísticas semanais */}
+      {/* Lista de vendas */}
       <div className="space-y-3">
-        {filteredStats.length === 0 ? (
+        {filteredVendas.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
               <div className="text-muted-foreground">
-                Nenhum dado encontrado para o período selecionado
+                Nenhuma venda encontrada para os filtros selecionados
               </div>
             </CardContent>
           </Card>
         ) : (
-          filteredStats.map((stat, index) => (
-            <Card key={index} className="hover:shadow-md transition-shadow">
+          filteredVendas.map((venda) => (
+            <Card key={venda.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium">{stat.week}</h4>
-                      <Badge variant="outline">
-                        {stat.vendas} vendas
+                      <h4 className="font-medium">
+                        {format(new Date(venda.enviado_em), 'dd/MM/yyyy')}
+                      </h4>
+                      <Badge className={getStatusColor(venda.status)}>
+                        {venda.status}
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       <div>
-                        <div className="text-muted-foreground">Reuniões</div>
+                        <div className="text-muted-foreground">Aluno</div>
                         <div className="font-medium">
-                          {stat.reunioesRealizadas}/{stat.totalReunioes}
+                          {venda.aluno?.nome || 'Não informado'}
                         </div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">Comparecimento</div>
-                        <div className="font-medium text-green-600">
-                          {stat.taxaComparecimento.toFixed(1)}%
+                        <div className="text-muted-foreground">Curso</div>
+                        <div className="font-medium">
+                          {venda.curso?.nome || 'Não informado'}
                         </div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">Conversão</div>
-                        <div className="font-medium text-primary">
-                          {stat.taxaConversao.toFixed(1)}%
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground">Pontos</div>
-                        <div className="font-medium text-purple-600">
-                          {stat.pontos.toFixed(1)}
+                        <div className="text-muted-foreground">Pontuação</div>
+                        <div className="font-medium">
+                          {venda.pontuacao_validada || venda.pontuacao_esperada || 0} pts
                         </div>
                       </div>
                     </div>
