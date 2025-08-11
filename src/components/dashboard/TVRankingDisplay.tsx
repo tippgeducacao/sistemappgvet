@@ -542,7 +542,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       });
 
       // Buscar meta de vendas de cursos do SDR
-      const sdrNivel = vendedor.nivel || 'sdr_inbound_junior';
+      const sdrNivel = vendedor.nivel || 'junior';
       const nivelConfig = niveis.find(n => n.nivel === sdrNivel && n.tipo_usuario === 'sdr');
       const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
       
@@ -931,7 +931,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         const sdrData = vendedores.find(v => v.id === sdr.id);
         const baseNivel = (sdrData?.nivel || 'junior').toLowerCase();
         const sdrTipoUsuario = sdrData?.user_type; // 'sdr'
-        const sdrType = sdrTipoUsuario === 'sdr_inbound' ? 'inbound' : 'outbound';
+        const sdrType = sdrData?.nivel?.includes('inbound') ? 'inbound' : 'outbound';
         
         // Se o nível não tiver o prefixo sdr_, compor corretamente com o tipo (inbound/outbound)
         const nivelCompleto = baseNivel.startsWith('sdr_') ? baseNivel : `sdr_${sdrType}_${baseNivel}`;
@@ -939,7 +939,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         const nivelLabel = nivelCompleto.charAt(0).toUpperCase() + nivelCompleto.slice(1);
         
         // Meta semanal correta por tipo de SDR
-        const metaSemanal = sdrTipoUsuario === 'sdr_inbound'
+        const metaSemanal = sdrData?.nivel?.includes('inbound')
           ? (nivelConfig?.meta_semanal_inbound ?? 55)
           : (nivelConfig?.meta_semanal_outbound ?? 55);
         const metaMensal = metaSemanal * weeks.length;
@@ -1048,7 +1048,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     const sdrsData = sdrsOnly.map(sdr => {
       const sdrData = vendedores.find(v => v.id === sdr.id);
       const sdrNivel = sdrData?.nivel || 'junior';
-      const sdrType = sdrData?.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+      const sdrType = sdrData?.nivel?.includes('inbound') ? 'inbound' : 'outbound';
       
       // Montar o nível completo exatamente como está na tabela niveis_vendedores
       const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;

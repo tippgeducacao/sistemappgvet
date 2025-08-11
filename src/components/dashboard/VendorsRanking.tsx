@@ -554,8 +554,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const sdrsVendedores = vendedores.filter(v => {
       const isSDRByType = v.user_type === 'sdr';
       const isSDRByNivel = v.nivel && (
-        v.nivel.includes('sdr_inbound') || 
-        v.nivel.includes('sdr_outbound') ||
+        v.user_type === 'sdr' ||
         v.nivel.includes('inbound') || 
         v.nivel.includes('outbound')
       );
@@ -585,7 +584,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       const sdrsTableData = await Promise.all(sdrsVendedores.map(async (sdr) => {
         const baseNivel = (sdr.nivel || 'junior').toLowerCase();
         const sdrTipoUsuario = sdr.user_type; // 'sdr'
-        const sdrType = sdrTipoUsuario === 'sdr_inbound' ? 'inbound' : 'outbound';
+        const sdrType = sdr.nivel?.includes('inbound') ? 'inbound' : 'outbound';
         
         // Se o nível não tiver o prefixo sdr_, compor corretamente com o tipo (inbound/outbound)
         const nivelCompleto = baseNivel.startsWith('sdr_') ? baseNivel : `sdr_${sdrType}_${baseNivel}`;
@@ -593,7 +592,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         const nivelLabel = nivelCompleto.charAt(0).toUpperCase() + nivelCompleto.slice(1);
         
         // Meta semanal correta por tipo de SDR
-        const metaSemanal = sdrTipoUsuario === 'sdr_inbound'
+        const metaSemanal = sdr.nivel?.includes('inbound')
           ? (nivelConfig?.meta_semanal_inbound ?? 55)
           : (nivelConfig?.meta_semanal_outbound ?? 55);
         const metaMensal = metaSemanal * weeks.length;
@@ -729,7 +728,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     
     const sdrsData = sdrsVendedores.map(sdr => {
       const sdrNivel = sdr.nivel || 'junior';
-      const sdrType = sdr.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+      const sdrType = sdr.nivel?.includes('inbound') ? 'inbound' : 'outbound';
       
       // Montar o nível completo exatamente como está na tabela niveis_vendedores
       const nivelCompleto = `sdr_${sdrType}_${sdrNivel}`;

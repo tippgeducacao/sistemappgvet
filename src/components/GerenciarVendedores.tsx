@@ -956,13 +956,11 @@ const UserCard: React.FC<UserCardProps> = ({
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className={
                 vendedor.user_type === 'admin' ? 'bg-red-100 text-red-800' :
-                vendedor.user_type === 'sdr_inbound' ? 'bg-cyan-100 text-cyan-800' :
-                vendedor.user_type === 'sdr_outbound' ? 'bg-indigo-100 text-indigo-800' :
+                 vendedor.user_type === 'sdr' ? 'bg-cyan-100 text-cyan-800' :
                 'bg-green-100 text-green-800'
               }>
                 {vendedor.user_type === 'admin' ? 'Admin' : 
-                 vendedor.user_type === 'sdr_inbound' ? 'SDR Inbound' :
-                 vendedor.user_type === 'sdr_outbound' ? 'SDR Outbound' : 'Vendedor'}
+                  vendedor.user_type === 'sdr' ? 'SDR' : 'Vendedor'}
               </Badge>
               
               {/* Badge de nível para vendedores e SDRs */}

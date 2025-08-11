@@ -144,7 +144,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       const { data: sdrsData, error: sdrsError } = await supabase
         .from('profiles')
         .select('id, name, email')
-        .in('user_type', ['sdr', 'sdr_inbound', 'sdr_outbound'])
+        .in('user_type', ['sdr'])
         .eq('ativo', true)
         .order('name');
 

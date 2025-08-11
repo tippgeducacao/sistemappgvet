@@ -66,11 +66,11 @@ const fimAno = new Date(hoje.getFullYear(), 11, 31);
 const { mes: mesAtualSemana, ano: anoAtualSemana } = getVendaPeriod(hoje);
 
     return sdrs.map(sdr => {
-      const isInbound = sdr.user_type === 'sdr_inbound';
+      const isInbound = sdr.nivel?.includes('inbound');
       
       // Buscar configuração do nível
       const nivelConfig = niveis.find(n => 
-        n.nivel === (sdr.nivel || (isInbound ? 'sdr_inbound_junior' : 'sdr_outbound_junior')) && 
+        n.nivel === (sdr.nivel || 'junior') && 
         n.tipo_usuario === 'sdr'
       );
 

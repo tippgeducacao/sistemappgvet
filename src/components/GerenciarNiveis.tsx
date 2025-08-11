@@ -19,8 +19,6 @@ const GerenciarNiveis: React.FC = () => {
 
   const niveisVendedores = niveis.filter(n => n.tipo_usuario === 'vendedor');
   const niveisSDR = niveis.filter(n => n.tipo_usuario === 'sdr');
-  const niveisSDRInbound = niveis.filter(n => n.tipo_usuario === 'sdr_inbound');
-  const niveisSDROutbound = niveis.filter(n => n.tipo_usuario === 'sdr_outbound');
 
 
   const handleEditNivel = (nivel: NivelVendedor) => {
@@ -79,7 +77,7 @@ const GerenciarNiveis: React.FC = () => {
            <Badge variant="outline" className={NiveisService.getNivelColor(nivel.nivel)}>
              {nivel.tipo_usuario === 'vendedor' ? 'Vendedor' : 
               nivel.tipo_usuario === 'sdr' ? 'SDR' :
-              nivel.tipo_usuario === 'sdr_inbound' ? 'SDR Inbound' : 'SDR Outbound'}
+              'SDR'}
            </Badge>
         </div>
         <Button
@@ -242,64 +240,51 @@ const GerenciarNiveis: React.FC = () => {
                     required
                   />
                 </div>
-                 {editingNivel.tipo_usuario === 'sdr' ? (
-                   <div>
-                     <Label htmlFor="meta_semanal_inbound">Meta Reuniões (Semanal)</Label>
-                     <Input
-                       id="meta_semanal_inbound"
-                       name="meta_semanal_inbound"
-                       type="number"
-                       defaultValue={editingNivel.meta_semanal_inbound}
-                       required
-                     />
-                   </div>
-                 ) : editingNivel.tipo_usuario === 'sdr_inbound' ? (
-                   <div>
-                     <Label htmlFor="meta_semanal_inbound">Meta Inbound (Reuniões)</Label>
-                     <Input
-                       id="meta_semanal_inbound"
-                       name="meta_semanal_inbound"
-                       type="number"
-                       defaultValue={editingNivel.meta_semanal_inbound}
-                       required
-                     />
-                   </div>
-                 ) : editingNivel.tipo_usuario === 'sdr_outbound' ? (
-                   <div>
-                     <Label htmlFor="meta_semanal_outbound">Meta Outbound (Reuniões)</Label>
-                     <Input
-                       id="meta_semanal_outbound"
-                       name="meta_semanal_outbound"
-                       type="number"
-                       defaultValue={editingNivel.meta_semanal_outbound}
-                       required
-                     />
-                   </div>
-                 ) : (
-                  <div>
-                    <Label htmlFor="meta_semanal_vendedor">Meta Semanal (pontos)</Label>
-                    <Input
-                      id="meta_semanal_vendedor"
-                      name="meta_semanal_vendedor"
-                      type="number"
-                      defaultValue={editingNivel.meta_semanal_vendedor}
-                      required
-                    />
-                  </div>
-                )}
-              </div>
-              {editingNivel.tipo_usuario === 'sdr' && (
                 <div>
-                  <Label htmlFor="meta_vendas_cursos">Meta Vendas de Cursos (semanal)</Label>
+                  <Label htmlFor="meta_semanal_vendedor">Meta Semanal (pontos)</Label>
                   <Input
-                    id="meta_vendas_cursos"
-                    name="meta_vendas_cursos"
+                    id="meta_semanal_vendedor"
+                    name="meta_semanal_vendedor"
                     type="number"
-                    defaultValue={editingNivel.meta_vendas_cursos}
+                    defaultValue={editingNivel.meta_semanal_vendedor}
                     required
                   />
                 </div>
-              )}
+                </div>
+               {editingNivel.tipo_usuario === 'sdr' && (
+                <>
+                  <div>
+                    <Label htmlFor="meta_semanal_inbound">Meta Inbound (Reuniões)</Label>
+                    <Input
+                      id="meta_semanal_inbound"
+                      name="meta_semanal_inbound"
+                      type="number"
+                      defaultValue={editingNivel.meta_semanal_inbound}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="meta_semanal_outbound">Meta Outbound (Reuniões)</Label>
+                    <Input
+                      id="meta_semanal_outbound"
+                      name="meta_semanal_outbound"
+                      type="number"
+                      defaultValue={editingNivel.meta_semanal_outbound}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="meta_vendas_cursos">Meta Vendas de Cursos (semanal)</Label>
+                    <Input
+                      id="meta_vendas_cursos"
+                      name="meta_vendas_cursos"
+                      type="number"
+                      defaultValue={editingNivel.meta_vendas_cursos}
+                      required
+                    />
+                  </div>
+                </>
+               )}
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Cancelar

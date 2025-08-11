@@ -40,7 +40,7 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
   const [weeklySDRCommissions, setWeeklySDRCommissions] = useState<number[]>([]);
 
   // Determinar tipo de SDR
-  const sdrType = sdr.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+  const sdrType = sdr.nivel?.includes('inbound') ? 'inbound' : 'outbound';
   const sdrTipoUsuario = sdr.user_type;
   
   // Processar nível do SDR
@@ -49,7 +49,7 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
   const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel.toLowerCase() === nivelCompleto);
   const nivelLabel = nivelCompleto.charAt(0).toUpperCase() + nivelCompleto.slice(1);
   
-  const metaSemanal = sdrTipoUsuario === 'sdr_inbound'
+  const metaSemanal = sdr.nivel?.includes('inbound')
     ? (nivelConfig?.meta_semanal_inbound ?? 55)
     : (nivelConfig?.meta_semanal_outbound ?? 55);
   

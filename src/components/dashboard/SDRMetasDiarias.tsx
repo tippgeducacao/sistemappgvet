@@ -155,7 +155,7 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
 
     // Buscar meta de agendamentos baseada no nível do SDR
     const nivel = (currentUser as any)?.nivel || (profile as any)?.nivel || 'junior';
-    const metaAgendamentos = profile?.user_type === 'sdr_inbound' ? 
+    const metaAgendamentos = profile?.user_type === 'sdr' ? 
       (niveis.find(n => n.nivel === nivel)?.meta_semanal_inbound || 0) :
       (niveis.find(n => n.nivel === nivel)?.meta_semanal_outbound || 0);
     
