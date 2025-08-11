@@ -29,7 +29,7 @@ import VendedorProfileModal from './VendedorProfileModal';
 import VendedoresTableRow from './VendedoresTableRow';
 import VendedorExportTableRow from './VendedorExportTableRow';
 import SDRTableRow from './SDRTableRow';
-import FechamentoMensalDialog from './FechamentoMensalDialog';
+// Importação removida - fechamento automático por data
 import { useMesFechado } from '@/hooks/useHistoricoMensal';
 import { Archive, Calendar } from 'lucide-react';
 

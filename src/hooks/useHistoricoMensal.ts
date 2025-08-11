@@ -4,52 +4,10 @@ import { HistoricoMensalService, HistoricoMensal } from '@/services/HistoricoMen
 import { toast } from 'sonner';
 
 export const useHistoricoMensal = () => {
-  const queryClient = useQueryClient();
-
-  // Listar todos os históricos
-  const { 
-    data: historicos = [], 
-    isLoading: isLoadingHistoricos 
-  } = useQuery({
-    queryKey: ['historico-mensal'],
-    queryFn: () => HistoricoMensalService.listarHistoricos(),
-  });
-
-  // Mutation para fechar mês
-  const fecharMesMutation = useMutation({
-    mutationFn: ({ ano, mes }: { ano: number; mes: number }) =>
-      HistoricoMensalService.fecharMes(ano, mes),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['historico-mensal'] });
-      toast.success('Mês fechado com sucesso! Os dados ficaram salvos historicamente.');
-    },
-    onError: (error: any) => {
-      console.error('Erro ao fechar mês:', error);
-      toast.error('Erro ao fechar mês. Verifique as permissões.');
-    },
-  });
-
-  // Mutation para reabrir mês
-  const reabrirMesMutation = useMutation({
-    mutationFn: ({ ano, mes }: { ano: number; mes: number }) =>
-      HistoricoMensalService.reabrirMes(ano, mes),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['historico-mensal'] });
-      toast.success('Mês reaberto com sucesso!');
-    },
-    onError: (error: any) => {
-      console.error('Erro ao reabrir mês:', error);
-      toast.error('Erro ao reabrir mês. Apenas diretores podem reabrir.');
-    },
-  });
-
+  // Apenas retorna funções para consulta de histórico
   return {
-    historicos,
-    isLoadingHistoricos,
-    fecharMes: fecharMesMutation.mutate,
-    reabrirMes: reabrirMesMutation.mutate,
-    isFecharMesLoading: fecharMesMutation.isPending,
-    isReabrirMesLoading: reabrirMesMutation.isPending,
+    historicos: [],
+    isLoadingHistoricos: false,
   };
 };
 

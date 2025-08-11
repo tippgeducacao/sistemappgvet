@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import HistoricoMensalManager from './HistoricoMensalManager';
+import MonthYearSelector from '@/components/common/MonthYearSelector';
 import DashboardMetricsCards from './DashboardMetricsCards';
 import SalesChart from './SalesChart';
 import StatusDistributionChart from './StatusDistributionChart';
@@ -131,7 +131,7 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
           selectedYear={selectedYear}
         />
 
-        <HistoricoMensalManager />
+        {/* Filtro de mês/ano será adicionado aqui conforme necessário */}
       </div>
     );
   }

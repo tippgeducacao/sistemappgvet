@@ -81,11 +81,15 @@ export class HistoricoMensalService {
   }
 
   /**
-   * Verificar se um mês está fechado
+   * Verificar se um mês está fechado (automático baseado em data)
    */
   static async isMesFechado(ano: number, mes: number): Promise<boolean> {
-    const historico = await this.buscarHistoricoMes(ano, mes);
-    return historico?.status === 'fechado';
+    const hoje = new Date();
+    const mesAtual = hoje.getMonth() + 1;
+    const anoAtual = hoje.getFullYear();
+    
+    // Mês está fechado se é anterior ao mês atual
+    return ano < anoAtual || (ano === anoAtual && mes < mesAtual);
   }
 
   /**
