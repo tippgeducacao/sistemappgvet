@@ -598,8 +598,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         reunioesSemana: agendamentosSDRSemana.length,
         reunioesDia: agendamentosSDRDia.length,
         reunioesMes: agendamentosSDRMes.length,
-        metaReunioesSemanais: nivelConfig?.meta_semanal_vendedor || 55,
-        metaReunioesEnvioDiario: Math.ceil((nivelConfig?.meta_semanal_vendedor || 55) / 7),
+        metaReunioesSemanais: nivelConfig?.meta_semanal_outbound || 55,
+        metaReunioesEnvioDiario: Math.ceil((nivelConfig?.meta_semanal_outbound || 55) / 7),
         // Taxa de conversão semanal
         taxaConversaoSemanal
       };
