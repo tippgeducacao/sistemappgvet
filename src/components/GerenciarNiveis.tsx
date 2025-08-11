@@ -22,15 +22,6 @@ const GerenciarNiveis: React.FC = () => {
   const niveisSDRInbound = niveis.filter(n => n.tipo_usuario === 'sdr_inbound');
   const niveisSDROutbound = niveis.filter(n => n.tipo_usuario === 'sdr_outbound');
 
-  // Debug log para verificar os dados
-  console.log('🔍 Debug Níveis - Total encontrados:', niveis.length);
-  console.log('📊 Breakdown por tipo:');
-  console.log('  - Vendedores:', niveisVendedores.length, niveisVendedores.map(n => n.nivel));
-  console.log('  - SDR (novo):', niveisSDR.length, niveisSDR.map(n => n.nivel));
-  console.log('  - SDR Inbound:', niveisSDRInbound.length, niveisSDRInbound.map(n => n.nivel));
-  console.log('  - SDR Outbound:', niveisSDROutbound.length, niveisSDROutbound.map(n => n.nivel));
-  console.log('🗂️ Todos os tipos únicos:', [...new Set(niveis.map(n => n.tipo_usuario))]);
-  console.log('📋 Todos os níveis:', niveis.map(n => `${n.tipo_usuario}:${n.nivel}`));
 
   const handleEditNivel = (nivel: NivelVendedor) => {
     setEditingNivel(nivel);
