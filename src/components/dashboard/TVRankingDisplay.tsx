@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
@@ -18,11 +12,6 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
-import * as XLSX from 'xlsx';
-import { format } from 'date-fns';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 
 interface VendedorData {
   id: string;
@@ -751,245 +740,6 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return dentroDoMes && compareceu;
   }).length;
 
-  // Função para obter semanas do mês atual
-  const getWeeksOfMonth = (year: number, month: number) => {
-    const weeks = [];
-    const firstDay = new Date(year, month - 1, 1);
-    const lastDay = new Date(year, month, 0);
-    
-    // Encontrar a primeira quarta-feira do mês (ou antes)
-    let currentDate = new Date(firstDay);
-    while (currentDate.getDay() !== 3) { // 3 = quarta-feira
-      currentDate.setDate(currentDate.getDate() - 1);
-    }
-    
-    let weekNumber = 1;
-    while (currentDate <= lastDay) {
-      const weekStart = new Date(currentDate);
-      const weekEnd = new Date(currentDate);
-      weekEnd.setDate(weekEnd.getDate() + 6); // Terça-feira
-      
-      weeks.push({
-        week: weekNumber,
-        startDate: weekStart,
-        endDate: weekEnd,
-        label: `${weekStart.getDate().toString().padStart(2, '0')}/${(weekStart.getMonth() + 1).toString().padStart(2, '0')} - ${weekEnd.getDate().toString().padStart(2, '0')}/${(weekEnd.getMonth() + 1).toString().padStart(2, '0')}`
-      });
-      
-      currentDate.setDate(currentDate.getDate() + 7);
-      weekNumber++;
-    }
-    
-    return weeks;
-  };
-
-  // Função para calcular pontos de vendedor por semana
-  const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
-    return weeks.map(week => {
-      const weeklyVendas = vendas?.filter(venda => {
-        if (venda.vendedor_id !== vendedorId) return false;
-        if (!venda.enviado_em) return false;
-        
-        const vendaDate = new Date(venda.enviado_em);
-        return vendaDate >= week.startDate && vendaDate <= week.endDate;
-      }) || [];
-      
-      return weeklyVendas.reduce((total, venda) => total + (venda.pontuacao_validada || 0), 0);
-    });
-  };
-
-  // Função para calcular reuniões de SDR por semana
-  const getSDRWeeklyMeetings = (sdrId: string, weeks: any[]) => {
-    return weeks.map(week => {
-      const weeklyMeetings = allAgendamentos?.filter(agendamento => {
-        if (agendamento.sdr_id !== sdrId) return false;
-        const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                          agendamento.resultado_reuniao === 'comprou';
-        if (!compareceu) return false;
-        
-        const meetingDate = new Date(agendamento.data_agendamento);
-        return meetingDate >= week.startDate && meetingDate <= week.endDate;
-      }) || [];
-      
-      return weeklyMeetings.length;
-    });
-  };
-
-  // Função para exportar PDF com dados semanais
-  const exportToPDF = async () => {
-    const doc = new jsPDF('l', 'mm', 'a4'); // landscape
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
-    const weeks = getWeeksOfMonth(currentYear, currentMonth);
-    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    const monthName = `${monthNames[currentMonth - 1]} ${currentYear}`;
-    
-    // PÁGINA 1: VENDEDORES
-    doc.setFontSize(16);
-    doc.text(`Ranking de Vendedores - ${monthName}`, 20, 20);
-    
-    // Cabeçalhos da tabela de vendedores
-    const vendedoresHeaders = [
-      'Vendedor',
-      'Nível',
-      'Meta Semanal',
-      ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
-      'Total Pontos',
-      'Atingimento %'
-    ];
-    
-    // Dados da tabela de vendedores
-    const vendedoresTableData = vendedoresOnly.map(vendedor => {
-      const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
-      const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
-      const metaMensal = vendedor.weeklyTarget * weeks.length;
-      const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
-      
-      return [
-        vendedor.name,
-        vendedor.nivel || 'Junior',
-        vendedor.weeklyTarget,
-        ...weeklyPoints.map(points => points.toFixed(1)),
-        totalPoints.toFixed(1),
-        `${achievementPercentage.toFixed(1)}%`
-      ];
-    });
-    
-    autoTable(doc, {
-      head: [vendedoresHeaders],
-      body: vendedoresTableData,
-      startY: 30,
-      styles: { fontSize: 8 },
-      columnStyles: {
-        0: { cellWidth: 30 }, // Vendedor
-      }
-    });
-
-    // PÁGINA 2: SDRs
-    if (sdrsOnly.length > 0) {
-      doc.addPage();
-      doc.setFontSize(16);
-      doc.text(`Ranking de SDRs - ${monthName}`, 20, 20);
-
-      const sdrsHeaders = [
-        'SDR',
-        'Tipo',
-        'Nível',
-        'Meta Semanal',
-        ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
-        'Total Reuniões',
-        'Atingimento %'
-      ];
-
-      const sdrsTableData = sdrsOnly.map(sdr => {
-        const weeklyMeetings = getSDRWeeklyMeetings(sdr.id, weeks);
-        const totalMeetings = weeklyMeetings.reduce((sum, meetings) => sum + meetings, 0);
-        const metaMensal = sdr.weeklyTarget * weeks.length;
-        const achievementPercentage = metaMensal > 0 ? (totalMeetings / metaMensal) * 100 : 0;
-        
-        return [
-          sdr.name,
-          sdr.nivel?.includes('inbound') ? 'Inbound' : 'Outbound',
-          sdr.nivel || 'Junior',
-          sdr.weeklyTarget,
-          ...weeklyMeetings.map(meetings => meetings.toString()),
-          totalMeetings,
-          `${achievementPercentage.toFixed(1)}%`
-        ];
-      });
-
-      autoTable(doc, {
-        head: [sdrsHeaders],
-        body: sdrsTableData,
-        startY: 30,
-        styles: { fontSize: 8 },
-        columnStyles: {
-          0: { cellWidth: 30 }, // SDR
-        }
-      });
-    }
-
-    const fileName = `ranking-detalhado-${monthName.toLowerCase().replace(/\s+/g, '-')}.pdf`;
-    doc.save(fileName);
-  };
-
-  // Função para exportar planilha com dados semanais
-  const exportToExcel = () => {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
-    const weeks = getWeeksOfMonth(currentYear, currentMonth);
-    const monthName = format(new Date(currentYear, currentMonth - 1), 'MMMM yyyy');
-
-    // Dados dos vendedores por semana
-    const vendedoresData = vendedoresOnly.map(vendedor => {
-      const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
-      const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
-      const metaMensal = vendedor.weeklyTarget * weeks.length;
-      const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
-
-      const row: any = {
-        'Vendedor': vendedor.name,
-        'Nível': vendedor.nivel || 'Junior',
-        'Meta Semanal': vendedor.weeklyTarget,
-      };
-
-      weeks.forEach((week, index) => {
-        const points = weeklyPoints[index];
-        const percentage = vendedor.weeklyTarget > 0 ? ((points / vendedor.weeklyTarget) * 100).toFixed(1) : '0.0';
-        row[`Semana ${week.week} (${week.label})`] = `${points.toFixed(1)} pts (${percentage}%)`;
-      });
-
-      row['Total Pontos'] = totalPoints.toFixed(1);
-      row['Atingimento %'] = achievementPercentage.toFixed(1);
-
-      return row;
-    });
-
-    // Dados dos SDRs por semana
-    const sdrsData = sdrsOnly.map(sdr => {
-      const weeklyMeetings = getSDRWeeklyMeetings(sdr.id, weeks);
-      const totalMeetings = weeklyMeetings.reduce((sum, meetings) => sum + meetings, 0);
-      const metaMensal = sdr.weeklyTarget * weeks.length;
-      const achievementPercentage = metaMensal > 0 ? (totalMeetings / metaMensal) * 100 : 0;
-
-      const row: any = {
-        'SDR': sdr.name,
-        'Tipo': sdr.nivel?.includes('inbound') ? 'Inbound' : 'Outbound',
-        'Nível': sdr.nivel || 'Junior',
-        'Meta Semanal': sdr.weeklyTarget,
-      };
-
-      weeks.forEach((week, index) => {
-        const meetings = weeklyMeetings[index];
-        const percentage = sdr.weeklyTarget > 0 ? ((meetings / sdr.weeklyTarget) * 100).toFixed(1) : '0.0';
-        row[`Semana ${week.week} (${week.label})`] = `${meetings} reuniões (${percentage}%)`;
-      });
-
-      row['Total Reuniões'] = totalMeetings;
-      row['Atingimento %'] = achievementPercentage.toFixed(1);
-
-      return row;
-    });
-
-    const workbook = XLSX.utils.book_new();
-    
-    // Adicionar aba dos Vendedores
-    if (vendedoresData.length > 0) {
-      const vendedoresWorksheet = XLSX.utils.json_to_sheet(vendedoresData);
-      XLSX.utils.book_append_sheet(workbook, vendedoresWorksheet, 'Ranking Vendedores');
-    }
-    
-    // Adicionar aba dos SDRs
-    if (sdrsData.length > 0) {
-      const sdrsWorksheet = XLSX.utils.json_to_sheet(sdrsData);
-      XLSX.utils.book_append_sheet(workbook, sdrsWorksheet, 'Ranking SDRs');
-    }
-    
-    const fileName = `ranking-detalhado-${monthName.toLowerCase().replace(/\s+/g, '-')}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-  };
 
   if (!isOpen) return null;
 
@@ -1095,27 +845,6 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
             </div>
           )}
 
-          {/* Botões de exportar */}
-          <div className="mt-8 flex justify-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="gap-2 bg-primary hover:bg-primary/90">
-                  <Download className="h-4 w-4" />
-                  Exportar Ranking
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => exportToPDF()}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Exportar PDF (por semana)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportToExcel()}>
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Exportar Planilha (por semana)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
       </div>
     </div>
