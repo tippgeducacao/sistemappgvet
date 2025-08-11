@@ -74,7 +74,7 @@ const GerenciarNiveis: React.FC = () => {
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-primary" />
           <CardTitle className="text-lg">
-            {NiveisService.getNivelLabel(nivel.nivel)}
+            {NiveisService.getNivelLabel(nivel.nivel, nivel.tipo_usuario)}
           </CardTitle>
            <Badge variant="outline" className={NiveisService.getNivelColor(nivel.nivel)}>
              {nivel.tipo_usuario === 'vendedor' ? 'Vendedor' : 
@@ -201,7 +201,7 @@ const GerenciarNiveis: React.FC = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
-              Editar {editingNivel ? NiveisService.getNivelLabel(editingNivel.nivel) : ''}
+              Editar {editingNivel ? NiveisService.getNivelLabel(editingNivel.nivel, editingNivel.tipo_usuario) : ''}
             </DialogTitle>
           </DialogHeader>
           {editingNivel && (

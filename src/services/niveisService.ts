@@ -83,7 +83,20 @@ export class NiveisService {
     console.log('✅ Nível e tipo do vendedor atualizado com sucesso');
   }
 
-  static getNivelLabel(nivel: string): string {
+  static getNivelLabel(nivel: string, tipoUsuario?: string): string {
+    // Para níveis SDR simples, usar o tipo de usuário para determinar o label
+    if (tipoUsuario === 'sdr') {
+      switch (nivel) {
+        case 'junior':
+          return 'SDR Júnior';
+        case 'pleno':
+          return 'SDR Pleno';
+        case 'senior':
+          return 'SDR Sênior';
+      }
+    }
+    
+    // Para outros tipos, manter a lógica original
     switch (nivel) {
       case 'junior':
         return 'Vendedor Júnior';
