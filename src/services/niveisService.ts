@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface NivelVendedor {
   id: string;
   nivel: 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior';
-  tipo_usuario: 'vendedor' | 'sdr';
+  tipo_usuario: 'vendedor' | 'sdr_inbound' | 'sdr_outbound' | 'sdr';
   fixo_mensal: number;
   vale: number;
   variavel_semanal: number;
@@ -35,7 +35,7 @@ export class NiveisService {
     return (data || []).map(item => ({
       ...item,
       nivel: item.nivel as 'junior' | 'pleno' | 'senior' | 'sdr_inbound_junior' | 'sdr_inbound_pleno' | 'sdr_inbound_senior' | 'sdr_outbound_junior' | 'sdr_outbound_pleno' | 'sdr_outbound_senior',
-      tipo_usuario: item.tipo_usuario as 'vendedor' | 'sdr'
+      tipo_usuario: item.tipo_usuario as 'vendedor' | 'sdr_inbound' | 'sdr_outbound' | 'sdr'
     }));
   }
 

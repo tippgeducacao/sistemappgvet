@@ -18,8 +18,9 @@ const GerenciarNiveis: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const niveisVendedores = niveis.filter(n => n.tipo_usuario === 'vendedor');
-  const niveisSDRInbound = niveis.filter(n => n.tipo_usuario === 'sdr' && n.nivel.includes('inbound'));
-  const niveisSDROutbound = niveis.filter(n => n.tipo_usuario === 'sdr' && n.nivel.includes('outbound'));
+  const niveisSDR = niveis.filter(n => n.tipo_usuario === 'sdr');
+  const niveisSDRInbound = niveis.filter(n => n.tipo_usuario === 'sdr_inbound');
+  const niveisSDROutbound = niveis.filter(n => n.tipo_usuario === 'sdr_outbound');
 
   const handleEditNivel = (nivel: NivelVendedor) => {
     setEditingNivel(nivel);
@@ -39,6 +40,11 @@ const GerenciarNiveis: React.FC = () => {
 
     if (editingNivel.tipo_usuario === 'sdr') {
       dados.meta_semanal_inbound = parseInt(formData.get('meta_semanal_inbound') as string);
+      dados.meta_vendas_cursos = parseInt(formData.get('meta_vendas_cursos') as string);
+    } else if (editingNivel.tipo_usuario === 'sdr_inbound') {
+      dados.meta_semanal_inbound = parseInt(formData.get('meta_semanal_inbound') as string);
+      dados.meta_vendas_cursos = parseInt(formData.get('meta_vendas_cursos') as string);
+    } else if (editingNivel.tipo_usuario === 'sdr_outbound') {
       dados.meta_semanal_outbound = parseInt(formData.get('meta_semanal_outbound') as string);
       dados.meta_vendas_cursos = parseInt(formData.get('meta_vendas_cursos') as string);
     } else {
@@ -131,10 +137,14 @@ const GerenciarNiveis: React.FC = () => {
       </div>
 
       <Tabs defaultValue="vendedores" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="vendedores" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Vendedores
+          </TabsTrigger>
+          <TabsTrigger value="sdr" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            SDR
           </TabsTrigger>
           <TabsTrigger value="sdr-inbound" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
@@ -161,6 +171,24 @@ const GerenciarNiveis: React.FC = () => {
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {niveisVendedores.map((nivel) => (
+                  <NivelCard key={nivel.id} nivel={nivel} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sdr" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Níveis de SDR
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {niveisSDR.map((nivel) => (
                   <NivelCard key={nivel.id} nivel={nivel} />
                 ))}
               </div>
@@ -255,34 +283,40 @@ const GerenciarNiveis: React.FC = () => {
                     required
                   />
                 </div>
-                {editingNivel.tipo_usuario === 'sdr' ? (
-                  <>
-                    {editingNivel.nivel.includes('inbound') && (
-                      <div>
-                        <Label htmlFor="meta_semanal_inbound">Meta Inbound (Reuniões)</Label>
-                        <Input
-                          id="meta_semanal_inbound"
-                          name="meta_semanal_inbound"
-                          type="number"
-                          defaultValue={editingNivel.meta_semanal_inbound}
-                          required
-                        />
-                      </div>
-                    )}
-                    {editingNivel.nivel.includes('outbound') && (
-                      <div>
-                        <Label htmlFor="meta_semanal_outbound">Meta Outbound (Reuniões)</Label>
-                        <Input
-                          id="meta_semanal_outbound"
-                          name="meta_semanal_outbound"
-                          type="number"
-                          defaultValue={editingNivel.meta_semanal_outbound}
-                          required
-                        />
-                      </div>
-                    )}
-                  </>
-                ) : (
+                 {editingNivel.tipo_usuario === 'sdr' ? (
+                   <div>
+                     <Label htmlFor="meta_semanal_inbound">Meta Reuniões (Semanal)</Label>
+                     <Input
+                       id="meta_semanal_inbound"
+                       name="meta_semanal_inbound"
+                       type="number"
+                       defaultValue={editingNivel.meta_semanal_inbound}
+                       required
+                     />
+                   </div>
+                 ) : editingNivel.tipo_usuario === 'sdr_inbound' ? (
+                   <div>
+                     <Label htmlFor="meta_semanal_inbound">Meta Inbound (Reuniões)</Label>
+                     <Input
+                       id="meta_semanal_inbound"
+                       name="meta_semanal_inbound"
+                       type="number"
+                       defaultValue={editingNivel.meta_semanal_inbound}
+                       required
+                     />
+                   </div>
+                 ) : editingNivel.tipo_usuario === 'sdr_outbound' ? (
+                   <div>
+                     <Label htmlFor="meta_semanal_outbound">Meta Outbound (Reuniões)</Label>
+                     <Input
+                       id="meta_semanal_outbound"
+                       name="meta_semanal_outbound"
+                       type="number"
+                       defaultValue={editingNivel.meta_semanal_outbound}
+                       required
+                     />
+                   </div>
+                 ) : (
                   <div>
                     <Label htmlFor="meta_semanal_vendedor">Meta Semanal (pontos)</Label>
                     <Input
