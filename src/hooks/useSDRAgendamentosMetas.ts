@@ -89,15 +89,23 @@ export const useSDRAgendamentosMetas = () => {
         throw profileError;
       }
 
-      const nivel = profileData?.nivel || 'junior';
-      console.log('🔍 Nível do SDR encontrado para metas:', nivel, 'Tipo:', profile.user_type);
+      const nivelRaw = profileData?.nivel || 'junior';
+      let nivelCompleto = '';
+      
+      // Se o nível já contém o prefixo, usar direto, senão construir
+      if (nivelRaw.includes('sdr_inbound_') || nivelRaw.includes('sdr_outbound_')) {
+        nivelCompleto = nivelRaw;
+      } else {
+        nivelCompleto = profile.user_type === 'sdr_inbound' ? `sdr_inbound_${nivelRaw}` : `sdr_outbound_${nivelRaw}`;
+      }
+
+      console.log('🔍 Nível do SDR encontrado para metas:', { nivelRaw, nivelCompleto, userType: profile.user_type });
 
       // Buscar meta de agendamentos na tabela niveis_vendedores
-      // O tipo_usuario na tabela é sempre 'sdr' para SDRs
       const { data: nivelData, error: nivelError } = await supabase
         .from('niveis_vendedores')
-        .select('meta_semanal_inbound, meta_semanal_outbound')
-        .eq('nivel', nivel)
+        .select('meta_semanal_inbound, meta_semanal_outbound, nivel')
+        .eq('nivel', nivelCompleto)
         .eq('tipo_usuario', 'sdr')
         .maybeSingle();
 
@@ -109,8 +117,8 @@ export const useSDRAgendamentosMetas = () => {
       console.log('📊 Dados do nível para metas:', nivelData);
 
       const metaSemanalAgendamentos = profile.user_type === 'sdr_inbound' 
-        ? (nivelData?.meta_semanal_inbound || 0)
-        : (nivelData?.meta_semanal_outbound || 0);
+        ? (nivelData?.meta_semanal_inbound || 55) // Meta padrão de 55 para SDR inbound junior
+        : (nivelData?.meta_semanal_outbound || 30); // Meta padrão de 30 para SDR outbound junior
 
       console.log('🎯 Meta semanal de agendamentos:', metaSemanalAgendamentos);
       

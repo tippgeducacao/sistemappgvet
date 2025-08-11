@@ -20,17 +20,24 @@ export const useMetasSemanaisSDR = () => {
 
   // Buscar meta semanal específica do SDR baseada no nível do usuário
   const getMetaSemanalSDR = (vendedorId: string, ano: number, semana: number): MetaSemanalSDR | undefined => {
-    // Combinar user_type e nivel para formar o nível completo
+    // Buscar o nível do usuário
     const userType = profile?.user_type;
-    const nivel = (currentUser as any)?.nivel || (profile as any)?.nivel || 'junior';
+    const nivelRaw = (currentUser as any)?.nivel || (profile as any)?.nivel || 'junior';
     
+    // Se o nível já contém o prefixo (ex: sdr_inbound_junior), usar direto
+    // Se não, construir o nível completo baseado no user_type
     let nivelCompleto = '';
-    if (userType === 'sdr_inbound') {
-      nivelCompleto = `sdr_inbound_${nivel}`;
-    } else if (userType === 'sdr_outbound') {
-      nivelCompleto = `sdr_outbound_${nivel}`;
+    if (nivelRaw.includes('sdr_inbound_') || nivelRaw.includes('sdr_outbound_')) {
+      nivelCompleto = nivelRaw; // Já tem o prefixo
     } else {
-      nivelCompleto = nivel; // Para vendedores normais
+      // Construir o nível baseado no user_type
+      if (userType === 'sdr_inbound') {
+        nivelCompleto = `sdr_inbound_${nivelRaw}`;
+      } else if (userType === 'sdr_outbound') {
+        nivelCompleto = `sdr_outbound_${nivelRaw}`;
+      } else {
+        nivelCompleto = nivelRaw; // Para vendedores normais
+      }
     }
     
     console.log('🔍 getMetaSemanalSDR: Buscando meta', { 
@@ -38,7 +45,7 @@ export const useMetasSemanaisSDR = () => {
       ano, 
       semana, 
       userType,
-      nivel,
+      nivelRaw,
       nivelCompleto,
       currentUser: currentUser ? { id: currentUser.id, user_type: (currentUser as any).user_type } : null,
       profile: profile ? { id: profile.id, user_type: profile.user_type, nivel: (profile as any).nivel } : null 
@@ -70,13 +77,13 @@ export const useMetasSemanaisSDR = () => {
     console.log('🔍 Buscando meta de cursos para nível:', nivel);
     console.log('📊 Níveis disponíveis:', niveis);
     
-    // Primeiro tentar buscar sem o prefixo
+    // Primeiro tentar buscar exato (ex: sdr_inbound_junior)
     let nivelConfig = niveis.find(n => n.nivel === nivel);
     
     // Se não encontrar, tentar com o nível base (sem sdr_inbound_ ou sdr_outbound_)
     if (!nivelConfig) {
       const nivelBase = nivel.replace('sdr_inbound_', '').replace('sdr_outbound_', '');
-      nivelConfig = niveis.find(n => n.nivel === nivelBase);
+      nivelConfig = niveis.find(n => n.nivel === nivelBase && n.tipo_usuario === 'vendedor');
       console.log('⚙️ Tentando buscar nível base:', nivelBase, 'resultado:', nivelConfig);
     }
     
@@ -87,7 +94,9 @@ export const useMetasSemanaisSDR = () => {
       return 8; // Meta padrão se não encontrar
     }
     
-    // Para SDRs, sempre usar meta_vendas_cursos
+    // Para SDRs, usar meta_vendas_cursos. Para verificar qual campo usar:
+    // - SDR inbound: meta_semanal_inbound (para agendamentos) e meta_vendas_cursos (para vendas)
+    // - SDR outbound: meta_semanal_outbound (para agendamentos) e meta_vendas_cursos (para vendas)
     const meta = nivelConfig.meta_vendas_cursos || 8;
     console.log('📈 Meta de vendas de cursos encontrada:', meta);
     
