@@ -18,7 +18,7 @@ export class SemanasConsecutivasService {
       }
 
       // Determinar se é vendedor ou SDR
-      const isSDR = profile.user_type === 'sdr_inbound' || profile.user_type === 'sdr_outbound';
+      const isSDR = profile.user_type === 'sdr';
       
       if (isSDR) {
         return await this.calcularSemanasConsecutivasSDR(vendedorId, profile.nivel);

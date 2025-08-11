@@ -53,7 +53,7 @@ export const EditarAgendamentoDiretor: React.FC<EditarAgendamentoDiretorProps> =
       const { data: vendedoresData, error: vendedoresError } = await supabase
         .from('profiles')
         .select('id, name, email')
-        .in('user_type', ['vendedor', 'sdr_inbound', 'sdr_outbound'])
+        .in('user_type', ['vendedor', 'sdr'])
         .eq('ativo', true)
         .order('name');
 

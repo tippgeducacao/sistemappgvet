@@ -232,8 +232,7 @@ const GerenciarVendedores: React.FC = () => {
               <SelectItem value="diretor">Diretor</SelectItem>
               <SelectItem value="secretaria">Secretaria</SelectItem>
               <SelectItem value="vendedor">Vendedor</SelectItem>
-              <SelectItem value="sdr_inbound">SDR Inbound</SelectItem>
-              <SelectItem value="sdr_outbound">SDR Outbound</SelectItem>
+              <SelectItem value="sdr">SDR</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -339,16 +338,15 @@ const GerenciarVendedores: React.FC = () => {
                             {vendedor.user_type === 'admin' && 'Admin'}
                             {vendedor.user_type === 'secretaria' && 'Secretaria'}
                             {vendedor.user_type === 'diretor' && 'Diretor'}
-                            {vendedor.user_type === 'sdr_inbound' && 'SDR Inbound'}
-                            {vendedor.user_type === 'sdr_outbound' && 'SDR Outbound'}
+                            {vendedor.user_type === 'sdr' && 'SDR'}
                           </Badge>
                         </div>
                       </TableCell>
                        <TableCell>
                         {(() => {
                           const baseNivel = (vendedor.nivel || 'junior').toLowerCase();
-                          const isSdr = vendedor.user_type === 'sdr_inbound' || vendedor.user_type === 'sdr_outbound';
-                          const sdrType = vendedor.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+                          const isSdr = vendedor.user_type === 'sdr';
+                          const sdrType = 'unified';
                           const nivelCompleto = isSdr && !baseNivel.startsWith('sdr_') ? `sdr_${sdrType}_${baseNivel}` : baseNivel;
                           return vendedor.nivel ? (
                             <Badge variant="outline" className={NiveisService.getNivelColor(nivelCompleto)}>
@@ -556,16 +554,15 @@ const GerenciarVendedores: React.FC = () => {
                             {vendedor.user_type === 'admin' && 'Admin'}
                             {vendedor.user_type === 'secretaria' && 'Secretaria'}
                             {vendedor.user_type === 'diretor' && 'Diretor'}
-                            {vendedor.user_type === 'sdr_inbound' && 'SDR Inbound'}
-                            {vendedor.user_type === 'sdr_outbound' && 'SDR Outbound'}
+                            {vendedor.user_type === 'sdr' && 'SDR'}
                           </Badge>
                         </div>
                       </TableCell>
                        <TableCell>
                         {(() => {
                           const baseNivel = (vendedor.nivel || 'junior').toLowerCase();
-                          const isSdr = vendedor.user_type === 'sdr_inbound' || vendedor.user_type === 'sdr_outbound';
-                          const sdrType = vendedor.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+                          const isSdr = vendedor.user_type === 'sdr';
+                          const sdrType = 'unified';
                           const nivelCompleto = isSdr && !baseNivel.startsWith('sdr_') ? `sdr_${sdrType}_${baseNivel}` : baseNivel;
                           return vendedor.nivel ? (
                             <Badge variant="outline" className={NiveisService.getNivelColor(nivelCompleto)}>
@@ -754,7 +751,7 @@ const GerenciarVendedores: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>SDRs:</span>
-                    <span className="font-semibold">{allUsers.filter(u => u.user_type === 'sdr_inbound' || u.user_type === 'sdr_outbound').length}</span>
+                    <span className="font-semibold">{allUsers.filter(u => u.user_type === 'sdr').length}</span>
                   </div>
                 </div>
               </CardContent>
@@ -816,7 +813,7 @@ const GerenciarVendedores: React.FC = () => {
       )}
 
       {/* Modal para SDRs */}
-      {selectedUserProfile && (selectedUserProfile.user_type === 'sdr_inbound' || selectedUserProfile.user_type === 'sdr_outbound') && (
+      {selectedUserProfile && (selectedUserProfile.user_type === 'sdr') && (
         <SDRProfileModal
           sdrId={selectedUserProfile?.id}
           sdrNome={selectedUserProfile?.name}
@@ -971,8 +968,8 @@ const UserCard: React.FC<UserCardProps> = ({
               {/* Badge de nível para vendedores e SDRs */}
               {(() => {
                 const baseNivel = (vendedor.nivel || 'junior').toLowerCase();
-                const isSdr = vendedor.user_type === 'sdr_inbound' || vendedor.user_type === 'sdr_outbound';
-                const sdrType = vendedor.user_type === 'sdr_inbound' ? 'inbound' : 'outbound';
+                const isSdr = vendedor.user_type === 'sdr';
+                const sdrType = 'unified';
                 const nivelCompleto = isSdr && !baseNivel.startsWith('sdr_') ? `sdr_${sdrType}_${baseNivel}` : baseNivel;
                 return (
                   <Badge variant="outline" className={NiveisService.getNivelColor(nivelCompleto)}>
@@ -1014,7 +1011,7 @@ const UserCard: React.FC<UserCardProps> = ({
                 )}
                 
                 {/* Botão para visualizar perfil - para vendedores e SDRs */}
-                {(vendedor.user_type === 'vendedor' || vendedor.user_type === 'sdr_inbound' || vendedor.user_type === 'sdr_outbound') && (
+                {(vendedor.user_type === 'vendedor' || vendedor.user_type === 'sdr') && (
                   <Button
                     variant="default"
                     size="sm"

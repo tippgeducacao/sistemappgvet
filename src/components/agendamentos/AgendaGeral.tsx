@@ -69,8 +69,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const temPermissao = profile?.user_type === 'admin' || 
                       profile?.user_type === 'secretaria' || 
                       profile?.user_type === 'diretor' ||
-                      profile?.user_type === 'sdr_inbound' ||
-                      profile?.user_type === 'sdr_outbound';
+                       profile?.user_type === 'sdr';
 
   // Horários da timeline (6:00 às 00:00) - Aumentando altura das células para 80px
   const horarios = Array.from({ length: 19 }, (_, i) => {

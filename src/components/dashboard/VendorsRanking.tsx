@@ -99,7 +99,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   // Calcular conversões semanais atuais
   const vendedorIds = vendedores.filter(v => v.user_type === 'vendedor').map(v => v.id);
-  const sdrIds = vendedores.filter(v => ['sdr_inbound', 'sdr_outbound'].includes(v.user_type)).map(v => v.id);
+  const sdrIds = vendedores.filter(v => ['sdr'].includes(v.user_type)).map(v => v.id);
   
   const { data: vendedorConversions } = useCurrentWeekConversions(vendedorIds, 'vendedor');
   const { data: sdrConversions } = useCurrentWeekConversions(sdrIds, 'sdr');
@@ -552,7 +552,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
     // PÁGINA 2: SDRs
     const sdrsVendedores = vendedores.filter(v => {
-      const isSDRByType = v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound';
+      const isSDRByType = v.user_type === 'sdr';
       const isSDRByNivel = v.nivel && (
         v.nivel.includes('sdr_inbound') || 
         v.nivel.includes('sdr_outbound') ||
@@ -584,7 +584,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       // Dados da tabela de SDRs
       const sdrsTableData = await Promise.all(sdrsVendedores.map(async (sdr) => {
         const baseNivel = (sdr.nivel || 'junior').toLowerCase();
-        const sdrTipoUsuario = sdr.user_type; // 'sdr_inbound' | 'sdr_outbound'
+        const sdrTipoUsuario = sdr.user_type; // 'sdr'
         const sdrType = sdrTipoUsuario === 'sdr_inbound' ? 'inbound' : 'outbound';
         
         // Se o nível não tiver o prefixo sdr_, compor corretamente com o tipo (inbound/outbound)
@@ -712,7 +712,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
     // Dados dos SDRs - buscar apenas usuários com user_type de SDR
     const sdrsVendedores = vendedores.filter(v => {
-      return v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound';
+      return v.user_type === 'sdr';
     });
     console.log('👥 SDRs encontrados:', sdrsVendedores.length, sdrsVendedores.map(s => ({ 
       name: s.name, 
@@ -837,9 +837,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           console.log('🔍 DEBUG Planilha:');
           console.log('- vendedoresFiltrados.length:', vendedoresFiltrados.length);
           console.log('- vendedoresFiltrados:', vendedoresFiltrados.map(v => ({ id: v.id, name: v.name, user_type: v.user_type })));
-          console.log('- SDRs count:', vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').length);
-          console.log('- SDRs:', vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').map(v => ({ id: v.id, name: v.name, user_type: v.user_type })));
-          console.log('- Condição planilha:', vendedoresFiltrados.length > 0 || vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').length > 0);
+          console.log('- SDRs count:', vendedores.filter(v => v.user_type === 'sdr').length);
+          console.log('- SDRs:', vendedores.filter(v => v.user_type === 'sdr').map(v => ({ id: v.id, name: v.name, user_type: v.user_type })));
+          console.log('- Condição planilha:', vendedoresFiltrados.length > 0 || vendedores.filter(v => v.user_type === 'sdr').length > 0);
           return null;
         })()}
         
@@ -890,7 +890,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           )}
 
           {/* Tabela de SDRs */}
-          {vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').length > 0 && (
+          {vendedores.filter(v => v.user_type === 'sdr').length > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-4">SDRs</h3>
               <div className="overflow-x-auto bg-card/50 backdrop-blur-sm rounded-lg border border-border">
@@ -914,7 +914,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                     </tr>
                   </thead>
                   <tbody>
-                    {vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').map((sdr, index) => (
+                    {vendedores.filter(v => v.user_type === 'sdr').map((sdr, index) => (
                       <SDRTableRow
                         key={sdr.id}
                         sdr={sdr}

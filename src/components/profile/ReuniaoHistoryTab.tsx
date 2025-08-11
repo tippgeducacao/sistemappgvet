@@ -28,7 +28,7 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
   const filteredAgendamentos = useMemo(() => {
     if (!agendamentos) return [];
     
-    const isSDR = userType === 'sdr_inbound' || userType === 'sdr_outbound';
+    const isSDR = userType === 'sdr';
     
     return agendamentos.filter(agendamento => {
       // Filtrar por usuário baseado no tipo

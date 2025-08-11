@@ -153,7 +153,7 @@ const AgendamentosPage: React.FC = () => {
           .single();
         
         if (!error && data) {
-          setIsSDR(['sdr_inbound', 'sdr_outbound'].includes(data.user_type));
+          setIsSDR(['sdr'].includes(data.user_type));
         }
       }
     };
@@ -226,7 +226,7 @@ const AgendamentosPage: React.FC = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, email')
-        .in('user_type', ['sdr_inbound', 'sdr_outbound'])
+        .in('user_type', ['sdr'])
         .eq('ativo', true)
         .order('name');
 

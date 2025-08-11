@@ -52,8 +52,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
       'diretor': 'Diretor',
       'secretaria': 'Secretária',
       'vendedor': 'Vendedor',
-      'sdr_inbound': 'SDR Inbound',
-      'sdr_outbound': 'SDR Outbound'
+      'sdr': 'SDR'
     };
     return types[userType] || userType;
   };
@@ -64,8 +63,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
       'diretor': 'bg-purple-100 text-purple-800',
       'secretaria': 'bg-blue-100 text-blue-800',
       'vendedor': 'bg-green-100 text-green-800',
-      'sdr_inbound': 'bg-orange-100 text-orange-800',
-      'sdr_outbound': 'bg-yellow-100 text-yellow-800'
+      'sdr': 'bg-orange-100 text-orange-800'
     };
     return colors[userType] || 'bg-gray-100 text-gray-800';
   };
@@ -109,8 +107,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   const showHistoryTabs = user.user_type === 'vendedor' || 
-                         user.user_type === 'sdr_inbound' || 
-                         user.user_type === 'sdr_outbound';
+                         user.user_type === 'sdr';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

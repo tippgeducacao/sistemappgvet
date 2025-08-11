@@ -42,7 +42,7 @@ const SimpleSDRRanking: React.FC = () => {
   // Filtrar apenas SDRs ativos
   const sdrs = useMemo(() => {
     return vendedores.filter(v => 
-      (v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound') && 
+      (v.user_type === 'sdr') && 
       v.ativo
     );
   }, [vendedores]);

@@ -18,7 +18,7 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
   const [selectedModalidade, setSelectedModalidade] = useState(formData.modalidadeCurso || '');
 
   // Verificar se é SDR
-  const isSDR = currentUser?.user_type === 'sdr_inbound' || currentUser?.user_type === 'sdr_outbound';
+  const isSDR = currentUser?.user_type === 'sdr';
   
   // Modalidades disponíveis baseadas no tipo de usuário
   const modalidadeOptions = isSDR 

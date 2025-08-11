@@ -304,8 +304,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
 
           {/* Grupos de Pós-graduações (apenas para vendedores e SDRs) */}
           {(vendedor.user_type === 'vendedor' || 
-            vendedor.user_type === 'sdr_inbound' || 
-            vendedor.user_type === 'sdr_outbound') && (
+            vendedor.user_type === 'sdr') && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-foreground" />

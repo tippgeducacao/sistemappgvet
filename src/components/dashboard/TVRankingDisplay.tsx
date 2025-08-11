@@ -930,7 +930,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       const sdrsTableData = sdrsOnly.map((sdr) => {
         const sdrData = vendedores.find(v => v.id === sdr.id);
         const baseNivel = (sdrData?.nivel || 'junior').toLowerCase();
-        const sdrTipoUsuario = sdrData?.user_type; // 'sdr_inbound' | 'sdr_outbound'
+        const sdrTipoUsuario = sdrData?.user_type; // 'sdr'
         const sdrType = sdrTipoUsuario === 'sdr_inbound' ? 'inbound' : 'outbound';
         
         // Se o nível não tiver o prefixo sdr_, compor corretamente com o tipo (inbound/outbound)
