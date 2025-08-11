@@ -84,9 +84,10 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
       {reunioesPorSemana.map((reunioes, weekIndex) => {
         const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : "0.0";
         const weeklyCommission = weeklySDRCommissions[weekIndex] || 0;
+        const fatorComissao = variavelSemanal > 0 ? (variavelSemanal / 100).toFixed(1) : "0.0";
         return (
           <td key={weekIndex} className="p-2 text-xs">
-            <div>{reunioes} reuniões ({percentage}%)</div>
+            <div>{reunioes} reuniões ({percentage}%) x {fatorComissao}</div>
             <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
           </td>
         );
