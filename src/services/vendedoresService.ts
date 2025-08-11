@@ -50,6 +50,7 @@ export class VendedoresService {
     email: string;
     password: string;
     userType: string;
+    nivel?: string;
   }): Promise<void> {
     try {
       console.log('👤 Criando novo usuário:', vendedorData.email, 'tipo:', vendedorData.userType);
@@ -82,7 +83,8 @@ export class VendedoresService {
         vendedorData.email,
         vendedorData.password,
         vendedorData.name,
-        vendedorData.userType
+        vendedorData.userType,
+        vendedorData.nivel
       );
       
       // Depois, criar a role no contexto do diretor (apenas para admin)

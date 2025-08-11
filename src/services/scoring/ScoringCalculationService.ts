@@ -72,7 +72,7 @@ export class ScoringCalculationService {
       }
       
       // SDRs recebem 1 ponto por curso, vendedores recebem 0.2
-      const isSDR = userType === 'sdr_inbound' || userType === 'sdr_outbound';
+      const isSDR = userType === 'sdr';
       return isSDR ? 1 : 0.2;
     }
     

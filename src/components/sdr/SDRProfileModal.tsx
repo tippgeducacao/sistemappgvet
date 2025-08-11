@@ -131,21 +131,22 @@ const SDRProfileModal: React.FC<SDRProfileModalProps> = ({
   };
 
   const getNivelLabel = (nivel: string, userType?: string) => {
-    const base = (nivel || '').toLowerCase();
-    if (userType === 'sdr' && !base.startsWith('sdr_')) {
-      const tipoSDR = nivel?.includes('inbound') ? 'Inbound' : 'Outbound';
-      return `SDR ${tipoSDR} ${base.includes('junior') ? 'Júnior' : base.includes('pleno') ? 'Pleno' : base.includes('senior') ? 'Sênior' : nivel}`;
+    // Para SDRs, usar apenas o nível simples
+    if (userType === 'sdr') {
+      switch (nivel?.toLowerCase()) {
+        case 'junior':
+          return 'Junior';
+        case 'pleno':
+          return 'Pleno';
+        case 'senior':
+          return 'Senior';
+        default:
+          return 'Junior';
+      }
     }
-    if (base.includes('inbound_junior')) return 'SDR Inbound Júnior';
-    if (base.includes('inbound_pleno')) return 'SDR Inbound Pleno';
-    if (base.includes('inbound_senior')) return 'SDR Inbound Sênior';
-    if (base.includes('outbound_junior')) return 'SDR Outbound Júnior';
-    if (base.includes('outbound_pleno')) return 'SDR Outbound Pleno';
-    if (base.includes('outbound_senior')) return 'SDR Outbound Sênior';
-    if (base.includes('junior')) return 'Júnior';
-    if (base.includes('pleno')) return 'Pleno';
-    if (base.includes('senior')) return 'Sênior';
-    return nivel;
+    
+    // Para outros tipos, usar lógica padrão
+    return nivel || 'Junior';
   };
 
   return (

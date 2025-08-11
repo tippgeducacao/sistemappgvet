@@ -163,7 +163,7 @@ export class SDRConversionService {
     const { data: sdrs, error: sdrsError } = await supabase
       .from('profiles')
       .select('id')
-      .in('user_type', ['sdr_inbound', 'sdr_outbound'])
+      .eq('user_type', 'sdr')
       .eq('ativo', true);
 
     if (sdrsError) {

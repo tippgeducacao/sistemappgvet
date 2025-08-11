@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { VendedoresService } from '@/services/vendedoresService';
 import { UserPlus } from 'lucide-react';
+import { useNiveis } from '@/hooks/useNiveis';
 
 interface NovoVendedorDialogProps {
   open: boolean;
@@ -24,10 +25,36 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
     name: '',
     email: '',
     password: '',
-    userType: 'vendedor'
+    userType: 'vendedor',
+    nivel: 'junior'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { niveis } = useNiveis();
+  
+  // Tipos de usuário disponíveis baseados nos níveis
+  const tiposUsuario = React.useMemo(() => {
+    const tipos = new Set(['admin', 'vendedor']); // Sempre disponíveis
+    
+    // Adicionar 'sdr' se existir na tabela niveis_vendedores
+    if (niveis.some(n => n.tipo_usuario === 'sdr')) {
+      tipos.add('sdr');
+    }
+    
+    return Array.from(tipos);
+  }, [niveis]);
+  
+  // Níveis disponíveis baseados no tipo de usuário selecionado
+  const niveisDisponiveis = React.useMemo(() => {
+    if (formData.userType === 'admin') {
+      return []; // Admin não tem nível
+    }
+    
+    const niveisDoTipo = niveis.filter(n => n.tipo_usuario === formData.userType);
+    const niveisUnicos = new Set(niveisDoTipo.map(n => n.nivel));
+    
+    return Array.from(niveisUnicos);
+  }, [niveis, formData.userType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +63,16 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validar nível para tipos que precisam
+    if (formData.userType !== 'admin' && !formData.nivel) {
+      toast({
+        title: "Nível obrigatório",
+        description: "Por favor, selecione um nível para este tipo de usuário",
         variant: "destructive",
       });
       return;
@@ -63,7 +100,7 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
         description: `${formData.name} foi cadastrado como ${userTypeLabel} com sucesso!`,
       });
 
-      setFormData({ name: '', email: '', password: '', userType: 'vendedor' });
+      setFormData({ name: '', email: '', password: '', userType: 'vendedor', nivel: 'junior' });
       onSuccess();
       
     } catch (error) {
@@ -133,19 +170,52 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
             <Label htmlFor="userType">Tipo de usuário</Label>
             <Select
               value={formData.userType}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, userType: value }))}
+              onValueChange={(value) => {
+                setFormData(prev => ({ 
+                  ...prev, 
+                  userType: value,
+                  nivel: value === 'admin' ? '' : 'junior' // Reset nível quando muda tipo
+                }));
+              }}
               disabled={isSubmitting}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o tipo de usuário" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="vendedor">Vendedor</SelectItem>
-                <SelectItem value="admin">Administrador</SelectItem>
-                <SelectItem value="sdr">SDR</SelectItem>
+                {tiposUsuario.map(tipo => (
+                  <SelectItem key={tipo} value={tipo}>
+                    {tipo === 'admin' ? 'Administrador' : 
+                     tipo === 'vendedor' ? 'Vendedor' : 
+                     tipo === 'sdr' ? 'SDR' : tipo}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
+          
+          {/* Mostrar seleção de nível apenas se não for admin e tiver níveis disponíveis */}
+          {formData.userType !== 'admin' && niveisDisponiveis.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="nivel">Nível</Label>
+              <Select
+                value={formData.nivel}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, nivel: value }))}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o nível" />
+                </SelectTrigger>
+                <SelectContent>
+                  {niveisDisponiveis.map(nivel => (
+                    <SelectItem key={nivel} value={nivel}>
+                      {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           
           <div className="flex space-x-3 pt-4">
             <Button

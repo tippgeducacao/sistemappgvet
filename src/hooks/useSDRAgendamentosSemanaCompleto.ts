@@ -60,9 +60,7 @@ export const useSDRAgendamentosSemanaCompleto = () => {
 
       console.log('📊 Dados do nível encontrados:', nivelData);
 
-      const metaAgendamentos = nivelCompleto?.includes('inbound') 
-        ? (nivelData?.meta_semanal_inbound || 55) // Meta padrão de 55 para SDR inbound junior
-        : (nivelData?.meta_semanal_outbound || 30); // Meta padrão de 30 para SDR outbound junior
+      const metaAgendamentos = nivelData?.meta_semanal_outbound || 30; // Meta padrão de 30 para SDRs
 
       const agendamentosRealizados = agendamentos?.length || 0;
       const percentualAgendamentos = metaAgendamentos > 0 

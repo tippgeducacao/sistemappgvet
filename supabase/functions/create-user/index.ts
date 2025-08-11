@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, password, name, userType } = await req.json()
+    const { email, password, name, userType, nivel } = await req.json()
 
     // Validate required fields
     if (!email || !password || !name || !userType) {
@@ -93,7 +93,8 @@ Deno.serve(async (req) => {
       email_confirm: true, // Skip email confirmation for admin-created users
       user_metadata: {
         name: name.trim(),
-        user_type: userType
+        user_type: userType,
+        nivel: userType === 'admin' ? undefined : (nivel || 'junior')
       }
     })
 
@@ -139,7 +140,7 @@ Deno.serve(async (req) => {
         name: name.trim(),
         user_type: userType,
         ativo: true,
-        nivel: userType === 'vendedor' ? 'junior' : undefined
+        nivel: userType === 'admin' ? undefined : (nivel || 'junior')
       }, {
         onConflict: 'id'
       })
@@ -158,13 +159,13 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create user role if it's not vendedor
-    if (userType !== 'vendedor') {
+    // Create user role if it's admin (SDR and vendedor use user_type only)
+    if (userType === 'admin') {
       const { error: roleError } = await supabaseAdmin
         .from('user_roles')
         .insert({
           user_id: userId,
-          role: userType as 'admin' | 'sdr_inbound' | 'sdr_outbound',
+          role: 'admin',
           created_by: user.id
         })
 

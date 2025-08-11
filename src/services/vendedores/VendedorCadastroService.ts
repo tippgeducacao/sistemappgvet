@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export class VendedorCadastroService {
-  static async cadastrarVendedor(email: string, password: string, name: string, userType: string = 'vendedor'): Promise<string> {
+  static async cadastrarVendedor(email: string, password: string, name: string, userType: string = 'vendedor', nivel: string = 'junior'): Promise<string> {
     console.log('📝 Iniciando cadastro de usuário via Edge Function:', { email, name, userType });
 
     // Validações básicas
@@ -37,7 +37,8 @@ export class VendedorCadastroService {
           email: email.trim().toLowerCase(),
           password,
           name: name.trim(),
-          userType
+          userType,
+          nivel: userType === 'admin' ? undefined : nivel
         })
       });
 
