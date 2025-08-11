@@ -4,9 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon, Search, Download, Eye } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import AgendamentoDetailsModal from '@/components/agendamentos/AgendamentoDetailsModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAllAgendamentos } from '@/hooks/useAllAgendamentos';
@@ -84,85 +84,6 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
       default: return 'bg-gray-100 text-gray-800';
     }
   };
-
-  const AgendamentoDetailsModal = ({ agendamento }: { agendamento: any }) => (
-    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>Detalhes da Reunião</DialogTitle>
-      </DialogHeader>
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Data do Agendamento</label>
-            <p className="text-sm">{format(new Date(agendamento.data_agendamento), 'dd/MM/yyyy HH:mm')}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Status</label>
-            <Badge className={getStatusColor(agendamento.status)}>{agendamento.status}</Badge>
-          </div>
-        </div>
-
-        {agendamento.data_fim_agendamento && (
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Data de Fim</label>
-            <p className="text-sm">{format(new Date(agendamento.data_fim_agendamento), 'dd/MM/yyyy HH:mm')}</p>
-          </div>
-        )}
-
-        <div>
-          <label className="text-sm font-medium text-muted-foreground">Interesse em Pós-Graduação</label>
-          <p className="text-sm">{agendamento.pos_graduacao_interesse || 'Não informado'}</p>
-        </div>
-
-        {agendamento.link_reuniao && (
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Link da Reunião</label>
-            <p className="text-sm break-all">{agendamento.link_reuniao}</p>
-          </div>
-        )}
-
-        {agendamento.resultado_reuniao && (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Resultado da Reunião</label>
-              <p className="text-sm">{agendamento.resultado_reuniao}</p>
-            </div>
-            {agendamento.data_resultado && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Data do Resultado</label>
-                <p className="text-sm">{format(new Date(agendamento.data_resultado), 'dd/MM/yyyy HH:mm')}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {agendamento.observacoes && (
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Observações</label>
-            <p className="text-sm">{agendamento.observacoes}</p>
-          </div>
-        )}
-
-        {agendamento.observacoes_resultado && (
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Observações do Resultado</label>
-            <p className="text-sm">{agendamento.observacoes_resultado}</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Criado em</label>
-            <p className="text-sm">{format(new Date(agendamento.created_at), 'dd/MM/yyyy HH:mm')}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Atualizado em</label>
-            <p className="text-sm">{format(new Date(agendamento.updated_at), 'dd/MM/yyyy HH:mm')}</p>
-          </div>
-        </div>
-      </div>
-    </DialogContent>
-  );
 
   if (isLoading) {
     return (
@@ -281,15 +202,15 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
                     </div>
                   </div>
                   <div className="flex-shrink-0">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-2">
-                          <Eye className="h-4 w-4" />
-                          Ver Detalhes
-                        </Button>
-                      </DialogTrigger>
-                      <AgendamentoDetailsModal agendamento={agendamento} />
-                    </Dialog>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => setSelectedAgendamento(agendamento)}
+                    >
+                      <Eye className="h-4 w-4" />
+                      Ver Detalhes
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -297,6 +218,12 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
           ))
         )}
       </div>
+
+      <AgendamentoDetailsModal
+        agendamento={selectedAgendamento}
+        open={!!selectedAgendamento}
+        onOpenChange={(open) => !open && setSelectedAgendamento(null)}
+      />
     </div>
   );
 };
