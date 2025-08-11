@@ -1133,6 +1133,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         />
 
         {/* Planilha Detalhada */}
+        {vendedoresFiltrados.length > 0 || vendedores.filter(v => v.user_type === 'sdr_inbound' || v.user_type === 'sdr_outbound').length > 0 ? (
         <div className="mt-8">
           <h2 className="text-xl font-bold text-foreground mb-4">Planilha Detalhada</h2>
           
@@ -1287,6 +1288,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
             </div>
           )}
         </div>
+        ) : (
+          <div className="mt-8 p-8 text-center text-muted-foreground">
+            <p>Nenhum dado disponível para exibir na planilha.</p>
+          </div>
+        )}
 
       </CardContent>
     </Card>
