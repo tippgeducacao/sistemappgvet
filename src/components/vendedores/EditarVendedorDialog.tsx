@@ -220,12 +220,25 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
                     <SelectValue placeholder="Selecione o nível" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="junior">Vendedor Júnior</SelectItem>
-                    <SelectItem value="pleno">Vendedor Pleno</SelectItem>
-                    <SelectItem value="senior">Vendedor Sênior</SelectItem>
-                     <SelectItem value="junior">SDR Júnior</SelectItem>
-                     <SelectItem value="pleno">SDR Pleno</SelectItem>
-                     <SelectItem value="senior">SDR Sênior</SelectItem>
+                    {vendedor.user_type === 'vendedor' ? (
+                      <>
+                        <SelectItem value="junior">Vendedor Júnior</SelectItem>
+                        <SelectItem value="pleno">Vendedor Pleno</SelectItem>
+                        <SelectItem value="senior">Vendedor Sênior</SelectItem>
+                      </>
+                    ) : vendedor.user_type === 'sdr' ? (
+                      <>
+                        <SelectItem value="junior">SDR Júnior</SelectItem>
+                        <SelectItem value="pleno">SDR Pleno</SelectItem>
+                        <SelectItem value="senior">SDR Sênior</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="junior">Júnior</SelectItem>
+                        <SelectItem value="pleno">Pleno</SelectItem>
+                        <SelectItem value="senior">Sênior</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
