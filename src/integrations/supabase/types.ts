@@ -928,6 +928,10 @@ export type Database = {
         Args: { p_ano: number; p_mes: number }
         Returns: undefined
       }
+      get_current_user_type: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_weeks_in_month: {
         Args: { ano: number; mes: number }
         Returns: number
