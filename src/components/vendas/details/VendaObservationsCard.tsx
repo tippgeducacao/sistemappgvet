@@ -11,21 +11,21 @@ const VendaObservationsCard: React.FC<VendaObservationsCardProps> = ({
   observacoes
 }) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
+    <Card className="bg-white dark:bg-gray-800 border dark:border-gray-700">
+      <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900 dark:to-indigo-800 border-b dark:border-gray-700">
+        <CardTitle className="text-lg flex items-center gap-2 text-indigo-900 dark:text-indigo-100">
           <MessageSquare className="h-5 w-5" />
           Observações
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4">
         {observacoes ? (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-gray-800 whitespace-pre-wrap">{observacoes}</p>
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{observacoes}</p>
           </div>
         ) : (
-          <div className="text-center py-4 text-gray-500">
-            <MessageSquare className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+          <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+            <MessageSquare className="h-12 w-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
             <p>Nenhuma observação registrada</p>
           </div>
         )}

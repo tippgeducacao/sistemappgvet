@@ -200,22 +200,22 @@ const VendaDocumentCard: React.FC<VendaDocumentCardProps> = ({
     return fileName.replace(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z-/, '');
   };
   if (isLoadingFormDetails) {
-    return <Card>
+    return <Card className="bg-white dark:bg-gray-800 border dark:border-gray-700">
         <VendaDocumentHeader tipoVenda={tipoVenda} requerComprovacao={requerComprovacao} isRefreshing={false} onRefresh={() => {}} />
-        <CardContent>
+        <CardContent className="bg-white dark:bg-gray-800">
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-400" />
-              <p className="text-sm text-gray-500">Carregando informações do documento...</p>
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-400 dark:text-gray-500" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">Carregando informações do documento...</p>
             </div>
           </div>
         </CardContent>
       </Card>;
   }
   return <div className="space-y-4">
-      <Card>
+      <Card className="bg-white dark:bg-gray-800 border dark:border-gray-700">
         <VendaDocumentHeader tipoVenda={tipoVenda} requerComprovacao={requerComprovacao} isRefreshing={isRefreshing} onRefresh={handleRefreshDocument} />
-        <CardContent>
+        <CardContent className="bg-white dark:bg-gray-800">
           <div className="space-y-4">
             <VendaDocumentInfo tipoVenda={tipoVenda} />
 
