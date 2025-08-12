@@ -89,22 +89,39 @@ export const useAuthManager = () => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const result = await AuthService.signIn(email, password);
-    
-    if (result.error) {
+    try {
+      setLoading(true);
+      const result = await AuthService.signIn(email, password);
+      
+      if (result.error) {
+        console.error('Erro no login:', result.error);
+        toast({
+          title: "Erro no login",
+          description: result.error.message,
+          variant: "destructive",
+          duration: 5000,
+        });
+        return false;
+      } else {
+        toast({
+          title: "Login realizado",
+          description: "Bem-vindo ao sistema PPGVET!",
+          duration: 3000,
+        });
+        setTimeout(() => navigate('/'), 1000);
+        return true;
+      }
+    } catch (error) {
+      console.error('Erro inesperado no login:', error);
       toast({
-        title: "Erro no login",
-        description: result.error.message,
+        title: "Erro inesperado",
+        description: "Ocorreu um erro inesperado. Tente novamente em alguns minutos.",
         variant: "destructive",
+        duration: 5000,
       });
       return false;
-    } else {
-      toast({
-        title: "Login realizado",
-        description: "Bem-vindo ao sistema PPGVET!",
-      });
-      setTimeout(() => navigate('/'), 1000);
-      return true;
+    } finally {
+      setLoading(false);
     }
   };
 

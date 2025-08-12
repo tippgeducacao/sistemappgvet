@@ -33,16 +33,25 @@ export class AuthService {
       });
       
       if (error) {
+        console.error('Erro de autenticação:', error);
         let friendlyMessage = 'Erro no login';
         
         if (error.message.includes('Invalid login credentials')) {
-          friendlyMessage = 'Email ou senha incorretos. Verifique suas credenciais.';
+          friendlyMessage = 'Email ou senha incorretos. Verifique suas credenciais e tente novamente.';
         } else if (error.message.includes('Email not confirmed')) {
           friendlyMessage = 'Por favor, confirme seu email antes de fazer login.';
         } else if (error.message.includes('Too many requests')) {
-          friendlyMessage = 'Muitas tentativas de login. Tente novamente em alguns minutos.';
+          friendlyMessage = 'Muitas tentativas de login. Aguarde alguns minutos antes de tentar novamente.';
+        } else if (error.message.includes('User not found')) {
+          friendlyMessage = 'Email não encontrado. Verifique se está correto ou crie uma nova conta.';
+        } else if (error.message.includes('Invalid email')) {
+          friendlyMessage = 'Email inválido. Verifique o formato do email.';
+        } else if (error.message.includes('signup_disabled')) {
+          friendlyMessage = 'Cadastro desabilitado. Entre em contato com o administrador.';
+        } else if (error.message.includes('weak_password')) {
+          friendlyMessage = 'Senha muito fraca. Use uma senha mais forte.';
         } else {
-          friendlyMessage = error.message;
+          friendlyMessage = `${error.message}. Se o problema persistir, entre em contato com o suporte.`;
         }
         
         return { error: { ...error, message: friendlyMessage } };
