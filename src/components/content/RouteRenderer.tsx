@@ -15,6 +15,7 @@ import LeadsManager from '@/components/leads/LeadsManager';
 import GerenciarNiveis from '@/components/GerenciarNiveis';
 import AgendamentosPage from '@/components/agendamentos/AgendamentosPage';
 import VendedorReunioes from '@/components/vendedor/VendedorReunioes';
+import { RelatorioDiario } from '@/components/vendedor/RelatorioDiario';
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
@@ -153,6 +154,18 @@ const RouteRenderer: React.FC = () => {
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
           <p className="text-gray-600 mt-2">Apenas vendedores podem acessar Reuniões.</p>
+        </div>
+      );
+
+    case 'relatorio-diario':
+      // Vendedores e SDRs podem acessar Relatório Diário
+      if (isVendedor || isSDR) {
+        return <RelatorioDiario />;
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Apenas vendedores e SDRs podem acessar Relatório Diário.</p>
         </div>
       );
 

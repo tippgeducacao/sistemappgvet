@@ -792,6 +792,45 @@ export type Database = {
         }
         Relationships: []
       }
+      relatorios_diarios: {
+        Row: {
+          acoes_proximo_dia: string | null
+          created_at: string
+          data: string
+          id: string
+          principais_objecoes: string | null
+          reunioes_realizadas: number
+          taxa_fechamento: number
+          updated_at: string
+          vendas_fechadas: number
+          vendedor_id: string
+        }
+        Insert: {
+          acoes_proximo_dia?: string | null
+          created_at?: string
+          data: string
+          id?: string
+          principais_objecoes?: string | null
+          reunioes_realizadas?: number
+          taxa_fechamento?: number
+          updated_at?: string
+          vendas_fechadas?: number
+          vendedor_id: string
+        }
+        Update: {
+          acoes_proximo_dia?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          principais_objecoes?: string | null
+          reunioes_realizadas?: number
+          taxa_fechamento?: number
+          updated_at?: string
+          vendas_fechadas?: number
+          vendedor_id?: string
+        }
+        Relationships: []
+      }
       respostas_formulario: {
         Row: {
           campo_nome: string
