@@ -118,6 +118,87 @@ export const VENDOR_MENU_ITEMS: MenuItem[] = [
   }
 ];
 
+export const COORDINATOR_MENU_ITEMS: MenuItem[] = [
+  {
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
+  },
+  {
+    title: 'Gestão de Leads',
+    section: 'gestao-leads',
+    icon: 'Target'
+  },
+  {
+    title: 'Agendamentos',
+    section: 'agendamentos',
+    icon: 'Calendar'
+  },
+  {
+    title: 'Gerenciar Vendas',
+    section: 'gerenciar-vendas',
+    icon: 'FileText'
+  },
+  {
+    title: 'Gerenciar Usuários',
+    section: 'gerenciar-vendedores',
+    icon: 'Users'
+  },
+  {
+    title: 'Nova Venda',
+    section: 'nova-venda',
+    icon: 'Plus'
+  },
+  {
+    title: 'Minhas Vendas',
+    section: 'minhas-vendas',
+    icon: 'ShoppingCart'
+  },
+  {
+    title: 'Relatório Diário',
+    section: 'relatorio-diario',
+    icon: 'FileText'
+  }
+];
+
+export const SUPERVISOR_MENU_ITEMS: MenuItem[] = [
+  {
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
+  },
+  {
+    title: 'Gestão de Leads',
+    section: 'gestao-leads',
+    icon: 'Target'
+  },
+  {
+    title: 'Agendamentos',
+    section: 'agendamentos',
+    icon: 'Calendar'
+  },
+  {
+    title: 'Gerenciar Grupos',
+    section: 'gerenciar-grupos',
+    icon: 'Users'
+  },
+  {
+    title: 'Nova Venda',
+    section: 'nova-venda',
+    icon: 'Plus'
+  },
+  {
+    title: 'Minhas Vendas',
+    section: 'minhas-vendas',
+    icon: 'ShoppingCart'
+  },
+  {
+    title: 'Relatório Diário',
+    section: 'relatorio-diario',
+    icon: 'FileText'
+  }
+];
+
 export const SDR_MENU_ITEMS: MenuItem[] = [
   {
     title: 'Dashboard',

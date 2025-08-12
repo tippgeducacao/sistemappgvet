@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type AppRole = 'admin' | 'secretaria' | 'vendedor' | 'diretor' | 'sdr_inbound' | 'sdr_outbound';
+export type AppRole = 'admin' | 'secretaria' | 'vendedor' | 'diretor' | 'sdr_inbound' | 'sdr_outbound' | 'coordenador' | 'supervisor';
 
 export interface UserRole {
   id: string;
@@ -42,7 +42,7 @@ export class UserRoleService {
   }
 
   static async hasRole(userId: string, role: AppRole): Promise<boolean> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('user_roles')
       .select('id')
       .eq('user_id', userId)
@@ -78,7 +78,7 @@ export class UserRoleService {
   }
 
   static async addRole(userId: string, role: AppRole): Promise<boolean> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_roles')
       .insert({
         user_id: userId,
@@ -95,7 +95,7 @@ export class UserRoleService {
   }
 
   static async removeRole(userId: string, role: AppRole): Promise<boolean> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_roles')
       .delete()
       .eq('user_id', userId)

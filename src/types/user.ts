@@ -1,5 +1,5 @@
 
-export type UserType = 'admin' | 'secretaria' | 'vendedor' | 'diretor' | 'sdr_inbound' | 'sdr_outbound' | 'sdr';
+export type UserType = 'admin' | 'secretaria' | 'vendedor' | 'diretor' | 'sdr_inbound' | 'sdr_outbound' | 'sdr' | 'coordenador' | 'supervisor';
 
 export interface User {
   id: string;

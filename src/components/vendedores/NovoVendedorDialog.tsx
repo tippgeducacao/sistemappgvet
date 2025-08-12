@@ -36,10 +36,12 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
   const tiposUsuario = React.useMemo(() => {
     const tipos = new Set(['admin', 'vendedor']); // Sempre disponíveis
     
-    // Adicionar 'sdr' se existir na tabela niveis_vendedores
-    if (niveis.some(n => n.tipo_usuario === 'sdr')) {
-      tipos.add('sdr');
-    }
+    // Adicionar tipos baseados nos níveis existentes
+    niveis.forEach(nivel => {
+      if (['sdr', 'coordenador', 'supervisor'].includes(nivel.tipo_usuario)) {
+        tipos.add(nivel.tipo_usuario);
+      }
+    });
     
     return Array.from(tipos);
   }, [niveis]);
@@ -93,7 +95,9 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
       await VendedoresService.createVendedor(formData);
       
       const userTypeLabel = formData.userType === 'admin' ? 'Administrador' : 
-                             formData.userType === 'sdr' ? 'SDR' : 'Vendedor';
+                             formData.userType === 'sdr' ? 'SDR' :
+                             formData.userType === 'coordenador' ? 'Coordenador' :
+                             formData.userType === 'supervisor' ? 'Supervisor' : 'Vendedor';
       
       toast({
         title: "Usuário criado",
@@ -187,7 +191,9 @@ const NovoVendedorDialog: React.FC<NovoVendedorDialogProps> = ({
                   <SelectItem key={tipo} value={tipo}>
                     {tipo === 'admin' ? 'Administrador' : 
                      tipo === 'vendedor' ? 'Vendedor' : 
-                     tipo === 'sdr' ? 'SDR' : tipo}
+                     tipo === 'sdr' ? 'SDR' :
+                     tipo === 'coordenador' ? 'Coordenador' :
+                     tipo === 'supervisor' ? 'Supervisor' : tipo}
                   </SelectItem>
                 ))}
               </SelectContent>

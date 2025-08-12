@@ -231,6 +231,8 @@ const GerenciarVendedores: React.FC = () => {
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="diretor">Diretor</SelectItem>
               <SelectItem value="secretaria">Secretaria</SelectItem>
+              <SelectItem value="coordenador">Coordenador</SelectItem>
+              <SelectItem value="supervisor">Supervisor</SelectItem>
               <SelectItem value="vendedor">Vendedor</SelectItem>
               <SelectItem value="sdr">SDR</SelectItem>
             </SelectContent>
@@ -338,6 +340,8 @@ const GerenciarVendedores: React.FC = () => {
                             {vendedor.user_type === 'admin' && 'Admin'}
                             {vendedor.user_type === 'secretaria' && 'Secretaria'}
                             {vendedor.user_type === 'diretor' && 'Diretor'}
+                            {vendedor.user_type === 'coordenador' && 'Coordenador'}
+                            {vendedor.user_type === 'supervisor' && 'Supervisor'}
                             {vendedor.user_type === 'sdr' && 'SDR'}
                           </Badge>
                         </div>
@@ -548,6 +552,8 @@ const GerenciarVendedores: React.FC = () => {
                             {vendedor.user_type === 'admin' && 'Admin'}
                             {vendedor.user_type === 'secretaria' && 'Secretaria'}
                             {vendedor.user_type === 'diretor' && 'Diretor'}
+                            {vendedor.user_type === 'coordenador' && 'Coordenador'}
+                            {vendedor.user_type === 'supervisor' && 'Supervisor'}
                             {vendedor.user_type === 'sdr' && 'SDR'}
                           </Badge>
                         </div>

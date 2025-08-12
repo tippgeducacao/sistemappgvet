@@ -44,6 +44,12 @@ export const useUserRoles = () => {
   // SDR: quem tem user_type sdr
   const isSDR = profile?.user_type === 'sdr' || currentUser?.user_type === 'sdr';
 
+  // Coordenador: quem tem user_type coordenador
+  const isCoordenador = (profile?.user_type as any) === 'coordenador' || (currentUser?.user_type as any) === 'coordenador';
+
+  // Supervisor: quem tem user_type supervisor  
+  const isSupervisor = (profile?.user_type as any) === 'supervisor' || (currentUser?.user_type as any) === 'supervisor';
+
   // Funções auxiliares para SDR (agora unificadas)
   const isSDRInbound = false; // Será determinado por outras características se necessário
   const isSDROutbound = false; // Será determinado por outras características se necessário  
@@ -61,6 +67,8 @@ export const useUserRoles = () => {
     isSecretaria,
     isVendedor,
     isSDR,
+    isCoordenador,
+    isSupervisor,
     isSDRInbound,
     isSDROutbound,
     isSDRUnified
@@ -75,6 +83,8 @@ export const useUserRoles = () => {
     isSecretaria,
     isVendedor,
     isSDR,
+    isCoordenador,
+    isSupervisor,
     isSDRInbound,
     isSDROutbound,
     isSDRUnified
