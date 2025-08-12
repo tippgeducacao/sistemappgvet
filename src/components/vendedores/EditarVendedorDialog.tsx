@@ -28,7 +28,7 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
   onOpenChange,
   onSuccess
 }) => {
-  const { updateVendedorNivel } = useNiveis();
+  const { updateVendedorNivel, niveis } = useNiveis();
   const { cursos } = useCursos();
   const { toast } = useToast();
   const [selectedNivel, setSelectedNivel] = useState<string>('');
@@ -244,71 +244,63 @@ const EditarVendedorDialog: React.FC<EditarVendedorDialogProps> = ({
               </div>
 
               {/* Preview das informações do nível selecionado */}
-              {selectedNivel && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-foreground">Informações do Nível</Label>
-                  <div className="p-3 bg-accent/20 rounded-lg border border-accent/30">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Fixo Mensal:</span>
-                        <p className="font-medium text-foreground">R$ {
-                          selectedNivel === 'junior' ? '2.200' :
-                          selectedNivel === 'pleno' ? '2.600' :
-                          selectedNivel === 'senior' ? '3.000' :
-                          selectedNivel.includes('sdr') ? '1.800' : '0'
-                        }</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Vale:</span>
-                        <p className="font-medium text-foreground">R$ 400</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Variável Semanal:</span>
-                        <p className="font-medium text-foreground">R$ {
-                          selectedNivel === 'junior' ? '450' :
-                          selectedNivel === 'pleno' ? '500' :
-                          selectedNivel === 'senior' ? '550' :
-                          selectedNivel.includes('junior') ? '450' :
-                          selectedNivel.includes('pleno') ? '500' :
-                          selectedNivel.includes('senior') ? '550' : '0'
-                        }</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">
-                          {selectedNivel.includes('sdr') ? 'Metas Semanais:' : 'Meta Semanal:'}
-                        </span>
-                        {selectedNivel.includes('sdr') ? (
-                          <div className="font-medium text-foreground">
-                            {selectedNivel.includes('inbound') && (
-                              <p>Inbound: {
-                                selectedNivel.includes('junior') ? '55' :
-                                selectedNivel.includes('pleno') ? '60' :
-                                selectedNivel.includes('senior') ? '65' : '0'
-                              } reuniões</p>
-                            )}
-                            {selectedNivel.includes('outbound') && (
-                              <p>Outbound: {
-                                selectedNivel.includes('junior') ? '27' :
-                                selectedNivel.includes('pleno') ? '30' :
-                                selectedNivel.includes('senior') ? '35' : '0'
-                              } reuniões</p>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="font-medium text-foreground flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            {
-                              selectedNivel === 'junior' ? '6' :
-                              selectedNivel === 'pleno' ? '7' :
-                              selectedNivel === 'senior' ? '8' : '0'
-                            } pts
+              {selectedNivel && (() => {
+                // Buscar informações do nível selecionado
+                const nivelInfo = niveis.find(n => 
+                  n.nivel === selectedNivel && 
+                  n.tipo_usuario === vendedor.user_type
+                );
+                
+                if (!nivelInfo) return null;
+                
+                return (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground">Informações do Nível</Label>
+                    <div className="p-3 bg-accent/20 rounded-lg border border-accent/30">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Fixo Mensal:</span>
+                          <p className="font-medium text-foreground">
+                            R$ {Number(nivelInfo.fixo_mensal).toLocaleString('pt-BR')}
                           </p>
-                        )}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Vale:</span>
+                          <p className="font-medium text-foreground">
+                            R$ {Number(nivelInfo.vale).toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Variável Semanal:</span>
+                          <p className="font-medium text-foreground">
+                            R$ {Number(nivelInfo.variavel_semanal).toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">
+                            {vendedor.user_type === 'sdr' ? 'Metas Semanais:' : 'Meta Semanal:'}
+                          </span>
+                          {vendedor.user_type === 'sdr' ? (
+                            <div className="font-medium text-foreground">
+                              {nivelInfo.meta_semanal_inbound > 0 && (
+                                <p>Inbound: {nivelInfo.meta_semanal_inbound} reuniões</p>
+                              )}
+                              {nivelInfo.meta_semanal_outbound > 0 && (
+                                <p>Outbound: {nivelInfo.meta_semanal_outbound} reuniões</p>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="font-medium text-foreground flex items-center gap-1">
+                              <TrendingUp className="h-3 w-3" />
+                              {nivelInfo.meta_semanal_vendedor} pts
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </>
           )}
 
