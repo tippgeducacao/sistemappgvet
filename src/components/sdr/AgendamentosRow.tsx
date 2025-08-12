@@ -121,20 +121,30 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
         {loading ? (
           <span className="text-sm text-muted-foreground">...</span>
         ) : (
-          <div className="flex flex-col">
-            <span className={`font-medium text-sm ${comissaoData.valor > 0 ? 'text-green-600' : 'text-gray-500'}`}>
-              R$ {comissaoData.valor.toFixed(2)}
+          <div className="flex items-center">
+            <span className={`font-medium text-sm ${comissaoData.multiplicador > 0 ? 'text-blue-600' : 'text-gray-500'}`}>
+              {comissaoData.multiplicador > 0 ? `${comissaoData.multiplicador}x` : '0x'}
             </span>
-            {comissaoData.multiplicador > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {comissaoData.multiplicador}x
-              </span>
-            )}
           </div>
         )}
       </td>
       <td className="p-3">
-        {getStatusBadge(percentual, isAtual)}
+        {loading ? (
+          <span className="text-sm text-muted-foreground">...</span>
+        ) : (
+          <div className="flex flex-col">
+            <span className={`font-medium text-sm ${comissaoData.valor > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+              R$ {comissaoData.valor.toFixed(2)}
+            </span>
+          </div>
+        )}
+      </td>
+      <td className="p-3">
+        {loading ? (
+          <span className="text-sm text-muted-foreground">...</span>
+        ) : (
+          getStatusBadge(agendamentosData.percentual, isAtual)
+        )}
       </td>
     </tr>
   );

@@ -145,21 +145,19 @@ export const SDRMetasSemanais = () => {
     return now >= startDate && now <= endDate;
   };
 
-  const getStatusBadge = (percentual: number, isAtual: boolean) => {
+  const getStatusBadge = (percentualAgendamentos: number, isAtual: boolean) => {
     if (isAtual) {
       return <Badge variant="secondary">Atual</Badge>;
     }
     
-    // Implementar regra de 71% para desbloqueio de comissão
-    if (percentual >= 100) {
-      return <Badge className="bg-emerald-500 text-white">Meta atingida</Badge>;
-    } else if (percentual >= 71) {
-      return <Badge className="bg-green-500 text-white">Comissão desbloqueada</Badge>;
-    } else if (percentual > 0) {
-      return <Badge variant="destructive" className="bg-red-500 text-white">Comissão bloqueada</Badge>;
+    // Status baseado na meta de agendamentos (100% para meta batida)
+    if (percentualAgendamentos >= 100) {
+      return <Badge className="bg-emerald-500 text-white">Meta Batida</Badge>;
+    } else if (percentualAgendamentos > 0) {
+      return <Badge variant="destructive" className="bg-red-500 text-white">Não Bateu</Badge>;
     }
     
-    return <Badge variant="outline">Sem atividade</Badge>;
+    return <Badge variant="outline" className="text-gray-500">Sem Atividade</Badge>;
   };
 
   const mesesOptions = [
@@ -256,6 +254,7 @@ export const SDRMetasSemanais = () => {
                 <th className="text-left p-3 font-medium text-muted-foreground">Meta Agendamentos</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Agendamentos</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">% Agendamentos</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Multiplicador</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Comissão</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
               </tr>
@@ -303,6 +302,11 @@ export const SDRMetasSemanais = () => {
                 <td className="p-3 font-bold">-</td>
                 <td className="p-3 font-bold">-</td>
                 <td className="p-3 font-bold">-</td>
+                <td className="p-3">
+                  <span className="font-bold text-blue-600">
+                    Multiplicador Total
+                  </span>
+                </td>
                 <td className="p-3">
                   <span className="font-bold text-green-600">
                     Comissão Total
