@@ -14,6 +14,11 @@ interface AgendamentosRowProps {
     meta: number;
     percentual: number;
   }>;
+  calcularComissaoSemana: (cursosVendidos: number, metaCursos: number) => Promise<{
+    valor: number;
+    multiplicador: number;
+    percentual: number;
+  }>;
 }
 
 const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
@@ -24,11 +29,17 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
   metaValue,
   realizado,
   getStatusBadge,
-  getAgendamentosNaSemana
+  getAgendamentosNaSemana,
+  calcularComissaoSemana
 }) => {
   const [agendamentosData, setAgendamentosData] = useState({
     realizados: 0,
     meta: 0,
+    percentual: 0
+  });
+  const [comissaoData, setComissaoData] = useState({
+    valor: 0,
+    multiplicador: 0,
     percentual: 0
   });
   const [loading, setLoading] = useState(true);
@@ -37,17 +48,23 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
     const fetchData = async () => {
       setLoading(true);
       try {
-        const data = await getAgendamentosNaSemana(semana);
-        setAgendamentosData(data);
+        const [agendamentosResult, comissaoResult] = await Promise.all([
+          getAgendamentosNaSemana(semana),
+          calcularComissaoSemana(realizado, metaValue)
+        ]);
+        
+        setAgendamentosData(agendamentosResult);
+        setComissaoData(comissaoResult);
       } catch (error) {
         console.error('Erro ao buscar dados da semana:', error);
         setAgendamentosData({ realizados: 0, meta: 0, percentual: 0 });
+        setComissaoData({ valor: 0, multiplicador: 0, percentual: 0 });
       }
       setLoading(false);
     };
     
     fetchData();
-  }, [semana]);
+  }, [semana, realizado, metaValue]);
 
   return (
     <tr 
@@ -98,6 +115,22 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
           <span className={`font-medium ${agendamentosData.percentual >= 100 ? 'text-emerald-600' : agendamentosData.percentual >= 70 ? 'text-green-600' : 'text-red-600'}`}>
             {agendamentosData.percentual}%
           </span>
+        )}
+      </td>
+      <td className="p-3">
+        {loading ? (
+          <span className="text-sm text-muted-foreground">...</span>
+        ) : (
+          <div className="flex flex-col">
+            <span className={`font-medium text-sm ${comissaoData.valor > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+              R$ {comissaoData.valor.toFixed(2)}
+            </span>
+            {comissaoData.multiplicador > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {comissaoData.multiplicador}x
+              </span>
+            )}
+          </div>
         )}
       </td>
       <td className="p-3">

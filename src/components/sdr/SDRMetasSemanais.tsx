@@ -7,6 +7,7 @@ import { useMetasSemanaisSDR } from '@/hooks/useMetasSemanaisSDR';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useVendas } from '@/hooks/useVendas';
 import { useComissionamento } from '@/hooks/useComissionamento';
+import { useNiveis } from '@/hooks/useNiveis';
 import { useSDRAgendamentosSemanaCompleto } from '@/hooks/useSDRAgendamentosSemanaCompleto';
 import { supabase } from '@/integrations/supabase/client';
 import AgendamentosRow from './AgendamentosRow';
@@ -29,7 +30,8 @@ export const SDRMetasSemanais = () => {
   } = useMetasSemanaisSDR();
   
   const { vendas } = useVendas(); // Mudança: agora usar vendas ao invés de agendamentos
-  const { calcularComissao } = useComissionamento();
+  const { calcularComissao } = useComissionamento('sdr');
+  const { niveis } = useNiveis();
   const { fetchAgendamentosSemanaCompleto } = useSDRAgendamentosSemanaCompleto();
 
   if (!profile) return null;
@@ -108,6 +110,26 @@ export const SDRMetasSemanais = () => {
     }
   };
 
+  const calcularComissaoSemana = async (cursosVendidos: number, metaCursos: number) => {
+    if (!profile) return { valor: 0, multiplicador: 0, percentual: 0 };
+    
+    // Buscar configuração do nível SDR
+    const nivelSDR = niveis.find(nivel => 
+      nivel.nivel === profile.nivel && nivel.tipo_usuario === 'sdr'
+    );
+    
+    if (!nivelSDR) return { valor: 0, multiplicador: 0, percentual: 0 };
+    
+    // Calcular comissão baseada nos cursos vendidos vs meta de cursos
+    const comissao = await calcularComissao(
+      cursosVendidos, 
+      metaCursos, 
+      nivelSDR.variavel_semanal
+    );
+    
+    return comissao;
+  };
+
   const formatPeriodo = (semana: number) => {
     const startDate = getDataInicioSemana(selectedYear, selectedMonth, semana);
     const endDate = getDataFimSemana(selectedYear, selectedMonth, semana);
@@ -168,6 +190,26 @@ export const SDRMetasSemanais = () => {
 
   const percentualTotal = totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
 
+  // Calcular comissão total do mês
+  const calcularComissaoTotal = async () => {
+    if (!profile) return 0;
+    
+    let comissaoTotal = 0;
+    
+    for (const semana of semanas) {
+      const vendasNaSemana = getVendasNaSemana(semana);
+      const meta = getMetaSemanalSDR(profile.id, selectedYear, semana);
+      const metaValue = meta?.meta_vendas_cursos || 0;
+      
+      if (metaValue > 0) {
+        const comissao = await calcularComissaoSemana(vendasNaSemana.length, metaValue);
+        comissaoTotal += comissao.valor;
+      }
+    }
+    
+    return comissaoTotal;
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -214,6 +256,7 @@ export const SDRMetasSemanais = () => {
                 <th className="text-left p-3 font-medium text-muted-foreground">Meta Agendamentos</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Agendamentos</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">% Agendamentos</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Comissão</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
               </tr>
             </thead>
@@ -237,6 +280,7 @@ export const SDRMetasSemanais = () => {
                     realizado={realizado}
                     getStatusBadge={getStatusBadge}
                     getAgendamentosNaSemana={getAgendamentosNaSemana}
+                    calcularComissaoSemana={calcularComissaoSemana}
                   />
                 );
               })}
@@ -259,6 +303,11 @@ export const SDRMetasSemanais = () => {
                 <td className="p-3 font-bold">-</td>
                 <td className="p-3 font-bold">-</td>
                 <td className="p-3 font-bold">-</td>
+                <td className="p-3">
+                  <span className="font-bold text-green-600">
+                    Comissão Total
+                  </span>
+                </td>
                 <td className="p-3">-</td>
               </tr>
             </tfoot>
