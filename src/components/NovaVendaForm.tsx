@@ -45,8 +45,9 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
   // Definir vendedor no formulário quando o usuário estiver logado
   useEffect(() => {
     if (currentUser?.id && !formData.vendedor) {
-      console.log('🔧 Definindo vendedor no formulário:', currentUser.name || currentUser.email);
-      setVendedor(currentUser.name || currentUser.email);
+      console.log('🔧 Definindo vendedor no formulário:', currentUser);
+      console.log('🔧 Nome do vendedor atual:', currentUser.name);
+      setVendedor(currentUser.name);
     }
   }, [currentUser, formData.vendedor, setVendedor]);
 
