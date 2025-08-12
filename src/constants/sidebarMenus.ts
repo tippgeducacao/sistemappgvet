@@ -56,6 +56,11 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     icon: 'BarChart3'
   },
   {
+    title: 'Gestão de Leads',
+    section: 'gestao-leads',
+    icon: 'Target'
+  },
+  {
     title: 'Perfis de Usuários',
     section: 'gerenciar-perfis',
     icon: 'UserCog'
