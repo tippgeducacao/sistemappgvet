@@ -280,12 +280,12 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
   const getCorAgendamento = (agendamento: Agendamento) => {
     const cores = [
-      'bg-blue-200 border-blue-400',
-      'bg-green-200 border-green-400',
-      'bg-yellow-200 border-yellow-400',
-      'bg-purple-200 border-purple-400',
-      'bg-pink-200 border-pink-400',
-      'bg-indigo-200 border-indigo-400',
+      'bg-blue-200 border-blue-400 dark:bg-blue-800 dark:border-blue-600 dark:text-blue-100',
+      'bg-green-200 border-green-400 dark:bg-green-800 dark:border-green-600 dark:text-green-100',
+      'bg-yellow-200 border-yellow-400 dark:bg-yellow-800 dark:border-yellow-600 dark:text-yellow-100',
+      'bg-purple-200 border-purple-400 dark:bg-purple-800 dark:border-purple-600 dark:text-purple-100',
+      'bg-pink-200 border-pink-400 dark:bg-pink-800 dark:border-pink-600 dark:text-pink-100',
+      'bg-indigo-200 border-indigo-400 dark:bg-indigo-800 dark:border-indigo-600 dark:text-indigo-100',
     ];
     
     // Usar hash simples baseado no ID para consistência de cores
@@ -351,7 +351,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Todos os grupos" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border z-50">
                     <SelectItem value="todos">Todos os grupos</SelectItem>
                     {gruposUnicos.map((grupo, index) => (
                       <SelectItem key={index} value={grupo}>
@@ -368,7 +368,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Todos os SDRs" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border z-50">
                     <SelectItem value="todos">Todos os SDRs</SelectItem>
                     {sdrs.map((sdr) => (
                       <SelectItem key={sdr.id} value={sdr.id}>
