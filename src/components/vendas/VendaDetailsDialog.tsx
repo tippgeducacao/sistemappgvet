@@ -154,6 +154,19 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
                       <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Curso:</td>
                       <td className="px-3 py-2 text-gray-900">{venda.curso?.nome || 'Não informado'}</td>
                     </tr>
+                    <tr className="border-t bg-gray-50 hover:bg-gray-100">
+                      <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Semestre/Ano/Turma:</td>
+                      <td className="px-3 py-2 text-gray-900">
+                        {(() => {
+                          const semestre = formDetails?.find(r => r.campo_nome === 'Semestre' || r.campo_nome === 'semestre')?.valor_informado;
+                          const ano = formDetails?.find(r => r.campo_nome === 'Ano' || r.campo_nome === 'ano')?.valor_informado;
+                          const turma = formDetails?.find(r => r.campo_nome === 'Turma' || r.campo_nome === 'turma')?.valor_informado;
+                          
+                          if (!semestre || !ano || !turma) return 'Não informado';
+                          return `${semestre}/${ano}/${turma}`;
+                        })()}
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
