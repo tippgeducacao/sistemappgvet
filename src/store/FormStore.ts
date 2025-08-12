@@ -97,6 +97,7 @@ const initialFormData: FormData = {
   // Indication
   indicacao: '',
   nomeIndicador: '',
+  vendedor: '', // Inicializar vazio para ser preenchido pelo sistema
 
   // Document
   documentoComprobatorio: null,
@@ -117,9 +118,15 @@ export const useFormStore = create<FormState>((set) => ({
     formData: { ...state.formData, ...data }
   })),
 
-  setVendedor: (vendedor) => set((state) => ({
-    formData: { ...state.formData, vendedor }
-  })),
+  setVendedor: (vendedor) => {
+    console.log('📝 FormStore: setVendedor chamado com:', vendedor);
+    set((state) => {
+      console.log('📝 FormStore: Estado anterior:', state.formData.vendedor);
+      const newState = { ...state.formData, vendedor };
+      console.log('📝 FormStore: Novo estado:', newState.vendedor);
+      return { formData: newState };
+    });
+  },
   
   clearForm: () => set({ formData: initialFormData }),
   setIsSubmitting: (value) => set({ isSubmitting: value }),
