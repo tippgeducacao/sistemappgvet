@@ -173,21 +173,21 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
 
   return (
     <div className="space-y-4" id="form-details-section">
-      <h3 className="font-semibold text-lg">
+      <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
         Detalhes do Formulário 
-        <span className="text-sm font-normal text-gray-500 ml-2">
+        <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
           ({respostas?.length || 0} respostas)
         </span>
       </h3>
       
       {isLoading ? (
-        <div className="text-gray-500 py-4">Carregando detalhes do formulário...</div>
+        <div className="text-gray-500 dark:text-gray-400 py-4">Carregando detalhes do formulário...</div>
       ) : error ? (
-        <div className="text-red-500 py-4">
+        <div className="text-red-500 dark:text-red-400 py-4">
           <p>Erro ao carregar detalhes: {error.message}</p>
           <button 
             onClick={onRefetch} 
-            className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm"
+            className="mt-2 px-3 py-1 bg-blue-500 dark:bg-blue-600 text-white rounded text-sm hover:bg-blue-600 dark:hover:bg-blue-700"
           >
             Tentar novamente
           </button>
@@ -206,18 +206,18 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
             const categoryRespostas = groupRespostasByCategory(respostas)[categoryName] || [];
             return categoryRespostas.length > 0 && (
               <div key={categoryName}>
-                <h4 className="font-medium text-gray-800 mb-2 text-sm">
+                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2 text-sm">
                   {categoryName} ({categoryRespostas.length} campos)
                 </h4>
-                <div className="bg-gray-50 rounded border">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded border dark:border-gray-600">
                   <table className="w-full text-sm">
                     <tbody>
                       {categoryRespostas.map((resposta, index) => (
-                        <tr key={resposta.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="p-2 font-medium text-gray-700 border-r w-1/3">
+                        <tr key={resposta.id} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}>
+                          <td className="p-2 font-medium text-gray-700 dark:text-gray-300 border-r dark:border-gray-600 w-1/3">
                             {formatFieldName(resposta.campo_nome)}
                           </td>
-                          <td className="p-2 text-gray-900">
+                          <td className="p-2 text-gray-900 dark:text-gray-100">
                             {formatFieldValue(resposta.campo_nome, resposta.valor_informado)}
                           </td>
                         </tr>
@@ -230,16 +230,16 @@ const VendaFormDetailsCard: React.FC<VendaFormDetailsCardProps> = ({
           })}
         </div>
       ) : (
-        <div className="text-center py-6 bg-yellow-50 rounded border">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+        <div className="text-center py-6 bg-yellow-50 dark:bg-yellow-900/20 rounded border dark:border-yellow-800">
+          <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
             ⚠️ Nenhum detalhe encontrado
           </h3>
-          <p className="text-yellow-700 mb-2">
+          <p className="text-yellow-700 dark:text-yellow-300 mb-2">
             Os dados do formulário não foram encontrados.
           </p>
           <button 
             onClick={onRefetch} 
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+            className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded hover:bg-blue-600 dark:hover:bg-blue-700 text-sm"
           >
             🔄 Recarregar dados
           </button>
