@@ -89,10 +89,10 @@ export class SemanasConsecutivasService {
       return 0;
     }
 
-    // Buscar tipo do SDR
+    // Buscar tipo do SDR e data de criação
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_type')
+      .select('user_type, created_at')
       .eq('id', vendedorId)
       .single();
 
@@ -118,12 +118,19 @@ export class SemanasConsecutivasService {
 
     // Calcular semanas desde a mais recente
     const hoje = new Date();
+    const dataCriacao = new Date(profile.created_at);
+    const { ano: anoCriacao, semana: semanaCriacao } = this.getAnoSemanaFromDate(dataCriacao);
+    
     let semanasConsecutivas = 0;
     let semanaAtual = this.getSemanaAtual();
     let anoAtual = hoje.getFullYear();
 
-    // Verificar as últimas 20 semanas (aproximadamente 5 meses)
+    // Verificar semanas desde a criação até agora (máximo 20 semanas para performance)
     for (let i = 0; i < 20; i++) {
+      // Parar se chegamos na semana de criação do usuário
+      if (anoAtual < anoCriacao || (anoAtual === anoCriacao && semanaAtual < semanaCriacao)) {
+        break;
+      }
       const agendamentosNaSemana = this.contarAgendamentosNaSemana(
         agendamentos || [], 
         anoAtual, 
