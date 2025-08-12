@@ -119,13 +119,15 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
         };
       }
       
+      // Sempre incrementar o total
       acc[cursoNome].total += 1;
       
+      // Incrementar baseado no status específico
       if (venda.status === 'matriculado') {
         acc[cursoNome].matriculadas += 1;
       } else if (venda.status === 'pendente') {
         acc[cursoNome].pendentes += 1;
-      } else if (venda.status === 'desistiu') {
+      } else if (venda.status === 'desistiu' || venda.status === 'rejeitado') {
         acc[cursoNome].rejeitadas += 1;
       }
       
@@ -134,14 +136,24 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
 
     return Object.values(vendasPorCurso)
       .sort((a: any, b: any) => {
-        const aValue = statusFilter === 'total' ? b.total : b[statusFilter];
-        const bValue = statusFilter === 'total' ? a.total : a[statusFilter];
-        return aValue - bValue;
+        // Ordenar por quantidade decrescente (maior primeiro)
+        const aValue = statusFilter === 'total' ? a.total : 
+                      statusFilter === 'matriculado' ? a.matriculadas :
+                      statusFilter === 'pendente' ? a.pendentes :
+                      statusFilter === 'desistiu' ? a.rejeitadas : a.total;
+        const bValue = statusFilter === 'total' ? b.total : 
+                      statusFilter === 'matriculado' ? b.matriculadas :
+                      statusFilter === 'pendente' ? b.pendentes :
+                      statusFilter === 'desistiu' ? b.rejeitadas : b.total;
+        return bValue - aValue; // Ordem decrescente
       })
       .map((item: any, index) => ({
         ...item,
         color: courseColors[index % courseColors.length],
-        displayValue: statusFilter === 'total' ? item.total : item[statusFilter]
+        displayValue: statusFilter === 'total' ? item.total : 
+                     statusFilter === 'matriculado' ? item.matriculadas :
+                     statusFilter === 'pendente' ? item.pendentes :
+                     statusFilter === 'desistiu' ? item.rejeitadas : item.total
       }));
   }, [vendas, selectedVendedor, selectedMonth, selectedYear, statusFilter, cursoFilter]);
 
