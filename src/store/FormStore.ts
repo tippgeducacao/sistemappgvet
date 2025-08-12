@@ -26,8 +26,9 @@ export interface FormData {
   modalidadeCurso?: string;
   cursoId: string;
   vendedor?: string;
+  semestre?: string;
+  ano?: string;
   turma?: string;
-  abertura?: string;
 
   // Informações da reunião (se aplicável)
   agendamentoId?: string;
@@ -71,8 +72,9 @@ const initialFormData: FormData = {
   ies: '',
   modalidadeCurso: '',
   cursoId: '',
+  semestre: '',
+  ano: new Date().getFullYear().toString(),
   turma: '',
-  abertura: '',
 
   // Scoring Info
   lotePos: '',

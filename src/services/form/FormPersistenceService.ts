@@ -181,12 +181,16 @@ export class FormPersistenceService {
       errors.push('Curso é obrigatório');
     }
 
+    if (!formData.semestre?.trim()) {
+      errors.push('Semestre é obrigatório');
+    }
+    
+    if (!formData.ano?.trim()) {
+      errors.push('Ano é obrigatório');
+    }
+    
     if (!formData.turma?.trim()) {
       errors.push('Turma é obrigatória');
-    }
-
-    if (!formData.abertura?.trim()) {
-      errors.push('Abertura é obrigatória');
     }
 
     // Validar se pelo menos alguns campos de scoring estão preenchidos

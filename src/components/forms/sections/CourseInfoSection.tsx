@@ -84,59 +84,6 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
     });
   };
 
-  const formatTurma = (value: string): string => {
-    // Remove tudo que não é número
-    const numbers = value.replace(/\D/g, '');
-    
-    if (numbers === '') return '';
-    
-    // Pega apenas os números (turma pode ser até 99)
-    const turmaNumber = parseInt(numbers);
-    
-    // Formata com zero à esquerda se necessário e adiciona prefixo T
-    const formattedNumber = turmaNumber.toString().padStart(2, '0');
-    
-    return `T${formattedNumber}`;
-  };
-
-  const formatAbertura = (value: string): string => {
-    // Remove tudo que não é número
-    const numbers = value.replace(/\D/g, '');
-    
-    if (numbers === '') return '';
-    
-    // Pega apenas os números (abertura pode ser até 99)
-    const aberturaNumber = parseInt(numbers);
-    
-    // Formata com zero à esquerda se necessário e adiciona prefixo #
-    const formattedNumber = aberturaNumber.toString().padStart(2, '0');
-    
-    return `#${formattedNumber}`;
-  };
-
-  const handleTurmaChange = (value: string) => {
-    if (value === '') {
-      updateField('turma', '');
-      return;
-    }
-    
-    // Se já tem o prefixo T, pega apenas os números
-    const cleanValue = value.replace(/^T/, '');
-    const formattedValue = formatTurma(cleanValue);
-    updateField('turma', formattedValue);
-  };
-
-  const handleAberturaChange = (value: string) => {
-    if (value === '') {
-      updateField('abertura', '');
-      return;
-    }
-    
-    // Se já tem o prefixo #, pega apenas os números
-    const cleanValue = value.replace(/^#/, '');
-    const formattedValue = formatAbertura(cleanValue);
-    updateField('abertura', formattedValue);
-  };
 
   const handleValorContratoChange = (value: string) => {
     const formattedValue = formatCurrency(value);
@@ -179,24 +126,48 @@ const CourseInfoSection: React.FC<CourseInfoSectionProps> = ({ formData, updateF
         disabled={!selectedModalidade}
       />
 
-      {/* Turma e Abertura lado a lado */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Semestre, Ano e Turma lado a lado */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <FormSelectField
+          id="semestre"
+          label="Semestre *"
+          value={formData.semestre || ''}
+          onChange={(value) => updateField('semestre', value)}
+          options={[
+            { value: '01', label: '01' },
+            { value: '02', label: '02' }
+          ]}
+          placeholder="Selecione"
+        />
+         
+        <FormInputField
+          id="ano"
+          label="Ano *"
+          value={formData.ano || ''}
+          onChange={(value) => updateField('ano', value)}
+          placeholder="2024"
+          className="text-center"
+        />
+        
         <FormInputField
           id="turma"
-           label="Turma *"
-           value={formData.turma || ''}
-           onChange={handleTurmaChange}
-           placeholder="Ex: 2 (será T02)"
-           className="font-mono"
-         />
-         
-         <FormInputField
-           id="abertura"
-           label="Abertura *"
-           value={formData.abertura || ''}
-           onChange={handleAberturaChange}
-           placeholder="Ex: 5 (será #05)"
-           className="font-mono"
+          label="Turma *"
+          value={formData.turma || ''}
+          onChange={(value) => {
+            // Formatar com T + número com zero à esquerda
+            let formatted = value.replace(/[^0-9]/g, '');
+            if (formatted) {
+              const num = parseInt(formatted);
+              if (num > 0 && num <= 99) {
+                formatted = `T${num.toString().padStart(2, '0')}`;
+              } else {
+                formatted = '';
+              }
+            }
+            updateField('turma', formatted);
+          }}
+          placeholder="T01"
+          className="text-center font-mono"
         />
       </div>
 

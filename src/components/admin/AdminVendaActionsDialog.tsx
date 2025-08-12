@@ -277,17 +277,23 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
                        <td className="px-3 py-2 text-gray-900">{venda.curso?.nome || 'Não informado'}</td>
                      </tr>
                      <tr className="border-b bg-gray-50 hover:bg-gray-100">
-                       <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Turma:</td>
-                       <td className="px-3 py-2 text-gray-900">
-                         {formDetails?.find(r => r.campo_nome === 'Turma' || r.campo_nome === 'turma')?.valor_informado || 'Não informado'}
-                       </td>
-                     </tr>
-                     <tr className="bg-white hover:bg-gray-50">
-                       <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Abertura:</td>
-                       <td className="px-3 py-2 text-gray-900">
-                         {formDetails?.find(r => r.campo_nome === 'Abertura' || r.campo_nome === 'abertura')?.valor_informado || 'Não informado'}
-                       </td>
-                     </tr>
+                        <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Semestre:</td>
+                        <td className="px-3 py-2 text-gray-900">
+                          {formDetails?.find(r => r.campo_nome === 'Semestre' || r.campo_nome === 'semestre')?.valor_informado || 'Não informado'}
+                        </td>
+                      </tr>
+                      <tr className="bg-white hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Ano:</td>
+                        <td className="px-3 py-2 text-gray-900">
+                          {formDetails?.find(r => r.campo_nome === 'Ano' || r.campo_nome === 'ano')?.valor_informado || 'Não informado'}
+                        </td>
+                      </tr>
+                      <tr className="border-b bg-gray-50 hover:bg-gray-100">
+                        <td className="px-3 py-2 font-medium text-gray-700 w-1/3">Turma:</td>
+                        <td className="px-3 py-2 text-gray-900">
+                          {formDetails?.find(r => r.campo_nome === 'Turma' || r.campo_nome === 'turma')?.valor_informado || 'Não informado'}
+                        </td>
+                      </tr>
                   </tbody>
                 </table>
               </div>

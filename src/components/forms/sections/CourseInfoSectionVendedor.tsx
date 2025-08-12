@@ -93,23 +93,47 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
         disabled={availableCourses.length === 0}
       />
 
-      {/* Campos Turma e Abertura em uma linha */}
-      <div className="col-span-2 grid grid-cols-2 gap-4">
+      {/* Campos Semestre, Ano e Turma em uma linha */}
+      <div className="col-span-2 grid grid-cols-3 gap-4">
+         <FormSelectField
+           id="semestre"
+           label="Semestre *"
+           value={formData.semestre || ''}
+           onChange={(value) => updateField('semestre', value)}
+           options={[
+             { value: '01', label: '01' },
+             { value: '02', label: '02' }
+           ]}
+           placeholder="Selecione"
+         />
+         
          <FormInputField
-           id="turma"
-           label="Turma *"
-           value={formData.turma || ''}
-           onChange={(value) => updateField('turma', value)}
-           placeholder="01/25"
+           id="ano"
+           label="Ano *"
+           value={formData.ano || ''}
+           onChange={(value) => updateField('ano', value)}
+           placeholder="2024"
            className="text-center"
          />
          
          <FormInputField
-           id="abertura"
-           label="Abertura *"
-           value={formData.abertura || ''}
-           onChange={(value) => updateField('abertura', value)}
-           placeholder="#01"
+           id="turma"
+           label="Turma *"
+           value={formData.turma || ''}
+           onChange={(value) => {
+             // Formatar com T + número com zero à esquerda
+             let formatted = value.replace(/[^0-9]/g, '');
+             if (formatted) {
+               const num = parseInt(formatted);
+               if (num > 0 && num <= 99) {
+                 formatted = `T${num.toString().padStart(2, '0')}`;
+               } else {
+                 formatted = '';
+               }
+             }
+             updateField('turma', formatted);
+           }}
+           placeholder="T01"
            className="text-center"
          />
       </div>
