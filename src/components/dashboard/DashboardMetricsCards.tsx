@@ -11,6 +11,7 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import { getVendaPeriod } from '@/utils/semanaUtils';
+import { getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 import type { UserType } from '@/types/user';
 
 interface DashboardMetricsCardsProps {
@@ -60,8 +61,8 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
     }
     return vendas.filter(venda => {
       if (!venda.enviado_em) return false;
-      const vendaDate = new Date(venda.enviado_em);
-      const { mes: vendaMes, ano: vendaAno } = getVendaPeriod(vendaDate);
+      const vendaPeriod = getVendaEffectivePeriod(venda);
+      const { mes: vendaMes, ano: vendaAno } = vendaPeriod;
       return vendaMes === selectedMonth && vendaAno === selectedYear;
     });
   }, [vendas, selectedMonth, selectedYear]);

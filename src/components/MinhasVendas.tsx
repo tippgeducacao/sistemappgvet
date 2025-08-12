@@ -16,6 +16,7 @@ import VendasPagination from '@/components/vendas/VendasPagination';
 import VendasFilter from '@/components/vendas/VendasFilter';
 import type { VendaCompleta } from '@/hooks/useVendas';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
+import { getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 
 const ITEMS_PER_PAGE = 20; // Aumentado de 10 para 20
 
@@ -42,11 +43,8 @@ const MinhasVendas: React.FC = () => {
     return vendas.filter(venda => {
       if (!venda.enviado_em) return false;
       
-      const vendaDate = new Date(venda.enviado_em);
-      const vendaMonth = vendaDate.getMonth() + 1;
-      const vendaYear = vendaDate.getFullYear();
-      
-      return vendaMonth === selectedMonth && vendaYear === selectedYear;
+      const vendaPeriod = getVendaEffectivePeriod(venda);
+      return vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
     });
   }, [vendas, selectedMonth, selectedYear]);
 

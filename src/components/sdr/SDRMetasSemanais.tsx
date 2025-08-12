@@ -10,6 +10,7 @@ import { useComissionamento } from '@/hooks/useComissionamento';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useSDRAgendamentosSemanaCompleto } from '@/hooks/useSDRAgendamentosSemanaCompleto';
 import { supabase } from '@/integrations/supabase/client';
+import { isVendaInWeek } from '@/utils/vendaDateUtils';
 import AgendamentosRow from './AgendamentosRow';
 import { Calendar } from 'lucide-react';
 
@@ -50,8 +51,9 @@ export const SDRMetasSemanais = () => {
       // Contar apenas vendas matriculadas (cursos vendidos com sucesso)
       if (venda.status !== 'matriculado') return false;
       
-      const dataVenda = new Date(venda.enviado_em);
-      return dataVenda >= startDate && dataVenda <= endDate;
+      // Usar data efetiva da venda (data de assinatura do contrato se disponível)
+      const { isVendaInWeek } = require('@/utils/vendaDateUtils');
+      return isVendaInWeek(venda, startDate, endDate);
     }) || [];
   };
 
