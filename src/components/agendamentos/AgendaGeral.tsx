@@ -307,30 +307,24 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            Agenda Geral - Todos os Agendamentos
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="flex flex-col h-[calc(95vh-120px)]">
-          {/* Header com navegação e filtros */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center gap-4">
+      <DialogContent className="max-w-[98vw] max-h-[98vh] overflow-hidden p-0">
+        <div className="flex flex-col h-[98vh]">
+          {/* Header compacto com navegação e filtros */}
+          <div className="flex items-center justify-between py-2 px-3 border-b bg-background">
+            <div className="flex items-center gap-3">
               {/* Navegação de data */}
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => navegarData('anterior')}
+                  className="h-8 w-8 p-0"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 
-                <div className="min-w-[200px] text-center">
-                  <span className="font-medium text-lg">
+                <div className="min-w-[180px] text-center">
+                  <span className="font-medium text-sm">
                     {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                   </span>
                 </div>
@@ -339,16 +333,17 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                   variant="outline"
                   size="sm"
                   onClick={() => navegarData('proximo')}
+                  className="h-8 w-8 p-0"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
 
-              {/* Filtro de Grupos */}
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
+              {/* Filtro de Grupos compacto */}
+              <div className="flex items-center gap-1">
+                <Filter className="h-3 w-3" />
                 <Select value={filtroGrupo} onValueChange={setFiltroGrupo}>
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger className="w-[160px] h-8 text-xs">
                     <SelectValue placeholder="Todos os grupos" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
@@ -362,10 +357,10 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                 </Select>
               </div>
 
-              {/* Filtro por SDR */}
-              <div className="flex items-center gap-2">
+              {/* Filtro por SDR compacto */}
+              <div className="flex items-center gap-1">
                 <Select value={filtroSDR} onValueChange={setFiltroSDR}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[140px] h-8 text-xs">
                     <SelectValue placeholder="Todos os SDRs" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
@@ -379,6 +374,11 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                 </Select>
               </div>
             </div>
+
+            {/* Botão fechar no header */}
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
+              ×
+            </Button>
           </div>
 
           {/* Timeline Container */}
@@ -416,11 +416,11 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                   minWidth: `${80 + (vendedoresFiltrados.length * 200)}px`
                 }}>
                   {/* Header com vendedores */}
-                  <div className="sticky top-0 bg-background border-b p-2 text-center font-medium text-sm">
+                  <div className="sticky top-0 bg-background border-b p-2 text-center font-medium text-sm z-30">
                     Horário
                   </div>
                   {vendedoresFiltrados.map((vendedor) => (
-                    <div key={vendedor.id} className="sticky top-0 bg-background border-b border-l p-3 text-center">
+                    <div key={vendedor.id} className="sticky top-0 bg-background border-b border-l p-3 text-center z-30">
                       <div className="flex flex-col items-center gap-2">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={vendedor.photo_url} />
@@ -538,22 +538,19 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
             )}
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-between items-center p-4 border-t">
-            <div className="text-sm text-muted-foreground">
+          {/* Footer compacto */}
+          <div className="flex justify-between items-center py-2 px-3 border-t bg-background">
+            <div className="text-xs text-muted-foreground">
               {vendedoresFiltrados.length} vendedor(es) • {agendamentos.filter(ag => {
                 if (filtroSDR !== 'todos' && ag.sdr_id !== filtroSDR) return false;
                 return vendedoresFiltrados.some(v => v.id === ag.vendedor_id);
               }).length} agendamento(s)
               {filtroSDR !== 'todos' && (
                 <span className="ml-2 text-primary">
-                  • Filtrado por SDR: {sdrs.find(s => s.id === filtroSDR)?.name}
+                  • SDR: {sdrs.find(s => s.id === filtroSDR)?.name}
                 </span>
               )}
             </div>
-            <Button variant="outline" onClick={onClose}>
-              Fechar
-            </Button>
           </div>
         </div>
 
