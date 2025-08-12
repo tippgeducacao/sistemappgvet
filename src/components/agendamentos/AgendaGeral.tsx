@@ -261,8 +261,8 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     const minutosInicio = dataInicio.getMinutes();
     const horaInicio = dataInicio.getHours();
     
-    // Altura da célula
-    const ALTURA_CELULA = 80;
+    // Altura da célula aumentada para acomodar melhor o conteúdo
+    const ALTURA_CELULA = 120;
     
     // Calcular posição vertical baseada nos minutos
     const topOffset = (minutosInicio / 60) * ALTURA_CELULA;
@@ -275,7 +275,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       altura = (duracaoMinutos / 60) * ALTURA_CELULA;
     }
     
-    return { top: topOffset, height: Math.max(altura, 24) }; // altura mínima de 24px
+    return { top: topOffset, height: Math.max(altura, 80) }; // altura mínima aumentada para 80px
   };
 
   const getCorAgendamento = (agendamento: Agendamento) => {
@@ -475,7 +475,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                            return (
                              <div 
                                key={`${vendedor.id}-${horario}`} 
-                               className={`border-b border-l min-h-[80px] relative ${temConflito ? 'bg-red-50 dark:bg-red-950/20' : ''}`}
+                                className={`border-b border-l min-h-[120px] relative ${temConflito ? 'bg-red-50 dark:bg-red-950/20' : ''}`}
                              >
                                 {temConflito && (
                                   <div className="absolute top-1 right-1 z-20" title="Conflito de horário detectado">
@@ -502,28 +502,28 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                                      }}
                                      title={`${format(new Date(agendamento.data_agendamento), 'HH:mm')}${agendamento.data_fim_agendamento ? ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}` : ''} | ${agendamento.lead?.nome} | ${agendamento.pos_graduacao_interesse}${agendamento.sdr?.name ? ` | SDR: ${agendamento.sdr.name}` : ''}${isConflito ? ' | ⚠️ CONFLITO DE HORÁRIO' : ''}`}
                                    >
-                                     <div className="h-full flex flex-col justify-start">
-                                       <div className="flex items-center justify-between">
-                                         <div className="font-semibold text-xs leading-tight">
-                                           {format(new Date(agendamento.data_agendamento), 'HH:mm')}
-                                           {agendamento.data_fim_agendamento && ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`}
-                                         </div>
-                                         {isConflito && (
-                                           <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400 flex-shrink-0" />
-                                         )}
-                                       </div>
-                                       <div className="font-medium text-xs truncate leading-tight mt-1">
-                                         {agendamento.lead?.nome || 'Lead não encontrado'}
-                                       </div>
-                                       <div className="text-[10px] truncate opacity-80 leading-tight">
-                                         {agendamento.pos_graduacao_interesse.replace('Pós-graduação: ', '')}
-                                       </div>
-                                       {agendamento.sdr?.name && (
-                                         <div className="text-[9px] truncate opacity-70 leading-tight mt-0.5">
-                                           SDR: {agendamento.sdr.name}
-                                         </div>
-                                       )}
-                                     </div>
+                                      <div className="h-full flex flex-col justify-start overflow-hidden">
+                                        <div className="flex items-center justify-between">
+                                          <div className="font-semibold text-xs leading-tight">
+                                            {format(new Date(agendamento.data_agendamento), 'HH:mm')}
+                                            {agendamento.data_fim_agendamento && ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`}
+                                          </div>
+                                          {isConflito && (
+                                            <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400 flex-shrink-0" />
+                                          )}
+                                        </div>
+                                        <div className="font-medium text-xs leading-tight mt-1 overflow-hidden break-words">
+                                          {agendamento.lead?.nome || 'Lead não encontrado'}
+                                        </div>
+                                        <div className="text-[10px] leading-tight opacity-80 mt-0.5 overflow-hidden break-words">
+                                          {agendamento.pos_graduacao_interesse.replace('Pós-graduação: ', '')}
+                                        </div>
+                                        {agendamento.sdr?.name && (
+                                          <div className="text-[9px] leading-tight opacity-70 mt-0.5 overflow-hidden break-words">
+                                            SDR: {agendamento.sdr.name}
+                                          </div>
+                                        )}
+                                      </div>
                                    </div>
                                  );
                                })}
