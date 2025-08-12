@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { useAllVendas } from '@/hooks/useVendas';
+import { useCursos } from '@/hooks/useCursos';
 import { getVendaPeriod } from '@/utils/semanaUtils';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -13,8 +16,13 @@ interface SalesByCourseChartProps {
   selectedYear?: number;
 }
 
+type StatusFilter = 'total' | 'matriculado' | 'pendente' | 'desistiu';
+
 const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedor, selectedMonth, selectedYear }) => {
   const { vendas, isLoading } = useAllVendas();
+  const { cursos } = useCursos();
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('matriculado');
+  const [cursoFilter, setCursoFilter] = useState<string>('todos');
 
   const courseColors = [
     '#3b82f6', // azul
@@ -76,6 +84,11 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
         return false;
       }
       
+      // Filtro por curso
+      if (cursoFilter !== 'todos' && venda.curso_id !== cursoFilter) {
+        return false;
+      }
+      
       // Filtro por período usando regra de semana
       if (selectedMonth && selectedYear && venda.enviado_em) {
         const vendaDate = new Date(venda.enviado_em);
@@ -120,16 +133,31 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
     }, {} as Record<string, any>);
 
     return Object.values(vendasPorCurso)
-      .sort((a: any, b: any) => b.total - a.total)
+      .sort((a: any, b: any) => {
+        const aValue = statusFilter === 'total' ? b.total : b[statusFilter];
+        const bValue = statusFilter === 'total' ? a.total : a[statusFilter];
+        return aValue - bValue;
+      })
       .map((item: any, index) => ({
         ...item,
-        color: courseColors[index % courseColors.length]
+        color: courseColors[index % courseColors.length],
+        displayValue: statusFilter === 'total' ? item.total : item[statusFilter]
       }));
-  }, [vendas, selectedVendedor, selectedMonth, selectedYear]);
+  }, [vendas, selectedVendedor, selectedMonth, selectedYear, statusFilter, cursoFilter]);
+
+  const getStatusLabel = (status: StatusFilter) => {
+    switch (status) {
+      case 'total': return 'Total de Vendas';
+      case 'matriculado': return 'Matriculadas';
+      case 'pendente': return 'Pendentes';
+      case 'desistiu': return 'Rejeitadas';
+      default: return 'Total de Vendas';
+    }
+  };
 
   const chartConfig = {
-    total: {
-      label: "Total de Vendas",
+    displayValue: {
+      label: getStatusLabel(statusFilter),
       color: "#3b82f6"
     }
   };
@@ -219,12 +247,53 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
     <TooltipProvider>
       <Card>
         <CardHeader>
-          <CardTitle>Vendas por Curso</CardTitle>
-          <CardDescription>
-            Distribuição de {selectedVendedor && selectedVendedor !== 'todos' 
-              ? chartData.reduce((acc, item) => acc + item.total, 0) 
-              : vendas.length} vendas entre os cursos oferecidos
-          </CardDescription>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <CardTitle>Vendas por Curso</CardTitle>
+              <CardDescription>
+                Distribuição de vendas entre os cursos oferecidos
+              </CardDescription>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="matriculado">Matriculadas</SelectItem>
+                  <SelectItem value="total">Total</SelectItem>
+                  <SelectItem value="pendente">Pendentes</SelectItem>
+                  <SelectItem value="desistiu">Rejeitadas</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={cursoFilter} onValueChange={setCursoFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filtrar por curso" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os cursos</SelectItem>
+                  {cursos.map((curso) => (
+                    <SelectItem key={curso.id} value={curso.id}>
+                      {curso.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="outline">
+              {getStatusLabel(statusFilter)}: {chartData.reduce((acc, item) => acc + item.displayValue, 0)}
+            </Badge>
+            {cursoFilter !== 'todos' && (
+              <Badge variant="secondary">
+                Curso: {cursos.find(c => c.id === cursoFilter)?.nome || 'Selecionado'}
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[500px]">
@@ -261,7 +330,7 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
                   }}
                 />
                 <Bar 
-                  dataKey="total" 
+                  dataKey="displayValue" 
                   radius={[4, 4, 0, 0]}
                 >
                   {chartData.map((entry, index) => (
@@ -284,7 +353,7 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
                   ></div>
                   <div className="flex-1 min-w-0">
                     <div className="break-words leading-tight">
-                      {curso.cursoLimpo} ({curso.total})
+                      {curso.cursoLimpo} ({curso.displayValue})
                     </div>
                   </div>
                 </div>
