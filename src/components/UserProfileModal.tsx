@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +44,37 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState(user);
   const [isLoading, setIsLoading] = useState(false);
+  const [fullUserProfile, setFullUserProfile] = useState(user);
   const { toast } = useToast();
+
+  // Carregar perfil completo quando o modal abrir
+  useEffect(() => {
+    const loadFullProfile = async () => {
+      if (!user?.id || !isOpen) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Erro ao carregar perfil completo:', error);
+          return;
+        }
+
+        if (data) {
+          setFullUserProfile(data);
+          setEditedUser(data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar perfil completo:', error);
+      }
+    };
+
+    loadFullProfile();
+  }, [user?.id, isOpen]);
 
   const getUserTypeLabel = (userType: string) => {
     const types: Record<string, string> = {
@@ -145,9 +175,9 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <CardContent className="pt-6">
                 <div className="flex items-start gap-4">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={(user as any).photo_url} alt={user.name} />
+                    <AvatarImage src={fullUserProfile?.photo_url} alt={fullUserProfile?.name} />
                     <AvatarFallback className="text-lg">
-                      {user.name.charAt(0).toUpperCase()}
+                      {fullUserProfile?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
 
@@ -160,7 +190,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
                           className="text-lg font-semibold"
                         />
                       ) : (
-                        <h2 className="text-lg font-semibold">{user.name}</h2>
+                        <h2 className="text-lg font-semibold">{fullUserProfile?.name}</h2>
                       )}
                       
                       {canEdit && !isEditing && (
@@ -175,17 +205,17 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-3">
-                      <Badge className={getUserTypeColor(user.user_type)}>
+                      <Badge className={getUserTypeColor(fullUserProfile?.user_type)}>
                         <Shield className="h-3 w-3 mr-1" />
-                        {getUserTypeLabel(user.user_type)}
+                        {getUserTypeLabel(fullUserProfile?.user_type)}
                       </Badge>
-                      {user.nivel && (
+                      {fullUserProfile?.nivel && (
                         <Badge variant="outline">
                           <Award className="h-3 w-3 mr-1" />
-                          {user.nivel}
+                          {fullUserProfile.nivel}
                         </Badge>
                       )}
-                      {user.ativo === false && (
+                      {fullUserProfile?.ativo === false && (
                         <Badge variant="destructive">
                           Inativo
                         </Badge>
@@ -194,7 +224,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Mail className="h-4 w-4" />
-                      {user.email}
+                      {fullUserProfile?.email}
                     </div>
                   </div>
 
@@ -233,7 +263,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">ID:</span>
                     <span className="text-muted-foreground font-mono">
-                      {user.id.substring(0, 8)}...
+                      {fullUserProfile?.id?.substring(0, 8)}...
                     </span>
                   </div>
 
@@ -241,23 +271,23 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Criado em:</span>
                     <span className="text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                      {fullUserProfile?.created_at ? new Date(fullUserProfile.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                     </span>
                   </div>
 
-                  {user.updated_at && (
+                  {fullUserProfile?.updated_at && (
                     <div className="flex items-center gap-2 text-sm">
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Atualizado em:</span>
                       <span className="text-muted-foreground">
-                        {new Date(user.updated_at).toLocaleDateString('pt-BR')}
+                        {new Date(fullUserProfile.updated_at).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
                   )}
 
                   <Separator />
 
-                  <div>
+                    <div>
                     <Label className="text-sm font-medium">Nível</Label>
                     {isEditing ? (
                       <Input
@@ -268,7 +298,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       />
                     ) : (
                       <div className="mt-1 text-sm text-muted-foreground">
-                        {user.nivel || 'Não informado'}
+                        {fullUserProfile?.nivel || 'Não informado'}
                       </div>
                     )}
                   </div>
@@ -281,18 +311,18 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   <CardTitle className="text-base">Horário de Trabalho</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {user.horario_trabalho ? (
+                  {fullUserProfile?.horario_trabalho ? (
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="font-medium">Manhã:</span>
                         <span className="text-muted-foreground">
-                          {user.horario_trabalho.manha_inicio} - {user.horario_trabalho.manha_fim}
+                          {fullUserProfile.horario_trabalho.manha_inicio} - {fullUserProfile.horario_trabalho.manha_fim}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="font-medium">Tarde:</span>
                         <span className="text-muted-foreground">
-                          {user.horario_trabalho.tarde_inicio} - {user.horario_trabalho.tarde_fim}
+                          {fullUserProfile.horario_trabalho.tarde_inicio} - {fullUserProfile.horario_trabalho.tarde_fim}
                         </span>
                       </div>
                     </div>
@@ -306,26 +336,26 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
 
             {/* Informações adicionais */}
-            {(user.semanas_consecutivas_meta > 0 || user.pos_graduacoes?.length > 0) && (
+            {(fullUserProfile?.semanas_consecutivas_meta > 0 || fullUserProfile?.pos_graduacoes?.length > 0) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Informações Adicionais</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {user.semanas_consecutivas_meta > 0 && (
+                  {fullUserProfile?.semanas_consecutivas_meta > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="font-medium">Semanas consecutivas na meta:</span>
                       <span className="text-green-600 font-medium">
-                        {user.semanas_consecutivas_meta}
+                        {fullUserProfile.semanas_consecutivas_meta}
                       </span>
                     </div>
                   )}
 
-                  {user.pos_graduacoes?.length > 0 && (
+                  {fullUserProfile?.pos_graduacoes?.length > 0 && (
                     <div>
                       <span className="text-sm font-medium">Pós-graduações:</span>
                       <div className="mt-1 text-sm text-muted-foreground">
-                        {user.pos_graduacoes.length} grupo(s) atribuído(s)
+                        {fullUserProfile.pos_graduacoes.length} grupo(s) atribuído(s)
                       </div>
                     </div>
                   )}
