@@ -867,21 +867,19 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         <div className="mb-6 flex justify-between items-center">
           <h2 className="text-xl font-semibold">Planilha Detalhada</h2>
           <div className="flex gap-2 items-center">
-            {!propSelectedMonth && !propSelectedYear && (
-              <MonthYearSelector
-                selectedMonth={parseInt(selectedMonth.split('-')[1])}
-                selectedYear={parseInt(selectedMonth.split('-')[0])}
-                onMonthChange={(month) => {
-                  const year = selectedMonth.split('-')[0];
-                  setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
-                }}
-                onYearChange={(year) => {
-                  const month = selectedMonth.split('-')[1];
-                  setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
-                }}
-                showAll={false}
-              />
-            )}
+            <MonthYearSelector
+              selectedMonth={parseInt(selectedMonth.split('-')[1])}
+              selectedYear={parseInt(selectedMonth.split('-')[0])}
+              onMonthChange={!propSelectedMonth && !propSelectedYear ? (month) => {
+                const year = selectedMonth.split('-')[0];
+                setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+              } : undefined}
+              onYearChange={!propSelectedMonth && !propSelectedYear ? (year) => {
+                const month = selectedMonth.split('-')[1];
+                setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+              } : undefined}
+              showAll={false}
+            />
             <Button
               onClick={exportDetailedToPDF}
               variant="outline"
