@@ -39,7 +39,6 @@ import MonthYearSelector from '@/components/common/MonthYearSelector';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import ForceAugustFilter from '@/components/common/ForceAugustFilter';
 
 interface VendorsRankingProps {
   selectedVendedor?: string;
@@ -868,19 +867,21 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         <div className="mb-6 flex justify-between items-center">
           <h2 className="text-xl font-semibold">Planilha Detalhada</h2>
           <div className="flex gap-2 items-center">
-            <MonthYearSelector
-              selectedMonth={parseInt(selectedMonth.split('-')[1])}
-              selectedYear={parseInt(selectedMonth.split('-')[0])}
-              onMonthChange={(month) => {
-                const year = selectedMonth.split('-')[0];
-                setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
-              }}
-              onYearChange={(year) => {
-                const month = selectedMonth.split('-')[1];
-                setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
-              }}
-              showAll={false}
-            />
+            {!propSelectedMonth && !propSelectedYear && (
+              <MonthYearSelector
+                selectedMonth={parseInt(selectedMonth.split('-')[1])}
+                selectedYear={parseInt(selectedMonth.split('-')[0])}
+                onMonthChange={(month) => {
+                  const year = selectedMonth.split('-')[0];
+                  setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+                }}
+                onYearChange={(year) => {
+                  const month = selectedMonth.split('-')[1];
+                  setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+                }}
+                showAll={false}
+              />
+            )}
             <Button
               onClick={exportDetailedToPDF}
               variant="outline"
@@ -905,7 +906,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         })()}
         
         <div className="mt-8" data-detailed-spreadsheet>
-          <ForceAugustFilter className="mb-6" />
           
           {/* Tabela de Vendedores */}
           {vendedoresFiltrados.length > 0 && (
