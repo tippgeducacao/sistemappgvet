@@ -797,25 +797,198 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     console.log('✅ Exportação concluída!');
   };
 
+  // Função para exportar a planilha detalhada como PDF
+  const exportDetailedToPDF = async () => {
+    const doc = new jsPDF('l', 'mm', 'a4'); // landscape
+    const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
+    
+    // PÁGINA 1: VENDEDORES
+    doc.setFontSize(16);
+    doc.text(`Planilha Detalhada - Vendedores - ${mesAtualSelecionado}`, 20, 20);
+    
+    // Cabeçalhos da tabela de vendedores
+    const vendedoresHeaders = [
+      'Vendedor',
+      'Nível',
+      'Meta Semanal',
+      'Comissão Semanal',
+      ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
+      'Total Pontos',
+      'Atingimento %',
+      'Comissão Total'
+    ];
+    
+    // Dados da tabela de vendedores
+    const vendedoresTableData = await Promise.all(vendedoresFiltrados.map(async vendedor => {
+      const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
+      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
+      const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
+      const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
+      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;
+      const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
+      const commissionData = await calculateTotalCommission(vendedor.id, weeks, nivelConfig);
+      
+      const weeklyCommissionStrings = await Promise.all(weeklyPoints.map(async (points, index) => {
+        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
+        const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+        const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
+        const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
+        const valorFormatado = DataFormattingService.formatCurrency(commission.valor);
+        return `${points.toFixed(1)}pts\n${percentage}%\nx${commission.multiplicador}\n${valorFormatado}`;
+      }));
+      
+      return [
+        vendedor.name,
+        vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
+        nivelConfig?.meta_semanal_vendedor || 7,
+        DataFormattingService.formatCurrency(nivelConfig?.variavel_semanal || 0),
+        ...weeklyCommissionStrings,
+        totalPoints.toFixed(1),
+        `${achievementPercentage.toFixed(1)}%`,
+        DataFormattingService.formatCurrency(commissionData.total)
+      ];
+    }));
+    
+    autoTable(doc, {
+      head: [vendedoresHeaders],
+      body: vendedoresTableData,
+      startY: 30,
+      styles: { fontSize: 7, cellPadding: 2 },
+      columnStyles: {
+        0: { cellWidth: 25 }, // Vendedor
+        1: { cellWidth: 15 }, // Nível
+        2: { cellWidth: 15 }, // Meta Semanal
+        3: { cellWidth: 20 }, // Comissão Semanal
+      },
+      theme: 'striped'
+    });
+
+    // PÁGINA 2: SDRs (se existirem)
+    const sdrsVendedores = vendedores.filter(v => v.user_type === 'sdr');
+    
+    if (sdrsVendedores.length > 0) {
+      doc.addPage();
+      doc.setFontSize(16);
+      doc.text(`Planilha Detalhada - SDRs - ${mesAtualSelecionado}`, 20, 20);
+
+      // Cabeçalhos da tabela de SDRs
+      const sdrsHeaders = [
+        'SDR',
+        'Tipo',
+        'Nível',
+        'Meta Semanal',
+        'Comissão Semanal',
+        ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
+        'Total Reuniões',
+        'Atingimento %',
+        'Comissão Total'
+      ];
+
+      // Dados da tabela de SDRs
+      const sdrsTableData = await Promise.all(sdrsVendedores.map(async (sdr) => {
+        const sdrNivel = sdr.nivel || 'junior';
+        const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel === sdrNivel);
+        
+        const metaSemanal = nivelConfig?.meta_vendas_cursos ?? 8;
+        const metaMensal = metaSemanal * weeks.length;
+        const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
+        
+        // Calcular reuniões por semana
+        const reunioesPorSemana = weeks.map(week => {
+          const startDate = new Date(week.startDate);
+          const endDate = new Date(week.endDate);
+          
+          const reunioesNaSemana = agendamentos?.filter(agendamento => {
+            if (agendamento.sdr_id !== sdr.id) return false;
+            const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                              agendamento.resultado_reuniao === 'comprou';
+            if (!compareceu) return false;
+            const dataAgendamento = new Date(agendamento.data_agendamento);
+            return dataAgendamento >= startDate && dataAgendamento <= endDate;
+          }) || [];
+          
+          return reunioesNaSemana.length;
+        });
+        
+        const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
+        const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
+        
+        const weeklyCommissions = await Promise.all(
+          reunioesPorSemana.map(reunioes => 
+            ComissionamentoService.calcularComissao(reunioes, metaSemanal, variavelSemanal, 'sdr')
+          )
+        );
+        const totalCommission = weeklyCommissions.reduce((sum, c) => sum + c.valor, 0);
+        
+        const weeklyMeetingsStrings = reunioesPorSemana.map((reunioes, index) => {
+          const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : '0.0';
+          const commission = weeklyCommissions[index];
+          const valorFormatado = DataFormattingService.formatCurrency(commission.valor);
+          return `${reunioes} reuniões\n${percentage}%\nx${commission.multiplicador}\n${valorFormatado}`;
+        });
+        
+        return [
+          sdr.name,
+          'SDR',
+          sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
+          metaSemanal,
+          DataFormattingService.formatCurrency(variavelSemanal),
+          ...weeklyMeetingsStrings,
+          totalReunioes,
+          `${achievementPercentage.toFixed(1)}%`,
+          DataFormattingService.formatCurrency(totalCommission)
+        ];
+      }));
+
+      autoTable(doc, {
+        head: [sdrsHeaders],
+        body: sdrsTableData,
+        startY: 30,
+        styles: { fontSize: 7, cellPadding: 2 },
+        columnStyles: {
+          0: { cellWidth: 25 }, // SDR
+          1: { cellWidth: 15 }, // Tipo
+          2: { cellWidth: 15 }, // Nível
+          3: { cellWidth: 15 }, // Meta Semanal
+          4: { cellWidth: 20 }, // Comissão Semanal
+        },
+        theme: 'striped'
+      });
+    }
+    
+    doc.save(`planilha-detalhada-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+  };
+
   return (
     <Card>
       <CardContent className="pt-6">
         {/* Filtro de Mês/Ano */}
         <div className="mb-6 flex justify-between items-center">
           <h2 className="text-xl font-semibold">Planilha Detalhada</h2>
-          <MonthYearSelector
-            selectedMonth={parseInt(selectedMonth.split('-')[1])}
-            selectedYear={parseInt(selectedMonth.split('-')[0])}
-            onMonthChange={(month) => {
-              const year = selectedMonth.split('-')[0];
-              setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
-            }}
-            onYearChange={(year) => {
-              const month = selectedMonth.split('-')[1];
-              setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
-            }}
-            showAll={false}
-          />
+          <div className="flex gap-2 items-center">
+            <MonthYearSelector
+              selectedMonth={parseInt(selectedMonth.split('-')[1])}
+              selectedYear={parseInt(selectedMonth.split('-')[0])}
+              onMonthChange={(month) => {
+                const year = selectedMonth.split('-')[0];
+                setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+              }}
+              onYearChange={(year) => {
+                const month = selectedMonth.split('-')[1];
+                setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+              }}
+              showAll={false}
+            />
+            <Button
+              onClick={exportDetailedToPDF}
+              variant="outline"
+              size="sm"
+              className="ml-2 bg-gradient-to-r from-red-500 to-red-600 text-white border-red-600 hover:from-red-600 hover:to-red-700"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Exportar PDF
+            </Button>
+          </div>
         </div>
 
         {/* Planilha Detalhada - Debug */}
@@ -830,7 +1003,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         })()}
         
         <div className="mt-8">
-          <h2 className="text-xl font-bold text-foreground mb-4">Planilha Detalhada</h2>
           
           {/* Tabela de Vendedores */}
           {vendedoresFiltrados.length > 0 && (
