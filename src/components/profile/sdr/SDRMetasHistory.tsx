@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Target } from 'lucide-react';
 import { useMetasSemanaisSDR } from '@/hooks/useMetasSemanaisSDR';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useAuthStore } from '@/stores/AuthStore';
-import { supabase } from '@/integrations/supabase/client';
+import { SDRMetasHistoryService } from '@/services/sdr/SDRMetasHistoryService';
 import SDRMetasMonthGroup from './SDRMetasMonthGroup';
 
 interface SDRMetasHistoryProps {
@@ -21,6 +21,7 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
   const { profile } = useAuthStore();
   const { getSemanasDoMes: getSemanasSDR, getDataInicioSemana: getDataInicioSDR, getDataFimSemana: getDataFimSDR } = useMetasSemanaisSDR();
   const { niveis } = useNiveis();
+  const metasHistoryService = SDRMetasHistoryService.getInstance();
 
   // Buscar todos os agendamentos do SDR
   useEffect(() => {
@@ -34,29 +35,8 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
 
     setLoading(true);
     try {
-      console.log('🔄 Buscando agendamentos para SDR:', profile.id);
-      
-      const { data: agendamentos, error } = await supabase
-        .from('agendamentos')
-        .select('*')
-        .eq('sdr_id', profile.id)
-        .order('data_agendamento', { ascending: false });
-
-      if (error) {
-        console.error('❌ Erro ao buscar agendamentos:', error);
-        throw error;
-      }
-
-      console.log('📊 Total de agendamentos encontrados:', agendamentos?.length || 0);
-      console.log('🔍 Agendamentos encontrados:', agendamentos?.map(a => ({
-        id: a.id,
-        data: a.data_agendamento,
-        status: a.status,
-        resultado: a.resultado_reuniao,
-        sdr_id: a.sdr_id
-      })));
-      
-      setAgendamentosData(agendamentos || []);
+      const agendamentos = await metasHistoryService.fetchAgendamentosForSDR(profile.id);
+      setAgendamentosData(agendamentos);
     } catch (error) {
       console.error('❌ Erro ao buscar agendamentos:', error);
       setAgendamentosData([]);
@@ -65,251 +45,37 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     }
   };
 
-  // Função para obter agendamentos de uma semana específica - com cache independente
-  const getAgendamentosSemana = useCallback((ano: number, mes: number, semana: number) => {
-    // Criar chave única e específica para esta semana
-    const chaveUnica = `${ano}-${mes.toString().padStart(2, '0')}-S${semana}`;
-    const dataInicio = getDataInicioSDR(ano, mes, semana);
-    const dataFim = getDataFimSDR(ano, mes, semana);
-    
-    console.log(`🔍 [${chaveUnica}] Calculando agendamentos para semana específica`);
-    console.log(`📅 [${chaveUnica}] Período EXATO: ${dataInicio.toISOString()} até ${dataFim.toISOString()}`);
-    
-    // Filtrar agendamentos SOMENTE para esta semana específica
-    const agendamentosDestePerioodo = agendamentosData.filter(agendamento => {
-      const dataAgendamento = new Date(agendamento.data_agendamento);
-      
-      // Verificação rigorosa de período - deve estar EXATAMENTE dentro desta semana
-      const estaDentroDoPerido = dataAgendamento >= dataInicio && dataAgendamento <= dataFim;
-      
-      if (estaDentroDoPerido) {
-        console.log(`✅ [${chaveUnica}] Agendamento encontrado:`, {
-          id: agendamento.id,
-          data: dataAgendamento.toISOString(),
-          periodo: `${dataInicio.toISOString()} - ${dataFim.toISOString()}`,
-          status: agendamento.status,
-          resultado: agendamento.resultado_reuniao
-        });
-      }
-      
-      return estaDentroDoPerido;
-    });
-    
-    // Filtrar apenas os realizados dentre os deste período
-    const agendamentosRealizados = agendamentosDestePerioodo.filter(agendamento => {
-      const foiRealizado = agendamento.status === 'finalizado' && (
-        agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-        agendamento.resultado_reuniao === 'comprou' ||
-        agendamento.resultado_reuniao === 'presente' ||
-        agendamento.resultado_reuniao === 'compareceu' ||
-        agendamento.resultado_reuniao === 'realizada'
-      );
-      
-      if (foiRealizado) {
-        console.log(`✅ [${chaveUnica}] Agendamento REALIZADO:`, {
-          id: agendamento.id,
-          data: agendamento.data_agendamento,
-          status: agendamento.status,
-          resultado: agendamento.resultado_reuniao
-        });
-      }
-      
-      return foiRealizado;
-    });
-    
-    console.log(`📊 [${chaveUnica}] RESULTADO FINAL: ${agendamentosDestePerioodo.length} total, ${agendamentosRealizados.length} realizados`);
-    
-    // Buscar meta baseada no nível do SDR
-    const nivel = profile?.nivel || 'junior';
-    const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
-    const metaAgendamentos = nivelConfig?.meta_semanal_inbound || 0;
-
-    const resultado = {
-      realizados: agendamentosRealizados.length,
-      meta: metaAgendamentos,
-      total: agendamentosDestePerioodo.length,
-      chaveUnica,
-      periodo: `${dataInicio.toLocaleDateString()} - ${dataFim.toLocaleDateString()}`,
-      dataInicio: dataInicio.toISOString(),
-      dataFim: dataFim.toISOString()
-    };
-    
-    console.log(`🎯 [${chaveUnica}] Retornando resultado:`, resultado);
-    return resultado;
-  }, [agendamentosData, profile?.nivel, niveis, getDataInicioSDR, getDataFimSDR]);
-
-  // Função para calcular semanas consecutivas
-  const calcularSemanasConsecutivas = (ano: number, mes: number, semana: number): number => {
-    const nivel = profile?.nivel || 'junior';
-    const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
-    const metaAgendamentos = nivelConfig?.meta_semanal_inbound || 0;
-    
-    let consecutivas = 0;
-    let anoAtual = ano;
-    let mesAtual = mes;
-    let semanaAtual = semana;
-    
-    // Verificar semanas anteriores até encontrar uma que não bateu a meta
-    for (let i = 0; i < 20; i++) {
-      const { realizados } = getAgendamentosSemana(anoAtual, mesAtual, semanaAtual);
-      
-      if (realizados >= metaAgendamentos) {
-        consecutivas++;
-      } else {
-        break;
-      }
-      
-      // Ir para semana anterior
-      semanaAtual--;
-      if (semanaAtual <= 0) {
-        mesAtual--;
-        if (mesAtual <= 0) {
-          anoAtual--;
-          mesAtual = 12;
-        }
-        const semanasDoMesAnterior = getSemanasSDR(anoAtual, mesAtual);
-        semanaAtual = Math.max(...semanasDoMesAnterior);
-      }
-    }
-    
-    return consecutivas;
-  };
-
-  // Gerar dados organizados por mês automaticamente
+  // Gerar dados usando o service
   const generateMonthsData = () => {
-    const hoje = new Date();
-    const mesesData: { [key: string]: any[] } = {};
-
-    console.log('🗓️ Data atual:', hoje.toLocaleDateString());
-    console.log('📅 Gerando dados para meses...');
-
-    // Gerar dados para todos os 12 meses do ano atual
-    for (let mes = 1; mes <= 12; mes++) {
-      const anoRef = selectedYear;
-      const mesRef = mes;
-      
-      console.log(`📅 Processando mês: ${mesRef}/${anoRef}`);
-      
-      const mesKey = `${mesRef.toString().padStart(2, '0')}/${anoRef}`;
-      const semanasDoMes = getSemanasSDR(anoRef, mesRef);
-      
-      console.log(`📊 Semanas para ${mesKey}:`, semanasDoMes);
-
-      // Só incluir se houver semanas válidas para este mês
-      if (semanasDoMes.length > 0) {
-        mesesData[mesKey] = semanasDoMes
-          .map(numeroSemana => {
-            // RECALCULAR TUDO DO ZERO para cada semana
-            const dataInicioFresh = getDataInicioSDR(anoRef, mesRef, numeroSemana);
-            const dataFimFresh = getDataFimSDR(anoRef, mesRef, numeroSemana);
-            const chaveUnicaFresh = `${anoRef}-${mesRef.toString().padStart(2, '0')}-S${numeroSemana}`;
-            
-            console.log(`🔄 [${chaveUnicaFresh}] RECALCULANDO DO ZERO`);
-            console.log(`📅 [${chaveUnicaFresh}] Período: ${dataInicioFresh.toLocaleDateString()} - ${dataFimFresh.toLocaleDateString()}`);
-            
-            // Buscar agendamentos APENAS para esta data específica
-            const agendamentosDestaSemanaSomente = agendamentosData.filter(agendamento => {
-              const dataAgendamento = new Date(agendamento.data_agendamento);
-              const dentroDoPerido = dataAgendamento >= dataInicioFresh && dataAgendamento <= dataFimFresh;
-              
-              if (dentroDoPerido) {
-                console.log(`🎯 [${chaveUnicaFresh}] AGENDAMENTO VÁLIDO:`, {
-                  id: agendamento.id,
-                  data: dataAgendamento.toLocaleDateString(),
-                  status: agendamento.status,
-                  resultado: agendamento.resultado_reuniao
-                });
-              }
-              
-              return dentroDoPerido;
-            });
-            
-            const agendamentosRealizadosApenasDestaData = agendamentosDestaSemanaSomente.filter(agendamento => {
-              return agendamento.status === 'finalizado' && (
-                agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                agendamento.resultado_reuniao === 'comprou' ||
-                agendamento.resultado_reuniao === 'presente' ||
-                agendamento.resultado_reuniao === 'compareceu' ||
-                agendamento.resultado_reuniao === 'realizada'
-              );
-            });
-            
-            console.log(`📊 [${chaveUnicaFresh}] RESULTADO: ${agendamentosDestaSemanaSomente.length} total, ${agendamentosRealizadosApenasDestaData.length} realizados`);
-            
-            // Recalcular meta fresh também
-            const nivelFresh = profile?.nivel || 'junior';
-            const nivelConfigFresh = niveis.find(n => n.nivel === nivelFresh && n.tipo_usuario === 'sdr');
-            const metaAgendamentosFresh = nivelConfigFresh?.meta_semanal_inbound || 0;
-            const variabelSemanalFresh = nivelConfigFresh?.variavel_semanal || 0;
-            
-            const percentualFresh = metaAgendamentosFresh > 0 ? Math.round((agendamentosRealizadosApenasDestaData.length / metaAgendamentosFresh) * 100) : 0;
-            const metaAtingidaFresh = agendamentosRealizadosApenasDestaData.length >= metaAgendamentosFresh;
-            
-            const hoje = new Date();
-            const isCurrentWeekFresh = dataInicioFresh <= hoje && dataFimFresh >= hoje;
-            const isFutureWeekFresh = dataInicioFresh > hoje;
-            
-            const semanasConsecutivasFresh = metaAtingidaFresh && !isFutureWeekFresh ? calcularSemanasConsecutivas(anoRef, mesRef, numeroSemana) : 0;
-            
-            const periodoFresh = `${dataInicioFresh.getDate().toString().padStart(2, '0')}/${(dataInicioFresh.getMonth() + 1).toString().padStart(2, '0')} - ${dataFimFresh.getDate().toString().padStart(2, '0')}/${(dataFimFresh.getMonth() + 1).toString().padStart(2, '0')}`;
-            
-            return {
-              numero: numeroSemana,
-              periodo: periodoFresh,
-              metaAgendamentos: metaAgendamentosFresh,
-              agendamentosRealizados: agendamentosRealizadosApenasDestaData.length,
-              percentual: percentualFresh,
-              variabelSemanal: variabelSemanalFresh,
-              metaAtingida: isFutureWeekFresh ? false : metaAtingidaFresh,
-              semanasConsecutivas: isFutureWeekFresh ? 0 : semanasConsecutivasFresh,
-              isCurrentWeek: isCurrentWeekFresh,
-              isFutureWeek: isFutureWeekFresh
-            };
-          })
-          .sort((a, b) => b.numero - a.numero); // Mais recente primeiro
-      } else {
-        mesesData[mesKey] = []; // Array vazio se não houver semanas
-      }
-      
-      console.log(`✅ Dados criados para ${mesKey}:`, mesesData[mesKey].length, 'semanas');
-    }
-
-    console.log('🎯 Todos os dados de meses gerados:', Object.keys(mesesData));
-    return mesesData;
+    if (!profile?.nivel) return {};
+    
+    return metasHistoryService.generateMonthlyData(
+      agendamentosData,
+      selectedYear,
+      getSemanasSDR,
+      getDataInicioSDR,
+      getDataFimSDR,
+      niveis,
+      profile.nivel
+    );
   };
 
   // Gerar dados com cache específico por combinação de filtros
   const mesesData = useMemo(() => {
-    const cacheKey = `${selectedYear}-${selectedMonth}`;
-    console.log(`🔄 REGENERANDO DADOS COMPLETOS - Cache Key: ${cacheKey}`);
-    console.log(`📊 Agendamentos disponíveis: ${agendamentosData.length}`);
+    const cacheKey = `${selectedYear}-${selectedMonth}-${agendamentosData.length}`;
+    console.log(`🔄 SDRMetasHistory: REGENERANDO DADOS COMPLETOS - Cache Key: ${cacheKey}`);
     
     const resultado = generateMonthsData();
-    console.log(`✅ Dados gerados para cache ${cacheKey}:`, Object.keys(resultado));
+    console.log(`✅ SDRMetasHistory: Dados gerados para cache ${cacheKey}:`, Object.keys(resultado));
     return resultado;
-  }, [agendamentosData, selectedYear, selectedMonth, profile?.nivel, niveis, getAgendamentosSemana]);
+  }, [agendamentosData, selectedYear, selectedMonth, profile?.nivel, niveis]);
   
   console.log('📊 Meses disponíveis final:', Object.keys(mesesData));
   
-  // Filtrar dados baseado na seleção
-  console.log('🔍 Filtro - Ano selecionado:', selectedYear, 'Mês selecionado:', selectedMonth);
-  
-  const filteredMesesData = selectedMonth !== 'all' && typeof selectedMonth === 'number'
-    ? Object.entries(mesesData).filter(([mesAno]) => {
-        const [mes, ano] = mesAno.split('/');
-        const mesInt = parseInt(mes);
-        const anoInt = parseInt(ano);
-        const match = mesInt === selectedMonth && anoInt === selectedYear;
-        console.log(`🔍 Verificando ${mesAno}: mes=${mesInt} == ${selectedMonth}? ${mesInt === selectedMonth}, ano=${anoInt} == ${selectedYear}? ${anoInt === selectedYear}, match=${match}`);
-        return match;
-      }).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as { [key: string]: any[] })
-    : Object.entries(mesesData).filter(([mesAno]) => {
-        const [mes, ano] = mesAno.split('/');
-        const anoInt = parseInt(ano);
-        const match = anoInt === selectedYear;
-        console.log(`🔍 Verificando ${mesAno}: ano=${anoInt} == ${selectedYear}? ${match}`);
-        return match;
-      }).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as { [key: string]: any[] });
+  // Filtrar dados baseado na seleção usando o service
+  const filteredMesesData = useMemo(() => {
+    return metasHistoryService.filterDataByMonth(mesesData, selectedYear, selectedMonth);
+  }, [mesesData, selectedYear, selectedMonth]);
 
   console.log('📊 Dados filtrados:', Object.keys(filteredMesesData));
 
