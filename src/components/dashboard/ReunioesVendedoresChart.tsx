@@ -17,6 +17,7 @@ const COLORS = {
 };
 
 export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = ({ selectedVendedor }) => {
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedWeek, setSelectedWeek] = useState(new Date());
   const { statsData, isLoading } = useAgendamentosStatsVendedores(selectedVendedor, selectedWeek);
 
@@ -50,12 +51,31 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
 
   const goToCurrentWeek = () => {
     setSelectedWeek(new Date());
+    setSelectedMonth(new Date());
   };
 
   const isCurrentWeek = () => {
     const now = new Date();
     const { start: currentStart } = getWeekBounds(now);
     return weekStart.getTime() === currentStart.getTime();
+  };
+
+  const goToPreviousMonth = () => {
+    const previousMonth = new Date(selectedMonth);
+    previousMonth.setMonth(selectedMonth.getMonth() - 1);
+    setSelectedMonth(previousMonth);
+    // Ajustar a semana para o início do mês anterior
+    const firstWeekOfMonth = new Date(previousMonth.getFullYear(), previousMonth.getMonth(), 1);
+    setSelectedWeek(firstWeekOfMonth);
+  };
+
+  const goToNextMonth = () => {
+    const nextMonth = new Date(selectedMonth);
+    nextMonth.setMonth(selectedMonth.getMonth() + 1);
+    setSelectedMonth(nextMonth);
+    // Ajustar a semana para o início do próximo mês
+    const firstWeekOfMonth = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
+    setSelectedWeek(firstWeekOfMonth);
   };
 
   console.log('🔍 ReunioesVendedoresChart renderizando com selectedWeek:', selectedWeek);
@@ -100,42 +120,69 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Resultados das Reuniões por Vendedor - Semana Atual</span>
+          <span>Resultados das Reuniões por Vendedor</span>
           
-          {/* Filtro de Semana */}
-          <div className="flex items-center gap-1 bg-red-500 p-2 rounded">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToPreviousWeek}
-              className="h-7 w-7 p-0 bg-blue-500 text-white hover:bg-blue-600"
-            >
-              ←
-            </Button>
-            
-            <span className="text-xs font-bold text-white px-2">
-              {weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-            </span>
-
-            {!isCurrentWeek() && (
+          <div className="flex items-center gap-3">
+            {/* Filtro de Mês */}
+            <div className="flex items-center gap-1 bg-gradient-to-r from-purple-500 to-purple-600 p-2 rounded-lg shadow-md">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                onClick={goToCurrentWeek}
-                className="text-xs h-7 px-2 bg-green-500 text-white hover:bg-green-600"
+                onClick={goToPreviousMonth}
+                className="h-8 w-8 p-0 text-white hover:bg-white/20"
               >
-                Atual
+                ←
               </Button>
-            )}
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToNextWeek}
-              className="h-7 w-7 p-0 bg-purple-500 text-white hover:bg-purple-600"
-            >
-              →
-            </Button>
+              
+              <span className="text-sm font-semibold text-white px-3 min-w-[120px] text-center">
+                {selectedMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+              </span>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToNextMonth}
+                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+              >
+                →
+              </Button>
+            </div>
+
+            {/* Filtro de Semana */}
+            <div className="flex items-center gap-1 bg-gradient-to-r from-orange-500 to-orange-600 p-2 rounded-lg shadow-md">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToPreviousWeek}
+                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+              >
+                ←
+              </Button>
+              
+              <span className="text-sm font-semibold text-white px-3 min-w-[140px] text-center">
+                {weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+              </span>
+
+              {!isCurrentWeek() && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToCurrentWeek}
+                  className="text-sm h-8 px-3 text-white hover:bg-white/20 font-medium"
+                >
+                  Atual
+                </Button>
+              )}
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToNextWeek}
+                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+              >
+                →
+              </Button>
+            </div>
           </div>
         </CardTitle>
         
