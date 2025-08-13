@@ -130,49 +130,53 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Resultados das Reuniões por Vendedor - Semana Atual</CardTitle>
-        <CardDescription>
-          Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)
-          {selectedVendedor && selectedVendedor !== 'todos' && ' (filtrado)'}
-        </CardDescription>
-        
-        {/* Filtro de Semana */}
-        <div className="flex items-center gap-2 mt-4 p-3 bg-muted/30 rounded-lg border">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToPreviousWeek}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-sm font-medium truncate">
-              {weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-            </span>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Resultados das Reuniões por Vendedor - Semana Atual</CardTitle>
+            <CardDescription>
+              Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)
+              {selectedVendedor && selectedVendedor !== 'todos' && ' (filtrado)'}
+            </CardDescription>
           </div>
-
-          {!isCurrentWeek() && (
+          
+          {/* Filtro de Semana */}
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={goToCurrentWeek}
-              className="text-xs h-8 px-2"
+              onClick={goToPreviousWeek}
+              className="h-8 w-8 p-0"
             >
-              Atual
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-          )}
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToNextWeek}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+            
+            <div className="flex items-center gap-2 min-w-0">
+              <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm font-medium whitespace-nowrap">
+                {weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              </span>
+            </div>
+
+            {!isCurrentWeek() && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToCurrentWeek}
+                className="text-xs h-8 px-2"
+              >
+                Atual
+              </Button>
+            )}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextWeek}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
