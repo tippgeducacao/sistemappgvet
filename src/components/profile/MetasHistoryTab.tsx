@@ -273,22 +273,53 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
 
   // Função para renderizar tabela de metas SDR
   function renderSDRMetasTable() {
-    // Gerar semanas para o período selecionado
-    const semanas: Array<{semana: number, ano: number, mes: number}> = [];
+    const hoje = new Date();
+    const semanas: Array<{semana: number, ano: number, mes: number, dataInicio: Date, dataFim: Date}> = [];
     
     if (selectedMonth) {
       // Mostrar apenas semanas do mês selecionado
       const semanasDoMes = getSemanasSDR(selectedYear, selectedMonth);
-      semanasDoMes.forEach(semana => {
-        semanas.push({ semana, ano: selectedYear, mes: selectedMonth });
+      semanasDoMes.forEach(numeroSemana => {
+        const dataInicio = getDataInicioSDR(selectedYear, selectedMonth, numeroSemana);
+        const dataFim = getDataFimSDR(selectedYear, selectedMonth, numeroSemana);
+        
+        // Adicionar apenas semanas que já passaram ou são a atual
+        if (dataFim <= hoje || (dataInicio <= hoje && dataFim >= hoje)) {
+          semanas.push({ 
+            semana: numeroSemana, 
+            ano: selectedYear, 
+            mes: selectedMonth,
+            dataInicio,
+            dataFim
+          });
+        }
       });
     } else {
-      // Mostrar todas as semanas do ano
-      for (let mes = 1; mes <= 12; mes++) {
-        const semanasDoMes = getSemanasSDR(selectedYear, mes);
-        semanasDoMes.forEach(semana => {
-          semanas.push({ semana, ano: selectedYear, mes });
-        });
+      // Gerar semanas históricas (últimos 6 meses)
+      const mesesAtras = 6;
+      for (let i = 0; i < mesesAtras; i++) {
+        const dataReferencia = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        const anoRef = dataReferencia.getFullYear();
+        const mesRef = dataReferencia.getMonth() + 1;
+        
+        if (anoRef === selectedYear || selectedYear === hoje.getFullYear()) {
+          const semanasDoMes = getSemanasSDR(anoRef, mesRef);
+          semanasDoMes.forEach(numeroSemana => {
+            const dataInicio = getDataInicioSDR(anoRef, mesRef, numeroSemana);
+            const dataFim = getDataFimSDR(anoRef, mesRef, numeroSemana);
+            
+            // Adicionar apenas semanas que já passaram ou são a atual
+            if (dataFim <= hoje || (dataInicio <= hoje && dataFim >= hoje)) {
+              semanas.push({ 
+                semana: numeroSemana, 
+                ano: anoRef, 
+                mes: mesRef,
+                dataInicio,
+                dataFim
+              });
+            }
+          });
+        }
       }
     }
 
@@ -302,7 +333,10 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
     if (semanas.length === 0) {
       return (
         <div className="text-center py-8 text-muted-foreground">
-          Nenhuma meta semanal encontrada para este usuário.
+          {selectedMonth 
+            ? `Nenhuma semana histórica encontrada para ${months.find(m => m.value === selectedMonth)?.label} de ${selectedYear}`
+            : `Nenhuma semana histórica encontrada para ${selectedYear}`
+          }
         </div>
       );
     }
@@ -319,7 +353,7 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
             </tr>
           </thead>
           <tbody>
-            {semanas.slice(0, 20).map(({ semana, ano, mes }, index) => {
+            {semanas.slice(0, 20).map(({ semana, ano, mes, dataInicio, dataFim }, index) => {
               const agendamentosInfo = getAgendamentosSemana(ano, semana);
               const percentual = agendamentosInfo.meta > 0 ? Math.round((agendamentosInfo.realizados / agendamentosInfo.meta) * 100 * 100) / 100 : 0;
               const metaAtingida = agendamentosInfo.realizados >= agendamentosInfo.meta;
@@ -331,8 +365,6 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
               const variabelSemanal = nivelConfig?.variavel_semanal || 0;
               
               // Formatar período conforme a regra das terças-feiras
-              const dataInicio = getDataInicioSDR(ano, mes, semana);
-              const dataFim = getDataFimSDR(ano, mes, semana);
               const periodo = `${dataInicio.getDate().toString().padStart(2, '0')}/${(dataInicio.getMonth() + 1).toString().padStart(2, '0')} - ${dataFim.getDate().toString().padStart(2, '0')}/${(dataFim.getMonth() + 1).toString().padStart(2, '0')}`;
               
               // Verificar se é semana atual
@@ -382,9 +414,10 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
         
         {/* Informações explicativas */}
         <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-          <h4 className="font-medium mb-2">Como funciona:</h4>
+          <h4 className="font-medium mb-2">Como funciona o histórico:</h4>
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>• <strong>Período:</strong> Sistema respeita a regra das terças-feiras - a semana vai de quarta a terça</li>
+            <li>• <strong>Histórico:</strong> Mostra apenas semanas que já passaram ou a semana atual</li>
             <li>• <strong>Atingimento:</strong> Quantidade de agendamentos comparecidos / meta semanal definida</li>
             <li>• <strong>Comissão:</strong> Variável semanal × (regra de comissionamento) = valor</li>
             <li>• <strong>Semanas consecutivas:</strong> Contabiliza quando atinge meta; reseta quando não atinge após uma sequência</li>
