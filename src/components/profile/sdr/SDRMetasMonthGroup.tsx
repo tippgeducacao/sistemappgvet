@@ -14,6 +14,7 @@ interface SDRMetasMonthGroupProps {
     metaAtingida: boolean;
     semanasConsecutivas: number;
     isCurrentWeek: boolean;
+    isFutureWeek?: boolean;
   }>;
 }
 
@@ -84,30 +85,36 @@ const SDRMetasMonthGroup: React.FC<SDRMetasMonthGroupProps> = ({ mesAno, semanas
                 </td>
                 <td className="p-3">
                   <span className="text-sm">
-                    {semana.metaAtingida ? '1x' : '0x'}
+                    {semana.isFutureWeek ? '-' : (semana.metaAtingida ? '1x' : '0x')}
                   </span>
                 </td>
                 <td className="p-3">
                   <span className="font-medium">
-                    R$ {semana.metaAtingida ? semana.variabelSemanal.toFixed(2) : '0,00'}
+                    {semana.isFutureWeek ? '-' : (semana.metaAtingida ? `R$ ${semana.variabelSemanal.toFixed(2)}` : 'R$ 0,00')}
                   </span>
                 </td>
                 <td className="p-3">
                   <div className="flex flex-col gap-1">
-                    <Badge className={semana.metaAtingida ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                      {semana.metaAtingida ? (
-                        <>
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Bateu
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Não Bateu
-                        </>
-                      )}
-                    </Badge>
-                    {semana.semanasConsecutivas > 0 && (
+                    {semana.isFutureWeek ? (
+                      <Badge variant="outline" className="bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                        Sem Atividade
+                      </Badge>
+                    ) : (
+                      <Badge className={semana.metaAtingida ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                        {semana.metaAtingida ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Bateu
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Não Bateu
+                          </>
+                        )}
+                      </Badge>
+                    )}
+                    {semana.semanasConsecutivas > 0 && !semana.isFutureWeek && (
                       <Badge variant="outline" className="bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400 text-xs">
                         {semana.semanasConsecutivas} STREAK
                       </Badge>
