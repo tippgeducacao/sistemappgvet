@@ -18,16 +18,34 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string) => {
     try {
       setIsLoading(true);
       
+      // Calcular o início e fim da semana atual (quarta a terça)
+      const now = new Date();
+      const dayOfWeek = now.getDay(); // 0 = domingo, 3 = quarta
+      
+      // Calcular quantos dias subtrair para chegar na quarta-feira
+      let daysToSubtract = dayOfWeek >= 3 ? dayOfWeek - 3 : dayOfWeek + 4;
+      
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - daysToSubtract);
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+      
       let query = supabase
         .from('agendamentos')
         .select(`
           sdr_id,
           resultado_reuniao,
+          data_agendamento,
           profiles!sdr_id (
             name
           )
         `)
-        .not('resultado_reuniao', 'is', null);
+        .not('resultado_reuniao', 'is', null)
+        .gte('data_agendamento', startOfWeek.toISOString())
+        .lte('data_agendamento', endOfWeek.toISOString());
 
       // Se um SDR específico foi selecionado
       if (selectedSDR && selectedSDR !== 'todos') {

@@ -21,8 +21,8 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Resultados das Reuniões por Vendedor</CardTitle>
-          <CardDescription>Performance dos vendedores nas reuniões agendadas</CardDescription>
+          <CardTitle>Resultados das Reuniões por Vendedor - Semana Atual</CardTitle>
+          <CardDescription>Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)</CardDescription>
         </CardHeader>
         <CardContent>
           <LoadingState message="Carregando estatísticas..." />
@@ -35,8 +35,8 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Resultados das Reuniões por Vendedor</CardTitle>
-          <CardDescription>Performance dos vendedores nas reuniões agendadas</CardDescription>
+          <CardTitle>Resultados das Reuniões por Vendedor - Semana Atual</CardTitle>
+          <CardDescription>Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-muted-foreground">
@@ -89,9 +89,9 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Resultados das Reuniões por Vendedor</CardTitle>
+        <CardTitle>Resultados das Reuniões por Vendedor - Semana Atual</CardTitle>
         <CardDescription>
-          Performance dos vendedores nas reuniões agendadas
+          Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)
           {selectedVendedor && selectedVendedor !== 'todos' && ' (filtrado)'}
         </CardDescription>
       </CardHeader>

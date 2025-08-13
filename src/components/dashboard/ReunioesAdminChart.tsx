@@ -21,8 +21,8 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Resultados das Reuniões por SDR</CardTitle>
-          <CardDescription>Performance dos SDRs nas reuniões agendadas</CardDescription>
+          <CardTitle>Resultados das Reuniões por SDR - Semana Atual</CardTitle>
+          <CardDescription>Performance dos SDRs nas reuniões agendadas desta semana (quarta a terça)</CardDescription>
         </CardHeader>
         <CardContent>
           <LoadingState message="Carregando estatísticas..." />
@@ -35,8 +35,8 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Resultados das Reuniões por SDR</CardTitle>
-          <CardDescription>Performance dos SDRs nas reuniões agendadas</CardDescription>
+          <CardTitle>Resultados das Reuniões por SDR - Semana Atual</CardTitle>
+          <CardDescription>Performance dos SDRs nas reuniões agendadas desta semana (quarta a terça)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-muted-foreground">
@@ -89,9 +89,9 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Resultados das Reuniões por SDR</CardTitle>
+        <CardTitle>Resultados das Reuniões por SDR - Semana Atual</CardTitle>
         <CardDescription>
-          Performance dos SDRs nas reuniões agendadas
+          Performance dos SDRs nas reuniões agendadas desta semana (quarta a terça)
           {selectedSDR && selectedSDR !== 'todos' && ' (filtrado)'}
         </CardDescription>
       </CardHeader>
