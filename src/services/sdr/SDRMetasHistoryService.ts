@@ -64,8 +64,15 @@ export class SDRMetasHistoryService {
     const dataFim = getDataFim(ano, mes, numeroSemana);
     const chaveUnica = `${ano}-${mes.toString().padStart(2, '0')}-S${numeroSemana}`;
     
-    console.log(`🔍 [${chaveUnica}] SDRMetasHistoryService: Calculando dados da semana`);
-    console.log(`📅 [${chaveUnica}] Período: ${dataInicio.toLocaleDateString()} - ${dataFim.toLocaleDateString()}`);
+    console.log(`🔍 [${chaveUnica}] ===== INÍCIO CÁLCULO SEMANAL =====`);
+    console.log(`📅 [${chaveUnica}] Período CALCULADO: ${dataInicio.toLocaleDateString('pt-BR')} - ${dataFim.toLocaleDateString('pt-BR')}`);
+    console.log(`📊 [${chaveUnica}] Total de agendamentos para análise: ${agendamentosData.length}`);
+    
+    // Analisar TODOS os agendamentos para debug
+    agendamentosData.forEach((agendamento, index) => {
+      const dataAgendamento = new Date(agendamento.data_agendamento);
+      console.log(`📋 [${chaveUnica}] Agendamento ${index + 1}: ${dataAgendamento.toLocaleDateString('pt-BR')} - ${agendamento.id}`);
+    });
     
     // Filtrar agendamentos apenas para esta semana específica
     const agendamentosDestaSemanaNova = agendamentosData.filter(agendamento => {
@@ -78,22 +85,21 @@ export class SDRMetasHistoryService {
       
       const estaDentroDoPerido = dataAgendamentoSemHora >= dataInicioSemHora && dataAgendamentoSemHora <= dataFimSemHora;
       
+      console.log(`🔍 [${chaveUnica}] Testando agendamento ${agendamento.id}:`, {
+        dataAgendamento: dataAgendamentoSemHora.toLocaleDateString('pt-BR'),
+        dataInicio: dataInicioSemHora.toLocaleDateString('pt-BR'),
+        dataFim: dataFimSemHora.toLocaleDateString('pt-BR'),
+        dentroDoPerido: estaDentroDoPerido,
+        comparacao: {
+          maiorQueInicio: dataAgendamentoSemHora >= dataInicioSemHora,
+          menorQueFim: dataAgendamentoSemHora <= dataFimSemHora
+        }
+      });
+      
       if (estaDentroDoPerido) {
-        console.log(`✅ [${chaveUnica}] Agendamento encontrado:`, {
-          id: agendamento.id,
-          data: dataAgendamentoSemHora.toLocaleDateString('pt-BR'),
-          status: agendamento.status,
-          resultado: agendamento.resultado_reuniao,
-          periodoSemana: `${dataInicioSemHora.toLocaleDateString('pt-BR')} - ${dataFimSemHora.toLocaleDateString('pt-BR')}`
-        });
+        console.log(`✅ [${chaveUnica}] INCLUÍDO: Agendamento ${agendamento.id} em ${dataAgendamentoSemHora.toLocaleDateString('pt-BR')}`);
       } else {
-        // Log para debug de agendamentos que não estão no período
-        console.log(`❌ [${chaveUnica}] Agendamento FORA do período:`, {
-          id: agendamento.id,
-          data: dataAgendamentoSemHora.toLocaleDateString('pt-BR'),
-          periodoSemana: `${dataInicioSemHora.toLocaleDateString('pt-BR')} - ${dataFimSemHora.toLocaleDateString('pt-BR')}`,
-          motivo: 'Data fora do intervalo da semana'
-        });
+        console.log(`❌ [${chaveUnica}] EXCLUÍDO: Agendamento ${agendamento.id} em ${dataAgendamentoSemHora.toLocaleDateString('pt-BR')}`);
       }
       
       return estaDentroDoPerido;
@@ -110,7 +116,9 @@ export class SDRMetasHistoryService {
       );
     });
     
-    console.log(`📊 [${chaveUnica}] SDRMetasHistoryService: ${agendamentosDestaSemanaNova.length} total, ${agendamentosRealizados.length} realizados`);
+    console.log(`📊 [${chaveUnica}] RESULTADO FINAL: ${agendamentosDestaSemanaNova.length} total, ${agendamentosRealizados.length} realizados`);
+    console.log(`🔍 [${chaveUnica}] ===== FIM CÁLCULO SEMANAL =====`);
+    console.log(''); // Linha em branco para separar
     
     // Buscar configuração do nível
     const nivelConfig = niveis.find(n => n.nivel === userLevel && n.tipo_usuario === 'sdr');
