@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { useAgendamentosStatsVendedores } from '@/hooks/useAgendamentosStatsVendedores';
 import LoadingState from '@/components/ui/loading-state';
-import { WeekSelector } from '@/components/common/WeekSelector';
 
 interface ReunioesVendedoresChartProps {
   selectedVendedor?: string;
@@ -18,6 +19,44 @@ const COLORS = {
 export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = ({ selectedVendedor }) => {
   const [selectedWeek, setSelectedWeek] = useState(new Date());
   const { statsData, isLoading } = useAgendamentosStatsVendedores(selectedVendedor, selectedWeek);
+
+  // Função para calcular início e fim da semana
+  const getWeekBounds = (date: Date) => {
+    const dayOfWeek = date.getDay();
+    let daysToSubtract = dayOfWeek >= 3 ? dayOfWeek - 3 : dayOfWeek + 4;
+    
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - daysToSubtract);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    return { start: startOfWeek, end: endOfWeek };
+  };
+
+  const { start: weekStart, end: weekEnd } = getWeekBounds(selectedWeek);
+
+  const goToPreviousWeek = () => {
+    const previousWeek = new Date(selectedWeek);
+    previousWeek.setDate(selectedWeek.getDate() - 7);
+    setSelectedWeek(previousWeek);
+  };
+
+  const goToNextWeek = () => {
+    const nextWeek = new Date(selectedWeek);
+    nextWeek.setDate(selectedWeek.getDate() + 7);
+    setSelectedWeek(nextWeek);
+  };
+
+  const goToCurrentWeek = () => {
+    setSelectedWeek(new Date());
+  };
+
+  const isCurrentWeek = () => {
+    const now = new Date();
+    const { start: currentStart } = getWeekBounds(now);
+    return weekStart.getTime() === currentStart.getTime();
+  };
 
   if (isLoading) {
     return (
@@ -96,10 +135,43 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
           Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)
           {selectedVendedor && selectedVendedor !== 'todos' && ' (filtrado)'}
         </CardDescription>
-        <WeekSelector 
-          currentWeek={selectedWeek} 
-          onWeekChange={setSelectedWeek} 
-        />
+        <div className="flex items-center gap-2 mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToPreviousWeek}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm font-medium truncate">
+              {weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            </span>
+          </div>
+
+          {!isCurrentWeek() && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToCurrentWeek}
+              className="text-xs h-8 px-2"
+            >
+              Atual
+            </Button>
+          )}
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToNextWeek}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="h-80 mb-6">
