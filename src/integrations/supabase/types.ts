@@ -233,6 +233,39 @@ export type Database = {
           },
         ]
       }
+      eventos_especiais: {
+        Row: {
+          created_at: string
+          created_by: string
+          data_fim: string
+          data_inicio: string
+          descricao: string | null
+          id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          data_fim: string
+          data_inicio: string
+          descricao?: string | null
+          id?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data_fim?: string
+          data_inicio?: string
+          descricao?: string | null
+          id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       form_entries: {
         Row: {
           abertura: string | null
@@ -991,6 +1024,10 @@ export type Database = {
           pontuacao_param?: number
           motivo_param?: string
         }
+        Returns: boolean
+      }
+      verificar_conflito_evento_especial: {
+        Args: { data_inicio_agendamento: string; data_fim_agendamento: string }
         Returns: boolean
       }
     }

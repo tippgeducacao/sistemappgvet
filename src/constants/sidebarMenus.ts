@@ -13,6 +13,11 @@ export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
     icon: 'Calendar'
   },
   {
+    title: 'Eventos Especiais',
+    section: 'eventos-especiais',
+    icon: 'CalendarX'
+  },
+  {
     title: 'Gerenciar Vendas',
     section: 'gerenciar-vendas',
     icon: 'FileText'
