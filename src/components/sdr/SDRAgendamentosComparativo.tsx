@@ -74,7 +74,7 @@ const SDRAgendamentosComparativo: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Meta Semanal de Agendamentos */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -136,46 +136,6 @@ const SDRAgendamentosComparativo: React.FC = () => {
             <p className={`text-xs ${getComparativoColor()}`}>
               {dados.percentual > 0 ? '+' : ''}{dados.percentual}% em relação a ontem
             </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Meta Semanal de Cursos com Comissão */}
-      <Card className={!atingiu71Porcento ? "border-red-500 bg-red-50 dark:bg-red-950/20" : ""}>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Meta Semanal de Cursos</CardTitle>
-          <Target className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold">{vendasCursosSemana.length}</span>
-              <span className="text-sm text-muted-foreground">/ {dados.metaSemanalCursos}</span>
-            </div>
-            
-            <Progress 
-              value={progressoSemanalCursos} 
-              className={`h-2 ${!atingiu71Porcento ? '[&>div]:bg-red-500' : ''}`}
-            />
-            
-            <div className="flex items-center justify-between">
-              <Badge 
-                variant={atingiu71Porcento ? "default" : "destructive"}
-                className={!atingiu71Porcento ? "bg-red-500 hover:bg-red-600" : ""}
-              >
-                {atingiu71Porcento ? "Comissão Desbloqueada" : "Comissão Bloqueada"}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {Math.round(progressoSemanalCursos)}% completo
-              </span>
-            </div>
-            
-            <div className={`text-xs font-medium ${atingiu71Porcento ? 'text-green-600' : 'text-red-600'}`}>
-              {atingiu71Porcento 
-                ? `✅ Acima de 71% - Comissão desbloqueada` 
-                : `❌ Abaixo de 71% - Comissão bloqueada (faltam ${Math.ceil((percentual71 * dados.metaSemanalCursos / 100) - vendasCursosSemana.length)} cursos)`
-              }
-            </div>
           </div>
         </CardContent>
       </Card>
