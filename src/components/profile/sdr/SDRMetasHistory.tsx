@@ -49,7 +49,9 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
   const generateMonthsData = () => {
     if (!profile?.nivel) return {};
     
-    return metasHistoryService.generateMonthlyData(
+    console.log('🔄 SDRMetasHistory: Chamando service para gerar dados...');
+    
+    const resultado = metasHistoryService.generateMonthlyData(
       agendamentosData,
       selectedYear,
       getSemanasSDR,
@@ -58,6 +60,9 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
       niveis,
       profile.nivel
     );
+    
+    console.log('✅ SDRMetasHistory: Service retornou:', Object.keys(resultado));
+    return resultado;
   };
 
   // Gerar dados com cache específico por combinação de filtros
