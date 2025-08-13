@@ -872,14 +872,20 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
               selectedYear={parseInt(selectedMonth.split('-')[0])}
               onMonthChange={(month) => {
                 if (!propSelectedMonth && !propSelectedYear) {
-                  const year = selectedMonth.split('-')[0];
-                  setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+                  const currentYear = selectedMonth.split('-')[0];
+                  if (month === 0) {
+                    // "Todos os meses" - usar mês atual
+                    const now = new Date();
+                    setInternalSelectedMonth(`${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+                  } else {
+                    setInternalSelectedMonth(`${currentYear}-${String(month).padStart(2, '0')}`);
+                  }
                 }
               }}
               onYearChange={(year) => {
                 if (!propSelectedMonth && !propSelectedYear) {
-                  const month = selectedMonth.split('-')[1];
-                  setInternalSelectedMonth(`${year}-${String(month).padStart(2, '0')}`);
+                  const currentMonth = selectedMonth.split('-')[1];
+                  setInternalSelectedMonth(`${year}-${currentMonth}`);
                 }
               }}
               showAll={false}
