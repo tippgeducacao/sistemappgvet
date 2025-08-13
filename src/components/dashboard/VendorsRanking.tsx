@@ -39,6 +39,7 @@ import MonthYearSelector from '@/components/common/MonthYearSelector';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import ForceAugustFilter from '@/components/common/ForceAugustFilter';
 
 interface VendorsRankingProps {
   selectedVendedor?: string;
@@ -904,6 +905,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         })()}
         
         <div className="mt-8" data-detailed-spreadsheet>
+          <ForceAugustFilter className="mb-6" />
           
           {/* Tabela de Vendedores */}
           {vendedoresFiltrados.length > 0 && (
