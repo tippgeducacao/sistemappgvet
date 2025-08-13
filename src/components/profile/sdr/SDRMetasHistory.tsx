@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Target } from 'lucide-react';
@@ -65,21 +65,38 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     }
   };
 
-  // Função para obter agendamentos de uma semana específica
-  const getAgendamentosSemana = (ano: number, mes: number, semana: number) => {
+  // Função para obter agendamentos de uma semana específica - com cache independente
+  const getAgendamentosSemana = useCallback((ano: number, mes: number, semana: number) => {
+    // Criar chave única e específica para esta semana
+    const chaveUnica = `${ano}-${mes.toString().padStart(2, '0')}-S${semana}`;
     const dataInicio = getDataInicioSDR(ano, mes, semana);
     const dataFim = getDataFimSDR(ano, mes, semana);
     
-    // Criar chave única para identificar a semana
-    const chaveUnica = `${ano}-${mes.toString().padStart(2, '0')}-S${semana}`;
+    console.log(`🔍 [${chaveUnica}] Calculando agendamentos para semana específica`);
+    console.log(`📅 [${chaveUnica}] Período EXATO: ${dataInicio.toISOString()} até ${dataFim.toISOString()}`);
     
-    console.log(`🔍 Verificando semana ${chaveUnica}:`);
-    console.log(`📅 Período: ${dataInicio.toLocaleDateString()} - ${dataFim.toLocaleDateString()}`);
-    
-    const agendamentosRealizados = agendamentosData.filter(agendamento => {
+    // Filtrar agendamentos SOMENTE para esta semana específica
+    const agendamentosDestePerioodo = agendamentosData.filter(agendamento => {
       const dataAgendamento = new Date(agendamento.data_agendamento);
       
-      // Critérios para contar agendamentos realizados
+      // Verificação rigorosa de período - deve estar EXATAMENTE dentro desta semana
+      const estaDentroDoPerido = dataAgendamento >= dataInicio && dataAgendamento <= dataFim;
+      
+      if (estaDentroDoPerido) {
+        console.log(`✅ [${chaveUnica}] Agendamento encontrado:`, {
+          id: agendamento.id,
+          data: dataAgendamento.toISOString(),
+          periodo: `${dataInicio.toISOString()} - ${dataFim.toISOString()}`,
+          status: agendamento.status,
+          resultado: agendamento.resultado_reuniao
+        });
+      }
+      
+      return estaDentroDoPerido;
+    });
+    
+    // Filtrar apenas os realizados dentre os deste período
+    const agendamentosRealizados = agendamentosDestePerioodo.filter(agendamento => {
       const foiRealizado = agendamento.status === 'finalizado' && (
         agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
         agendamento.resultado_reuniao === 'comprou' ||
@@ -88,46 +105,38 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
         agendamento.resultado_reuniao === 'realizada'
       );
       
-      // IMPORTANTE: Verificar se a data está EXATAMENTE dentro do período da semana específica
-      const estaNaSemana = dataAgendamento >= dataInicio && dataAgendamento <= dataFim;
-      
-      if (estaNaSemana) {
-        console.log(`✅ Agendamento na ${chaveUnica}:`, {
+      if (foiRealizado) {
+        console.log(`✅ [${chaveUnica}] Agendamento REALIZADO:`, {
           id: agendamento.id,
-          data: dataAgendamento.toLocaleDateString(),
+          data: agendamento.data_agendamento,
           status: agendamento.status,
-          resultado: agendamento.resultado_reuniao,
-          foiRealizado,
-          dataInicio: dataInicio.toLocaleDateString(),
-          dataFim: dataFim.toLocaleDateString()
+          resultado: agendamento.resultado_reuniao
         });
       }
       
-      return estaNaSemana && foiRealizado;
+      return foiRealizado;
     });
     
-    // Verificar TODOS os agendamentos do período (mesmo não realizados)
-    const todosAgendamentosPeriodo = agendamentosData.filter(agendamento => {
-      const dataAgendamento = new Date(agendamento.data_agendamento);
-      return dataAgendamento >= dataInicio && dataAgendamento <= dataFim;
-    });
+    console.log(`📊 [${chaveUnica}] RESULTADO FINAL: ${agendamentosDestePerioodo.length} total, ${agendamentosRealizados.length} realizados`);
     
-    console.log(`📊 ${chaveUnica}: ${todosAgendamentosPeriodo.length} total, ${agendamentosRealizados.length} realizados`);
-    console.log(`📊 Período específico: ${dataInicio.toISOString()} até ${dataFim.toISOString()}`);
-
     // Buscar meta baseada no nível do SDR
     const nivel = profile?.nivel || 'junior';
     const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
     const metaAgendamentos = nivelConfig?.meta_semanal_inbound || 0;
 
-    return {
+    const resultado = {
       realizados: agendamentosRealizados.length,
       meta: metaAgendamentos,
-      total: todosAgendamentosPeriodo.length,
-      chaveUnica, // Adicionar chave para debug
-      periodo: `${dataInicio.toLocaleDateString()} - ${dataFim.toLocaleDateString()}`
+      total: agendamentosDestePerioodo.length,
+      chaveUnica,
+      periodo: `${dataInicio.toLocaleDateString()} - ${dataFim.toLocaleDateString()}`,
+      dataInicio: dataInicio.toISOString(),
+      dataFim: dataFim.toISOString()
     };
-  };
+    
+    console.log(`🎯 [${chaveUnica}] Retornando resultado:`, resultado);
+    return resultado;
+  }, [agendamentosData, profile?.nivel, niveis, getDataInicioSDR, getDataFimSDR]);
 
   // Função para calcular semanas consecutivas
   const calcularSemanasConsecutivas = (ano: number, mes: number, semana: number): number => {
@@ -229,11 +238,16 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     return mesesData;
   };
 
-  // Forçar regeneração quando filtros mudarem
+  // Gerar dados com cache específico por combinação de filtros
   const mesesData = useMemo(() => {
-    console.log('🔄 REGENERANDO DADOS - Filtros mudaram:', { selectedYear, selectedMonth });
-    return generateMonthsData();
-  }, [agendamentosData, selectedYear, selectedMonth, profile?.nivel, niveis, getSemanasSDR, getDataInicioSDR, getDataFimSDR]);
+    const cacheKey = `${selectedYear}-${selectedMonth}`;
+    console.log(`🔄 REGENERANDO DADOS COMPLETOS - Cache Key: ${cacheKey}`);
+    console.log(`📊 Agendamentos disponíveis: ${agendamentosData.length}`);
+    
+    const resultado = generateMonthsData();
+    console.log(`✅ Dados gerados para cache ${cacheKey}:`, Object.keys(resultado));
+    return resultado;
+  }, [agendamentosData, selectedYear, selectedMonth, profile?.nivel, niveis, getAgendamentosSemana]);
   
   console.log('📊 Meses disponíveis final:', Object.keys(mesesData));
   
