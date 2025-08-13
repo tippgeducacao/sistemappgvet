@@ -18,7 +18,7 @@ export class SemanasConsecutivasService {
       }
 
       // Determinar se é vendedor ou SDR
-      const isSDR = profile.user_type === 'sdr';
+      const isSDR = profile.user_type === 'sdr' || profile.user_type === 'sdr_inbound' || profile.user_type === 'sdr_outbound';
       
       if (isSDR) {
         return await this.calcularSemanasConsecutivasSDR(vendedorId, profile.nivel);
@@ -48,7 +48,7 @@ export class SemanasConsecutivasService {
     // Buscar todas as vendas aprovadas do vendedor
     const { data: vendas, error: vendasError } = await supabase
       .from('form_entries')
-      .select('data_aprovacao, pontuacao_validada')
+      .select('data_aprovacao, pontuacao_validada, pontuacao_esperada')
       .eq('vendedor_id', vendedorId)
       .eq('status', 'matriculado')
       .not('data_aprovacao', 'is', null);
@@ -62,16 +62,22 @@ export class SemanasConsecutivasService {
     
     // Verificar cada semana (da mais recente para a mais antiga)
     for (const meta of metasSemanais) {
-      const vendasNaSemana = this.contarVendasNaSemana(vendas || [], meta.ano, meta.semana);
+      const pontuacaoNaSemana = this.calcularPontuacaoNaSemana(vendas || [], meta.ano, meta.semana);
       
-      if (vendasNaSemana >= meta.meta_vendas) {
+      console.log(`🔍 Semana ${meta.semana}/${meta.ano}: Pontuação=${pontuacaoNaSemana}, Meta=${meta.meta_vendas}`);
+      
+      // Meta batida se pontuação >= meta (100% ou mais)
+      if (pontuacaoNaSemana >= meta.meta_vendas) {
         semanasConsecutivas++;
+        console.log(`✅ Meta batida na semana ${meta.semana}/${meta.ano}! Total consecutivas: ${semanasConsecutivas}`);
       } else {
+        console.log(`❌ Meta não batida na semana ${meta.semana}/${meta.ano}. Parando contagem.`);
         // Se não bateu a meta nesta semana, para a contagem
         break;
       }
     }
 
+    console.log(`🏆 Total de semanas consecutivas batendo meta: ${semanasConsecutivas}`);
     return semanasConsecutivas;
   }
 
@@ -155,15 +161,24 @@ export class SemanasConsecutivasService {
     return semanasConsecutivas;
   }
 
-  private static contarVendasNaSemana(vendas: any[], ano: number, semana: number): number {
-    return vendas.filter(venda => {
+  private static calcularPontuacaoNaSemana(vendas: any[], ano: number, semana: number): number {
+    const vendasDaSemana = vendas.filter(venda => {
       if (!venda.data_aprovacao) return false;
       
       const dataAprovacao = new Date(venda.data_aprovacao);
       const { ano: anoVenda, semana: semanaVenda } = this.getAnoSemanaFromDate(dataAprovacao);
       
       return anoVenda === ano && semanaVenda === semana;
-    }).length;
+    });
+
+    // Somar pontuação das vendas da semana
+    const pontuacaoTotal = vendasDaSemana.reduce((total, venda) => {
+      const pontuacao = venda.pontuacao_validada || venda.pontuacao_esperada || 0;
+      return total + pontuacao;
+    }, 0);
+
+    console.log(`📊 Semana ${semana}/${ano}: ${vendasDaSemana.length} vendas, ${pontuacaoTotal} pontos`);
+    return pontuacaoTotal;
   }
 
   private static contarAgendamentosNaSemana(agendamentos: any[], ano: number, semana: number): number {
