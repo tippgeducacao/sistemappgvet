@@ -70,7 +70,10 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     const dataInicio = getDataInicioSDR(ano, mes, semana);
     const dataFim = getDataFimSDR(ano, mes, semana);
     
-    console.log(`🔍 Verificando semana ${semana}/${mes}/${ano}:`);
+    // Criar chave única para identificar a semana
+    const chaveUnica = `${ano}-${mes.toString().padStart(2, '0')}-S${semana}`;
+    
+    console.log(`🔍 Verificando semana ${chaveUnica}:`);
     console.log(`📅 Período: ${dataInicio.toLocaleDateString()} - ${dataFim.toLocaleDateString()}`);
     
     const agendamentosRealizados = agendamentosData.filter(agendamento => {
@@ -85,15 +88,18 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
         agendamento.resultado_reuniao === 'realizada'
       );
       
+      // IMPORTANTE: Verificar se a data está EXATAMENTE dentro do período da semana específica
       const estaNaSemana = dataAgendamento >= dataInicio && dataAgendamento <= dataFim;
       
       if (estaNaSemana) {
-        console.log(`✅ Agendamento na semana:`, {
+        console.log(`✅ Agendamento na ${chaveUnica}:`, {
           id: agendamento.id,
           data: dataAgendamento.toLocaleDateString(),
           status: agendamento.status,
           resultado: agendamento.resultado_reuniao,
-          foiRealizado
+          foiRealizado,
+          dataInicio: dataInicio.toLocaleDateString(),
+          dataFim: dataFim.toLocaleDateString()
         });
       }
       
@@ -106,7 +112,8 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
       return dataAgendamento >= dataInicio && dataAgendamento <= dataFim;
     });
     
-    console.log(`📊 Semana ${semana}: ${todosAgendamentosPeriodo.length} total, ${agendamentosRealizados.length} realizados`);
+    console.log(`📊 ${chaveUnica}: ${todosAgendamentosPeriodo.length} total, ${agendamentosRealizados.length} realizados`);
+    console.log(`📊 Período específico: ${dataInicio.toISOString()} até ${dataFim.toISOString()}`);
 
     // Buscar meta baseada no nível do SDR
     const nivel = profile?.nivel || 'junior';
@@ -116,7 +123,9 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     return {
       realizados: agendamentosRealizados.length,
       meta: metaAgendamentos,
-      total: todosAgendamentosPeriodo.length
+      total: todosAgendamentosPeriodo.length,
+      chaveUnica, // Adicionar chave para debug
+      periodo: `${dataInicio.toLocaleDateString()} - ${dataFim.toLocaleDateString()}`
     };
   };
 
