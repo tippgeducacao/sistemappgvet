@@ -70,14 +70,29 @@ export class SDRMetasHistoryService {
     // Filtrar agendamentos apenas para esta semana específica
     const agendamentosDestaSemanaNova = agendamentosData.filter(agendamento => {
       const dataAgendamento = new Date(agendamento.data_agendamento);
-      const estaDentroDoPerido = dataAgendamento >= dataInicio && dataAgendamento <= dataFim;
+      
+      // Importante: resetar o horário para comparação precisa
+      const dataAgendamentoSemHora = new Date(dataAgendamento.getFullYear(), dataAgendamento.getMonth(), dataAgendamento.getDate());
+      const dataInicioSemHora = new Date(dataInicio.getFullYear(), dataInicio.getMonth(), dataInicio.getDate());
+      const dataFimSemHora = new Date(dataFim.getFullYear(), dataFim.getMonth(), dataFim.getDate());
+      
+      const estaDentroDoPerido = dataAgendamentoSemHora >= dataInicioSemHora && dataAgendamentoSemHora <= dataFimSemHora;
       
       if (estaDentroDoPerido) {
         console.log(`✅ [${chaveUnica}] Agendamento encontrado:`, {
           id: agendamento.id,
-          data: dataAgendamento.toLocaleDateString(),
+          data: dataAgendamentoSemHora.toLocaleDateString('pt-BR'),
           status: agendamento.status,
-          resultado: agendamento.resultado_reuniao
+          resultado: agendamento.resultado_reuniao,
+          periodoSemana: `${dataInicioSemHora.toLocaleDateString('pt-BR')} - ${dataFimSemHora.toLocaleDateString('pt-BR')}`
+        });
+      } else {
+        // Log para debug de agendamentos que não estão no período
+        console.log(`❌ [${chaveUnica}] Agendamento FORA do período:`, {
+          id: agendamento.id,
+          data: dataAgendamentoSemHora.toLocaleDateString('pt-BR'),
+          periodoSemana: `${dataInicioSemHora.toLocaleDateString('pt-BR')} - ${dataFimSemHora.toLocaleDateString('pt-BR')}`,
+          motivo: 'Data fora do intervalo da semana'
         });
       }
       
@@ -144,24 +159,36 @@ export class SDRMetasHistoryService {
       const semanasDoMes = getSemanasDoMes(selectedYear, mes);
       
       console.log(`📅 SDRMetasHistoryService: Processando ${mesKey}, semanas:`, semanasDoMes);
-
-      if (semanasDoMes.length > 0) {
-        mesesData[mesKey] = semanasDoMes
-          .map(numeroSemana => {
-            return this.calculateWeeklyData(
-              agendamentosData,
-              selectedYear,
-              mes,
-              numeroSemana,
-              getDataInicio,
-              getDataFim,
-              niveis,
-              userLevel
-            );
-          })
-          .sort((a, b) => b.numero - a.numero); // Mais recente primeiro
+      
+      // Só processar meses que já chegaram ou o mês atual
+      const hoje = new Date();
+      const mesAtual = hoje.getMonth() + 1;
+      const anoAtual = hoje.getFullYear();
+      
+      // Só gerar dados para meses que já passaram ou o atual
+      if (selectedYear < anoAtual || (selectedYear === anoAtual && mes <= mesAtual)) {
+        if (semanasDoMes.length > 0) {
+          mesesData[mesKey] = semanasDoMes
+            .map(numeroSemana => {
+              return this.calculateWeeklyData(
+                agendamentosData,
+                selectedYear,
+                mes,
+                numeroSemana,
+                getDataInicio,
+                getDataFim,
+                niveis,
+                userLevel
+              );
+            })
+            .sort((a, b) => b.numero - a.numero); // Mais recente primeiro
+        } else {
+          mesesData[mesKey] = [];
+        }
       } else {
+        // Para meses futuros, criar apenas estrutura vazia
         mesesData[mesKey] = [];
+        console.log(`⏭️ SDRMetasHistoryService: Mês futuro ${mesKey} - criando estrutura vazia`);
       }
       
       console.log(`✅ SDRMetasHistoryService: Dados criados para ${mesKey}:`, mesesData[mesKey].length, 'semanas');
