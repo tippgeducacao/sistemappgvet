@@ -802,86 +802,118 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const doc = new jsPDF('l', 'mm', 'a4'); // landscape
     const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
     
-    // PÁGINA 1: VENDEDORES
+    let yPosition = 20;
+    
+    // Título principal
     doc.setFontSize(16);
-    doc.text(`Planilha Detalhada - Vendedores - ${mesAtualSelecionado}`, 20, 20);
+    doc.text(`Planilha Detalhada - ${mesAtualSelecionado}`, 20, yPosition);
+    yPosition += 15;
     
-    // Cabeçalhos da tabela de vendedores
-    const vendedoresHeaders = [
-      'Vendedor',
-      'Nível',
-      'Meta Semanal',
-      'Comissão Semanal',
-      ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
-      'Total Pontos',
-      'Atingimento %',
-      'Comissão Total'
-    ];
-    
-    // Dados da tabela de vendedores
-    const vendedoresTableData = await Promise.all(vendedoresFiltrados.map(async vendedor => {
-      const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
-      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
-      const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
-      const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
-      const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;
-      const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
-      const commissionData = await calculateTotalCommission(vendedor.id, weeks, nivelConfig);
+    // SEÇÃO VENDEDORES
+    if (vendedoresFiltrados.length > 0) {
+      doc.setFontSize(14);
+      doc.text('Vendedores', 20, yPosition);
+      yPosition += 10;
       
-      const weeklyCommissionStrings = await Promise.all(weeklyPoints.map(async (points, index) => {
-        const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
-        const variavelSemanal = nivelConfig?.variavel_semanal || 0;
-        const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
-        const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
-        const valorFormatado = DataFormattingService.formatCurrency(commission.valor);
-        return `${points.toFixed(1)}pts\n${percentage}%\nx${commission.multiplicador}\n${valorFormatado}`;
+      // Cabeçalhos da tabela de vendedores
+      const vendedoresHeaders = [
+        'Vendedor',
+        'Nível',
+        'Meta\nSemanal',
+        'Comissão\nSemanal',
+        ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
+        'Total\nPontos',
+        'Atingimento\n%',
+        'Comissão\nTotal'
+      ];
+      
+      // Dados da tabela de vendedores
+      const vendedoresTableData = await Promise.all(vendedoresFiltrados.map(async vendedor => {
+        const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
+        const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
+        const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
+        const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
+        const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;
+        const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
+        const commissionData = await calculateTotalCommission(vendedor.id, weeks, nivelConfig);
+        
+        const weeklyData = await Promise.all(weeklyPoints.map(async (points, index) => {
+          const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
+          const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+          const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
+          const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
+          return `${points.toFixed(1)}pts (${percentage}%) x ${commission.multiplicador}\n${DataFormattingService.formatCurrency(commission.valor)}`;
+        }));
+        
+        return [
+          vendedor.name,
+          vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
+          (nivelConfig?.meta_semanal_vendedor || 7).toString(),
+          DataFormattingService.formatCurrency(nivelConfig?.variavel_semanal || 0),
+          ...weeklyData,
+          totalPoints.toFixed(1),
+          `${achievementPercentage.toFixed(1)}%`,
+          DataFormattingService.formatCurrency(commissionData.total)
+        ];
       }));
       
-      return [
-        vendedor.name,
-        vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
-        nivelConfig?.meta_semanal_vendedor || 7,
-        DataFormattingService.formatCurrency(nivelConfig?.variavel_semanal || 0),
-        ...weeklyCommissionStrings,
-        totalPoints.toFixed(1),
-        `${achievementPercentage.toFixed(1)}%`,
-        DataFormattingService.formatCurrency(commissionData.total)
-      ];
-    }));
-    
-    autoTable(doc, {
-      head: [vendedoresHeaders],
-      body: vendedoresTableData,
-      startY: 30,
-      styles: { fontSize: 7, cellPadding: 2 },
-      columnStyles: {
-        0: { cellWidth: 25 }, // Vendedor
-        1: { cellWidth: 15 }, // Nível
-        2: { cellWidth: 15 }, // Meta Semanal
-        3: { cellWidth: 20 }, // Comissão Semanal
-      },
-      theme: 'striped'
-    });
+      autoTable(doc, {
+        head: [vendedoresHeaders],
+        body: vendedoresTableData,
+        startY: yPosition,
+        styles: { 
+          fontSize: 6, 
+          cellPadding: 1.5,
+          valign: 'middle',
+          halign: 'center'
+        },
+        headStyles: {
+          fillColor: [64, 64, 64],
+          textColor: 255,
+          fontSize: 7,
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { cellWidth: 25, halign: 'left' }, // Vendedor
+          1: { cellWidth: 15 }, // Nível
+          2: { cellWidth: 15 }, // Meta Semanal
+          3: { cellWidth: 20 }, // Comissão Semanal
+        },
+        theme: 'striped',
+        alternateRowStyles: { fillColor: [248, 249, 250] }
+      });
+      
+      yPosition = (doc as any).lastAutoTable.finalY + 15;
+    }
 
-    // PÁGINA 2: SDRs (se existirem)
+    // SEÇÃO SDRs
     const sdrsVendedores = vendedores.filter(v => v.user_type === 'sdr');
     
     if (sdrsVendedores.length > 0) {
-      doc.addPage();
-      doc.setFontSize(16);
-      doc.text(`Planilha Detalhada - SDRs - ${mesAtualSelecionado}`, 20, 20);
+      // Se não couber na página atual, adicionar nova página
+      if (yPosition > 150) {
+        doc.addPage();
+        yPosition = 20;
+        doc.setFontSize(16);
+        doc.text(`Planilha Detalhada - ${mesAtualSelecionado} (continuação)`, 20, yPosition);
+        yPosition += 15;
+      }
+      
+      doc.setFontSize(14);
+      doc.text('SDRs', 20, yPosition);
+      yPosition += 10;
 
       // Cabeçalhos da tabela de SDRs
       const sdrsHeaders = [
         'SDR',
         'Tipo',
         'Nível',
-        'Meta Semanal',
-        'Comissão Semanal',
+        'Meta\nSemanal',
+        'Comissão\nSemanal',
         ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
-        'Total Reuniões',
-        'Atingimento %',
-        'Comissão Total'
+        'Total\nReuniões',
+        'Atingimento\n%',
+        'Comissão\nTotal'
       ];
 
       // Dados da tabela de SDRs
@@ -920,21 +952,20 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         );
         const totalCommission = weeklyCommissions.reduce((sum, c) => sum + c.valor, 0);
         
-        const weeklyMeetingsStrings = reunioesPorSemana.map((reunioes, index) => {
+        const weeklyData = reunioesPorSemana.map((reunioes, index) => {
           const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : '0.0';
           const commission = weeklyCommissions[index];
-          const valorFormatado = DataFormattingService.formatCurrency(commission.valor);
-          return `${reunioes} reuniões\n${percentage}%\nx${commission.multiplicador}\n${valorFormatado}`;
+          return `${reunioes} reuniões (${percentage}%) x ${commission.multiplicador}\n${DataFormattingService.formatCurrency(commission.valor)}`;
         });
         
         return [
           sdr.name,
           'SDR',
           sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
-          metaSemanal,
+          metaSemanal.toString(),
           DataFormattingService.formatCurrency(variavelSemanal),
-          ...weeklyMeetingsStrings,
-          totalReunioes,
+          ...weeklyData,
+          totalReunioes.toString(),
           `${achievementPercentage.toFixed(1)}%`,
           DataFormattingService.formatCurrency(totalCommission)
         ];
@@ -943,16 +974,28 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       autoTable(doc, {
         head: [sdrsHeaders],
         body: sdrsTableData,
-        startY: 30,
-        styles: { fontSize: 7, cellPadding: 2 },
+        startY: yPosition,
+        styles: { 
+          fontSize: 6, 
+          cellPadding: 1.5,
+          valign: 'middle',
+          halign: 'center'
+        },
+        headStyles: {
+          fillColor: [64, 64, 64],
+          textColor: 255,
+          fontSize: 7,
+          fontStyle: 'bold'
+        },
         columnStyles: {
-          0: { cellWidth: 25 }, // SDR
+          0: { cellWidth: 25, halign: 'left' }, // SDR
           1: { cellWidth: 15 }, // Tipo
           2: { cellWidth: 15 }, // Nível
           3: { cellWidth: 15 }, // Meta Semanal
           4: { cellWidth: 20 }, // Comissão Semanal
         },
-        theme: 'striped'
+        theme: 'striped',
+        alternateRowStyles: { fillColor: [248, 249, 250] }
       });
     }
     
