@@ -146,20 +146,41 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
   };
 
   // Função para calcular comissão baseada na regra de comissionamento
-  const calcularComissao = (realizados: number, meta: number): number => {
-    if (!isSDR || meta === 0) return 0;
+  const calcularComissao = async (realizados: number, meta: number): Promise<{valor: number, multiplicador: number}> => {
+    if (!isSDR || meta === 0) return {valor: 0, multiplicador: 0};
     
     const percentual = (realizados / meta) * 100;
     const nivel = profile?.nivel || 'junior';
     const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
     const variabelSemanal = nivelConfig?.variavel_semanal || 0;
     
-    // Aplicar regra de comissionamento: se atingiu 100% ou mais, recebe o valor
-    if (percentual >= 100) {
-      return variabelSemanal;
+    try {
+      // Buscar regras de comissionamento para SDR
+      const { data: regras, error } = await supabase
+        .from('regras_comissionamento')
+        .select('*')
+        .eq('tipo_usuario', 'sdr')
+        .order('percentual_minimo', { ascending: true });
+      
+      if (error) {
+        console.error('Erro ao buscar regras de comissionamento:', error);
+        return {valor: 0, multiplicador: 0};
+      }
+      
+      // Encontrar regra aplicável baseada no percentual de atingimento
+      const regraAplicavel = regras?.find(regra => 
+        percentual >= regra.percentual_minimo && 
+        (percentual <= regra.percentual_maximo || regra.percentual_maximo === 999)
+      );
+      
+      const multiplicador = regraAplicavel?.multiplicador || 0;
+      const valor = variabelSemanal * multiplicador;
+      
+      return {valor, multiplicador};
+    } catch (error) {
+      console.error('Erro ao calcular comissão:', error);
+      return {valor: 0, multiplicador: 0};
     }
-    
-    return 0;
   };
 
   // Filtrar vendas aprovadas do usuário
@@ -301,9 +322,13 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
             {semanas.slice(0, 20).map(({ semana, ano, mes }, index) => {
               const agendamentosInfo = getAgendamentosSemana(ano, semana);
               const percentual = agendamentosInfo.meta > 0 ? Math.round((agendamentosInfo.realizados / agendamentosInfo.meta) * 100 * 100) / 100 : 0;
-              const comissao = calcularComissao(agendamentosInfo.realizados, agendamentosInfo.meta);
               const metaAtingida = agendamentosInfo.realizados >= agendamentosInfo.meta;
               const semanasConsecutivas = metaAtingida ? calcularSemanasConsecutivas(ano, semana) : 0;
+              
+              // Buscar variável semanal do nível
+              const nivel = profile?.nivel || 'junior';
+              const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
+              const variabelSemanal = nivelConfig?.variavel_semanal || 0;
               
               // Formatar período conforme a regra das terças-feiras
               const dataInicio = getDataInicioSDR(ano, mes, semana);
@@ -334,7 +359,7 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
                   </td>
                   <td className="p-3 border-r border-border">
                     <span className="font-medium">
-                      {agendamentosInfo.meta}×({metaAtingida ? '1' : '0'}) = {comissao}
+                      {variabelSemanal}×({metaAtingida ? '1' : '0'}) = {metaAtingida ? variabelSemanal : 0}
                     </span>
                   </td>
                   <td className="p-3">
