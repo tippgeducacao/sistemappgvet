@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import VendasHistoryTab from '@/components/profile/VendasHistoryTab';
 import ReuniaoHistoryTab from '@/components/profile/ReuniaoHistoryTab';
+import MetasHistoryTab from '@/components/profile/MetasHistoryTab';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -150,7 +151,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
         </DialogHeader>
 
         <Tabs defaultValue="perfil" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${showHistoryTabs ? 'grid-cols-4' : 'grid-cols-1'}`}>
             <TabsTrigger value="perfil">
               <User className="h-4 w-4 mr-2" />
               Perfil
@@ -164,6 +165,10 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <TabsTrigger value="reunioes">
                   <Users className="h-4 w-4 mr-2" />
                   Histórico de Reuniões
+                </TabsTrigger>
+                <TabsTrigger value="metas">
+                  <Award className="h-4 w-4 mr-2" />
+                  Histórico de Metas
                 </TabsTrigger>
               </>
             )}
@@ -375,6 +380,13 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {showHistoryTabs && (
             <TabsContent value="reunioes">
               <ReuniaoHistoryTab userId={user.id} userType={user.user_type} />
+            </TabsContent>
+          )}
+
+          {/* Aba de Histórico de Metas */}
+          {showHistoryTabs && (
+            <TabsContent value="metas">
+              <MetasHistoryTab userId={user.id} userType={user.user_type} />
             </TabsContent>
           )}
         </Tabs>
