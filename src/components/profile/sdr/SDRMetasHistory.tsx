@@ -15,6 +15,8 @@ interface SDRMetasHistoryProps {
 const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
   const [agendamentosData, setAgendamentosData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number | 'all'>(new Date().getMonth() + 1);
 
   const { profile } = useAuthStore();
   const { getSemanasDoMes: getSemanasSDR, getDataInicioSemana: getDataInicioSDR, getDataFimSemana: getDataFimSDR } = useMetasSemanaisSDR();
@@ -232,20 +234,79 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     );
   }
 
+  // Filtrar dados baseado na seleção
+  const filteredMesesData = selectedMonth !== 'all' && typeof selectedMonth === 'number'
+    ? Object.entries(mesesData).filter(([mesAno]) => {
+        const [mes, ano] = mesAno.split('/');
+        return parseInt(mes) === selectedMonth && parseInt(ano) === selectedYear;
+      }).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as { [key: string]: any[] })
+    : Object.entries(mesesData).filter(([mesAno]) => {
+        const [mes, ano] = mesAno.split('/');
+        return parseInt(ano) === selectedYear;
+      }).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as { [key: string]: any[] });
+
+  // Gerar anos disponíveis
+  const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
+
   return (
     <div className="space-y-6">
+      {/* Performance Semanal Detalhada */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Performance Semanal Detalhada
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Ano</label>
+              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableYears.map(year => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mês (opcional)</label>
+              <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(value === 'all' ? 'all' : parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os meses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os meses</SelectItem>
+                  {months.map(month => (
+                    <SelectItem key={month.value} value={month.value.toString()}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Histórico por Mês */}
       <div className="space-y-6">
-        {Object.keys(mesesData).length === 0 ? (
+        {Object.keys(filteredMesesData).length === 0 ? (
           <Card>
             <CardContent className="text-center py-8">
               <p className="text-muted-foreground">
-                Nenhuma semana histórica encontrada
+                Nenhuma semana histórica encontrada para o período selecionado
               </p>
             </CardContent>
           </Card>
         ) : (
-          Object.entries(mesesData)
+          Object.entries(filteredMesesData)
             .sort((a, b) => b[0].localeCompare(a[0])) // Ordenar por mês/ano (mais recente primeiro)
             .map(([mesAno, semanas]) => (
               <SDRMetasMonthGroup
