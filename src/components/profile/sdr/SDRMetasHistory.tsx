@@ -165,20 +165,20 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     console.log('🗓️ Data atual:', hoje.toLocaleDateString());
     console.log('📅 Gerando dados para meses...');
 
-    // Mostrar últimos 11 meses + próximos 1 mês (total de 12 meses)
-    for (let i = -11; i <= 0; i++) {
-      const dataReferencia = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-      const anoRef = dataReferencia.getFullYear();
-      const mesRef = dataReferencia.getMonth() + 1;
+    // Gerar dados para todos os 12 meses do ano atual
+    for (let mes = 1; mes <= 12; mes++) {
+      const anoRef = selectedYear;
+      const mesRef = mes;
       
-      console.log(`📅 Processando i=${i}: ${mesRef}/${anoRef}`);
+      console.log(`📅 Processando mês: ${mesRef}/${anoRef}`);
       
       const mesKey = `${mesRef.toString().padStart(2, '0')}/${anoRef}`;
       const semanasDoMes = getSemanasSDR(anoRef, mesRef);
       
       console.log(`📊 Semanas para ${mesKey}:`, semanasDoMes);
-      
-      mesesData[mesKey] = semanasDoMes
+
+      // Mesmo se não houver semanas, criar o mês com array vazio
+      mesesData[mesKey] = semanasDoMes.length > 0 ? semanasDoMes
         .map(numeroSemana => {
           const dataInicio = getDataInicioSDR(anoRef, mesRef, numeroSemana);
           const dataFim = getDataFimSDR(anoRef, mesRef, numeroSemana);
@@ -210,7 +210,8 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
             isFutureWeek
           };
         })
-        .sort((a, b) => b.numero - a.numero); // Mais recente primeiro
+        .sort((a, b) => b.numero - a.numero) // Mais recente primeiro
+        : []; // Array vazio se não houver semanas
       
       console.log(`✅ Dados criados para ${mesKey}:`, mesesData[mesKey].length, 'semanas');
     }
