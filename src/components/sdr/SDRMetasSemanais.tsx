@@ -246,21 +246,18 @@ export const SDRMetasSemanais = () => {
       <CardContent>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-3 font-medium text-muted-foreground">Semana</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Período</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Meta Cursos</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Cursos Vendidos</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">% Cursos</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Meta Agendamentos</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Agendamentos</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">% Agendamentos</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Multiplicador</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Comissão</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-              </tr>
-            </thead>
+             <thead>
+               <tr className="border-b">
+                 <th className="text-left p-3 font-medium text-muted-foreground">Semana</th>
+                 <th className="text-left p-3 font-medium text-muted-foreground">Período</th>
+                 <th className="text-left p-3 font-medium text-muted-foreground">Meta Agendamentos</th>
+                 <th className="text-left p-3 font-medium text-muted-foreground">Agendamentos</th>
+                 <th className="text-left p-3 font-medium text-muted-foreground">% Agendamentos</th>
+                 <th className="text-left p-3 font-medium text-muted-foreground">Multiplicador</th>
+                 <th className="text-left p-3 font-medium text-muted-foreground">Comissão</th>
+                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+               </tr>
+             </thead>
             <tbody>
               {semanas.map((semana) => {
                 const meta = getMetaSemanalSDR(profile.id, selectedYear, semana);
@@ -286,37 +283,26 @@ export const SDRMetasSemanais = () => {
                 );
               })}
             </tbody>
-            <tfoot>
-              <tr className="border-t-2 bg-muted/30">
-                <td className="p-3 font-bold">TOTAL</td>
-                <td className="p-3">-</td>
-                <td className="p-3">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400 font-bold">
-                    {totalMeta}
-                  </Badge>
-                </td>
-                <td className="p-3 font-bold">{totalRealizado}</td>
-                <td className="p-3">
-                  <span className={`font-bold ${percentualTotal >= 100 ? 'text-emerald-600' : percentualTotal >= 71 ? 'text-green-600' : 'text-red-600'}`}>
-                    {percentualTotal.toFixed(0)}%
-                  </span>
-                </td>
-                <td className="p-3 font-bold">-</td>
-                <td className="p-3 font-bold">-</td>
-                <td className="p-3 font-bold">-</td>
-                <td className="p-3">
-                  <span className="font-bold text-blue-600">
-                    Multiplicador Total
-                  </span>
-                </td>
-                <td className="p-3">
-                  <span className="font-bold text-green-600">
-                    Comissão Total
-                  </span>
-                </td>
-                <td className="p-3">-</td>
-              </tr>
-            </tfoot>
+             <tfoot>
+               <tr className="border-t-2 bg-muted/30">
+                 <td className="p-3 font-bold">TOTAL</td>
+                 <td className="p-3">-</td>
+                 <td className="p-3 font-bold">-</td>
+                 <td className="p-3 font-bold">-</td>
+                 <td className="p-3 font-bold">-</td>
+                 <td className="p-3">
+                   <span className="font-bold text-blue-600">
+                     Multiplicador Total
+                   </span>
+                 </td>
+                 <td className="p-3">
+                   <span className="font-bold text-green-600">
+                     Comissão Total
+                   </span>
+                 </td>
+                 <td className="p-3">-</td>
+               </tr>
+             </tfoot>
           </table>
         </div>
       </CardContent>

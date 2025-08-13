@@ -80,19 +80,6 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
         {formatPeriodo(semana)}
       </td>
       <td className="p-3">
-        <Badge variant="outline" className="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-          {metaValue}
-        </Badge>
-      </td>
-      <td className="p-3">
-        <span className="font-medium">{realizado}</span>
-      </td>
-      <td className="p-3">
-        <span className={`font-medium ${percentual >= 100 ? 'text-emerald-600' : percentual >= 71 ? 'text-green-600' : 'text-red-600'}`}>
-          {percentual.toFixed(0)}%
-        </span>
-      </td>
-      <td className="p-3">
         {loading ? (
           <span className="text-sm text-muted-foreground">...</span>
         ) : (
