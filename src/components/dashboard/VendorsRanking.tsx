@@ -800,22 +800,39 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   // Função para exportar a planilha detalhada como screenshot PDF
   const exportDetailedToPDF = async () => {
+    console.log('🚀 Iniciando exportação PDF...');
+    
     try {
       // Encontrar o elemento da planilha detalhada
       const element = document.querySelector('[data-detailed-spreadsheet]') as HTMLElement;
       
       if (!element) {
-        console.error('Elemento da planilha não encontrado');
+        console.error('❌ Elemento da planilha não encontrado');
+        alert('Erro: Elemento da planilha não encontrado para exportação');
         return;
       }
 
+      console.log('✅ Elemento encontrado:', element);
+      console.log('📏 Dimensões do elemento:', {
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        offsetWidth: element.offsetWidth,
+        offsetHeight: element.offsetHeight
+      });
+
       // Capturar screenshot do elemento
+      console.log('📸 Capturando screenshot...');
       const canvas = await html2canvas(element, {
         scale: 2, // Melhor qualidade
         useCORS: true,
         backgroundColor: '#ffffff',
         width: element.scrollWidth,
         height: element.scrollHeight
+      });
+
+      console.log('✅ Screenshot capturado:', {
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height
       });
 
       // Criar PDF com as dimensões da captura
@@ -825,14 +842,21 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         format: [canvas.width, canvas.height]
       });
 
+      console.log('📄 PDF criado com orientação:', canvas.width > canvas.height ? 'landscape' : 'portrait');
+
       // Adicionar a imagem ao PDF
       const imgData = canvas.toDataURL('image/png');
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
 
       // Salvar o PDF
-      pdf.save(`planilha-detalhada-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+      const fileName = `planilha-detalhada-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      console.log('💾 Salvando PDF:', fileName);
+      pdf.save(fileName);
+      
+      console.log('✅ PDF exportado com sucesso!');
     } catch (error) {
-      console.error('Erro ao exportar PDF:', error);
+      console.error('❌ Erro ao exportar PDF:', error);
+      alert(`Erro ao exportar PDF: ${error}`);
     }
   };
 
