@@ -195,41 +195,81 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
       
       console.log(`📊 Semanas para ${mesKey}:`, semanasDoMes);
 
-      // Mesmo se não houver semanas, criar o mês com array vazio
-      mesesData[mesKey] = semanasDoMes.length > 0 ? semanasDoMes
-        .map(numeroSemana => {
-          const dataInicio = getDataInicioSDR(anoRef, mesRef, numeroSemana);
-          const dataFim = getDataFimSDR(anoRef, mesRef, numeroSemana);
-          
-          const agendamentosInfo = getAgendamentosSemana(anoRef, mesRef, numeroSemana);
-          const percentual = agendamentosInfo.meta > 0 ? Math.round((agendamentosInfo.realizados / agendamentosInfo.meta) * 100) : 0;
-          const metaAtingida = agendamentosInfo.realizados >= agendamentosInfo.meta;
-          const semanasConsecutivas = metaAtingida ? calcularSemanasConsecutivas(anoRef, mesRef, numeroSemana) : 0;
-          const isCurrentWeek = dataInicio <= hoje && dataFim >= hoje;
-          const isFutureWeek = dataInicio > hoje;
-          
-          // Buscar variável semanal do nível
-          const nivel = profile?.nivel || 'junior';
-          const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
-          const variabelSemanal = nivelConfig?.variavel_semanal || 0;
-          
-          const periodo = `${dataInicio.getDate().toString().padStart(2, '0')}/${(dataInicio.getMonth() + 1).toString().padStart(2, '0')} - ${dataFim.getDate().toString().padStart(2, '0')}/${(dataFim.getMonth() + 1).toString().padStart(2, '0')}`;
-          
-          return {
-            numero: numeroSemana,
-            periodo,
-            metaAgendamentos: agendamentosInfo.meta,
-            agendamentosRealizados: agendamentosInfo.realizados,
-            percentual,
-            variabelSemanal,
-            metaAtingida: isFutureWeek ? false : metaAtingida,
-            semanasConsecutivas: isFutureWeek ? 0 : semanasConsecutivas,
-            isCurrentWeek,
-            isFutureWeek
-          };
-        })
-        .sort((a, b) => b.numero - a.numero) // Mais recente primeiro
-        : []; // Array vazio se não houver semanas
+      // Só incluir se houver semanas válidas para este mês
+      if (semanasDoMes.length > 0) {
+        mesesData[mesKey] = semanasDoMes
+          .map(numeroSemana => {
+            // RECALCULAR TUDO DO ZERO para cada semana
+            const dataInicioFresh = getDataInicioSDR(anoRef, mesRef, numeroSemana);
+            const dataFimFresh = getDataFimSDR(anoRef, mesRef, numeroSemana);
+            const chaveUnicaFresh = `${anoRef}-${mesRef.toString().padStart(2, '0')}-S${numeroSemana}`;
+            
+            console.log(`🔄 [${chaveUnicaFresh}] RECALCULANDO DO ZERO`);
+            console.log(`📅 [${chaveUnicaFresh}] Período: ${dataInicioFresh.toLocaleDateString()} - ${dataFimFresh.toLocaleDateString()}`);
+            
+            // Buscar agendamentos APENAS para esta data específica
+            const agendamentosDestaSemanaSomente = agendamentosData.filter(agendamento => {
+              const dataAgendamento = new Date(agendamento.data_agendamento);
+              const dentroDoPerido = dataAgendamento >= dataInicioFresh && dataAgendamento <= dataFimFresh;
+              
+              if (dentroDoPerido) {
+                console.log(`🎯 [${chaveUnicaFresh}] AGENDAMENTO VÁLIDO:`, {
+                  id: agendamento.id,
+                  data: dataAgendamento.toLocaleDateString(),
+                  status: agendamento.status,
+                  resultado: agendamento.resultado_reuniao
+                });
+              }
+              
+              return dentroDoPerido;
+            });
+            
+            const agendamentosRealizadosApenasDestaData = agendamentosDestaSemanaSomente.filter(agendamento => {
+              return agendamento.status === 'finalizado' && (
+                agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                agendamento.resultado_reuniao === 'comprou' ||
+                agendamento.resultado_reuniao === 'presente' ||
+                agendamento.resultado_reuniao === 'compareceu' ||
+                agendamento.resultado_reuniao === 'realizada'
+              );
+            });
+            
+            console.log(`📊 [${chaveUnicaFresh}] RESULTADO: ${agendamentosDestaSemanaSomente.length} total, ${agendamentosRealizadosApenasDestaData.length} realizados`);
+            
+            // Recalcular meta fresh também
+            const nivelFresh = profile?.nivel || 'junior';
+            const nivelConfigFresh = niveis.find(n => n.nivel === nivelFresh && n.tipo_usuario === 'sdr');
+            const metaAgendamentosFresh = nivelConfigFresh?.meta_semanal_inbound || 0;
+            const variabelSemanalFresh = nivelConfigFresh?.variavel_semanal || 0;
+            
+            const percentualFresh = metaAgendamentosFresh > 0 ? Math.round((agendamentosRealizadosApenasDestaData.length / metaAgendamentosFresh) * 100) : 0;
+            const metaAtingidaFresh = agendamentosRealizadosApenasDestaData.length >= metaAgendamentosFresh;
+            
+            const hoje = new Date();
+            const isCurrentWeekFresh = dataInicioFresh <= hoje && dataFimFresh >= hoje;
+            const isFutureWeekFresh = dataInicioFresh > hoje;
+            
+            const semanasConsecutivasFresh = metaAtingidaFresh && !isFutureWeekFresh ? calcularSemanasConsecutivas(anoRef, mesRef, numeroSemana) : 0;
+            
+            const periodoFresh = `${dataInicioFresh.getDate().toString().padStart(2, '0')}/${(dataInicioFresh.getMonth() + 1).toString().padStart(2, '0')} - ${dataFimFresh.getDate().toString().padStart(2, '0')}/${(dataFimFresh.getMonth() + 1).toString().padStart(2, '0')}`;
+            
+            return {
+              numero: numeroSemana,
+              periodo: periodoFresh,
+              metaAgendamentos: metaAgendamentosFresh,
+              agendamentosRealizados: agendamentosRealizadosApenasDestaData.length,
+              percentual: percentualFresh,
+              variabelSemanal: variabelSemanalFresh,
+              metaAtingida: isFutureWeekFresh ? false : metaAtingidaFresh,
+              semanasConsecutivas: isFutureWeekFresh ? 0 : semanasConsecutivasFresh,
+              isCurrentWeek: isCurrentWeekFresh,
+              isFutureWeek: isFutureWeekFresh
+            };
+          })
+          .sort((a, b) => b.numero - a.numero); // Mais recente primeiro
+      } else {
+        mesesData[mesKey] = []; // Array vazio se não houver semanas
+      }
       
       console.log(`✅ Dados criados para ${mesKey}:`, mesesData[mesKey].length, 'semanas');
     }
