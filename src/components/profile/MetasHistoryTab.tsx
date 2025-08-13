@@ -42,35 +42,33 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
     if (isSDR && profile?.id) {
       fetchAgendamentosSDR();
     }
-  }, [isSDR, profile?.id, selectedYear, selectedMonth]);
+  }, [isSDR, profile?.id]); // Removido selectedYear e selectedMonth para buscar todos os dados
 
   const fetchAgendamentosSDR = async () => {
     if (!profile?.id) return;
 
     try {
-      // Buscar todos os agendamentos do SDR para o ano/mês selecionado
-      let query = supabase
+      console.log('🔄 Buscando agendamentos para SDR:', profile.id);
+      
+      // Buscar TODOS os agendamentos do SDR (não filtrar por ano/mês aqui)
+      // Vamos filtrar depois para ter mais flexibilidade
+      const { data: agendamentos, error } = await supabase
         .from('agendamentos')
         .select('*')
         .eq('sdr_id', profile.id)
-        .gte('data_agendamento', `${selectedYear}-01-01`)
-        .lt('data_agendamento', `${selectedYear + 1}-01-01`);
+        .order('data_agendamento', { ascending: false });
 
-      if (selectedMonth) {
-        const startOfMonth = new Date(selectedYear, selectedMonth - 1, 1);
-        const endOfMonth = new Date(selectedYear, selectedMonth, 0, 23, 59, 59);
-        query = query
-          .gte('data_agendamento', startOfMonth.toISOString())
-          .lte('data_agendamento', endOfMonth.toISOString());
+      if (error) {
+        console.error('❌ Erro ao buscar agendamentos:', error);
+        throw error;
       }
 
-      const { data: agendamentos, error } = await query;
-
-      if (error) throw error;
-
+      console.log('📊 Total de agendamentos encontrados:', agendamentos?.length || 0);
+      console.log('🔍 Primeiros agendamentos:', agendamentos?.slice(0, 3));
+      
       setAgendamentosData(agendamentos || []);
     } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error);
+      console.error('❌ Erro ao buscar agendamentos:', error);
       setAgendamentosData([]);
     }
   };
@@ -92,18 +90,40 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
     const dataInicio = getDataInicioSDR(ano, mesEncontrado, semana);
     const dataFim = getDataFimSDR(ano, mesEncontrado, semana);
     
+    console.log(`🔍 Buscando agendamentos para semana ${semana}/${ano} (${dataInicio.toLocaleDateString()} - ${dataFim.toLocaleDateString()})`);
+    
     const agendamentosRealizados = agendamentosData.filter(agendamento => {
       const dataAgendamento = new Date(agendamento.data_agendamento);
-      const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                         agendamento.resultado_reuniao === 'comprou';
       
-      return dataAgendamento >= dataInicio && dataAgendamento <= dataFim && compareceu;
+      // Critérios mais amplos para contar agendamentos realizados
+      const foiRealizado = agendamento.status === 'finalizado' && (
+        agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+        agendamento.resultado_reuniao === 'comprou' ||
+        agendamento.resultado_reuniao === 'presente' ||
+        agendamento.resultado_reuniao === 'compareceu' ||
+        agendamento.resultado_reuniao === 'realizada'
+      );
+      
+      const estaNaSemana = dataAgendamento >= dataInicio && dataAgendamento <= dataFim;
+      
+      if (estaNaSemana) {
+        console.log(`📅 Agendamento encontrado:`, {
+          data: dataAgendamento.toLocaleDateString(),
+          status: agendamento.status,
+          resultado: agendamento.resultado_reuniao,
+          foiRealizado
+        });
+      }
+      
+      return estaNaSemana && foiRealizado;
     });
 
     // Buscar meta baseada no nível do SDR
     const nivel = profile?.nivel || 'junior';
     const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
     const metaAgendamentos = nivelConfig?.meta_semanal_inbound || 0;
+
+    console.log(`📊 Semana ${semana}/${ano}: ${agendamentosRealizados.length} agendamentos realizados, Meta: ${metaAgendamentos}`);
 
     return {
       realizados: agendamentosRealizados.length,
