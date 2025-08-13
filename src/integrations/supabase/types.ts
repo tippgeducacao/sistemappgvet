@@ -238,9 +238,16 @@ export type Database = {
           created_at: string
           created_by: string
           data_fim: string
+          data_fim_recorrencia: string | null
           data_inicio: string
+          data_inicio_recorrencia: string | null
           descricao: string | null
+          dias_semana: number[] | null
+          hora_fim: string
+          hora_inicio: string
           id: string
+          is_recorrente: boolean
+          tipo_recorrencia: string | null
           titulo: string
           updated_at: string
         }
@@ -248,9 +255,16 @@ export type Database = {
           created_at?: string
           created_by: string
           data_fim: string
+          data_fim_recorrencia?: string | null
           data_inicio: string
+          data_inicio_recorrencia?: string | null
           descricao?: string | null
+          dias_semana?: number[] | null
+          hora_fim?: string
+          hora_inicio?: string
           id?: string
+          is_recorrente?: boolean
+          tipo_recorrencia?: string | null
           titulo: string
           updated_at?: string
         }
@@ -258,9 +272,16 @@ export type Database = {
           created_at?: string
           created_by?: string
           data_fim?: string
+          data_fim_recorrencia?: string | null
           data_inicio?: string
+          data_inicio_recorrencia?: string | null
           descricao?: string | null
+          dias_semana?: number[] | null
+          hora_fim?: string
+          hora_inicio?: string
           id?: string
+          is_recorrente?: boolean
+          tipo_recorrencia?: string | null
           titulo?: string
           updated_at?: string
         }
