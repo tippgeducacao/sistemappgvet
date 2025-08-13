@@ -250,11 +250,12 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
 
   return (
     <div className="space-y-6">
+      {/* Performance Semanal Detalhada */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Filtros de Período
+            Performance Semanal Detalhada
           </CardTitle>
         </CardHeader>
         <CardContent>
