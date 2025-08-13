@@ -60,7 +60,6 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const [vendedoresFiltrados, setVendedoresFiltrados] = useState<Vendedor[]>([]);
   const [loading, setLoading] = useState(false);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-  const [eventosEspeciais, setEventosEspeciais] = useState<any[]>([]);
   const [sdrs, setSdrs] = useState<any[]>([]);
   const [filtroGrupo, setFiltroGrupo] = useState<string>('todos');
   const [filtroSDR, setFiltroSDR] = useState<string>('todos');
@@ -214,57 +213,10 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       
       setAgendamentos(agendamentosFormatados);
 
-      // Buscar eventos especiais
-      await carregarEventosEspeciais();
       
       console.log('📅 Agendamentos carregados:', agendamentosFormatados);
     } catch (error) {
       console.error('Erro ao carregar agendamentos da data:', error);
-    }
-  };
-
-  const carregarEventosEspeciais = async () => {
-    if (!selectedDate) return;
-
-    try {
-      const dataFormatada = format(selectedDate, 'yyyy-MM-dd');
-      const diaSemanaAtual = selectedDate.getDay(); // 0=domingo, 1=segunda, etc.
-      
-      // Buscar eventos especiais que afetam a data selecionada
-      const { data, error } = await supabase
-        .from('eventos_especiais')
-        .select('*');
-
-      if (error) throw error;
-
-      // Filtrar eventos que afetam a data atual
-      const eventosAtivos = (data || []).filter(evento => {
-        if (!evento.is_recorrente) {
-          // Evento único - verificar se a data está no período
-          const dataInicioEvento = new Date(evento.data_inicio).toDateString();
-          const dataFimEvento = new Date(evento.data_fim).toDateString();
-          const dataAtual = selectedDate.toDateString();
-          
-          return dataAtual >= dataInicioEvento && dataAtual <= dataFimEvento;
-        } else {
-          // Evento recorrente
-          if (evento.tipo_recorrencia === 'semanal') {
-            // Verificar se hoje é um dos dias da semana do evento
-            const diasSemanaEvento = evento.dias_semana || [];
-            const estaNoPeriodo = dataFormatada >= evento.data_inicio_recorrencia && 
-                                 dataFormatada <= evento.data_fim_recorrencia;
-            
-            return estaNoPeriodo && diasSemanaEvento.includes(diaSemanaAtual);
-          }
-          // Aqui podem ser adicionados outros tipos de recorrência no futuro
-        }
-        return false;
-      });
-
-      setEventosEspeciais(eventosAtivos);
-      console.log('🎯 Eventos especiais ativos para', dataFormatada, ':', eventosAtivos);
-    } catch (error) {
-      console.error('Erro ao carregar eventos especiais:', error);
     }
   };
 
@@ -305,21 +257,6 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     });
   };
 
-  const getEventosEspeciaisParaHorario = (horario: string) => {
-    const horaTimeline = parseInt(horario.split(':')[0]);
-    
-    return eventosEspeciais.filter(evento => {
-      if (!evento.is_recorrente) {
-        // Evento único - verificar horário
-        const horaInicio = new Date(evento.data_inicio).getHours();
-        return horaInicio === horaTimeline;
-      } else {
-        // Evento recorrente - verificar horário
-        const horaInicio = parseInt(evento.hora_inicio.split(':')[0]);
-        return horaInicio === horaTimeline;
-      }
-    });
-  };
 
   const calcularPosicaoEAltura = (agendamento: Agendamento, horario: string) => {
     const dataInicio = new Date(agendamento.data_agendamento);
@@ -534,11 +471,10 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                           {horario}
                         </div>
                         
-                         {/* Colunas dos vendedores */}
-                         {vendedoresFiltrados.map((vendedor) => {
-                           const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
-                           const eventosHorario = getEventosEspeciaisParaHorario(horario);
-                           const temConflito = detectarConflitos(vendedor.id, horario);
+                          {/* Colunas dos vendedores */}
+                          {vendedoresFiltrados.map((vendedor) => {
+                            const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
+                            const temConflito = detectarConflitos(vendedor.id, horario);
                            
                            return (
                              <div 
@@ -551,41 +487,6 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                                   </div>
                                 )}
 
-                               {/* Eventos Especiais - aparecem para todos os vendedores */}
-                               {eventosHorario.map((evento, index) => {
-                                 const horaInicio = evento.is_recorrente ? evento.hora_inicio : format(new Date(evento.data_inicio), 'HH:mm');
-                                 const horaFim = evento.is_recorrente ? evento.hora_fim : format(new Date(evento.data_fim), 'HH:mm');
-                                 
-                                 return (
-                                   <div
-                                     key={`evento-${evento.id}-${horario}-${index}`}
-                                     className="absolute left-1 right-1 rounded-sm border-l-4 p-2 text-xs bg-orange-200 border-orange-500 dark:bg-orange-900/50 dark:border-orange-400 dark:text-orange-100"
-                                     style={{
-                                       top: '2px',
-                                       height: '76px',
-                                       zIndex: 20
-                                     }}
-                                     title={`${horaInicio} - ${horaFim} | ${evento.titulo}${evento.descricao ? ` | ${evento.descricao}` : ''} | EVENTO ESPECIAL`}
-                                   >
-                                     <div className="h-full flex flex-col justify-start overflow-hidden">
-                                       <div className="font-semibold text-xs leading-tight">
-                                         {horaInicio} - {horaFim}
-                                       </div>
-                                       <div className="font-medium text-xs leading-tight mt-1 overflow-hidden break-words">
-                                         🎯 {evento.titulo}
-                                       </div>
-                                       {evento.descricao && (
-                                         <div className="text-[10px] leading-tight opacity-80 mt-0.5 overflow-hidden break-words">
-                                           {evento.descricao}
-                                         </div>
-                                       )}
-                                       <div className="text-[9px] leading-tight opacity-70 mt-0.5 overflow-hidden break-words">
-                                         EVENTO ESPECIAL
-                                       </div>
-                                     </div>
-                                   </div>
-                                 );
-                               })}
 
                                {/* Agendamentos regulares */}
                                {agendamentosHorario.map((agendamento, index) => {
