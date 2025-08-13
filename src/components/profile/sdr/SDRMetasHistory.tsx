@@ -162,14 +162,21 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     const hoje = new Date();
     const mesesData: { [key: string]: any[] } = {};
 
+    console.log('🗓️ Data atual:', hoje.toLocaleDateString());
+    console.log('📅 Gerando dados para meses...');
+
     // Mostrar últimos 6 meses + próximos 3 meses
     for (let i = -3; i < 6; i++) {
       const dataReferencia = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
       const anoRef = dataReferencia.getFullYear();
       const mesRef = dataReferencia.getMonth() + 1;
       
+      console.log(`📅 Processando i=${i}: ${mesRef}/${anoRef}`);
+      
       const mesKey = `${mesRef.toString().padStart(2, '0')}/${anoRef}`;
       const semanasDoMes = getSemanasSDR(anoRef, mesRef);
+      
+      console.log(`📊 Semanas para ${mesKey}:`, semanasDoMes);
       
       mesesData[mesKey] = semanasDoMes
         .map(numeroSemana => {
@@ -204,23 +211,38 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
           };
         })
         .sort((a, b) => b.numero - a.numero); // Mais recente primeiro
+      
+      console.log(`✅ Dados criados para ${mesKey}:`, mesesData[mesKey].length, 'semanas');
     }
 
+    console.log('🎯 Todos os dados de meses gerados:', Object.keys(mesesData));
     return mesesData;
   };
 
   const mesesData = generateMonthsData();
+  console.log('📊 Meses disponíveis final:', Object.keys(mesesData));
   
   // Filtrar dados baseado na seleção
+  console.log('🔍 Filtro - Ano selecionado:', selectedYear, 'Mês selecionado:', selectedMonth);
+  
   const filteredMesesData = selectedMonth !== 'all' && typeof selectedMonth === 'number'
     ? Object.entries(mesesData).filter(([mesAno]) => {
         const [mes, ano] = mesAno.split('/');
-        return parseInt(mes) === selectedMonth && parseInt(ano) === selectedYear;
+        const mesInt = parseInt(mes);
+        const anoInt = parseInt(ano);
+        const match = mesInt === selectedMonth && anoInt === selectedYear;
+        console.log(`🔍 Verificando ${mesAno}: mes=${mesInt} == ${selectedMonth}? ${mesInt === selectedMonth}, ano=${anoInt} == ${selectedYear}? ${anoInt === selectedYear}, match=${match}`);
+        return match;
       }).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as { [key: string]: any[] })
     : Object.entries(mesesData).filter(([mesAno]) => {
         const [mes, ano] = mesAno.split('/');
-        return parseInt(ano) === selectedYear;
+        const anoInt = parseInt(ano);
+        const match = anoInt === selectedYear;
+        console.log(`🔍 Verificando ${mesAno}: ano=${anoInt} == ${selectedYear}? ${match}`);
+        return match;
       }).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as { [key: string]: any[] });
+
+  console.log('📊 Dados filtrados:', Object.keys(filteredMesesData));
 
   // Gerar anos disponíveis
   const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
