@@ -210,6 +210,21 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
   };
 
   const mesesData = generateMonthsData();
+  
+  // Filtrar dados baseado na seleção
+  const filteredMesesData = selectedMonth !== 'all' && typeof selectedMonth === 'number'
+    ? Object.entries(mesesData).filter(([mesAno]) => {
+        const [mes, ano] = mesAno.split('/');
+        return parseInt(mes) === selectedMonth && parseInt(ano) === selectedYear;
+      }).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as { [key: string]: any[] })
+    : Object.entries(mesesData).filter(([mesAno]) => {
+        const [mes, ano] = mesAno.split('/');
+        return parseInt(ano) === selectedYear;
+      }).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as { [key: string]: any[] });
+
+  // Gerar anos disponíveis
+  const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
+  
   const months = [
     { value: 1, label: 'Janeiro' },
     { value: 2, label: 'Fevereiro' },
@@ -234,23 +249,9 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     );
   }
 
-  // Filtrar dados baseado na seleção
-  const filteredMesesData = selectedMonth !== 'all' && typeof selectedMonth === 'number'
-    ? Object.entries(mesesData).filter(([mesAno]) => {
-        const [mes, ano] = mesAno.split('/');
-        return parseInt(mes) === selectedMonth && parseInt(ano) === selectedYear;
-      }).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as { [key: string]: any[] })
-    : Object.entries(mesesData).filter(([mesAno]) => {
-        const [mes, ano] = mesAno.split('/');
-        return parseInt(ano) === selectedYear;
-      }).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as { [key: string]: any[] });
-
-  // Gerar anos disponíveis
-  const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
-
   return (
     <div className="space-y-6">
-      {/* Performance Semanal Detalhada */}
+      {/* Performance Semanal Detalhada com Filtros Integrados */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -292,31 +293,29 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
               </Select>
             </div>
           </div>
+
+          {/* Dados das Semanas */}
+          <div className="space-y-6">
+            {Object.keys(filteredMesesData).length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  Nenhuma semana histórica encontrada para o período selecionado
+                </p>
+              </div>
+            ) : (
+              Object.entries(filteredMesesData)
+                .sort((a, b) => b[0].localeCompare(a[0])) // Ordenar por mês/ano (mais recente primeiro)
+                .map(([mesAno, semanas]) => (
+                  <SDRMetasMonthGroup
+                    key={mesAno}
+                    mesAno={months.find(m => m.value === parseInt(mesAno.split('/')[0]))?.label + ' de ' + mesAno.split('/')[1]}
+                    semanas={semanas}
+                  />
+                ))
+            )}
+          </div>
         </CardContent>
       </Card>
-
-      {/* Histórico por Mês */}
-      <div className="space-y-6">
-        {Object.keys(filteredMesesData).length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">
-                Nenhuma semana histórica encontrada para o período selecionado
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          Object.entries(filteredMesesData)
-            .sort((a, b) => b[0].localeCompare(a[0])) // Ordenar por mês/ano (mais recente primeiro)
-            .map(([mesAno, semanas]) => (
-              <SDRMetasMonthGroup
-                key={mesAno}
-                mesAno={months.find(m => m.value === parseInt(mesAno.split('/')[0]))?.label + ' de ' + mesAno.split('/')[1]}
-                semanas={semanas}
-              />
-            ))
-        )}
-      </div>
 
       {/* Informações explicativas */}
       <Card>
