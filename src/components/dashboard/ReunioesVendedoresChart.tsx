@@ -132,40 +132,30 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Resultados das Reuniões por Vendedor - Semana Atual</CardTitle>
-            <CardDescription>
-              Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)
-              {selectedVendedor && selectedVendedor !== 'todos' && ' (filtrado)'}
-            </CardDescription>
-          </div>
+        <CardTitle className="flex items-center justify-between">
+          <span>Resultados das Reuniões por Vendedor - Semana Atual</span>
           
-          {/* Filtro de Semana - Forçando visibilidade */}
-          <div className="flex items-center gap-2 bg-red-100 p-2 border border-red-500">
-            <span className="text-xs text-red-600">FILTRO TESTE</span>
+          {/* Filtro de Semana */}
+          <div className="flex items-center gap-1 bg-red-500 p-2 rounded">
             <Button
               variant="outline"
               size="sm"
               onClick={goToPreviousWeek}
-              className="h-8 w-8 p-0 bg-blue-500 text-white"
+              className="h-7 w-7 p-0 bg-blue-500 text-white hover:bg-blue-600"
             >
-              <ChevronLeft className="h-4 w-4" />
+              ←
             </Button>
             
-            <div className="flex items-center gap-2 min-w-0 bg-yellow-200 px-2">
-              <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm font-medium whitespace-nowrap">
-                {weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-              </span>
-            </div>
+            <span className="text-xs font-bold text-white px-2">
+              {weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            </span>
 
             {!isCurrentWeek() && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={goToCurrentWeek}
-                className="text-xs h-8 px-2 bg-green-500 text-white"
+                className="text-xs h-7 px-2 bg-green-500 text-white hover:bg-green-600"
               >
                 Atual
               </Button>
@@ -175,12 +165,17 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
               variant="outline"
               size="sm"
               onClick={goToNextWeek}
-              className="h-8 w-8 p-0 bg-purple-500 text-white"
+              className="h-7 w-7 p-0 bg-purple-500 text-white hover:bg-purple-600"
             >
-              <ChevronRight className="h-4 w-4" />
+              →
             </Button>
           </div>
-        </div>
+        </CardTitle>
+        
+        <CardDescription>
+          Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)
+          {selectedVendedor && selectedVendedor !== 'todos' && ' (filtrado)'}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-80 mb-6">
