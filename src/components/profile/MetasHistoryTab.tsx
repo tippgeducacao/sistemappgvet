@@ -157,22 +157,23 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
       </Card>
 
       {/* Performance Semanal Detalhada */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Performance Semanal Detalhada
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isSDR ? (
-            // Renderizar componente específico para SDRs
-            <SDRMetasHistory userId={userId} />
-          ) : userMetasSemanais.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhuma meta semanal encontrada para este usuário.
-            </div>
-          ) : (
+      {isSDR ? (
+        // Renderizar componente específico para SDRs (sem card wrapper para evitar duplicação)
+        <SDRMetasHistory userId={userId} />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Performance Semanal Detalhada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {userMetasSemanais.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhuma meta semanal encontrada para este usuário.
+              </div>
+            ) : (
             <div className="space-y-4">
               {userMetasSemanais
                 .filter(meta => {
@@ -271,9 +272,10 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
                   );
                 })}
             </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
