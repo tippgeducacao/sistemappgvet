@@ -1,8 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface WeekSelectorProps {
   currentWeek: Date;
@@ -62,7 +60,7 @@ export const WeekSelector: React.FC<WeekSelectorProps> = ({ currentWeek, onWeekC
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         <span className="text-sm font-medium truncate">
-          {format(weekStart, 'dd/MM', { locale: ptBR })} - {format(weekEnd, 'dd/MM/yyyy', { locale: ptBR })}
+          {weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
         </span>
       </div>
 
