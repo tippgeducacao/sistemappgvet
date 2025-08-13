@@ -16,7 +16,7 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
   const [agendamentosData, setAgendamentosData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth() + 1);
+  const [selectedMonth, setSelectedMonth] = useState<number | 'all'>('all');
 
   const { profile } = useAuthStore();
   const { getSemanasDoMes: getSemanasSDR, getDataInicioSemana: getDataInicioSDR, getDataFimSemana: getDataFimSDR } = useMetasSemanaisSDR();
@@ -235,7 +235,7 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
   }
 
   // Filtrar dados baseado na seleção
-  const filteredMesesData = selectedMonth 
+  const filteredMesesData = selectedMonth !== 'all' && typeof selectedMonth === 'number'
     ? Object.entries(mesesData).filter(([mesAno]) => {
         const [mes, ano] = mesAno.split('/');
         return parseInt(mes) === selectedMonth && parseInt(ano) === selectedYear;
@@ -274,12 +274,12 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Mês (opcional)</label>
-              <Select value={selectedMonth?.toString() || ""} onValueChange={(value) => setSelectedMonth(value ? parseInt(value) : null)}>
+              <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(value === 'all' ? 'all' : parseInt(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os meses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os meses</SelectItem>
+                  <SelectItem value="all">Todos os meses</SelectItem>
                   {months.map(month => (
                     <SelectItem key={month.value} value={month.value.toString()}>
                       {month.label}
