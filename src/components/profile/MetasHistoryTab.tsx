@@ -383,6 +383,57 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
     </div>
   );
 
+  // Função para calcular semanas consecutivas
+  const calcularSemanasConsecutivas = (ano: number, semana: number): number => {
+    if (!isSDR) return 0;
+    
+    // Buscar meta do nível
+    const nivel = profile?.nivel || 'junior';
+    const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
+    const metaAgendamentos = nivelConfig?.meta_semanal_inbound || 0;
+    
+    let consecutivas = 0;
+    let anoAtual = ano;
+    let semanaAtual = semana;
+    
+    // Verificar semanas anteriores até encontrar uma que não bateu a meta
+    for (let i = 0; i < 20; i++) {
+      const { realizados } = getAgendamentosSemana(anoAtual, semanaAtual);
+      
+      if (realizados >= metaAgendamentos) {
+        consecutivas++;
+      } else {
+        break;
+      }
+      
+      // Ir para semana anterior
+      semanaAtual--;
+      if (semanaAtual <= 0) {
+        anoAtual--;
+        semanaAtual = 52;
+      }
+    }
+    
+    return consecutivas;
+  };
+
+  // Função para calcular comissão baseada na regra de comissionamento
+  const calcularComissao = (realizados: number, meta: number): number => {
+    if (!isSDR || meta === 0) return 0;
+    
+    const percentual = (realizados / meta) * 100;
+    const nivel = profile?.nivel || 'junior';
+    const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
+    const variabelSemanal = nivelConfig?.variavel_semanal || 0;
+    
+    // Aplicar regra de comissionamento: se atingiu 100% ou mais, recebe o valor
+    if (percentual >= 100) {
+      return variabelSemanal;
+    }
+    
+    return 0;
+  };
+
   // Função para renderizar tabela de metas SDR
   function renderSDRMetasTable() {
     // Gerar semanas para o período selecionado
@@ -404,7 +455,7 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
       }
     }
 
-    // Ordenar semanas
+    // Ordenar semanas (mais recente primeiro)
     semanas.sort((a, b) => {
       if (a.ano !== b.ano) return b.ano - a.ano;
       if (a.mes !== b.mes) return b.mes - a.mes;
@@ -421,24 +472,24 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
 
     return (
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse border border-border">
           <thead>
-            <tr className="border-b">
-              <th className="text-left p-3 font-medium text-muted-foreground">Semana</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Período</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Meta Agendamentos</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Agendamentos Realizados</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">% da Meta</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+            <tr className="border-b bg-muted/50">
+              <th className="text-left p-3 font-medium border-r border-border">Período da semana</th>
+              <th className="text-left p-3 font-medium border-r border-border">Atingimento e meta</th>
+              <th className="text-left p-3 font-medium border-r border-border">Comissão</th>
+              <th className="text-left p-3 font-medium">Status</th>
             </tr>
           </thead>
           <tbody>
-            {semanas.slice(0, 20).map(({ semana, ano, mes }) => {
+            {semanas.slice(0, 20).map(({ semana, ano, mes }, index) => {
               const agendamentosInfo = getAgendamentosSemana(ano, semana);
-              const statusInfo = getStatusMetaAgendamentos(agendamentosInfo.realizados, agendamentosInfo.meta);
-              const StatusIcon = statusInfo.icon;
+              const percentual = agendamentosInfo.meta > 0 ? Math.round((agendamentosInfo.realizados / agendamentosInfo.meta) * 100 * 100) / 100 : 0;
+              const comissao = calcularComissao(agendamentosInfo.realizados, agendamentosInfo.meta);
+              const metaAtingida = agendamentosInfo.realizados >= agendamentosInfo.meta;
+              const semanasConsecutivas = metaAtingida ? calcularSemanasConsecutivas(ano, semana) : 0;
               
-              // Formatar período
+              // Formatar período conforme a regra das terças-feiras
               const dataInicio = getDataInicioSDR(ano, mes, semana);
               const dataFim = getDataFimSDR(ano, mes, semana);
               const periodo = `${dataInicio.getDate().toString().padStart(2, '0')}/${(dataInicio.getMonth() + 1).toString().padStart(2, '0')} - ${dataFim.getDate().toString().padStart(2, '0')}/${(dataFim.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -446,50 +497,61 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
               // Verificar se é semana atual
               const now = new Date();
               const isCurrentWeek = now >= dataInicio && now <= dataFim;
+              
+              // Determinar o mês correto baseado na terça-feira (fim da semana)
+              const mesCorreto = dataFim.getMonth() + 1;
 
               return (
-                <tr key={`${ano}-${semana}`} className={`border-b hover:bg-muted/50 ${isCurrentWeek ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{semana}</span>
-                      {isCurrentWeek && <Badge variant="secondary" className="text-xs">Atual</Badge>}
+                <tr key={`${ano}-${semana}`} className={`border-b hover:bg-muted/20 ${isCurrentWeek ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}>
+                  <td className="p-3 border-r border-border">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{periodo}</span>
+                      {isCurrentWeek && <Badge variant="secondary" className="text-xs mt-1 w-fit">Semana Atual</Badge>}
                     </div>
                   </td>
-                  <td className="p-3 text-sm text-muted-foreground">
-                    {periodo}
-                  </td>
-                  <td className="p-3">
-                    <Badge variant="outline" className="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-                      {agendamentosInfo.meta}
-                    </Badge>
-                  </td>
-                  <td className="p-3">
-                    <span className="font-medium">{agendamentosInfo.realizados}</span>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`font-medium ${statusInfo.percentual >= 100 ? 'text-green-600' : statusInfo.percentual >= 80 ? 'text-yellow-600' : 'text-red-600'}`}>
-                        {statusInfo.percentual}%
+                  <td className="p-3 border-r border-border">
+                    <div className="flex flex-col items-start gap-1">
+                      <span className="text-sm font-medium">
+                        {agendamentosInfo.realizados}/{agendamentosInfo.meta}
                       </span>
-                      <div className="w-16">
-                        <Progress 
-                          value={Math.min(statusInfo.percentual, 100)} 
-                          className="h-1"
-                        />
-                      </div>
+                      <span className={`text-sm font-bold ${percentual >= 100 ? 'text-green-600' : percentual >= 80 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {percentual}%
+                      </span>
                     </div>
                   </td>
+                  <td className="p-3 border-r border-border">
+                    <span className="font-medium">
+                      {agendamentosInfo.meta}×({metaAtingida ? '1' : '0'}) = {comissao}
+                    </span>
+                  </td>
                   <td className="p-3">
-                    <Badge className={statusInfo.color}>
-                      <StatusIcon className="h-3 w-3 mr-1" />
-                      {statusInfo.status}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                      <Badge className={metaAtingida ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                        {metaAtingida ? 'Meta atingida' : 'Meta não atingida'}
+                      </Badge>
+                      {semanasConsecutivas > 0 && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+                          {semanasConsecutivas} STREAK
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        
+        {/* Informações explicativas */}
+        <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+          <h4 className="font-medium mb-2">Como funciona:</h4>
+          <ul className="text-sm text-muted-foreground space-y-1">
+            <li>• <strong>Período:</strong> Sistema respeita a regra das terças-feiras - a semana vai de quarta a terça</li>
+            <li>• <strong>Atingimento:</strong> Quantidade de agendamentos comparecidos / meta semanal definida</li>
+            <li>• <strong>Comissão:</strong> Variável semanal × (regra de comissionamento) = valor</li>
+            <li>• <strong>Semanas consecutivas:</strong> Contabiliza quando atinge meta; reseta quando não atinge após uma sequência</li>
+          </ul>
+        </div>
       </div>
     );
   }
