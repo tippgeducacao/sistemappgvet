@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAgendamentosStatsAdmin } from '@/hooks/useAgendamentosStatsAdmin';
 import LoadingState from '@/components/ui/loading-state';
+import { WeekSelector } from '@/components/common/WeekSelector';
 
 interface ReunioesAdminChartProps {
   selectedSDR?: string;
@@ -15,7 +16,8 @@ const COLORS = {
 };
 
 export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selectedSDR }) => {
-  const { statsData, isLoading } = useAgendamentosStatsAdmin(selectedSDR);
+  const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const { statsData, isLoading } = useAgendamentosStatsAdmin(selectedSDR, selectedWeek);
 
   if (isLoading) {
     return (
@@ -94,6 +96,10 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
           Performance dos SDRs nas reuniões agendadas desta semana (quarta a terça)
           {selectedSDR && selectedSDR !== 'todos' && ' (filtrado)'}
         </CardDescription>
+        <WeekSelector 
+          currentWeek={selectedWeek} 
+          onWeekChange={setSelectedWeek} 
+        />
       </CardHeader>
       <CardContent>
         <div className="h-80 mb-6">

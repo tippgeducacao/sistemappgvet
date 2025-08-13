@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAgendamentosStatsVendedores } from '@/hooks/useAgendamentosStatsVendedores';
 import LoadingState from '@/components/ui/loading-state';
+import { WeekSelector } from '@/components/common/WeekSelector';
 
 interface ReunioesVendedoresChartProps {
   selectedVendedor?: string;
@@ -15,7 +16,8 @@ const COLORS = {
 };
 
 export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = ({ selectedVendedor }) => {
-  const { statsData, isLoading } = useAgendamentosStatsVendedores(selectedVendedor);
+  const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const { statsData, isLoading } = useAgendamentosStatsVendedores(selectedVendedor, selectedWeek);
 
   if (isLoading) {
     return (
@@ -94,6 +96,10 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
           Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)
           {selectedVendedor && selectedVendedor !== 'todos' && ' (filtrado)'}
         </CardDescription>
+        <WeekSelector 
+          currentWeek={selectedWeek} 
+          onWeekChange={setSelectedWeek} 
+        />
       </CardHeader>
       <CardContent>
         <div className="h-80 mb-6">

@@ -10,7 +10,7 @@ export interface AgendamentosStatsAdmin {
   total: number;
 }
 
-export const useAgendamentosStatsAdmin = (selectedSDR?: string) => {
+export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date) => {
   const [statsData, setStatsData] = useState<AgendamentosStatsAdmin[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -18,15 +18,15 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string) => {
     try {
       setIsLoading(true);
       
-      // Calcular o início e fim da semana atual (quarta a terça)
-      const now = new Date();
-      const dayOfWeek = now.getDay(); // 0 = domingo, 3 = quarta
+      // Calcular o início e fim da semana (quarta a terça)
+      const targetDate = weekDate || new Date();
+      const dayOfWeek = targetDate.getDay(); // 0 = domingo, 3 = quarta
       
       // Calcular quantos dias subtrair para chegar na quarta-feira
       let daysToSubtract = dayOfWeek >= 3 ? dayOfWeek - 3 : dayOfWeek + 4;
       
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - daysToSubtract);
+      const startOfWeek = new Date(targetDate);
+      startOfWeek.setDate(targetDate.getDate() - daysToSubtract);
       startOfWeek.setHours(0, 0, 0, 0);
       
       const endOfWeek = new Date(startOfWeek);
@@ -103,7 +103,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string) => {
 
   useEffect(() => {
     fetchStatsAdmin();
-  }, [selectedSDR]);
+  }, [selectedSDR, weekDate]);
 
   return {
     statsData,
