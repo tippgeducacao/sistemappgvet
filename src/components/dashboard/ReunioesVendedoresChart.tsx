@@ -243,3 +243,5 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
     </Card>
   );
 };
+
+export default ReunioesVendedoresChart;

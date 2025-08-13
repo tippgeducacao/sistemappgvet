@@ -119,9 +119,15 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
           selectedYear={selectedYear}
         />
 
-        <ReunioesAdminChart selectedSDR={selectedVendedor} />
+        <div style={{backgroundColor: 'red', padding: '20px', margin: '10px', border: '2px solid black'}}>
+          <h2 style={{color: 'white'}}>TESTE - GRÁFICO SDR DEVERIA APARECER AQUI</h2>
+          <ReunioesAdminChart selectedSDR={selectedVendedor} />
+        </div>
 
-        <ReunioesVendedoresChart selectedVendedor={selectedVendedor} />
+        <div style={{backgroundColor: 'blue', padding: '20px', margin: '10px', border: '2px solid black'}}>
+          <h2 style={{color: 'white'}}>TESTE - GRÁFICO VENDEDORES DEVERIA APARECER AQUI</h2>
+          <ReunioesVendedoresChart selectedVendedor={selectedVendedor} />
+        </div>
 
         <MiniTVDisplay 
           selectedMonth={selectedMonth}

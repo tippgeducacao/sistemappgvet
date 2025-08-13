@@ -244,3 +244,5 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
     </Card>
   );
 };
+
+export default ReunioesAdminChart;
