@@ -87,12 +87,12 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
             </div>
             <div className="flex-1">
               <label className="text-sm font-medium">Mês (opcional)</label>
-              <Select value={selectedMonth?.toString() || ""} onValueChange={(value) => setSelectedMonth(value ? parseInt(value) : undefined)}>
+              <Select value={selectedMonth?.toString() || "all"} onValueChange={(value) => setSelectedMonth(value === "all" ? undefined : parseInt(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os meses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os meses</SelectItem>
+                  <SelectItem value="all">Todos os meses</SelectItem>
                   {months.map(month => (
                     <SelectItem key={month.value} value={month.value.toString()}>
                       {month.label}
