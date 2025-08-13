@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Target } from 'lucide-react';
@@ -229,7 +229,12 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     return mesesData;
   };
 
-  const mesesData = generateMonthsData();
+  // Forçar regeneração quando filtros mudarem
+  const mesesData = useMemo(() => {
+    console.log('🔄 REGENERANDO DADOS - Filtros mudaram:', { selectedYear, selectedMonth });
+    return generateMonthsData();
+  }, [agendamentosData, selectedYear, selectedMonth, profile?.nivel, niveis, getSemanasSDR, getDataInicioSDR, getDataFimSDR]);
+  
   console.log('📊 Meses disponíveis final:', Object.keys(mesesData));
   
   // Filtrar dados baseado na seleção
