@@ -135,7 +135,9 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
           Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)
           {selectedVendedor && selectedVendedor !== 'todos' && ' (filtrado)'}
         </CardDescription>
-        <div className="flex items-center gap-2 mb-4">
+        
+        {/* Filtro de Semana */}
+        <div className="flex items-center gap-2 mt-4 p-3 bg-muted/30 rounded-lg border">
           <Button
             variant="outline"
             size="sm"
