@@ -13,8 +13,6 @@ interface SDRMetasHistoryProps {
 }
 
 const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<number | undefined>(undefined);
   const [agendamentosData, setAgendamentosData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -157,25 +155,29 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     return consecutivas;
   };
 
-  // Gerar dados organizados por mês
+  // Gerar dados organizados por mês automaticamente
   const generateMonthsData = () => {
     const hoje = new Date();
     const mesesData: { [key: string]: any[] } = {};
 
-    if (selectedMonth) {
-      // Mostrar apenas o mês selecionado
-      const mesKey = `${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`;
-      const semanasDoMes = getSemanasSDR(selectedYear, selectedMonth);
+    // Mostrar últimos 6 meses + próximos 3 meses
+    for (let i = -3; i < 6; i++) {
+      const dataReferencia = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      const anoRef = dataReferencia.getFullYear();
+      const mesRef = dataReferencia.getMonth() + 1;
+      
+      const mesKey = `${mesRef.toString().padStart(2, '0')}/${anoRef}`;
+      const semanasDoMes = getSemanasSDR(anoRef, mesRef);
       
       mesesData[mesKey] = semanasDoMes
         .map(numeroSemana => {
-          const dataInicio = getDataInicioSDR(selectedYear, selectedMonth, numeroSemana);
-          const dataFim = getDataFimSDR(selectedYear, selectedMonth, numeroSemana);
+          const dataInicio = getDataInicioSDR(anoRef, mesRef, numeroSemana);
+          const dataFim = getDataFimSDR(anoRef, mesRef, numeroSemana);
           
-          const agendamentosInfo = getAgendamentosSemana(selectedYear, selectedMonth, numeroSemana);
+          const agendamentosInfo = getAgendamentosSemana(anoRef, mesRef, numeroSemana);
           const percentual = agendamentosInfo.meta > 0 ? Math.round((agendamentosInfo.realizados / agendamentosInfo.meta) * 100) : 0;
           const metaAtingida = agendamentosInfo.realizados >= agendamentosInfo.meta;
-          const semanasConsecutivas = metaAtingida ? calcularSemanasConsecutivas(selectedYear, selectedMonth, numeroSemana) : 0;
+          const semanasConsecutivas = metaAtingida ? calcularSemanasConsecutivas(anoRef, mesRef, numeroSemana) : 0;
           const isCurrentWeek = dataInicio <= hoje && dataFim >= hoje;
           const isFutureWeek = dataInicio > hoje;
           
@@ -200,59 +202,12 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
           };
         })
         .sort((a, b) => b.numero - a.numero); // Mais recente primeiro
-    } else {
-      // Mostrar últimos 6 meses + próximos 3 meses
-      for (let i = -3; i < 6; i++) {
-        const dataReferencia = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-        const anoRef = dataReferencia.getFullYear();
-        const mesRef = dataReferencia.getMonth() + 1;
-        
-        if (anoRef === selectedYear) {
-          const mesKey = `${mesRef.toString().padStart(2, '0')}/${anoRef}`;
-          const semanasDoMes = getSemanasSDR(anoRef, mesRef);
-          
-          mesesData[mesKey] = semanasDoMes
-            .map(numeroSemana => {
-              const dataInicio = getDataInicioSDR(anoRef, mesRef, numeroSemana);
-              const dataFim = getDataFimSDR(anoRef, mesRef, numeroSemana);
-              
-              const agendamentosInfo = getAgendamentosSemana(anoRef, mesRef, numeroSemana);
-              const percentual = agendamentosInfo.meta > 0 ? Math.round((agendamentosInfo.realizados / agendamentosInfo.meta) * 100) : 0;
-              const metaAtingida = agendamentosInfo.realizados >= agendamentosInfo.meta;
-              const semanasConsecutivas = metaAtingida ? calcularSemanasConsecutivas(anoRef, mesRef, numeroSemana) : 0;
-              const isCurrentWeek = dataInicio <= hoje && dataFim >= hoje;
-              const isFutureWeek = dataInicio > hoje;
-              
-              // Buscar variável semanal do nível
-              const nivel = profile?.nivel || 'junior';
-              const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
-              const variabelSemanal = nivelConfig?.variavel_semanal || 0;
-              
-              const periodo = `${dataInicio.getDate().toString().padStart(2, '0')}/${(dataInicio.getMonth() + 1).toString().padStart(2, '0')} - ${dataFim.getDate().toString().padStart(2, '0')}/${(dataFim.getMonth() + 1).toString().padStart(2, '0')}`;
-              
-              return {
-                numero: numeroSemana,
-                periodo,
-                metaAgendamentos: agendamentosInfo.meta,
-                agendamentosRealizados: agendamentosInfo.realizados,
-                percentual,
-                variabelSemanal,
-                metaAtingida: isFutureWeek ? false : metaAtingida,
-                semanasConsecutivas: isFutureWeek ? 0 : semanasConsecutivas,
-                isCurrentWeek,
-                isFutureWeek
-              };
-            })
-            .sort((a, b) => b.numero - a.numero); // Mais recente primeiro
-        }
-      }
     }
 
     return mesesData;
   };
 
   const mesesData = generateMonthsData();
-  const years = Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i);
   const months = [
     { value: 1, label: 'Janeiro' },
     { value: 2, label: 'Fevereiro' },
@@ -279,61 +234,13 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
 
   return (
     <div className="space-y-6">
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Filtros de Período
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="text-sm font-medium">Ano</label>
-              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map(year => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1">
-              <label className="text-sm font-medium">Mês (opcional)</label>
-              <Select value={selectedMonth?.toString() || "all"} onValueChange={(value) => setSelectedMonth(value === "all" ? undefined : parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os meses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os meses</SelectItem>
-                  {months.map(month => (
-                    <SelectItem key={month.value} value={month.value.toString()}>
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Histórico por Mês */}
       <div className="space-y-6">
         {Object.keys(mesesData).length === 0 ? (
           <Card>
             <CardContent className="text-center py-8">
               <p className="text-muted-foreground">
-                {selectedMonth 
-                  ? `Nenhuma semana histórica encontrada para ${months.find(m => m.value === selectedMonth)?.label} de ${selectedYear}`
-                  : `Nenhuma semana histórica encontrada para ${selectedYear}`
-                }
+                Nenhuma semana histórica encontrada
               </p>
             </CardContent>
           </Card>
@@ -356,7 +263,7 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
           <h4 className="font-medium mb-2">Como funciona o histórico:</h4>
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>• <strong>Período:</strong> Sistema respeita a regra das terças-feiras - a semana vai de quarta a terça</li>
-            <li>• <strong>Histórico:</strong> Mostra apenas semanas que já passaram ou a semana atual</li>
+            <li>• <strong>Histórico:</strong> Mostra semanas passadas, atual e futuras automaticamente</li>
             <li>• <strong>Agendamentos:</strong> Contabiliza apenas reuniões com presença confirmada</li>
             <li>• <strong>Comissão:</strong> Variável semanal recebida quando a meta é atingida (100% ou mais)</li>
             <li>• <strong>Semanas consecutivas:</strong> Contador de streak quando atinge metas consecutivas</li>
