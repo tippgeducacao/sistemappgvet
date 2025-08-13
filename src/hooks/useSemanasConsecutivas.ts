@@ -11,13 +11,16 @@ export const useSemanasConsecutivas = (vendedorId?: string) => {
 
     setLoading(true);
     try {
+      console.log('🔄 Recalculando semanas consecutivas para:', targetId);
       const semanas = await SemanasConsecutivasService.calcularSemanasConsecutivas(targetId);
+      console.log('🏆 Resultado das semanas consecutivas:', semanas);
       setSemanasConsecutivas(semanas);
       
       // Atualizar no banco de dados
       await SemanasConsecutivasService.atualizarSemanasConsecutivas(targetId);
     } catch (error) {
       console.error('❌ Erro ao calcular semanas consecutivas:', error);
+      setSemanasConsecutivas(0); // Reset em caso de erro
     } finally {
       setLoading(false);
     }

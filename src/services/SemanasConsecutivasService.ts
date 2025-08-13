@@ -106,16 +106,18 @@ export class SemanasConsecutivasService {
       return 0;
     }
 
+    // Para SDRs, usar meta de agendamentos em vez de vendas de cursos
     const metaSemanal = profile.user_type === 'sdr_inbound' 
       ? nivelConfig?.meta_semanal_inbound || 0
       : nivelConfig?.meta_semanal_outbound || 0;
 
-    // Buscar agendamentos do SDR
+    // Buscar agendamentos realizados do SDR (apenas os que tiveram presença)
     const { data: agendamentos, error: agendamentosError } = await supabase
       .from('agendamentos')
-      .select('data_agendamento, resultado_reuniao')
+      .select('data_agendamento, resultado_reuniao, status')
       .eq('sdr_id', vendedorId)
-      .in('resultado_reuniao', ['compareceu', 'compareceu_vendeu']);
+      .eq('status', 'finalizado')
+      .in('resultado_reuniao', ['presente', 'compareceu', 'realizada']);
 
     if (agendamentosError) {
       console.error('❌ Erro ao buscar agendamentos:', agendamentosError);
@@ -143,9 +145,14 @@ export class SemanasConsecutivasService {
         semanaAtual
       );
       
+      console.log(`🔍 SDR Semana ${semanaAtual}/${anoAtual}: ${agendamentosNaSemana} agendamentos, Meta: ${metaSemanal}`);
+      
+      // Meta batida se agendamentos >= meta (100% ou mais)
       if (agendamentosNaSemana >= metaSemanal) {
         semanasConsecutivas++;
+        console.log(`✅ Meta de agendamentos batida na semana ${semanaAtual}/${anoAtual}! Total consecutivas: ${semanasConsecutivas}`);
       } else {
+        console.log(`❌ Meta de agendamentos não batida na semana ${semanaAtual}/${anoAtual}. Parando contagem.`);
         // Se não bateu a meta nesta semana, para a contagem
         break;
       }
@@ -158,6 +165,7 @@ export class SemanasConsecutivasService {
       }
     }
 
+    console.log(`🏆 SDR Total de semanas consecutivas batendo meta de agendamentos: ${semanasConsecutivas}`);
     return semanasConsecutivas;
   }
 

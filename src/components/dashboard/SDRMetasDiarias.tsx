@@ -163,61 +163,14 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
       Math.min((agendamentosRealizadosSemana / metaAgendamentos) * 100, 100) : 0;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Meta Semanal de Cursos SDR */}
-        <Card className={!atingiu71Porcento ? "border-red-500 bg-red-50 dark:bg-red-950/20" : ""}>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Meta Semanal de Cursos
-              </div>
-              <Badge 
-                variant={atingiu71Porcento ? "default" : "destructive"}
-                className={!atingiu71Porcento ? "bg-red-500 hover:bg-red-600" : ""}
-              >
-                {atingiu71Porcento ? "Comissão Desbloqueada" : "Comissão Bloqueada"}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Cursos Vendidos Esta Semana</span>
-              <span className="text-lg font-semibold">
-                {vendasCursosSemanaCount} / {metaSemanal?.meta_vendas_cursos || 0}
-              </span>
-            </div>
-            
-            <Progress 
-              value={progressoSemanal} 
-              className={`h-2 ${!atingiu71Porcento ? '[&>div]:bg-red-500' : ''}`}
-            />
-            
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">
-                {Math.round(progressoSemanal)}% da meta semanal
-              </span>
-              <span className={`font-semibold ${progressoSemanal >= 100 ? 'text-green-600' : progressoSemanal >= 71 ? 'text-green-600' : 'text-red-600'}`}>
-                {Math.round(progressoSemanal)}%
-              </span>
-            </div>
-            
-            <div className={`text-xs font-medium ${atingiu71Porcento ? 'text-green-600' : 'text-red-600'}`}>
-              {atingiu71Porcento 
-                ? `✅ Acima de 71% - Comissão desbloqueada` 
-                : `❌ Abaixo de 71% - Comissão bloqueada (faltam ${Math.ceil((percentual71 * (metaSemanal?.meta_vendas_cursos || 0) / 100) - vendasCursosSemanaCount)} cursos)`
-              }
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Meta Semanal de Reuniões SDR */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* Meta Semanal de Agendamentos SDR */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Meta Semanal de Reuniões
+                Meta Semanal de Agendamentos
               </div>
               <Badge variant={agendamentosRealizadosSemana >= metaAgendamentos ? "default" : "secondary"}>
                 {agendamentosRealizadosSemana >= metaAgendamentos ? "Atingida" : "Em Progresso"}
@@ -226,7 +179,7 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Reuniões Realizadas Esta Semana</span>
+              <span className="text-sm text-muted-foreground">Agendamentos Realizados Esta Semana</span>
               <span className="text-lg font-semibold">
                 {agendamentosRealizadosSemana} / {metaAgendamentos}
               </span>
@@ -244,6 +197,13 @@ const SDRMetasDiarias: React.FC<SDRMetasDiariasProps> = ({
               <span className={`font-semibold ${progressoAgendamentos >= 100 ? 'text-green-600' : 'text-muted-foreground'}`}>
                 {Math.round(progressoAgendamentos)}%
               </span>
+            </div>
+            
+            <div className="text-xs text-muted-foreground">
+              {agendamentosRealizadosSemana >= metaAgendamentos 
+                ? "✅ Meta semanal de agendamentos atingida!"
+                : `Faltam ${Math.max(0, metaAgendamentos - agendamentosRealizadosSemana)} agendamentos para atingir a meta`
+              }
             </div>
           </CardContent>
         </Card>
