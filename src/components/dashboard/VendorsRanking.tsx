@@ -14,13 +14,14 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useMetas } from '@/hooks/useMetas';
+import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { useAvaliacaoSemanal } from '@/hooks/useAvaliacaoSemanal';
 import { useVendedoresWeeklyConversions } from '@/hooks/useVendedorConversion';
 import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
-import { DataFormattingService } from '@/services/formatting/DataFormattingService';
+import html2canvas from 'html2canvas';
 import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
@@ -797,209 +798,42 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     console.log('✅ Exportação concluída!');
   };
 
-  // Função para exportar a planilha detalhada como PDF
+  // Função para exportar a planilha detalhada como screenshot PDF
   const exportDetailedToPDF = async () => {
-    const doc = new jsPDF('l', 'mm', 'a4'); // landscape
-    const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
-    
-    let yPosition = 20;
-    
-    // Título principal
-    doc.setFontSize(16);
-    doc.text(`Planilha Detalhada - ${mesAtualSelecionado}`, 20, yPosition);
-    yPosition += 15;
-    
-    // SEÇÃO VENDEDORES
-    if (vendedoresFiltrados.length > 0) {
-      doc.setFontSize(14);
-      doc.text('Vendedores', 20, yPosition);
-      yPosition += 10;
+    try {
+      // Encontrar o elemento da planilha detalhada
+      const element = document.querySelector('[data-detailed-spreadsheet]') as HTMLElement;
       
-      // Cabeçalhos da tabela de vendedores
-      const vendedoresHeaders = [
-        'Vendedor',
-        'Nível',
-        'Meta\nSemanal',
-        'Comissão\nSemanal',
-        ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
-        'Total\nPontos',
-        'Atingimento\n%',
-        'Comissão\nTotal'
-      ];
-      
-      // Dados da tabela de vendedores
-      const vendedoresTableData = await Promise.all(vendedoresFiltrados.map(async vendedor => {
-        const vendedorNivel = vendedores.find(v => v.id === vendedor.id)?.nivel || 'junior';
-        const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
-        const weeklyPoints = getVendedorWeeklyPoints(vendedor.id, weeks);
-        const totalPoints = weeklyPoints.reduce((sum, points) => sum + points, 0);
-        const metaMensal = (nivelConfig?.meta_semanal_vendedor || 7) * weeks.length;
-        const achievementPercentage = metaMensal > 0 ? (totalPoints / metaMensal) * 100 : 0;
-        const commissionData = await calculateTotalCommission(vendedor.id, weeks, nivelConfig);
-        
-        const weeklyData = await Promise.all(weeklyPoints.map(async (points, index) => {
-          const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
-          const variavelSemanal = nivelConfig?.variavel_semanal || 0;
-          const commission = await calculateWeeklyCommission(points, metaSemanal, variavelSemanal);
-          const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : '0.0';
-          return `${points.toFixed(1)}pts (${percentage}%) x ${commission.multiplicador}\n${DataFormattingService.formatCurrency(commission.valor)}`;
-        }));
-        
-        return [
-          vendedor.name,
-          vendedorNivel.charAt(0).toUpperCase() + vendedorNivel.slice(1),
-          (nivelConfig?.meta_semanal_vendedor || 7).toString(),
-          DataFormattingService.formatCurrency(nivelConfig?.variavel_semanal || 0),
-          ...weeklyData,
-          totalPoints.toFixed(1),
-          `${achievementPercentage.toFixed(1)}%`,
-          DataFormattingService.formatCurrency(commissionData.total)
-        ];
-      }));
-      
-      autoTable(doc, {
-        head: [vendedoresHeaders],
-        body: vendedoresTableData,
-        startY: yPosition,
-        styles: { 
-          fontSize: 6, 
-          cellPadding: 1.5,
-          valign: 'middle',
-          halign: 'center'
-        },
-        headStyles: {
-          fillColor: [64, 64, 64],
-          textColor: 255,
-          fontSize: 7,
-          fontStyle: 'bold'
-        },
-        columnStyles: {
-          0: { cellWidth: 25, halign: 'left' }, // Vendedor
-          1: { cellWidth: 15 }, // Nível
-          2: { cellWidth: 15 }, // Meta Semanal
-          3: { cellWidth: 20 }, // Comissão Semanal
-        },
-        theme: 'striped',
-        alternateRowStyles: { fillColor: [248, 249, 250] }
-      });
-      
-      yPosition = (doc as any).lastAutoTable.finalY + 15;
-    }
-
-    // SEÇÃO SDRs
-    const sdrsVendedores = vendedores.filter(v => v.user_type === 'sdr');
-    
-    if (sdrsVendedores.length > 0) {
-      // Se não couber na página atual, adicionar nova página
-      if (yPosition > 150) {
-        doc.addPage();
-        yPosition = 20;
-        doc.setFontSize(16);
-        doc.text(`Planilha Detalhada - ${mesAtualSelecionado} (continuação)`, 20, yPosition);
-        yPosition += 15;
+      if (!element) {
+        console.error('Elemento da planilha não encontrado');
+        return;
       }
-      
-      doc.setFontSize(14);
-      doc.text('SDRs', 20, yPosition);
-      yPosition += 10;
 
-      // Cabeçalhos da tabela de SDRs
-      const sdrsHeaders = [
-        'SDR',
-        'Tipo',
-        'Nível',
-        'Meta\nSemanal',
-        'Comissão\nSemanal',
-        ...weeks.map(w => `Semana ${w.week}\n${w.label}`),
-        'Total\nReuniões',
-        'Atingimento\n%',
-        'Comissão\nTotal'
-      ];
-
-      // Dados da tabela de SDRs
-      const sdrsTableData = await Promise.all(sdrsVendedores.map(async (sdr) => {
-        const sdrNivel = sdr.nivel || 'junior';
-        const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel === sdrNivel);
-        
-        const metaSemanal = nivelConfig?.meta_vendas_cursos ?? 8;
-        const metaMensal = metaSemanal * weeks.length;
-        const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
-        
-        // Calcular reuniões por semana
-        const reunioesPorSemana = weeks.map(week => {
-          const startDate = new Date(week.startDate);
-          const endDate = new Date(week.endDate);
-          
-          const reunioesNaSemana = agendamentos?.filter(agendamento => {
-            if (agendamento.sdr_id !== sdr.id) return false;
-            const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                              agendamento.resultado_reuniao === 'comprou';
-            if (!compareceu) return false;
-            const dataAgendamento = new Date(agendamento.data_agendamento);
-            return dataAgendamento >= startDate && dataAgendamento <= endDate;
-          }) || [];
-          
-          return reunioesNaSemana.length;
-        });
-        
-        const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
-        const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
-        
-        const weeklyCommissions = await Promise.all(
-          reunioesPorSemana.map(reunioes => 
-            ComissionamentoService.calcularComissao(reunioes, metaSemanal, variavelSemanal, 'sdr')
-          )
-        );
-        const totalCommission = weeklyCommissions.reduce((sum, c) => sum + c.valor, 0);
-        
-        const weeklyData = reunioesPorSemana.map((reunioes, index) => {
-          const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : '0.0';
-          const commission = weeklyCommissions[index];
-          return `${reunioes} reuniões (${percentage}%) x ${commission.multiplicador}\n${DataFormattingService.formatCurrency(commission.valor)}`;
-        });
-        
-        return [
-          sdr.name,
-          'SDR',
-          sdrNivel.charAt(0).toUpperCase() + sdrNivel.slice(1),
-          metaSemanal.toString(),
-          DataFormattingService.formatCurrency(variavelSemanal),
-          ...weeklyData,
-          totalReunioes.toString(),
-          `${achievementPercentage.toFixed(1)}%`,
-          DataFormattingService.formatCurrency(totalCommission)
-        ];
-      }));
-
-      autoTable(doc, {
-        head: [sdrsHeaders],
-        body: sdrsTableData,
-        startY: yPosition,
-        styles: { 
-          fontSize: 6, 
-          cellPadding: 1.5,
-          valign: 'middle',
-          halign: 'center'
-        },
-        headStyles: {
-          fillColor: [64, 64, 64],
-          textColor: 255,
-          fontSize: 7,
-          fontStyle: 'bold'
-        },
-        columnStyles: {
-          0: { cellWidth: 25, halign: 'left' }, // SDR
-          1: { cellWidth: 15 }, // Tipo
-          2: { cellWidth: 15 }, // Nível
-          3: { cellWidth: 15 }, // Meta Semanal
-          4: { cellWidth: 20 }, // Comissão Semanal
-        },
-        theme: 'striped',
-        alternateRowStyles: { fillColor: [248, 249, 250] }
+      // Capturar screenshot do elemento
+      const canvas = await html2canvas(element, {
+        scale: 2, // Melhor qualidade
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight
       });
+
+      // Criar PDF com as dimensões da captura
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height]
+      });
+
+      // Adicionar a imagem ao PDF
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+
+      // Salvar o PDF
+      pdf.save(`planilha-detalhada-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
     }
-    
-    doc.save(`planilha-detalhada-${mesAtualSelecionado.toLowerCase().replace(/\s+/g, '-')}.pdf`);
   };
 
   return (
@@ -1045,7 +879,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           return null;
         })()}
         
-        <div className="mt-8">
+        <div className="mt-8" data-detailed-spreadsheet>
           
           {/* Tabela de Vendedores */}
           {vendedoresFiltrados.length > 0 && (
