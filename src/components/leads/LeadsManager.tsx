@@ -340,7 +340,7 @@ const LeadsManager: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todas Páginas</SelectItem>
-                {paginasCaptura.map(pagina => (
+                {paginasCaptura.sort((a, b) => a.localeCompare(b)).map(pagina => (
                   <SelectItem key={pagina} value={pagina}>
                     {pagina}
                   </SelectItem>
