@@ -16,7 +16,6 @@ import GerenciarNiveis from '@/components/GerenciarNiveis';
 import AgendamentosPage from '@/components/agendamentos/AgendamentosPage';
 import VendedorReunioes from '@/components/vendedor/VendedorReunioes';
 import { RelatorioDiario } from '@/components/vendedor/RelatorioDiario';
-import { GerenciarEventosEspeciais } from '@/components/admin/GerenciarEventosEspeciais';
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
@@ -167,18 +166,6 @@ const RouteRenderer: React.FC = () => {
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
           <p className="text-gray-600 mt-2">Apenas vendedores e SDRs podem acessar Relatório Diário.</p>
-        </div>
-      );
-
-    case 'eventos-especiais':
-      // Apenas diretores podem gerenciar eventos especiais
-      if (isDiretor) {
-        return <GerenciarEventosEspeciais />;
-      }
-      return (
-        <div className="p-6">
-          <h1 className="text-3xl font-bold">Acesso Negado</h1>
-          <p className="text-gray-600 mt-2">Apenas diretores podem gerenciar eventos especiais.</p>
         </div>
       );
 

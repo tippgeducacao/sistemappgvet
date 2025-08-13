@@ -188,7 +188,6 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     try {
       const dataFormatada = format(selectedDate, 'yyyy-MM-dd');
       
-      // Buscar agendamentos regulares
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -212,8 +211,6 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       }));
       
       setAgendamentos(agendamentosFormatados);
-
-      
       console.log('📅 Agendamentos carregados:', agendamentosFormatados);
     } catch (error) {
       console.error('Erro ao carregar agendamentos da data:', error);
@@ -256,7 +253,6 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       return horaAgendamento === horaTimeline;
     });
   };
-
 
   const calcularPosicaoEAltura = (agendamento: Agendamento, horario: string) => {
     const dataInicio = new Date(agendamento.data_agendamento);
@@ -471,10 +467,10 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                           {horario}
                         </div>
                         
-                          {/* Colunas dos vendedores */}
-                          {vendedoresFiltrados.map((vendedor) => {
-                            const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
-                            const temConflito = detectarConflitos(vendedor.id, horario);
+                         {/* Colunas dos vendedores */}
+                         {vendedoresFiltrados.map((vendedor) => {
+                           const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
+                           const temConflito = detectarConflitos(vendedor.id, horario);
                            
                            return (
                              <div 
@@ -486,9 +482,6 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                                     <AlertTriangle className="h-4 w-4 text-red-500" />
                                   </div>
                                 )}
-
-
-                               {/* Agendamentos regulares */}
                                {agendamentosHorario.map((agendamento, index) => {
                                  const { top, height } = calcularPosicaoEAltura(agendamento, horario);
                                  const isConflito = temConflito && agendamentosHorario.length > 1;

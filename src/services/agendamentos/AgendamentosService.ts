@@ -299,27 +299,7 @@ export class AgendamentosService {
         dataFimLocal: dataFim.toLocaleString('pt-BR')
       });
 
-      // 1. VERIFICAR CONFLITOS COM EVENTOS ESPECIAIS
-      console.log('🎯 Verificando conflitos com eventos especiais...');
-      const { data: eventoConflito, error: eventoError } = await supabase
-        .rpc('verificar_conflito_evento_especial', {
-          data_inicio_agendamento: dataInicio.toISOString(),
-          data_fim_agendamento: dataFim.toISOString()
-        });
-
-      if (eventoError) {
-        console.error('❌ Erro ao verificar conflitos com eventos especiais:', eventoError);
-        // Ser conservador: se houver erro, assumir que há conflito
-        return true;
-      }
-
-      if (eventoConflito) {
-        console.log('🎯 CONFLITO COM EVENTO ESPECIAL DETECTADO!');
-        return true;
-      }
-      console.log('✅ Nenhum conflito com eventos especiais');
-
-      // 2. VERIFICAR CONFLITOS COM OUTROS AGENDAMENTOS
+      // Buscar agendamentos do vendedor no mesmo dia (usando formato sem timezone)
       const dataConsulta = dataAgendamento.split('T')[0]; // YYYY-MM-DD
       
       const { data, error } = await supabase
@@ -365,7 +345,7 @@ export class AgendamentosService {
         const temSobreposicao = dataInicio < agendamentoFim && dataFim > agendamentoInicio;
         
         if (temSobreposicao) {
-          console.log('⚠️ CONFLITO COM AGENDAMENTO DETECTADO!', {
+          console.log('⚠️ CONFLITO DETECTADO!', {
             agendamentoExistente: {
               id: agendamento.id,
               inicio: agendamentoInicio.toLocaleString('pt-BR'),
