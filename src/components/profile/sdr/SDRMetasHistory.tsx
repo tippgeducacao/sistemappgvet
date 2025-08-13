@@ -165,8 +165,8 @@ const SDRMetasHistory: React.FC<SDRMetasHistoryProps> = ({ userId }) => {
     console.log('🗓️ Data atual:', hoje.toLocaleDateString());
     console.log('📅 Gerando dados para meses...');
 
-    // Mostrar últimos 6 meses + próximos 3 meses
-    for (let i = -3; i < 6; i++) {
+    // Mostrar últimos 11 meses + próximos 1 mês (total de 12 meses)
+    for (let i = -11; i <= 0; i++) {
       const dataReferencia = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
       const anoRef = dataReferencia.getFullYear();
       const mesRef = dataReferencia.getMonth() + 1;
