@@ -127,6 +127,8 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
     return null;
   };
 
+  console.log('🔍 ReunioesVendedoresChart renderizando com selectedWeek:', selectedWeek);
+
   return (
     <Card>
       <CardHeader>
@@ -139,18 +141,19 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
             </CardDescription>
           </div>
           
-          {/* Filtro de Semana */}
-          <div className="flex items-center gap-2">
+          {/* Filtro de Semana - Forçando visibilidade */}
+          <div className="flex items-center gap-2 bg-red-100 p-2 border border-red-500">
+            <span className="text-xs text-red-600">FILTRO TESTE</span>
             <Button
               variant="outline"
               size="sm"
               onClick={goToPreviousWeek}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 bg-blue-500 text-white"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 bg-yellow-200 px-2">
               <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="text-sm font-medium whitespace-nowrap">
                 {weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
@@ -162,7 +165,7 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
                 variant="outline"
                 size="sm"
                 onClick={goToCurrentWeek}
-                className="text-xs h-8 px-2"
+                className="text-xs h-8 px-2 bg-green-500 text-white"
               >
                 Atual
               </Button>
@@ -172,7 +175,7 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
               variant="outline"
               size="sm"
               onClick={goToNextWeek}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 bg-purple-500 text-white"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
