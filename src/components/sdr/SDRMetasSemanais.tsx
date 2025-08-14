@@ -39,6 +39,8 @@ export const SDRMetasSemanais = () => {
 
   const semanas = getSemanasDoMes(selectedYear, selectedMonth);
   
+  console.log(`🔍 SETEMBRO 2025 DEBUG: Semanas calculadas para ${selectedMonth}/${selectedYear}:`, semanas);
+  
   const getVendasNaSemana = (semana: number) => {
     const startDate = getDataInicioSemana(selectedYear, selectedMonth, semana);
     const endDate = getDataFimSemana(selectedYear, selectedMonth, semana);

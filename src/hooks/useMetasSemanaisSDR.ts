@@ -113,28 +113,32 @@ export const useMetasSemanaisSDR = () => {
     
     console.log(`📅 Calculando semanas para ${mes}/${ano}`);
     
-    // Encontrar a primeira terça-feira que termina no mês
+    // Primeiro dia do mês e último dia do mês
     const primeiroDia = new Date(ano, mes - 1, 1);
     const ultimoDia = new Date(ano, mes, 0);
     
-    // Começar da primeira terça do mês (ou primeira terça que conta para este mês)
-    let dataAtual = new Date(primeiroDia);
+    console.log(`📅 Período do mês: ${primeiroDia.toLocaleDateString('pt-BR')} - ${ultimoDia.toLocaleDateString('pt-BR')}`);
     
-    // Encontrar a primeira terça-feira que pode estar no mês
+    // Encontrar a primeira terça-feira que termina uma semana no mês selecionado
+    let dataAtual = new Date(ano, mes - 1, 1);
+    
+    // Se o primeiro dia não for uma terça-feira, encontrar a primeira terça-feira
     while (dataAtual.getDay() !== 2) {
       dataAtual.setDate(dataAtual.getDate() + 1);
     }
     
+    // Se a primeira terça-feira está antes do início do mês, pular para a próxima
+    if (dataAtual.getDate() < 1) {
+      dataAtual.setDate(dataAtual.getDate() + 7);
+    }
+    
     let numeroSemana = 1;
     
-    // Percorrer todas as terças-feiras até o final do mês
-    while (dataAtual <= ultimoDia) {
-      // Verificar se esta terça-feira está dentro do mês
-      if (dataAtual.getMonth() === mes - 1) {
-        semanas.push(numeroSemana);
-        console.log(`✅ Semana ${numeroSemana} termina em ${dataAtual.toLocaleDateString('pt-BR')}`);
-        numeroSemana++;
-      }
+    // Percorrer todas as terças-feiras do mês
+    while (dataAtual.getMonth() === mes - 1 && dataAtual <= ultimoDia) {
+      semanas.push(numeroSemana);
+      console.log(`✅ Semana ${numeroSemana} termina em ${dataAtual.toLocaleDateString('pt-BR')} (mês ${dataAtual.getMonth() + 1})`);
+      numeroSemana++;
       
       // Ir para a próxima terça-feira (7 dias depois)
       dataAtual.setDate(dataAtual.getDate() + 7);
@@ -146,11 +150,12 @@ export const useMetasSemanaisSDR = () => {
 
   // Obter data de início da semana (quarta-feira)
   const getDataInicioSemana = (ano: number, mes: number, numeroSemana: number): Date => {
-    // Encontrar a primeira terça-feira do mês
-    const primeiroDia = new Date(ano, mes - 1, 1);
-    const ultimoDia = new Date(ano, mes, 0);
+    console.log(`📅 Calculando início da semana ${numeroSemana} para ${mes}/${ano}`);
     
-    let dataAtual = new Date(primeiroDia);
+    // Encontrar a primeira terça-feira do mês selecionado
+    let dataAtual = new Date(ano, mes - 1, 1);
+    
+    // Encontrar a primeira terça-feira dentro do mês
     while (dataAtual.getDay() !== 2) {
       dataAtual.setDate(dataAtual.getDate() + 1);
     }
@@ -158,29 +163,30 @@ export const useMetasSemanaisSDR = () => {
     // Avançar para a terça-feira da semana especificada
     dataAtual.setDate(dataAtual.getDate() + (numeroSemana - 1) * 7);
     
-    // Verificar se ainda está no mês correto
+    // Garantir que ainda está no mês correto
     if (dataAtual.getMonth() !== mes - 1) {
-      // Se saiu do mês, usar a última terça do mês
-      dataAtual = new Date(ultimoDia);
-      while (dataAtual.getDay() !== 2) {
-        dataAtual.setDate(dataAtual.getDate() - 1);
-      }
+      console.log(`⚠️ Semana ${numeroSemana} sai do mês ${mes}, ajustando...`);
+      // Se passou do mês, voltar para a última semana válida
+      dataAtual.setDate(dataAtual.getDate() - 7);
     }
     
     // Calcular a quarta-feira anterior (início da semana)
     const inicioSemana = new Date(dataAtual);
     inicioSemana.setDate(inicioSemana.getDate() - 6); // Voltar 6 dias para a quarta anterior
     inicioSemana.setHours(0, 0, 0, 0);
+    
+    console.log(`📅 Início da semana ${numeroSemana}: ${inicioSemana.toLocaleDateString('pt-BR')}`);
     return inicioSemana;
   };
 
   // Obter data de fim da semana (terça-feira)
   const getDataFimSemana = (ano: number, mes: number, numeroSemana: number): Date => {
-    // Encontrar a primeira terça-feira do mês
-    const primeiroDia = new Date(ano, mes - 1, 1);
-    const ultimoDia = new Date(ano, mes, 0);
+    console.log(`📅 Calculando fim da semana ${numeroSemana} para ${mes}/${ano}`);
     
-    let dataAtual = new Date(primeiroDia);
+    // Encontrar a primeira terça-feira do mês selecionado
+    let dataAtual = new Date(ano, mes - 1, 1);
+    
+    // Encontrar a primeira terça-feira dentro do mês
     while (dataAtual.getDay() !== 2) {
       dataAtual.setDate(dataAtual.getDate() + 1);
     }
@@ -188,16 +194,16 @@ export const useMetasSemanaisSDR = () => {
     // Avançar para a terça-feira da semana especificada
     dataAtual.setDate(dataAtual.getDate() + (numeroSemana - 1) * 7);
     
-    // Verificar se ainda está no mês correto
+    // Garantir que ainda está no mês correto
     if (dataAtual.getMonth() !== mes - 1) {
-      // Se saiu do mês, usar a última terça do mês
-      dataAtual = new Date(ultimoDia);
-      while (dataAtual.getDay() !== 2) {
-        dataAtual.setDate(dataAtual.getDate() - 1);
-      }
+      console.log(`⚠️ Semana ${numeroSemana} sai do mês ${mes}, ajustando...`);
+      // Se passou do mês, voltar para a última semana válida
+      dataAtual.setDate(dataAtual.getDate() - 7);
     }
     
     dataAtual.setHours(23, 59, 59, 999);
+    
+    console.log(`📅 Fim da semana ${numeroSemana}: ${dataAtual.toLocaleDateString('pt-BR')}`);
     return dataAtual;
   };
 
