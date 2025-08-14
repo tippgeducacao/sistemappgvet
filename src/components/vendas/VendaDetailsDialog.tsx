@@ -229,6 +229,7 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
               motivoPendencia={venda.motivo_pendencia}
               dataMatricula={dataMatriculaRaw ? formatarDataBrasileira(dataMatriculaRaw) : null}
               dataAssinaturaContrato={venda.data_assinatura_contrato ? formatarDataBrasileira(venda.data_assinatura_contrato) : null}
+              dataAssinaturaContratoRaw={venda.data_assinatura_contrato}
               vendaId={venda.id}
               userType={profile?.user_type || ''}
               onUpdate={refetchDetails}

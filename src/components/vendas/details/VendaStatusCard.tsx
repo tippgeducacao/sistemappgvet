@@ -13,6 +13,7 @@ interface VendaStatusCardProps {
   motivoPendencia: string | null;
   dataMatricula?: string | null;
   dataAssinaturaContrato?: string | null;
+  dataAssinaturaContratoRaw?: string | null;
   vendaId: string;
   userType: string;
   onUpdate: () => void;
@@ -25,6 +26,7 @@ const VendaStatusCard: React.FC<VendaStatusCardProps> = ({
   motivoPendencia,
   dataMatricula,
   dataAssinaturaContrato,
+  dataAssinaturaContratoRaw,
   vendaId,
   userType,
   onUpdate
@@ -92,7 +94,7 @@ const VendaStatusCard: React.FC<VendaStatusCardProps> = ({
                     </span>
                     <EditMatriculaDateDialog 
                       vendaId={vendaId}
-                      currentDate={dataAssinaturaContrato}
+                      currentDate={dataAssinaturaContratoRaw}
                       onUpdate={onUpdate}
                       userType={userType}
                     />
