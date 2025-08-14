@@ -19,7 +19,21 @@ export const useUltraSimpleVendas = () => {
       const { data, error } = await supabase
         .from('form_entries')
         .select(`
-          *,
+          id,
+          vendedor_id,
+          curso_id,
+          aluno_id,
+          observacoes,
+          status,
+          pontuacao_esperada,
+          pontuacao_validada,
+          created_at,
+          atualizado_em,
+          motivo_pendencia,
+          data_assinatura_contrato,
+          data_aprovacao,
+          documento_comprobatorio,
+          enviado_em,
           alunos!form_entries_aluno_id_fkey(*),
           cursos(*),
           profiles!form_entries_vendedor_id_fkey(name, email)
