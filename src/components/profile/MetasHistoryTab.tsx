@@ -1,75 +1,48 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { MetasSemanaisService, type MetaSemanalVendedor } from '@/services/metas/MetasSemanaisService';
 import SDRMetasHistory from './sdr/SDRMetasHistory';
-import { MetasSemanaisService } from '@/services/metas/MetasSemanaisService';
-import { useAuthStore } from '@/stores/AuthStore';
-import { useAllVendas } from '@/hooks/useVendas';
 
 interface MetasHistoryTabProps {
   userId: string;
   userType: string;
 }
 
-export const MetasHistoryTab = ({ userId, userType }: MetasHistoryTabProps) => {
+export default function MetasHistoryTab({ userId, userType }: MetasHistoryTabProps) {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(8); // Agosto por padrão
-  const [metasVendedor, setMetasVendedor] = useState<any[]>([]);
-  const [isLoadingMetas, setIsLoadingMetas] = useState(false);
-  
-  const { profile } = useAuthStore();
-  const { vendas: allVendas = [] } = useAllVendas();
-
-  // Determinar se é SDR
-  const isSDR = userType?.includes('sdr') || false;
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(8); // Agosto
+  const [metas, setMetas] = useState<MetaSemanalVendedor[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Buscar metas do vendedor
   const buscarMetasVendedor = async () => {
     if (!userId) return;
     
     try {
-      setIsLoadingMetas(true);
-      console.log(`🔍 Buscando metas para vendedor ${userId}, período: ${selectedMonth}/${selectedYear}`);
+      setLoading(true);
+      const metasEncontradas = await MetasSemanaisService.buscarOuCriarMetas(
+        userId, 
+        selectedYear, 
+        selectedMonth || undefined
+      );
       
-      const metas = await MetasSemanaisService.buscarOuCriarMetas(userId, selectedYear, selectedMonth || undefined);
-      console.log(`📊 Metas encontradas/criadas:`, metas.length);
-      
-      setMetasVendedor(metas);
+      console.log('📈 Metas encontradas:', metasEncontradas);
+      setMetas(metasEncontradas);
     } catch (error) {
-      console.error('❌ Erro ao buscar metas do vendedor:', error);
-      setMetasVendedor([]);
+      console.error('❌ Erro ao buscar metas:', error);
+      setMetas([]);
     } finally {
-      setIsLoadingMetas(false);
+      setLoading(false);
     }
   };
 
-  // Buscar metas quando mudar vendedor, ano ou mês
   useEffect(() => {
     buscarMetasVendedor();
   }, [userId, selectedYear, selectedMonth]);
-
-  // Filtrar vendas do usuário
-  const userVendas = allVendas.filter(venda => venda.vendedor_id === userId);
-
-  // Função para obter vendas de uma semana específica
-  const getVendasSemana = (ano: number, semana: number) => {
-    return userVendas.filter(venda => {
-      if (!venda.enviado_em) return false;
-      
-      const dataVenda = new Date(venda.enviado_em);
-      const anoVenda = dataVenda.getFullYear();
-      
-      if (anoVenda !== ano) return false;
-      
-      // Calcular número da semana
-      const inicioAno = new Date(ano, 0, 1);
-      const diferencaDias = Math.floor((dataVenda.getTime() - inicioAno.getTime()) / (24 * 60 * 60 * 1000));
-      const semanaVenda = Math.ceil((diferencaDias + inicioAno.getDay() + 1) / 7);
-      
-      return semanaVenda === semana;
-    });
-  };
 
   // Função para determinar o status da meta
   const getStatusMeta = (percentual: number) => {
@@ -84,189 +57,142 @@ export const MetasHistoryTab = ({ userId, userType }: MetasHistoryTabProps) => {
     }
   };
 
-  // Se for SDR, renderizar componente específico
-  if (isSDR) {
+  // Se for SDR, usar o componente específico
+  if (userType.includes('sdr')) {
     return <SDRMetasHistory userId={userId} />;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      {/* Filtros */}
-      <div className="flex gap-4 items-center">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">Ano:</label>
-          <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 5 }, (_, i) => {
-                const year = new Date().getFullYear() - i;
-                return (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">Mês (opcional):</label>
-          <Select 
-            value={selectedMonth?.toString() || "all"} 
-            onValueChange={(value) => setSelectedMonth(value === "all" ? null : parseInt(value))}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os meses</SelectItem>
-              {Array.from({ length: 12 }, (_, i) => {
-                const month = i + 1;
-                const monthName = new Date(2024, i).toLocaleDateString('pt-BR', { month: 'long' });
-                return (
-                  <SelectItem key={month} value={month.toString()}>
-                    {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Lista de Metas Semanais */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             🎯 Performance Semanal Detalhada
           </CardTitle>
+          <CardDescription>
+            Histórico detalhado de metas semanais e performance
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          {(() => {
-            if (isLoadingMetas) {
-              return (
-                <div className="text-center py-8 text-muted-foreground">
-                  Carregando histórico de metas...
-                </div>
-              );
-            }
+        <CardContent className="space-y-6">
+          {/* Filtros */}
+          <div className="flex gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Ano</label>
+              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[2024, 2025, 2026].map(year => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mês (opcional)</label>
+              <Select 
+                value={selectedMonth?.toString() || "all"} 
+                onValueChange={(value) => setSelectedMonth(value === "all" ? null : parseInt(value))}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os meses</SelectItem>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                    <SelectItem key={month} value={month.toString()}>
+                      {new Date(2025, month - 1).toLocaleDateString('pt-BR', { month: 'long' })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-            if (metasVendedor.length === 0) {
-              return (
-                <div className="text-center py-8 text-muted-foreground">
-                  Nenhuma meta semanal encontrada para o período selecionado
-                </div>
-              );
-            }
-
-            return (
-              <div className="space-y-4">
-                {metasVendedor
-                  .sort((a, b) => {
-                    if (a.ano !== b.ano) return b.ano - a.ano;
-                    return b.semana - a.semana;
-                  })
-                  .slice(0, 50) // Limitar para performance
-                  .map((meta) => {
-                    const vendasSemana = getVendasSemana(meta.ano, meta.semana);
-                    
-                    // Para SDR, usar meta de agendamentos, para vendedores usar meta de vendas
-                    const metaValue = meta.meta_vendas || 0;
-                    const achievement = userType === 'sdr' ? vendasSemana.length : vendasSemana.reduce((total, venda) => 
-                      total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0
-                    );
-                    
-                    const percentual = metaValue > 0 ? Math.round((achievement / metaValue) * 100) : 0;
-                    const status = getStatusMeta(percentual);
-
-                    // Top 3 vendas da semana
-                    const topVendas = vendasSemana
-                      .sort((a, b) => (b.pontuacao_validada || b.pontuacao_esperada || 0) - (a.pontuacao_validada || a.pontuacao_esperada || 0))
-                      .slice(0, 3);
-
-                    return (
-                      <div key={`${meta.ano}-${meta.semana}`} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium">
-                              Semana {meta.semana} - {meta.ano}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              Meta: {metaValue} {userType === 'sdr' ? 'agendamentos' : 'pontos'}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">
-                                {achievement} {userType === 'sdr' ? 'agend.' : 'pts'}
-                              </span>
-                              <Badge variant={status.variant as any}>
-                                {status.label}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{percentual}%</p>
-                          </div>
+          {/* Lista de Semanas */}
+          {metas.length > 0 ? (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">
+                Semanas {selectedMonth ? `de ${new Date(2025, (selectedMonth || 1) - 1).toLocaleDateString('pt-BR', { month: 'long' })}` : `do ano ${selectedYear}`}
+              </h3>
+              
+              <div className="grid gap-4">
+                {metas.map((meta) => {
+                  // Para vendedores, não há dados de vendas ainda
+                  const realizados = 0;
+                  const percentual = meta.meta_vendas > 0 ? (realizados / meta.meta_vendas) * 100 : 0;
+                  const status = getStatusMeta(percentual);
+                  
+                  return (
+                    <div key={`${meta.ano}-${meta.semana}`} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">Semana {meta.semana}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Ano {meta.ano}
+                          </p>
                         </div>
-
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Progresso</span>
-                            <span>{percentual}%</span>
-                          </div>
-                          <div className="w-full bg-secondary rounded-full h-2">
-                            <div
-                              className="bg-primary h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${Math.min(percentual, 100)}%` }}
-                            />
-                          </div>
+                        <Badge variant={status.variant as any}>
+                          {status.label}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Meta:</span>
+                          <span className="ml-2 font-medium">{meta.meta_vendas}</span>
                         </div>
-
-                        {topVendas.length > 0 && userType !== 'sdr' && (
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium">Top vendas da semana:</p>
-                            <div className="space-y-1">
-                              {topVendas.map((venda, index) => (
-                                <div key={venda.id} className="flex justify-between text-sm">
-                                  <span className="text-muted-foreground">
-                                    #{index + 1} {(venda as any).nome_aluno || 'Nome não informado'}
-                                  </span>
-                                  <span className="font-medium">
-                                    {venda.pontuacao_validada || venda.pontuacao_esperada || 0} pts
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="text-xs text-muted-foreground">
-                          Total de {userType === 'sdr' ? 'agendamentos' : 'vendas'}: {vendasSemana.length}
+                        <div>
+                          <span className="text-muted-foreground">Realizados:</span>
+                          <span className="ml-2 font-medium">{realizados}</span>
                         </div>
                       </div>
-                    );
-                  })}
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Progresso</span>
+                          <span>{percentual.toFixed(1)}%</span>
+                        </div>
+                        <Progress value={Math.min(percentual, 100)} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })()}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              Nenhuma semana histórica encontrada para o período selecionado
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Informações sobre o histórico */}
+      {/* Card Explicativo */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Como funciona o histórico:</CardTitle>
+          <CardTitle className="text-base">Como funciona o histórico:</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <div>• <strong>Período:</strong> Sistema respeita a regra das terças-feiras - a semana vai de quarta a terça</div>
-          <div>• <strong>Histórico:</strong> Mostra semanas passadas, atual e futuras automaticamente</div>
-          <div>• <strong>Agendamentos:</strong> Contabiliza apenas reuniões com presença confirmada</div>
-          <div>• <strong>Comissão:</strong> Variável semanal recebida quando a meta é atingida (100% ou mais)</div>
-          <div>• <strong>Semanas consecutivas:</strong> Contador de streak quando atinge metas consecutivas</div>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p><strong>• Período:</strong> Sistema respeita a regra das terças-feiras - a semana vai de quarta a terça</p>
+          <p><strong>• Histórico:</strong> Mostra semanas passadas, atual e futuras automaticamente</p>
+          <p><strong>• Vendas:</strong> Contabiliza apenas vendas com status aprovado</p>
+          <p><strong>• Pontuação:</strong> Considera pontuação validada pela secretaria</p>
+          <p><strong>• Semanas consecutivas:</strong> Contador de streak quando atinge metas consecutivas</p>
         </CardContent>
       </Card>
     </div>
   );
-};
+}

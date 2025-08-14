@@ -27,7 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import VendasHistoryTab from '@/components/profile/VendasHistoryTab';
 import ReuniaoHistoryTab from '@/components/profile/ReuniaoHistoryTab';
-import { MetasHistoryTab } from '@/components/profile/MetasHistoryTab';
+import MetasHistoryTab from '@/components/profile/MetasHistoryTab';
 
 interface UserProfileModalProps {
   isOpen: boolean;
