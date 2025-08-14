@@ -618,7 +618,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         if (venda.vendedor_id !== vendedor.id) return false;
         if (venda.status !== 'matriculado') return false;
         
-        const dataVenda = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
+        // Priorizar data_assinatura_contrato
+        let dataVenda: Date;
+        if (venda.data_assinatura_contrato) {
+          dataVenda = new Date(venda.data_assinatura_contrato);
+        } else {
+          dataVenda = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
+        }
         dataVenda.setHours(0, 0, 0, 0);
         
         return dataVenda.getTime() === hoje.getTime();
@@ -632,7 +638,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         if (venda.vendedor_id !== vendedor.id) return false;
         if (venda.status !== 'matriculado') return false;
         
-        const dataVenda = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
+        // Priorizar data_assinatura_contrato
+        let dataVenda: Date;
+        if (venda.data_assinatura_contrato) {
+          dataVenda = new Date(venda.data_assinatura_contrato);
+        } else {
+          dataVenda = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
+        }
         dataVenda.setHours(0, 0, 0, 0);
         
         return dataVenda.getTime() === ontem.getTime();
@@ -711,7 +723,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   // Calcular totais de vendas da semana e mês atual
   const totalVendasSemana = vendas.filter(v => {
     if (v.status !== 'matriculado') return false;
-    const dataVenda = v.data_aprovacao ? new Date(v.data_aprovacao) : new Date(v.enviado_em || v.atualizado_em);
+    // Priorizar data_assinatura_contrato
+    let dataVenda: Date;
+    if (v.data_assinatura_contrato) {
+      dataVenda = new Date(v.data_assinatura_contrato);
+    } else {
+      dataVenda = v.data_aprovacao ? new Date(v.data_aprovacao) : new Date(v.enviado_em || v.atualizado_em);
+    }
     return dataVenda >= startOfWeek && dataVenda <= endOfWeek;
   }).length;
   
@@ -721,7 +739,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   
   const totalVendasMes = vendas.filter(v => {
     if (v.status !== 'matriculado') return false;
-    const dataVenda = v.data_aprovacao ? new Date(v.data_aprovacao) : new Date(v.enviado_em || v.atualizado_em);
+    // Priorizar data_assinatura_contrato
+    let dataVenda: Date;
+    if (v.data_assinatura_contrato) {
+      dataVenda = new Date(v.data_assinatura_contrato);
+    } else {
+      dataVenda = v.data_aprovacao ? new Date(v.data_aprovacao) : new Date(v.enviado_em || v.atualizado_em);
+    }
     return dataVenda >= startOfMonth && dataVenda <= endOfMonth;
   }).length;
 

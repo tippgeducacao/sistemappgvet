@@ -204,20 +204,24 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
               const periodoSemana = `${formatDate(startSemana)} - ${formatDate(endSemana)}`;
 
-              // Calcular pontos da semana usando data de matrícula do formulário
+              // Calcular pontos da semana usando data de assinatura do contrato
               const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
                 
-                // NOVA LÓGICA: Usar data de matrícula das respostas do formulário
+                // NOVA LÓGICA: Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
                 let dataVenda: Date;
-                const dataMatricula = getDataMatriculaFromRespostas(respostas);
                 
-                if (dataMatricula) {
-                  dataVenda = dataMatricula;
+                if (venda.data_assinatura_contrato) {
+                  dataVenda = new Date(venda.data_assinatura_contrato);
                 } else {
-                  // Fallback para data de envio se não houver data de matrícula
-                  dataVenda = new Date(venda.enviado_em);
+                  const dataMatricula = getDataMatriculaFromRespostas(respostas);
+                  if (dataMatricula) {
+                    dataVenda = dataMatricula;
+                  } else {
+                    // Fallback para data de envio se não houver nenhuma outra data
+                    dataVenda = new Date(venda.enviado_em);
+                  }
                 }
                 
                 // Ajustar para considerar a zona de tempo corretamente
@@ -236,7 +240,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   console.log(`🔍 DASHBOARD PESSOAL - Processando venda do Adones:`, {
                     venda_id: venda.id.substring(0, 8),
                     aluno: venda.aluno?.nome,
-                    data_matricula_formulario: dataMatricula?.toLocaleDateString('pt-BR'),
+                    data_assinatura_contrato: venda.data_assinatura_contrato,
+                    data_matricula_formulario: getDataMatriculaFromRespostas(respostas)?.toLocaleDateString('pt-BR'),
                     data_enviado: venda.enviado_em,
                     data_usada: dataVenda.toISOString(),
                     data_usada_br: dataVenda.toLocaleDateString('pt-BR'),
@@ -372,15 +377,19 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                       if (venda.vendedor_id !== profile.id) return false;
                       if (venda.status !== 'matriculado') return false;
                       
-                      // NOVA LÓGICA: Usar data de matrícula das respostas do formulário
+                      // NOVA LÓGICA: Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
                       let dataVenda: Date;
-                      const dataMatricula = getDataMatriculaFromRespostas(respostas);
                       
-                      if (dataMatricula) {
-                        dataVenda = dataMatricula;
+                      if (venda.data_assinatura_contrato) {
+                        dataVenda = new Date(venda.data_assinatura_contrato);
                       } else {
-                        // Fallback para data de envio se não houver data de matrícula
-                        dataVenda = new Date(venda.enviado_em);
+                        const dataMatricula = getDataMatriculaFromRespostas(respostas);
+                        if (dataMatricula) {
+                          dataVenda = dataMatricula;
+                        } else {
+                          // Fallback para data de envio se não houver nenhuma outra data
+                          dataVenda = new Date(venda.enviado_em);
+                        }
                       }
                       
                       return dataVenda >= startSemana && dataVenda <= endSemana;
@@ -408,15 +417,19 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                         if (venda.vendedor_id !== profile.id) return false;
                         if (venda.status !== 'matriculado') return false;
                         
-                        // NOVA LÓGICA: Usar data de matrícula das respostas do formulário
+                        // NOVA LÓGICA: Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
                         let dataVenda: Date;
-                        const dataMatricula = getDataMatriculaFromRespostas(respostas);
                         
-                        if (dataMatricula) {
-                          dataVenda = dataMatricula;
+                        if (venda.data_assinatura_contrato) {
+                          dataVenda = new Date(venda.data_assinatura_contrato);
                         } else {
-                          // Fallback para data de envio se não houver data de matrícula
-                          dataVenda = new Date(venda.enviado_em);
+                          const dataMatricula = getDataMatriculaFromRespostas(respostas);
+                          if (dataMatricula) {
+                            dataVenda = dataMatricula;
+                          } else {
+                            // Fallback para data de envio se não houver nenhuma outra data
+                            dataVenda = new Date(venda.enviado_em);
+                          }
                         }
                         
                         return dataVenda >= startSemana && dataVenda <= endSemana;

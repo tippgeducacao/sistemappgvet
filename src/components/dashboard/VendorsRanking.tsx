@@ -202,10 +202,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const meses = new Set<string>();
     
     vendas.forEach(venda => {
-      // Para vendas matriculadas, usar data de aprovação se disponível, senão data de envio
-      const dataParaGrupar = venda.status === 'matriculado' && venda.data_aprovacao 
-        ? new Date(venda.data_aprovacao)
-        : new Date(venda.enviado_em);
+      // Priorizar data_assinatura_contrato
+      let dataParaGrupar: Date;
+      if (venda.data_assinatura_contrato) {
+        dataParaGrupar = new Date(venda.data_assinatura_contrato);
+      } else {
+        dataParaGrupar = venda.status === 'matriculado' && venda.data_aprovacao 
+          ? new Date(venda.data_aprovacao)
+          : new Date(venda.enviado_em);
+      }
       
       // Usar a regra de semana para categorizar o mês correto
       const { mes, ano } = getVendaPeriod(dataParaGrupar);
@@ -302,7 +307,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const vendasSemanaAtual = vendas.filter(venda => {
       if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
       
-      const vendaDate = new Date(venda.enviado_em);
+      // Priorizar data_assinatura_contrato
+      let vendaDate: Date;
+      if (venda.data_assinatura_contrato) {
+        vendaDate = new Date(venda.data_assinatura_contrato);
+      } else {
+        vendaDate = new Date(venda.enviado_em);
+      }
       return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
     });
 
@@ -459,10 +470,16 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
     return weeks.map((week, index) => {
       const weekPoints = vendasFiltradas
-        .filter(venda => {
+        .filter((venda) => {
           if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
           
-          const vendaDate = new Date(venda.enviado_em);
+          // Priorizar data_assinatura_contrato
+          let vendaDate: Date;
+          if (venda.data_assinatura_contrato) {
+            vendaDate = new Date(venda.data_assinatura_contrato);
+          } else {
+            vendaDate = new Date(venda.enviado_em);
+          }
           const isInRange = vendaDate >= week.startDate && vendaDate <= week.endDate;
           
           // Debug específico para semana 3 e vendedor teste

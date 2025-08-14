@@ -78,18 +78,30 @@ const { mes: mesAtualSemana, ano: anoAtualSemana } = getVendaPeriod(hoje);
       const vendasSemana = vendas.filter(v => {
         if (v.vendedor_id !== sdr.id || v.status !== 'matriculado') return false;
         
-        const dataVenda = v.data_aprovacao 
-          ? new Date(v.data_aprovacao)
-          : new Date(v.enviado_em);
+        // Priorizar data_assinatura_contrato
+        let dataVenda: Date;
+        if (v.data_assinatura_contrato) {
+          dataVenda = new Date(v.data_assinatura_contrato);
+        } else {
+          dataVenda = v.data_aprovacao 
+            ? new Date(v.data_aprovacao)
+            : new Date(v.enviado_em);
+        }
         
         return dataVenda >= inicioSemana && dataVenda <= fimSemana;
       }).length;
 
 const vendasMes = vendas.filter(v => {
         if (v.vendedor_id !== sdr.id || v.status !== 'matriculado') return false;
-        const dataVenda = v.data_aprovacao 
-          ? new Date(v.data_aprovacao)
-          : new Date(v.enviado_em);
+        // Priorizar data_assinatura_contrato
+        let dataVenda: Date;
+        if (v.data_assinatura_contrato) {
+          dataVenda = new Date(v.data_assinatura_contrato);
+        } else {
+          dataVenda = v.data_aprovacao 
+            ? new Date(v.data_aprovacao)
+            : new Date(v.enviado_em);
+        }
         const { mes, ano } = getVendaPeriod(dataVenda);
         return mes === mesAtualSemana && ano === anoAtualSemana;
       }).length;
@@ -97,9 +109,15 @@ const vendasMes = vendas.filter(v => {
       const vendasAno = vendas.filter(v => {
         if (v.vendedor_id !== sdr.id || v.status !== 'matriculado') return false;
         
-        const dataVenda = v.data_aprovacao 
-          ? new Date(v.data_aprovacao)
-          : new Date(v.enviado_em);
+        // Priorizar data_assinatura_contrato
+        let dataVenda: Date;
+        if (v.data_assinatura_contrato) {
+          dataVenda = new Date(v.data_assinatura_contrato);
+        } else {
+          dataVenda = v.data_aprovacao 
+            ? new Date(v.data_aprovacao)
+            : new Date(v.enviado_em);
+        }
         
         return dataVenda >= inicioAno && dataVenda <= fimAno;
       }).length;
@@ -305,7 +323,13 @@ const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
                       
                       const pontosOntem = vendas.filter(venda => {
                         if (venda.vendedor_id !== sdr.id || venda.status !== 'matriculado') return false;
-                        const vendaDate = new Date(venda.enviado_em);
+                        // Priorizar data_assinatura_contrato
+                        let vendaDate: Date;
+                        if (venda.data_assinatura_contrato) {
+                          vendaDate = new Date(venda.data_assinatura_contrato);
+                        } else {
+                          vendaDate = new Date(venda.enviado_em);
+                        }
                         return vendaDate >= startOfYesterday && vendaDate <= endOfYesterday;
                       }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
                       
@@ -316,7 +340,13 @@ const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
                       
                       const pontosHoje = vendas.filter(venda => {
                         if (venda.vendedor_id !== sdr.id || venda.status !== 'matriculado') return false;
-                        const vendaDate = new Date(venda.enviado_em);
+                        // Priorizar data_assinatura_contrato
+                        let vendaDate: Date;
+                        if (venda.data_assinatura_contrato) {
+                          vendaDate = new Date(venda.data_assinatura_contrato);
+                        } else {
+                          vendaDate = new Date(venda.enviado_em);
+                        }
                         return vendaDate >= startOfToday && vendaDate <= endOfToday;
                       }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
                       
