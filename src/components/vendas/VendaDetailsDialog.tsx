@@ -117,6 +117,8 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
   // Debug logs para entender o que está acontecendo
   console.log('🔍 Debug completo da venda:', {
     vendaId: venda.id,
+    vendaStatus: venda.status,
+    vendaDataAssinatura: venda.data_assinatura_contrato,
     dataMatriculaRaw,
     dataMatricula,
     dataAssinaturaRaw,
@@ -125,6 +127,14 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
     formDetails: formDetails?.map(r => ({ campo: r.campo_nome, valor: r.valor_informado })),
     totalCampos: formDetails?.length
   });
+
+  // Se a venda está pendente ou desistiu, a data de assinatura DEVE estar null
+  if ((venda.status === 'pendente' || venda.status === 'desistiu') && venda.data_assinatura_contrato) {
+    console.warn('⚠️ PROBLEMA: Venda está pendente/desistiu mas ainda tem data_assinatura_contrato:', {
+      status: venda.status,
+      dataAssinatura: venda.data_assinatura_contrato
+    });
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

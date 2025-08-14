@@ -58,25 +58,48 @@ export class FastUpdateService {
         return true;
       }
       
-      // Usar a função RPC otimizada para casos simples, mas atualizar para limpar data quando necessário
+      // Usar atualização direta para casos onde precisamos limpar data de assinatura
       if (status === 'pendente' || status === 'desistiu') {
         console.log('🗑️ FastUpdateService: Limpando data de assinatura para status:', status);
+        
+        const updateData = {
+          status,
+          data_assinatura_contrato: null,
+          data_aprovacao: null,
+          pontuacao_validada: pontuacaoValidada || null,
+          motivo_pendencia: motivoPendencia || null,
+          atualizado_em: new Date().toISOString()
+        };
+        
+        console.log('📝 FastUpdateService: Dados da atualização:', updateData);
+        
         const { error } = await supabase
           .from('form_entries')
-          .update({
-            status,
-            data_assinatura_contrato: null,
-            data_aprovacao: null,
-            pontuacao_validada: pontuacaoValidada || null,
-            motivo_pendencia: motivoPendencia || null,
-            atualizado_em: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', vendaId);
 
         if (error) {
           console.error('❌ FastUpdateService: Erro ao limpar data:', error);
           return false;
         }
+
+        // Verificar se a atualização foi aplicada
+        const { data: vendaVerificada, error: verifyError } = await supabase
+          .from('form_entries')
+          .select('id, status, data_assinatura_contrato, data_aprovacao')
+          .eq('id', vendaId)
+          .single();
+        
+        if (verifyError) {
+          console.error('❌ FastUpdateService: Erro na verificação:', verifyError);
+          return false;
+        }
+        
+        console.log('✅ FastUpdateService: Verificação após limpeza:', {
+          status: vendaVerificada.status,
+          dataAssinatura: vendaVerificada.data_assinatura_contrato,
+          dataAprovacao: vendaVerificada.data_aprovacao
+        });
 
         return true;
       }
