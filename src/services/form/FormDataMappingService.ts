@@ -18,6 +18,7 @@ export class FormDataMappingService {
       crmv: 'CRMV',
       formacaoAluno: 'Formação do Aluno',
       dataMatricula: 'Data de Matrícula',
+      dataAssinaturaContrato: 'Data de Assinatura do Contrato',
       ies: 'IES',
       vendedor: 'Vendedor',
       

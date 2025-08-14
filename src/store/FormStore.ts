@@ -22,6 +22,7 @@ export interface FormData {
   crmv?: string;
   formacaoAluno: string;
   dataMatricula?: string;
+  dataAssinaturaContrato?: string;
   ies: string;
   modalidadeCurso?: string;
   cursoId: string;
