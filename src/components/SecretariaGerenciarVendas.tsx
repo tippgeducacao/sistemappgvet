@@ -1,8 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, CheckCircle, XCircle, Users, Search } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Users, Search, UserCheck } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
+import { useVendedores } from '@/hooks/useVendedores';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 import TodasVendasTab from '@/components/vendas/TodasVendasTab';
@@ -11,6 +12,7 @@ import MatriculadasTab from '@/components/vendas/MatriculadasTab';
 import RejeitadasTab from '@/components/vendas/RejeitadasTab';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const SecretariaGerenciarVendas: React.FC = () => {
   const { 
@@ -19,19 +21,32 @@ const SecretariaGerenciarVendas: React.FC = () => {
     refetch
   } = useAllVendas();
   
-  const [searchTerm, setSearchTerm] = useState('');
+  const { vendedores } = useVendedores();
   
-  // Filtrar vendas por termo de pesquisa (nome ou email)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedVendedor, setSelectedVendedor] = useState<string>('');
+  
+  // Filtrar vendas por termo de pesquisa e vendedor
   const vendasFiltradas = useMemo(() => {
-    if (!searchTerm.trim()) return vendas;
+    let filtered = vendas;
     
-    const termLower = searchTerm.toLowerCase().trim();
-    return vendas.filter(venda => {
-      const nome = venda.aluno?.nome?.toLowerCase() || '';
-      const email = venda.aluno?.email?.toLowerCase() || '';
-      return nome.includes(termLower) || email.includes(termLower);
-    });
-  }, [vendas, searchTerm]);
+    // Filtrar por vendedor se selecionado
+    if (selectedVendedor && selectedVendedor !== 'todos') {
+      filtered = filtered.filter(venda => venda.vendedor_id === selectedVendedor);
+    }
+    
+    // Filtrar por termo de pesquisa (nome ou email)
+    if (searchTerm.trim()) {
+      const termLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(venda => {
+        const nome = venda.aluno?.nome?.toLowerCase() || '';
+        const email = venda.aluno?.email?.toLowerCase() || '';
+        return nome.includes(termLower) || email.includes(termLower);
+      });
+    }
+    
+    return filtered;
+  }, [vendas, searchTerm, selectedVendedor]);
   
   // Filtrar vendas por status
   const vendasPendentes = useMemo(() => {
@@ -65,16 +80,37 @@ const SecretariaGerenciarVendas: React.FC = () => {
         <p className="text-gray-600 mt-1">Gerencie todas as vendas do sistema em um só lugar</p>
       </div>
 
-      {/* Campo de pesquisa */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          type="text"
-          placeholder="Pesquisar por nome ou email do aluno..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Filtros */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Campo de pesquisa */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            type="text"
+            placeholder="Pesquisar por nome ou email do aluno..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Filtro por vendedor */}
+        <div className="relative">
+          <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Select value={selectedVendedor} onValueChange={setSelectedVendedor}>
+            <SelectTrigger className="pl-10">
+              <SelectValue placeholder="Filtrar por vendedor..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os vendedores</SelectItem>
+              {vendedores.map((vendedor) => (
+                <SelectItem key={vendedor.id} value={vendedor.id}>
+                  {vendedor.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Tabs de navegação */}
