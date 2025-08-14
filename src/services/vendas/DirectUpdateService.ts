@@ -40,18 +40,15 @@ export class DirectUpdateService {
       }
 
 
-      // Se aprovando e tiver data de assinatura, adicionar às observações
-      if (status === 'matriculado' && dataAssinaturaContrato) {
-        // Buscar observações existentes
-        const { data: currentData } = await supabase
-          .from('form_entries')
-          .select('observacoes')
-          .eq('id', vendaId)
-          .single();
-        
-        const observacoesExistentes = currentData?.observacoes || '';
-        const observacaoDataAssinatura = `\n\n📅 Data de assinatura do contrato: ${dataAssinaturaContrato}`;
-        updateData.observacoes = observacoesExistentes + observacaoDataAssinatura;
+      // Configurar datas baseado no status
+      if (status === 'matriculado') {
+        updateData.data_aprovacao = new Date().toISOString();
+        if (dataAssinaturaContrato) {
+          updateData.data_assinatura_contrato = dataAssinaturaContrato;
+        }
+      } else if (status === 'pendente' || status === 'desistiu') {
+        updateData.data_assinatura_contrato = null;
+        updateData.data_aprovacao = null;
       }
 
       console.log('📊 DADOS PARA UPDATE:', updateData);
