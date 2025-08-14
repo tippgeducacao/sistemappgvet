@@ -61,7 +61,14 @@ export const SDRMetasSemanais = () => {
     const startDate = getDataInicioSemana(selectedYear, selectedMonth, semana);
     const endDate = getDataFimSemana(selectedYear, selectedMonth, semana);
     
-    console.log(`🗓️ Buscando agendamentos para semana ${semana} (${selectedMonth}/${selectedYear}): ${startDate.toLocaleDateString('pt-BR')} - ${endDate.toLocaleDateString('pt-BR')}`);
+    console.log(`🗓️ DEBUGGING - Buscando agendamentos para:`, {
+      semana,
+      selectedMonth,
+      selectedYear,
+      periodo: `${startDate.toLocaleDateString('pt-BR')} - ${endDate.toLocaleDateString('pt-BR')}`,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString()
+    });
     
     if (!profile?.id) return { realizados: 0, meta: 0, percentual: 0 };
 
@@ -82,7 +89,22 @@ export const SDRMetasSemanais = () => {
         .lte('data_agendamento', endDateFormatted.toISOString())
         .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro na consulta de agendamentos:', error);
+        throw error;
+      }
+
+      console.log(`📊 RESULTADO da consulta de agendamentos:`, {
+        semana,
+        mes: selectedMonth,
+        ano: selectedYear,
+        agendamentosEncontrados: agendamentos?.length || 0,
+        agendamentos: agendamentos?.map(a => ({
+          id: a.id,
+          data_agendamento: a.data_agendamento,
+          resultado: a.resultado_reuniao
+        }))
+      });
 
       // Buscar configuração do nível diretamente do perfil
       const nivelSDR = profile?.nivel || 'junior';
@@ -110,11 +132,15 @@ export const SDRMetasSemanais = () => {
       const realizados = agendamentos?.length || 0;
       const percentual = metaAgendamentos > 0 ? (realizados / metaAgendamentos) * 100 : 0;
 
-      return {
+      const resultado = {
         realizados,
         meta: metaAgendamentos,
         percentual: Math.round(percentual)
       };
+
+      console.log(`✅ RESULTADO FINAL para semana ${semana}:`, resultado);
+
+      return resultado;
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
       return { realizados: 0, meta: 0, percentual: 0 };
