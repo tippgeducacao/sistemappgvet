@@ -41,6 +41,7 @@ export default function MetasHistoryTab({ userId, userType }: MetasHistoryTabPro
   };
 
   useEffect(() => {
+    console.log(`🔍 MetasHistoryTab: Buscando metas para vendedor ${userId}, ano ${selectedYear}, mês ${selectedMonth}`);
     buscarMetasVendedor();
   }, [userId, selectedYear, selectedMonth]);
 
