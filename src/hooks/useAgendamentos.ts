@@ -53,10 +53,6 @@ export const useAgendamentos = () => {
             nome,
             email,
             whatsapp
-          ),
-          profiles!agendamentos_sdr_id_fkey (
-            name,
-            email
           )
         `)
         .eq('vendedor_id', profile.id)
@@ -71,14 +67,40 @@ export const useAgendamentos = () => {
 
       console.log('🔍 DADOS RETORNADOS DO SUPABASE:', JSON.stringify(data, null, 2));
       console.log('🔍 PRIMEIRO AGENDAMENTO:', data?.[0]);
-      console.log('🔍 SDR DO PRIMEIRO AGENDAMENTO:', data?.[0]?.profiles);
+
+      // Buscar dados dos SDRs separadamente
+      const sdrIds = [...new Set((data || []).map(a => a.sdr_id).filter(Boolean))];
+      console.log('🔍 SDR IDs ENCONTRADOS:', sdrIds);
+      
+      let sdrsData: any[] = [];
+      if (sdrIds.length > 0) {
+        const { data: sdrs, error: sdrError } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .in('id', sdrIds);
+        
+        if (sdrError) {
+          console.error('Erro ao buscar SDRs:', sdrError);
+        } else {
+          sdrsData = sdrs || [];
+          console.log('🔍 DADOS DOS SDRS:', sdrsData);
+        }
+      }
 
       // Mapear os dados para o formato esperado
-      const agendamentosMapeados = (data || []).map(agendamento => ({
-        ...agendamento,
-        lead: agendamento.leads,
-        sdr: agendamento.profiles
-      }));
+      const agendamentosMapeados = (data || []).map(agendamento => {
+        const sdr = sdrsData.find(s => s.id === agendamento.sdr_id);
+        console.log(`🔍 MAPEANDO AGENDAMENTO ${agendamento.id}:`, {
+          sdr_id: agendamento.sdr_id,
+          sdr_encontrado: sdr
+        });
+        
+        return {
+          ...agendamento,
+          lead: agendamento.leads,
+          sdr: sdr || null
+        };
+      });
 
       console.log('🔍 AGENDAMENTOS MAPEADOS:', agendamentosMapeados[0]);
       console.log('🔍 SDR MAPEADO:', agendamentosMapeados[0]?.sdr);
@@ -104,10 +126,6 @@ export const useAgendamentos = () => {
             nome,
             email,
             whatsapp
-          ),
-          profiles!agendamentos_sdr_id_fkey (
-            name,
-            email
           )
         `)
         .eq('vendedor_id', profile.id)
@@ -120,12 +138,30 @@ export const useAgendamentos = () => {
         return [];
       }
 
+      // Buscar dados dos SDRs separadamente
+      const sdrIds = [...new Set((data || []).map(a => a.sdr_id).filter(Boolean))];
+      
+      let sdrsData: any[] = [];
+      if (sdrIds.length > 0) {
+        const { data: sdrs, error: sdrError } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .in('id', sdrIds);
+        
+        if (!sdrError) {
+          sdrsData = sdrs || [];
+        }
+      }
+
       // Mapear os dados para o formato esperado
-      const agendamentosMapeados = (data || []).map(agendamento => ({
-        ...agendamento,
-        lead: agendamento.leads,
-        sdr: agendamento.profiles
-      }));
+      const agendamentosMapeados = (data || []).map(agendamento => {
+        const sdr = sdrsData.find(s => s.id === agendamento.sdr_id);
+        return {
+          ...agendamento,
+          lead: agendamento.leads,
+          sdr: sdr || null
+        };
+      });
 
       return agendamentosMapeados as Agendamento[];
     } catch (error) {

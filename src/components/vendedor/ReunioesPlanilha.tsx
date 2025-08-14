@@ -404,10 +404,13 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                   </div>
                   <div>
                     <strong>SDR Responsável:</strong> {(() => {
-                      console.log('🔍 AGENDAMENTO SELECIONADO COMPLETO:', agendamentoSelecionado);
-                      console.log('🔍 SDR DATA:', agendamentoSelecionado.sdr);
-                      console.log('🔍 SDR NAME:', agendamentoSelecionado.sdr?.name);
-                      return agendamentoSelecionado.sdr?.name || 'Não informado';
+                      console.log('🔍 RENDER - AGENDAMENTO SELECIONADO COMPLETO:', agendamentoSelecionado);
+                      console.log('🔍 RENDER - SDR DATA:', agendamentoSelecionado.sdr);
+                      console.log('🔍 RENDER - SDR NAME:', agendamentoSelecionado.sdr?.name);
+                      console.log('🔍 RENDER - SDR ID:', agendamentoSelecionado.sdr_id);
+                      const nomeSDR = agendamentoSelecionado.sdr?.name || 'Não informado';
+                      console.log('🔍 RENDER - NOME FINAL:', nomeSDR);
+                      return nomeSDR;
                     })()}
                   </div>
                   <div>
