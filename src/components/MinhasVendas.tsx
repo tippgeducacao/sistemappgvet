@@ -258,11 +258,19 @@ const MinhasVendas: React.FC = () => {
                             <div>
                                <span className="font-medium">Enviado:</span> {venda.enviado_em ? DataFormattingService.formatDateTime(venda.enviado_em) : 'Não informada'}
                             </div>
-                            {venda.data_assinatura_contrato && (
-                              <div>
-                                <span className="font-medium">Data de Assinatura do Contrato:</span> {DataFormattingService.formatDate(venda.data_assinatura_contrato)}
-                              </div>
-                            )}
+                            {(() => {
+                              console.log('🔍 Debug data_assinatura_contrato:', {
+                                vendaId: venda.id.substring(0, 8),
+                                data_assinatura_contrato: venda.data_assinatura_contrato,
+                                status: venda.status,
+                                hasDataAssinatura: !!venda.data_assinatura_contrato
+                              });
+                              return venda.data_assinatura_contrato && (
+                                <div>
+                                  <span className="font-medium">Data de Assinatura do Contrato:</span> {DataFormattingService.formatDate(venda.data_assinatura_contrato)}
+                                </div>
+                              );
+                            })()}
                             {venda.data_aprovacao && (
                               <div>
                                 <span className="font-medium">Aprovado:</span> {DataFormattingService.formatDateTime(venda.data_aprovacao)}
