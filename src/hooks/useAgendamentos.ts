@@ -49,7 +49,7 @@ export const useAgendamentos = () => {
         .from('agendamentos')
         .select(`
           *,
-          leads (
+          leads!lead_id (
             nome,
             email,
             whatsapp
@@ -69,7 +69,13 @@ export const useAgendamentos = () => {
         return;
       }
 
-      setAgendamentos((data || []) as Agendamento[]);
+      // Mapear os dados para o formato esperado pela interface
+      const agendamentosMapeados = (data || []).map(agendamento => ({
+        ...agendamento,
+        lead: agendamento.leads // O campo vem como 'leads' mas a interface espera 'lead'
+      }));
+
+      setAgendamentos(agendamentosMapeados as Agendamento[]);
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
       toast.error('Erro ao carregar agendamentos');
@@ -86,7 +92,7 @@ export const useAgendamentos = () => {
         .from('agendamentos')
         .select(`
           *,
-          leads (
+          leads!lead_id (
             nome,
             email,
             whatsapp
@@ -106,7 +112,13 @@ export const useAgendamentos = () => {
         return [];
       }
 
-      return (data || []) as Agendamento[];
+      // Mapear os dados para o formato esperado pela interface
+      const agendamentosMapeados = (data || []).map(agendamento => ({
+        ...agendamento,
+        lead: agendamento.leads // O campo vem como 'leads' mas a interface espera 'lead'
+      }));
+
+      return agendamentosMapeados as Agendamento[];
     } catch (error) {
       console.error('Erro ao buscar agendamentos cancelados:', error);
       return [];
