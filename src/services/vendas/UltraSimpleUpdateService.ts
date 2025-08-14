@@ -39,14 +39,27 @@ export class UltraSimpleUpdateService {
         created: existingRecord.enviado_em
       });
 
-      // STEP 3: Tentar atualização SIMPLES primeiro
+      // STEP 3: Preparar dados para atualização
+      const updateData: any = { 
+        status: newStatus,
+        atualizado_em: new Date().toISOString()
+      };
+
+      // Definir data de aprovação e assinatura apenas quando aprovado
+      if (newStatus === 'matriculado') {
+        updateData.data_aprovacao = new Date().toISOString();
+        updateData.data_assinatura_contrato = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      } else if (newStatus === 'pendente' || newStatus === 'desistiu') {
+        // Limpar datas quando pendente ou rejeitado
+        updateData.data_aprovacao = null;
+        updateData.data_assinatura_contrato = null;
+      }
+
+      // STEP 4: Tentar atualização SIMPLES primeiro
       console.log('🔄 Tentativa 1: Update simples...');
       const { data: updateResult1, error: updateError1 } = await supabase
         .from('form_entries')
-        .update({ 
-          status: newStatus,
-          atualizado_em: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', vendaId)
         .select('id, status, atualizado_em');
 
@@ -64,17 +77,18 @@ export class UltraSimpleUpdateService {
         }
       }
 
-      // STEP 4: Tentar atualização com UPSERT
+      // STEP 5: Tentar atualização com UPSERT
       console.log('🔄 Tentativa 2: Upsert...');
+      const upsertData = { 
+        id: vendaId,
+        ...updateData,
+        vendedor_id: existingRecord.vendedor_id,
+        enviado_em: existingRecord.enviado_em
+      };
+
       const { data: updateResult2, error: updateError2 } = await supabase
         .from('form_entries')
-        .upsert({ 
-          id: vendaId,
-          status: newStatus,
-          atualizado_em: new Date().toISOString(),
-          vendedor_id: existingRecord.vendedor_id,
-          enviado_em: existingRecord.enviado_em
-        })
+        .upsert(upsertData)
         .select('id, status, atualizado_em');
 
       if (updateError2) {
@@ -91,11 +105,11 @@ export class UltraSimpleUpdateService {
         }
       }
 
-      // STEP 5: Tentar atualização com match
+      // STEP 6: Tentar atualização com match
       console.log('🔄 Tentativa 3: Update com match...');
       const { data: updateResult3, error: updateError3 } = await supabase
         .from('form_entries')
-        .update({ status: newStatus })
+        .update(updateData)
         .match({ id: vendaId })
         .select();
 
