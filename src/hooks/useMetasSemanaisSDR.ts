@@ -107,40 +107,43 @@ export const useMetasSemanaisSDR = () => {
     return Math.ceil((diasDoAno + primeiroDia.getDay() + 1) / 7);
   };
 
-  // Obter semanas do mês (quarta a terça) - mesma lógica original
+  // Obter semanas do mês - REGRA: semana pertence ao mês onde sua TERÇA-FEIRA FINAL cai
   const getSemanasDoMes = (ano: number, mes: number): number[] => {
     const semanas: number[] = [];
     
-    console.log(`📅 Calculando semanas para ${mes}/${ano}`);
+    console.log(`📅 Calculando semanas para ${mes}/${ano} - REGRA: semana pertence ao mês da terça final`);
     
-    // Encontrar a primeira terça-feira que termina no mês
+    // Encontrar todas as terças-feiras que estão DENTRO do mês selecionado
     const primeiroDia = new Date(ano, mes - 1, 1);
     const ultimoDia = new Date(ano, mes, 0);
     
-    // Começar da primeira terça do mês (ou primeira terça que conta para este mês)
-    let dataAtual = new Date(primeiroDia);
+    console.log(`📅 Analisando período: ${primeiroDia.toLocaleDateString('pt-BR')} - ${ultimoDia.toLocaleDateString('pt-BR')}`);
     
-    // Encontrar a primeira terça-feira que pode estar no mês
-    while (dataAtual.getDay() !== 2) {
-      dataAtual.setDate(dataAtual.getDate() + 1);
+    // Começar da primeira terça-feira do mês (ela será o fim da primeira semana)
+    let tercaAtual = new Date(primeiroDia);
+    while (tercaAtual.getDay() !== 2) { // 2 = terça-feira
+      tercaAtual.setDate(tercaAtual.getDate() + 1);
     }
     
     let numeroSemana = 1;
     
-    // Percorrer todas as terças-feiras até o final do mês
-    while (dataAtual <= ultimoDia) {
-      // Verificar se esta terça-feira está dentro do mês
-      if (dataAtual.getMonth() === mes - 1) {
-        semanas.push(numeroSemana);
-        console.log(`✅ Semana ${numeroSemana} termina em ${dataAtual.toLocaleDateString('pt-BR')}`);
-        numeroSemana++;
-      }
+    // Para cada terça-feira que está no mês, criar uma semana
+    while (tercaAtual.getMonth() === mes - 1 && tercaAtual <= ultimoDia) {
+      semanas.push(numeroSemana);
       
-      // Ir para a próxima terça-feira (7 dias depois)
-      dataAtual.setDate(dataAtual.getDate() + 7);
+      // Calcular a quarta-feira que inicia esta semana (6 dias antes da terça)
+      const quartaInicio = new Date(tercaAtual);
+      quartaInicio.setDate(quartaInicio.getDate() - 6);
+      
+      console.log(`✅ Semana ${numeroSemana} do mês ${mes}/${ano}: ${quartaInicio.toLocaleDateString('pt-BR')} (quarta) até ${tercaAtual.toLocaleDateString('pt-BR')} (terça)`);
+      
+      numeroSemana++;
+      
+      // Próxima terça-feira (7 dias depois)
+      tercaAtual.setDate(tercaAtual.getDate() + 7);
     }
     
-    console.log(`📅 Semanas válidas para ${mes}/${ano}:`, semanas);
+    console.log(`📅 Total de semanas válidas para ${mes}/${ano}:`, semanas.length);
     return semanas;
   };
 
