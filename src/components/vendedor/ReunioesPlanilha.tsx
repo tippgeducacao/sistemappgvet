@@ -226,7 +226,42 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     }
   };
 
-  const renderTabela = (listaAgendamentos: Agendamento[], mostrarAcoes: boolean = true) => (
+  const handleRemarcarHistorico = async (agendamento: Agendamento, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({
+          status: 'remarcado',
+          resultado_reuniao: null,
+          data_resultado: null,
+          observacoes_resultado: null
+        })
+        .eq('id', agendamento.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Reunião remarcada e movida para agendadas!",
+      });
+
+      if (onRefresh) {
+        onRefresh();
+      }
+      
+    } catch (error) {
+      console.error('Erro ao remarcar reunião:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remarcar a reunião. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const renderTabela = (listaAgendamentos: Agendamento[], mostrarAcoes: boolean = true, isHistorico: boolean = false) => (
     listaAgendamentos.length === 0 ? (
       <Card>
         <CardContent className="p-6 text-center">
@@ -293,7 +328,17 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                   {mostrarAcoes && (
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
-                        {!agendamento.resultado_reuniao && (
+                        {isHistorico ? (
+                          <Button 
+                            onClick={(e) => handleRemarcarHistorico(agendamento, e)}
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-1"
+                          >
+                            <Edit className="h-3 w-3" />
+                            Remarcar
+                          </Button>
+                        ) : !agendamento.resultado_reuniao && (
                           <>
                             <Button 
                               onClick={(e) => {
@@ -343,11 +388,11 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
         </TabsList>
         
         <TabsContent value="agendadas" className="space-y-4">
-          {renderTabela(reunioesAgendadas, true)}
+          {renderTabela(reunioesAgendadas, true, false)}
         </TabsContent>
         
         <TabsContent value="historico" className="space-y-4">
-          {renderTabela(reunioesHistorico, false)}
+          {renderTabela(reunioesHistorico, true, true)}
         </TabsContent>
       </Tabs>
 
