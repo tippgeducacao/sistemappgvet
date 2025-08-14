@@ -59,102 +59,100 @@ export const SDRMetasSemanais = () => {
     }) || [];
   };
 
-  const getAgendamentosNaSemana = async (semana: number) => {
-    const startDate = getDataInicioSemana(selectedYear, selectedMonth, semana);
-    const endDate = getDataFimSemana(selectedYear, selectedMonth, semana);
-    
-    console.log(`🗓️ DEBUGGING - Buscando agendamentos para:`, {
-      semana,
-      selectedMonth,
-      selectedYear,
-      periodo: `${startDate.toLocaleDateString('pt-BR')} - ${endDate.toLocaleDateString('pt-BR')}`,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
-    });
-    
-    if (!profile?.id) return { realizados: 0, meta: 0, percentual: 0 };
-
-    try {
-      // Garantir que só busca agendamentos realmente do período específico
-      const startDateFormatted = new Date(startDate);
-      startDateFormatted.setHours(0, 0, 0, 0);
+  // Criar função contextualizada para agendamentos
+  const getAgendamentosNaSemanaContexto = (targetYear: number, targetMonth: number) => {
+    return async (semana: number) => {
+      const startDate = getDataInicioSemana(targetYear, targetMonth, semana);
+      const endDate = getDataFimSemana(targetYear, targetMonth, semana);
       
-      const endDateFormatted = new Date(endDate);
-      endDateFormatted.setHours(23, 59, 59, 999);
-      
-      console.log(`🔍 CONSULTA EXATA:`, {
-        sdr_id: profile.id,
-        data_inicio: startDateFormatted.toISOString(),
-        data_fim: endDateFormatted.toISOString(),
-        mes_consultado: selectedMonth,
-        ano_consultado: selectedYear
-      });
-      
-      // Buscar agendamentos da semana específica que tiveram resultado positivo
-      const { data: agendamentos, error } = await supabase
-        .from('agendamentos')
-        .select('*')
-        .eq('sdr_id', profile.id)
-        .gte('data_agendamento', startDateFormatted.toISOString())
-        .lte('data_agendamento', endDateFormatted.toISOString())
-        .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
-
-      if (error) {
-        console.error('❌ Erro na consulta de agendamentos:', error);
-        throw error;
-      }
-
-      console.log(`📊 RESULTADO da consulta de agendamentos:`, {
+      console.log(`🗓️ CONTEXTO ESPECÍFICO - Buscando agendamentos para:`, {
         semana,
-        mes: selectedMonth,
-        ano: selectedYear,
-        agendamentosEncontrados: agendamentos?.length || 0,
-        agendamentos: agendamentos?.map(a => ({
-          id: a.id,
-          data_agendamento: a.data_agendamento,
-          resultado: a.resultado_reuniao
-        }))
+        targetMonth,
+        targetYear,
+        periodo: `${startDate.toLocaleDateString('pt-BR')} - ${endDate.toLocaleDateString('pt-BR')}`,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
       });
+      
+      if (!profile?.id) return { realizados: 0, meta: 0, percentual: 0 };
 
-      // Buscar configuração do nível diretamente do perfil
-      const nivelSDR = profile?.nivel || 'junior';
-      console.log('🔍 Nível SDR do perfil:', nivelSDR);
+      try {
+        // Garantir que só busca agendamentos realmente do período específico
+        const startDateFormatted = new Date(startDate);
+        startDateFormatted.setHours(0, 0, 0, 0);
+        
+        const endDateFormatted = new Date(endDate);
+        endDateFormatted.setHours(23, 59, 59, 999);
+        
+        console.log(`🔍 CONSULTA EXATA CONTEXTUALIZADA:`, {
+          sdr_id: profile.id,
+          data_inicio: startDateFormatted.toISOString(),
+          data_fim: endDateFormatted.toISOString(),
+          mes_consultado: targetMonth,
+          ano_consultado: targetYear,
+          semana_consultada: semana
+        });
+        
+        // Buscar agendamentos da semana específica que tiveram resultado positivo
+        const { data: agendamentos, error } = await supabase
+          .from('agendamentos')
+          .select('*')
+          .eq('sdr_id', profile.id)
+          .gte('data_agendamento', startDateFormatted.toISOString())
+          .lte('data_agendamento', endDateFormatted.toISOString())
+          .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
 
-      // Buscar configuração do nível para SDR
-      const { data: nivelConfig, error: nivelError } = await supabase
-        .from('niveis_vendedores')
-        .select('meta_semanal_inbound, meta_vendas_cursos')
-        .eq('nivel', nivelSDR)
-        .eq('tipo_usuario', 'sdr')
-        .single();
+        if (error) {
+          console.error('❌ Erro na consulta de agendamentos:', error);
+          throw error;
+        }
 
-      if (nivelError) {
-        console.error('❌ Erro ao buscar nível SDR:', nivelError);
+        console.log(`📊 RESULTADO CONTEXTUALIZADO da consulta:`, {
+          semana,
+          mes: targetMonth,
+          ano: targetYear,
+          agendamentosEncontrados: agendamentos?.length || 0,
+          agendamentos: agendamentos?.map(a => ({
+            id: a.id,
+            data_agendamento: a.data_agendamento,
+            resultado: a.resultado_reuniao
+          }))
+        });
+
+        // Buscar configuração do nível diretamente do perfil
+        const nivelSDR = profile?.nivel || 'junior';
+
+        // Buscar configuração do nível para SDR
+        const { data: nivelConfig, error: nivelError } = await supabase
+          .from('niveis_vendedores')
+          .select('meta_semanal_inbound, meta_vendas_cursos')
+          .eq('nivel', nivelSDR)
+          .eq('tipo_usuario', 'sdr')
+          .single();
+
+        if (nivelError) {
+          console.error('❌ Erro ao buscar nível SDR:', nivelError);
+          return { realizados: 0, meta: 0, percentual: 0 };
+        }
+
+        const metaAgendamentos = nivelConfig?.meta_semanal_inbound || 0;
+        const realizados = agendamentos?.length || 0;
+        const percentual = metaAgendamentos > 0 ? (realizados / metaAgendamentos) * 100 : 0;
+
+        const resultado = {
+          realizados,
+          meta: metaAgendamentos,
+          percentual: Math.round(percentual)
+        };
+
+        console.log(`✅ RESULTADO FINAL CONTEXTUALIZADO para semana ${semana} do mês ${targetMonth}/${targetYear}:`, resultado);
+
+        return resultado;
+      } catch (error) {
+        console.error('Erro ao buscar agendamentos:', error);
         return { realizados: 0, meta: 0, percentual: 0 };
       }
-
-      console.log('📊 Config de nível SDR encontrada:', nivelConfig);
-
-      const metaAgendamentos = nivelConfig?.meta_semanal_inbound || 0;
-
-      console.log('🎯 Meta de agendamentos para SDR:', metaAgendamentos);
-
-      const realizados = agendamentos?.length || 0;
-      const percentual = metaAgendamentos > 0 ? (realizados / metaAgendamentos) * 100 : 0;
-
-      const resultado = {
-        realizados,
-        meta: metaAgendamentos,
-        percentual: Math.round(percentual)
-      };
-
-      console.log(`✅ RESULTADO FINAL para semana ${semana}:`, resultado);
-
-      return resultado;
-    } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error);
-      return { realizados: 0, meta: 0, percentual: 0 };
-    }
+    };
   };
 
   const calcularComissaoSemana = async (cursosVendidos: number, metaCursos: number) => {
@@ -314,7 +312,7 @@ export const SDRMetasSemanais = () => {
 
                 return (
                   <AgendamentosRow 
-                    key={semana}
+                    key={`${selectedYear}-${selectedMonth}-${semana}`}
                     semana={semana}
                     formatPeriodo={formatPeriodo}
                     isAtual={isAtual}
@@ -322,7 +320,7 @@ export const SDRMetasSemanais = () => {
                     metaValue={metaValue}
                     realizado={realizado}
                     getStatusBadge={getStatusBadge}
-                    getAgendamentosNaSemana={getAgendamentosNaSemana}
+                    getAgendamentosNaSemana={getAgendamentosNaSemanaContexto(selectedYear, selectedMonth)}
                     calcularComissaoSemana={calcularComissaoSemana}
                   />
                 );
