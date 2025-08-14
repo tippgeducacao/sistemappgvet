@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut, FileText, FileSpreadsheet } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut, FileText, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -326,6 +326,7 @@ const VendasReunioesSummaryCard: React.FC<{
 const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoom, setZoom] = useState(100);
+  const [semanaOffset, setSemanaOffset] = useState(0); // 0 = semana atual, -1 = semana anterior, etc.
   const { vendas } = useAllVendas();
   const { vendedores } = useVendedores();
   const { metasSemanais, getSemanaAtual } = useMetasSemanais();
@@ -419,7 +420,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const currentWeek = getSemanaAtual();
   const today = new Date();
 
-  // Calcular período da semana atual (quarta-feira a terça-feira)
+  // Calcular período da semana baseado no offset
   const getDaysUntilWednesday = (date: Date) => {
     const day = date.getDay(); // 0=domingo, 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado
     if (day >= 3) { // Quinta, sexta, sábado ou quarta
@@ -429,19 +430,29 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     }
   };
 
-  const startOfWeek = new Date(today);
-  const daysToWednesday = getDaysUntilWednesday(today);
-  startOfWeek.setDate(today.getDate() - daysToWednesday);
+  // Calcular semana baseada no offset
+  const targetDate = new Date(today);
+  targetDate.setDate(today.getDate() + (semanaOffset * 7));
+  
+  const startOfWeek = new Date(targetDate);
+  const daysToWednesday = getDaysUntilWednesday(targetDate);
+  startOfWeek.setDate(targetDate.getDate() - daysToWednesday);
   startOfWeek.setHours(0, 0, 0, 0);
   
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6); // 6 dias depois (quarta + 6 = terça)
   endOfWeek.setHours(23, 59, 59, 999);
 
-  // Filtrar vendas usando a regra de semana (quarta a terça) para a semana atual
+  // Filtrar vendas usando a regra de semana (quarta a terça) para a semana selecionada
   const vendasSemanaAtual = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
-    const vendaDate = new Date(venda.enviado_em);
+    // Priorizar data_assinatura_contrato
+    let vendaDate: Date;
+    if (venda.data_assinatura_contrato) {
+      vendaDate = new Date(venda.data_assinatura_contrato);
+    } else {
+      vendaDate = new Date(venda.enviado_em);
+    }
     return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
   });
 
@@ -460,7 +471,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   endOfDay.setHours(23, 59, 59, 999);
 
   const vendasDiaAtual = vendas.filter(venda => {
-    const vendaDate = new Date(venda.enviado_em);
+    // Priorizar data_assinatura_contrato
+    let vendaDate: Date;
+    if (venda.data_assinatura_contrato) {
+      vendaDate = new Date(venda.data_assinatura_contrato);
+    } else {
+      vendaDate = new Date(venda.enviado_em);
+    }
     return vendaDate >= startOfDay && vendaDate <= endOfDay && 
            venda.status === 'matriculado';
   });
@@ -672,9 +689,15 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         pontosHoje,
         pontosOntem,
         metaSemanal,
+        semanaOffset,
+        startOfWeek: startOfWeek.toISOString(),
+        endOfWeek: endOfWeek.toISOString(),
         vendasDetalhes: vendasVendedorSemana.map(v => ({
           id: v.id,
           pontuacao_validada: v.pontuacao_validada,
+          pontuacao_esperada: v.pontuacao_esperada,
+          data_assinatura_contrato: v.data_assinatura_contrato,
+          data_aprovacao: v.data_aprovacao,
           status: v.status,
           enviado_em: v.enviado_em
         }))
@@ -1138,7 +1161,42 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
 
       {/* Header mais compacto */}
       <div className="relative z-10 flex justify-between items-center p-4 backdrop-blur-md border-b border-white/20">
-        <h1 className="text-2xl font-bold text-foreground">Ranking de Vendas - TV</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-foreground">Ranking de Vendas - TV</h1>
+          
+          {/* Controles de navegação de semana */}
+          <div className="flex items-center gap-2 px-3 py-1 bg-background/50 rounded-lg backdrop-blur-sm">
+            <Button
+              onClick={() => setSemanaOffset(semanaOffset - 1)}
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="text-sm font-medium text-foreground min-w-[120px] text-center">
+              {semanaOffset === 0 ? 'Semana Atual' : 
+               semanaOffset === -1 ? 'Semana Anterior' :
+               semanaOffset > 0 ? `+${semanaOffset} semanas` :
+               `${Math.abs(semanaOffset)} semanas atrás`}
+            </div>
+            
+            <Button
+              onClick={() => setSemanaOffset(semanaOffset + 1)}
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              disabled={semanaOffset >= 0} // Não permitir ir para o futuro
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="text-sm text-muted-foreground">
+            {startOfWeek.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {endOfWeek.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+          </div>
+        </div>
         <div className="flex gap-2">
           <Button
             onClick={exportToPDF}
