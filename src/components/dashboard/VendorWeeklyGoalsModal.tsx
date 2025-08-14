@@ -77,8 +77,11 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
   
   // Vendas filtradas por mês/ano
   const vendasFiltradas = vendasVendedor.filter(venda => {
-    const vendaDate = new Date(venda.enviado_em);
-    return vendaDate.getMonth() + 1 === filtroMes && vendaDate.getFullYear() === filtroAno;
+    // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
+    const dataReferencia = venda.status === 'matriculado' && venda.data_assinatura_contrato 
+      ? new Date(venda.data_assinatura_contrato) 
+      : new Date(venda.enviado_em);
+    return dataReferencia.getMonth() + 1 === filtroMes && dataReferencia.getFullYear() === filtroAno;
   });
 
   // Função para calcular as semanas que terminam no mês (quarta a terça)
@@ -136,8 +139,13 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
     const vendasAprovadas = todasVendas.filter(venda => {
       const isVendedor = venda.vendedor_id === vendedorId;
       const isAprovada = venda.status === 'matriculado';
-      const vendaDate = new Date(venda.enviado_em);
-      const isNoPeriodo = vendaDate >= startDate && vendaDate <= endDate;
+      
+      // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
+      const dataReferencia = isAprovada && venda.data_assinatura_contrato 
+        ? new Date(venda.data_assinatura_contrato) 
+        : new Date(venda.enviado_em);
+        
+      const isNoPeriodo = dataReferencia >= startDate && dataReferencia <= endDate;
       
       if (isVendedor) {
         console.log('📋 Venda do vendedor:', {
@@ -145,7 +153,8 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
           aluno: venda.aluno?.nome,
           status: venda.status,
           enviado_em: venda.enviado_em,
-          vendaDate: vendaDate.toISOString(),
+          data_assinatura_contrato: venda.data_assinatura_contrato,
+          dataReferencia: dataReferencia.toISOString(),
           isAprovada,
           isNoPeriodo
         });
@@ -178,10 +187,14 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
       const weekSales = todasVendas.filter(venda => {
         const isVendedor = venda.vendedor_id === vendedorId;
         const isAprovada = venda.status === 'matriculado';
-        const vendaDate = new Date(venda.enviado_em);
+        
+        // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
+        const dataReferencia = isAprovada && venda.data_assinatura_contrato 
+          ? new Date(venda.data_assinatura_contrato) 
+          : new Date(venda.enviado_em);
         
         // Normalizar datas para comparação (apenas a data, sem horário)
-        const vendaDateOnly = new Date(vendaDate.getFullYear(), vendaDate.getMonth(), vendaDate.getDate());
+        const vendaDateOnly = new Date(dataReferencia.getFullYear(), dataReferencia.getMonth(), dataReferencia.getDate());
         const weekStartOnly = new Date(week.start.getFullYear(), week.start.getMonth(), week.start.getDate());
         const weekEndOnly = new Date(week.end.getFullYear(), week.end.getMonth(), week.end.getDate());
         
@@ -459,7 +472,12 @@ const VendorWeeklyGoalsModal: React.FC<VendorWeeklyGoalsModalProps> = ({
                           <div className="text-sm text-muted-foreground">
                             <span>{venda.curso?.nome}</span>
                             <span className="mx-2">•</span>
-                            <span>{new Date(venda.enviado_em).toLocaleDateString('pt-BR')}</span>
+                            <span>
+                              {venda.status === 'matriculado' && venda.data_assinatura_contrato 
+                                ? `Assinatura: ${new Date(venda.data_assinatura_contrato).toLocaleDateString('pt-BR')}`
+                                : `Enviado: ${new Date(venda.enviado_em).toLocaleDateString('pt-BR')}`
+                              }
+                            </span>
                             {venda.pontuacao_validada && (
                               <>
                                 <span className="mx-2">•</span>
