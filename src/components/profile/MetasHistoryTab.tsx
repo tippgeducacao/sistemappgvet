@@ -171,27 +171,40 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {userMetasSemanais.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhuma meta semanal encontrada para este usuário.
-              </div>
-            ) : (
-            <div className="space-y-4">
-              {userMetasSemanais
-                .filter(meta => {
-                  if (selectedMonth) {
-                    // Verificar se a semana está no mês selecionado
-                    const semanasDoMes = getSemanasDoMes(selectedYear, selectedMonth);
-                    return meta.ano === selectedYear && semanasDoMes.includes(meta.semana);
-                  }
-                  return meta.ano === selectedYear;
-                })
-                .sort((a, b) => {
-                  if (a.ano !== b.ano) return b.ano - a.ano;
-                  return b.semana - a.semana;
-                })
-                .slice(0, 50) // Limitar para performance
-                .map((meta) => {
+            {(() => {
+              // Filtrar metas semanais com base no mês selecionado usando a mesma lógica corrigida
+              const metasFiltradas = userMetasSemanais.filter(meta => {
+                if (selectedMonth) {
+                  // Usar a lógica corrigida: verificar se a semana está no mês selecionado
+                  const semanasDoMes = getSemanasDoMes(selectedYear, selectedMonth);
+                  console.log(`🔍 Histórico: Verificando meta semana ${meta.semana} do ano ${meta.ano} para mês ${selectedMonth}/${selectedYear}`);
+                  console.log(`📅 Semanas válidas para ${selectedMonth}/${selectedYear}:`, semanasDoMes);
+                  const metaPertenceAoMes = meta.ano === selectedYear && semanasDoMes.includes(meta.semana);
+                  console.log(`✅ Meta pertence ao mês? ${metaPertenceAoMes}`);
+                  return metaPertenceAoMes;
+                }
+                return meta.ano === selectedYear;
+              });
+
+              console.log(`📊 Total de metas encontradas para o período: ${metasFiltradas.length}`);
+
+              if (metasFiltradas.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhuma semana histórica encontrada para o período selecionado
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-4">
+                  {metasFiltradas
+                    .sort((a, b) => {
+                      if (a.ano !== b.ano) return b.ano - a.ano;
+                      return b.semana - a.semana;
+                    })
+                    .slice(0, 50) // Limitar para performance
+                    .map((meta) => {
                   const vendasSemana = getVendasSemana(meta.ano, meta.semana);
                   const pontuacao = vendasSemana.reduce((total, venda) => 
                     total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0
@@ -272,9 +285,10 @@ const MetasHistoryTab: React.FC<MetasHistoryTabProps> = ({ userId, userType }) =
                       </div>
                     </div>
                   );
-                })}
-            </div>
-            )}
+                 })}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
