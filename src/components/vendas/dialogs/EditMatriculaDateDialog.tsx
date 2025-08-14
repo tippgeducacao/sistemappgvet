@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarIcon, Edit } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -29,6 +30,7 @@ const EditMatriculaDateDialog: React.FC<EditMatriculaDateDialogProps> = ({
   );
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Só diretores podem editar
   if (userType !== 'diretor') {
@@ -111,6 +113,11 @@ const EditMatriculaDateDialog: React.FC<EditMatriculaDateDialogProps> = ({
         title: "Sucesso",
         description: "Data de assinatura de contrato atualizada com sucesso"
       });
+
+      // Invalidar cache de vendas para atualizar ranking
+      queryClient.invalidateQueries({ queryKey: ['all-vendas'] });
+      queryClient.invalidateQueries({ queryKey: ['vendas'] });
+      queryClient.invalidateQueries({ queryKey: ['simple-admin-vendas'] });
 
       setIsOpen(false);
       onUpdate();
