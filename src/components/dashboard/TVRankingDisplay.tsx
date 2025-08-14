@@ -459,7 +459,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   // Filtrar vendas do mês atual usando a regra de semana
   const vendasMesAtual = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
-    const vendaDate = new Date(venda.enviado_em);
+    // Priorizar data_assinatura_contrato
+    let vendaDate: Date;
+    if (venda.data_assinatura_contrato) {
+      vendaDate = new Date(venda.data_assinatura_contrato);
+    } else {
+      vendaDate = new Date(venda.enviado_em);
+    }
     const { mes, ano } = getVendaPeriod(vendaDate);
     return mes === currentMonth && ano === currentYear;
   });
@@ -840,7 +846,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         .filter(venda => {
           if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
           
-          const vendaDate = new Date(venda.enviado_em);
+          // Priorizar data_assinatura_contrato
+          let vendaDate: Date;
+          if (venda.data_assinatura_contrato) {
+            vendaDate = new Date(venda.data_assinatura_contrato);
+          } else {
+            vendaDate = new Date(venda.enviado_em);
+          }
           const isInRange = vendaDate >= week.startDate && vendaDate <= week.endDate;
           
           return isInRange;
