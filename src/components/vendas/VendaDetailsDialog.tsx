@@ -155,9 +155,9 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
                       <span className="font-medium">Data de Matrícula:</span> {dataMatricula}
                     </div>
                   )}
-                  {dataAssinatura && (
+                  {venda.data_assinatura_contrato && (
                     <div className="text-sm text-gray-600">
-                      <span className="font-medium">Data de Assinatura do Contrato:</span> {dataAssinatura}
+                      <span className="font-medium">Data de Assinatura do Contrato:</span> {formatarDataBrasileira(venda.data_assinatura_contrato)}
                     </div>
                   )}
                 </div>
@@ -228,7 +228,7 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
               pontuacaoValidada={venda.pontuacao_validada}
               motivoPendencia={venda.motivo_pendencia}
               dataMatricula={dataMatriculaRaw}
-              dataAssinaturaContrato={venda.data_assinatura_contrato}
+              dataAssinaturaContrato={venda.data_assinatura_contrato ? formatarDataBrasileira(venda.data_assinatura_contrato) : null}
               vendaId={venda.id}
               userType={profile?.user_type || ''}
               onUpdate={refetchDetails}

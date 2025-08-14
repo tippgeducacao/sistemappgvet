@@ -88,7 +88,7 @@ const VendaStatusCard: React.FC<VendaStatusCardProps> = ({
                   <td className="px-4 py-3 font-medium text-gray-700 w-1/3">Data de Assinatura de Contrato:</td>
                   <td className="px-4 py-3 text-purple-600 font-medium flex items-center justify-between">
                     <span>
-                      {dataAssinaturaContrato ? format(new Date(dataAssinaturaContrato), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informada'}
+                      {dataAssinaturaContrato ? dataAssinaturaContrato : 'Não informada'}
                     </span>
                     <EditMatriculaDateDialog 
                       vendaId={vendaId}
