@@ -14,6 +14,7 @@ export interface VendaCompleta {
   enviado_em: string;
   atualizado_em: string;
   data_aprovacao?: string | null; // Nova propriedade para data de aprovação
+  data_assinatura_contrato?: string | null; // Nova propriedade para data de assinatura de contrato
   motivo_pendencia?: string | null;
   documento_comprobatorio?: string | null;
   aluno: {

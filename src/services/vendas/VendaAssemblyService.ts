@@ -55,6 +55,8 @@ export class VendaAssemblyService {
           pontuacao_validada: entry.pontuacao_validada,
           enviado_em: entry.enviado_em,
           atualizado_em: entry.atualizado_em,
+          data_aprovacao: entry.data_aprovacao,
+          data_assinatura_contrato: entry.data_assinatura_contrato,
           motivo_pendencia: entry.motivo_pendencia,
           documento_comprobatorio: entry.documento_comprobatorio,
           aluno,

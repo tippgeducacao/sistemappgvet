@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFormDetails } from '@/hooks/useFormDetails';
+import { useAuth } from '@/hooks/useAuth';
 import VendaAlunoInfoCard from './details/VendaAlunoInfoCard';
 import VendaCursoInfoCard from './details/VendaCursoInfoCard';
 import VendaStatusCard from './details/VendaStatusCard';
@@ -31,6 +32,8 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
     error: detailsError,
     refetch: refetchDetails 
   } = useFormDetails(venda?.id);
+
+  const { profile } = useAuth();
 
   if (!venda) return null;
 
@@ -202,58 +205,18 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
               </div>
             </div>
 
-            {/* Status da Venda */}
-            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-sm mb-6">
-              <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 px-4 py-2 border-b dark:border-gray-700 flex items-center justify-between">
-                <h3 className="font-semibold text-purple-900 dark:text-purple-100 text-sm">Status da Venda</h3>
-                <Badge className={getStatusColor(venda.status)}>
-                  {getStatusLabel(venda.status)}
-                </Badge>
-              </div>
-              <table className="w-full text-xs">
-                <tbody>
-                  <tr className="border-b dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300 w-1/4">Status Atual:</td>
-                    <td className="px-3 py-2 text-gray-900 dark:text-gray-100">
-                      <Badge className={getStatusColor(venda.status)}>
-                        {getStatusLabel(venda.status)}
-                      </Badge>
-                    </td>
-                  </tr>
-                  <tr className="border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600">
-                    <td className="px-3 py-2 font-medium text-gray-700 w-1/4">Pontuação (calculada automaticamente):</td>
-                    <td className="px-3 py-2 text-cyan-600 font-medium">{venda.pontuacao_esperada || 0} pts</td>
-                  </tr>
-                  <tr className="bg-white hover:bg-gray-50">
-                    <td className="px-3 py-2 font-medium text-gray-700 w-1/4">Pontuação Validada:</td>
-                    <td className="px-3 py-2 text-green-600 font-medium">{venda.pontuacao_validada || '-'} pts</td>
-                  </tr>
-                </tbody>
-              </table>
-              
-              {venda.motivo_pendencia && (
-                <div className={`m-3 border rounded-lg p-3 ${
-                  venda.status === 'desistiu' 
-                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
-                    : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-                }`}>
-                  <span className={`text-xs font-medium ${
-                    venda.status === 'desistiu' 
-                      ? 'text-red-800 dark:text-red-200' 
-                      : 'text-yellow-800 dark:text-yellow-200'
-                  }`}>
-                    {venda.status === 'desistiu' ? 'Motivo da Rejeição:' : 'Motivo da Pendência:'}
-                  </span>
-                  <p className={`text-xs mt-1 ${
-                    venda.status === 'desistiu' 
-                      ? 'text-red-700 dark:text-red-300' 
-                      : 'text-yellow-700 dark:text-yellow-300'
-                  }`}>
-                    {venda.motivo_pendencia}
-                  </p>
-                </div>
-              )}
-            </div>
+            {/* Status da Venda - Usando o componente VendaStatusCard */}
+            <VendaStatusCard
+              status={venda.status}
+              pontuacaoEsperada={venda.pontuacao_esperada}
+              pontuacaoValidada={venda.pontuacao_validada}
+              motivoPendencia={venda.motivo_pendencia}
+              dataMatricula={dataMatriculaRaw}
+              dataAssinaturaContrato={venda.data_assinatura_contrato || dataAssinaturaRaw}
+              vendaId={venda.id}
+              userType={profile?.user_type || ''}
+              onUpdate={refetchDetails}
+            />
 
             {/* Documentos e Observações em grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">

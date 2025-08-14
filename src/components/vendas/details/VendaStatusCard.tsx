@@ -2,19 +2,32 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import EditMatriculaDateDialog from '../dialogs/EditMatriculaDateDialog';
 
 interface VendaStatusCardProps {
   status: string;
   pontuacaoEsperada: number | null;
   pontuacaoValidada: number | null;
   motivoPendencia: string | null;
+  dataMatricula?: string | null;
+  dataAssinaturaContrato?: string | null;
+  vendaId: string;
+  userType: string;
+  onUpdate: () => void;
 }
 
 const VendaStatusCard: React.FC<VendaStatusCardProps> = ({
   status,
   pontuacaoEsperada,
   pontuacaoValidada,
-  motivoPendencia
+  motivoPendencia,
+  dataMatricula,
+  dataAssinaturaContrato,
+  vendaId,
+  userType,
+  onUpdate
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -61,6 +74,32 @@ const VendaStatusCard: React.FC<VendaStatusCardProps> = ({
               <td className="px-4 py-3 font-medium text-gray-700 w-1/3">Pontuação Validada:</td>
               <td className="px-4 py-3 text-green-600 font-medium">{pontuacaoValidada || '-'} pts</td>
             </tr>
+            
+            {/* Mostrar as datas apenas se a venda foi aprovada/matriculada */}
+            {status === 'matriculado' && (
+              <>
+                <tr className="border-b bg-gray-50 hover:bg-gray-100">
+                  <td className="px-4 py-3 font-medium text-gray-700 w-1/3">Data de Matrícula:</td>
+                  <td className="px-4 py-3 text-blue-600 font-medium">
+                    {dataMatricula ? format(new Date(dataMatricula), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informada'}
+                  </td>
+                </tr>
+                <tr className="bg-white hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-700 w-1/3">Data de Assinatura de Contrato:</td>
+                  <td className="px-4 py-3 text-purple-600 font-medium flex items-center justify-between">
+                    <span>
+                      {dataAssinaturaContrato ? format(new Date(dataAssinaturaContrato), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informada'}
+                    </span>
+                    <EditMatriculaDateDialog 
+                      vendaId={vendaId}
+                      currentDate={dataAssinaturaContrato}
+                      onUpdate={onUpdate}
+                      userType={userType}
+                    />
+                  </td>
+                </tr>
+              </>
+            )}
           </tbody>
         </table>
         
