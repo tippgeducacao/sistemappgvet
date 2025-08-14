@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -232,6 +232,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      eventos_especiais: {
+        Row: {
+          created_at: string
+          created_by: string
+          data_fim: string
+          data_fim_recorrencia: string | null
+          data_inicio: string
+          data_inicio_recorrencia: string | null
+          descricao: string | null
+          dias_semana: number[] | null
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          is_recorrente: boolean
+          tipo_recorrencia: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          data_fim: string
+          data_fim_recorrencia?: string | null
+          data_inicio: string
+          data_inicio_recorrencia?: string | null
+          descricao?: string | null
+          dias_semana?: number[] | null
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          is_recorrente?: boolean
+          tipo_recorrencia?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data_fim?: string
+          data_fim_recorrencia?: string | null
+          data_inicio?: string
+          data_inicio_recorrencia?: string | null
+          descricao?: string | null
+          dias_semana?: number[] | null
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          is_recorrente?: boolean
+          tipo_recorrencia?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       form_entries: {
         Row: {
@@ -893,8 +947,12 @@ export type Database = {
     }
     Functions: {
       calcular_avaliacao_semanal_vendedor: {
-        Args: { p_vendedor_id: string; p_ano: number; p_semana: number }
+        Args: { p_ano: number; p_semana: number; p_vendedor_id: string }
         Returns: undefined
+      }
+      can_access_aluno: {
+        Args: { aluno_vendedor_id: string }
+        Returns: boolean
       }
       check_and_update_overdue_appointments: {
         Args: Record<PropertyKey, never>
@@ -905,7 +963,7 @@ export type Database = {
         Returns: undefined
       }
       create_weekly_goals_for_vendor: {
-        Args: { p_vendedor_id: string; p_ano: number; p_mes: number }
+        Args: { p_ano: number; p_mes: number; p_vendedor_id: string }
         Returns: undefined
       }
       criar_snapshot_mensal: {
@@ -932,12 +990,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_student_safe_data: {
+        Args: { student_id: string }
+        Returns: {
+          email_masked: string
+          form_entry_id: string
+          id: string
+          nome: string
+          telefone_masked: string
+          vendedor_id: string
+        }[]
+      }
       get_weeks_in_month: {
         Args: { ano: number; mes: number }
         Returns: number
       }
       has_role: {
-        Args: { user_id: string; role_name: string }
+        Args: { role_name: string; user_id: string }
         Returns: boolean
       }
       is_admin: {
@@ -951,12 +1020,12 @@ export type Database = {
       list_bucket_files: {
         Args: { bucket_name: string; folder_prefix?: string }
         Returns: {
-          name: string
-          id: string
-          updated_at: string
           created_at: string
+          id: string
           last_accessed_at: string
           metadata: Json
+          name: string
+          updated_at: string
         }[]
       }
       reabrir_mes_planilha: {
@@ -977,20 +1046,24 @@ export type Database = {
       }
       update_venda_status: {
         Args: {
-          venda_id_param: string
+          motivo_param?: string
           novo_status: string
           pontuacao_param?: number
-          motivo_param?: string
+          venda_id_param: string
         }
         Returns: boolean
       }
       update_venda_status_fast: {
         Args: {
-          venda_id_param: string
+          motivo_param?: string
           novo_status: string
           pontuacao_param?: number
-          motivo_param?: string
+          venda_id_param: string
         }
+        Returns: boolean
+      }
+      verificar_conflito_evento_especial: {
+        Args: { data_fim_agendamento: string; data_inicio_agendamento: string }
         Returns: boolean
       }
     }
