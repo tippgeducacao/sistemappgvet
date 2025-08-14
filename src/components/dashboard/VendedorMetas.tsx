@@ -142,6 +142,18 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   // Debug específico para agosto 2025
   if (selectedMonth === 8 && selectedYear === 2025) {
     debugSemanasAgosto2025();
+    
+    // Debug das vendas do vendedor teste
+    if (profile?.name?.includes('teste')) {
+      const vendasMatriculadas = vendas.filter(v => 
+        v.vendedor_id === profile.id && v.status === 'matriculado'
+      );
+      
+      console.log(`🎯 VENDEDOR TESTE - Total de vendas matriculadas:`, vendasMatriculadas.length);
+      vendasMatriculadas.forEach(v => {
+        console.log(`  📝 Venda ${v.id.substring(0, 8)}: ${v.aluno?.nome} - ${v.pontuacao_validada || v.pontuacao_esperada} pts - Data assinatura: ${v.data_assinatura_contrato || 'N/A'} - Enviado: ${v.enviado_em}`);
+      });
+    }
   }
   
   // Só buscar meta da semana atual se estivermos no mês correto da semana
@@ -242,15 +254,13 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 
                 const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
                 
-                // DEBUG ESPECÍFICO para venda do dia 20/08
-                if (venda.data_assinatura_contrato === '2025-08-20' || 
-                    dataVenda.toISOString().includes('2025-08-20')) {
-                  console.log(`🚨 VENDA 20/08 - ANÁLISE DETALHADA:`, {
+                // DEBUG GERAL para todas as vendas matriculadas do vendedor teste
+                if (venda.status === 'matriculado' && profile?.name?.includes('teste')) {
+                  console.log(`🔍 VENDEDOR TESTE - Venda matriculada:`, {
                     venda_id: venda.id.substring(0, 8),
                     aluno: venda.aluno?.nome,
-                    vendedor: profile?.name,
+                    status: venda.status,
                     data_assinatura_contrato: venda.data_assinatura_contrato,
-                    data_matricula_formulario: getDataMatriculaFromRespostas(respostas)?.toLocaleDateString('pt-BR'),
                     data_enviado: venda.enviado_em,
                     data_usada: dataVenda.toISOString(),
                     data_usada_br: dataVenda.toLocaleDateString('pt-BR'),
@@ -258,13 +268,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                     periodo_semana: `${formatDate(startSemana)} - ${formatDate(endSemana)}`,
                     numero_semana: numeroSemana,
                     mes_ano_exibindo: `${mesParaExibir}/${anoParaExibir}`,
-                    startSemana_ISO: startSemana.toISOString(),
-                    endSemana_ISO: endSemana.toISOString(),
                     isInRange,
-                    comparacao: {
-                      'dataVenda >= startSemana': dataVenda >= startSemanaUTC,
-                      'dataVenda <= endSemana': dataVenda <= endSemanaUTC
-                    }
+                    vendedor_match: venda.vendedor_id === profile.id,
+                    status_match: venda.status === 'matriculado'
                   });
                 }
                 
