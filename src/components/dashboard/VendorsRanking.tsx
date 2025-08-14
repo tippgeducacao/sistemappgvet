@@ -473,23 +473,36 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         .filter((venda) => {
           if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
           
-          // Priorizar data_assinatura_contrato
-          let vendaDate: Date;
-          if (venda.data_assinatura_contrato) {
-            vendaDate = new Date(venda.data_assinatura_contrato);
-          } else {
-            vendaDate = new Date(venda.enviado_em);
-          }
-          const isInRange = vendaDate >= week.startDate && vendaDate <= week.endDate;
+          // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
+          let dataVenda: Date;
           
-          return isInRange;
+          if (venda.data_assinatura_contrato) {
+            dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
+          } else {
+            const vendaWithResponses = vendasWithResponses.find(vwr => vwr.venda.id === venda.id);
+            const dataMatricula = vendaWithResponses ? getDataMatriculaFromRespostas(vendaWithResponses.respostas) : null;
+            if (dataMatricula) {
+              dataVenda = dataMatricula;
+            } else {
+              dataVenda = new Date(venda.enviado_em);
+            }
+          }
+          
+          // CORREÇÃO: Aplicar a mesma lógica de validação de período do dashboard pessoal
+          const vendaPeriod = getVendaPeriod(dataVenda);
+          const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
+          
+          // Verificar se está na semana específica
+          dataVenda.setHours(0, 0, 0, 0);
+          const startSemanaUTC = new Date(week.startDate);
+          startSemanaUTC.setHours(0, 0, 0, 0);
+          const endSemanaUTC = new Date(week.endDate);
+          endSemanaUTC.setHours(23, 59, 59, 999);
+          const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+          
+          return periodoCorreto && isInRange;
         })
         .reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-      
-      // Debug total da semana 3
-      if (week.week === 3 && weekPoints > 0) {
-        console.log(`📊 Semana 3 - Vendedor: ${vendedorId}, Total de pontos: ${weekPoints}`);
-      }
       
       return weekPoints;
     });
