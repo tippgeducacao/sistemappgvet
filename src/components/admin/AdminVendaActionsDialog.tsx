@@ -194,28 +194,15 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   
   const dataMatricula = formatarDataBrasileira(dataMatriculaRaw);
   
-  // Formatar data de aprovação (assinatura do contrato)
-  const formatarDataAprovacao = (dataAprovacao: string | null): string => {
-    if (!dataAprovacao) return '';
-    
-    try {
-      const date = parseISO(dataAprovacao);
-      if (isValid(date)) {
-        return format(date, 'dd/MM/yyyy', { locale: ptBR });
-      }
-    } catch (error) {
-      console.error('Erro ao formatar data de aprovação:', error);
-    }
-    
-    return '';
-  };
-
-  const dataAssinatura = formatarDataAprovacao(venda.data_aprovacao);
+  // Extrair data de assinatura do contrato das respostas do formulário
+  const dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura do Contrato')?.valor_informado;
+  const dataAssinatura = formatarDataBrasileira(dataAssinaturaRaw);
   
   console.log('🗓️ Debug formatação de data:', {
     dataMatriculaRaw,
     dataMatriculaFormatada: dataMatricula,
-    dataAssinatura,
+    dataAssinaturaRaw,
+    dataAssinaturaFormatada: dataAssinatura,
     formDetails: formDetails?.map(r => ({ campo: r.campo_nome, valor: r.valor_informado }))
   });
   const handleSaveValidations = async (validations: any[]) => {
