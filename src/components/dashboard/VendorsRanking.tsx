@@ -466,13 +466,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   };
 
 
-  // Função para calcular pontos por semana do vendedor
+  // Função para calcular pontos por semana do vendedor (usando a MESMA lógica do dashboard pessoal)
   const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
     return weeks.map((week, index) => {
-      console.log(`🔍 SEMANA ${week.week} - VENDEDOR ${vendedorId}:`);
-      
-      const vendasDaSemana = vendasFiltradas.filter((venda) => {
-        if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
+      // Usar vendasWithResponses diretamente como no dashboard pessoal
+      const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
+        if (venda.vendedor_id !== vendedorId) return false;
+        if (venda.status !== 'matriculado') return false;
         
         // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
         let dataVenda: Date;
@@ -480,8 +480,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         if (venda.data_assinatura_contrato) {
           dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
         } else {
-          const vendaWithResponses = vendasWithResponses.find(vwr => vwr.venda.id === venda.id);
-          const dataMatricula = vendaWithResponses ? getDataMatriculaFromRespostas(vendaWithResponses.respostas) : null;
+          const dataMatricula = getDataMatriculaFromRespostas(respostas);
           if (dataMatricula) {
             dataVenda = dataMatricula;
           } else {
@@ -489,7 +488,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           }
         }
         
-        // CORREÇÃO: Aplicar a mesma lógica de validação de período do dashboard pessoal
+        // Aplicar a mesma lógica de validação de período do dashboard pessoal
         const vendaPeriod = getVendaPeriod(dataVenda);
         const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
         
@@ -501,39 +500,10 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         endSemanaUTC.setHours(23, 59, 59, 999);
         const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
         
-        const isValid = periodoCorreto && isInRange;
-        
-        // Debug para vendedor específico
-        if (vendedorId.includes('Adones') || venda.vendedor?.name?.includes('Adones')) {
-          console.log(`📊 VENDA ADONES:`, {
-            vendaId: venda.id.substring(0, 8),
-            aluno: venda.aluno?.nome,
-            pontuacao: venda.pontuacao_validada || venda.pontuacao_esperada,
-            dataVenda: dataVenda.toLocaleDateString('pt-BR'),
-            semanaRange: `${startSemanaUTC.toLocaleDateString('pt-BR')} - ${endSemanaUTC.toLocaleDateString('pt-BR')}`,
-            vendaPeriod,
-            periodoCorreto,
-            isInRange,
-            isValid
-          });
-        }
-        
-        return isValid;
-      });
+        return periodoCorreto && isInRange;
+      }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       
-      const weekPoints = vendasDaSemana.reduce((sum, venda) => {
-        return sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0);
-      }, 0);
-      
-      if (vendedorId.includes('Adones') || weeks.some(w => w.week === index + 1)) {
-        console.log(`📈 SEMANA ${week.week} - TOTAL PONTOS:`, {
-          vendas: vendasDaSemana.length,
-          pontos: weekPoints,
-          vendedorId: vendedorId.substring(0, 8)
-        });
-      }
-      
-      return weekPoints;
+      return pontosDaSemana;
     });
   };
 
