@@ -21,7 +21,8 @@ export const useUltraSimpleVendas = () => {
         .select(`
           *,
           alunos!form_entries_aluno_id_fkey(*),
-          cursos(*)
+          cursos(*),
+          profiles!form_entries_vendedor_id_fkey(name, email)
         `)
         .order('created_at', { ascending: false });
 
@@ -34,6 +35,7 @@ export const useUltraSimpleVendas = () => {
       
       const vendasMapeadas: VendaCompleta[] = (data || []).map(venda => {
         const aluno = Array.isArray(venda.alunos) ? venda.alunos[0] : venda.alunos;
+        const vendedorProfile = Array.isArray(venda.profiles) ? venda.profiles[0] : venda.profiles;
         
         return {
           id: venda.id,
@@ -46,6 +48,7 @@ export const useUltraSimpleVendas = () => {
           enviado_em: venda.created_at || new Date().toISOString(),
           atualizado_em: venda.atualizado_em || venda.created_at || new Date().toISOString(),
           motivo_pendencia: venda.motivo_pendencia,
+          data_assinatura_contrato: venda.data_assinatura_contrato,
           aluno: aluno ? {
             id: aluno.id,
             nome: aluno.nome,
@@ -57,7 +60,11 @@ export const useUltraSimpleVendas = () => {
             id: venda.cursos.id,
             nome: venda.cursos.nome
           } : null,
-          vendedor: undefined
+          vendedor: vendedorProfile ? {
+            id: venda.vendedor_id,
+            name: vendedorProfile.name,
+            email: vendedorProfile.email
+          } : null
         };
       });
       
