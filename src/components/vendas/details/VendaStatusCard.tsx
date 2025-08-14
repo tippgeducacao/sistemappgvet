@@ -78,10 +78,10 @@ const VendaStatusCard: React.FC<VendaStatusCardProps> = ({
             {/* Mostrar as datas apenas se a venda foi aprovada/matriculada */}
             {status === 'matriculado' && (
               <>
-                <tr className="border-b bg-gray-50 hover:bg-gray-100">
-                  <td className="px-4 py-3 font-medium text-gray-700 w-1/3">Data de Matrícula:</td>
-                  <td className="px-4 py-3 text-blue-600 font-medium">
-                    {dataMatricula ? format(new Date(dataMatricula), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informada'}
+                  <tr className="border-b bg-gray-50 hover:bg-gray-100">
+                    <td className="px-4 py-3 font-medium text-gray-700 w-1/3">Data de Matrícula:</td>
+                    <td className="px-4 py-3 text-blue-600 font-medium">
+                      {dataMatricula || 'Não informada'}
                   </td>
                 </tr>
                 <tr className="bg-white hover:bg-gray-50">
