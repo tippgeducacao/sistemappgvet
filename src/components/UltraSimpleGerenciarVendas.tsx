@@ -127,10 +127,12 @@ const UltraSimpleGerenciarVendas: React.FC = () => {
                     <p><strong>Curso:</strong> {venda.curso?.nome || 'Não informado'}</p>
                     <p><strong>Vendedor:</strong> {venda.vendedor?.name || 'Não informado'}</p>
                     <p><strong>Enviado:</strong> {venda.enviado_em ? new Date(venda.enviado_em).toLocaleDateString('pt-BR') + ' ' + new Date(venda.enviado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Não informado'}</p>
-                    {venda.status === 'matriculado' && venda.data_assinatura_contrato && (
-                      <p><strong>Data de Assinatura do Contrato:</strong> {new Date(venda.data_assinatura_contrato).toLocaleDateString('pt-BR')}</p>
-                    )}
-                    <p><strong>Pontuação:</strong> {venda.pontuacao_esperada || 0} pts</p>
+                    <div className="flex items-center gap-4">
+                      <span><strong>Pontuação:</strong> {venda.pontuacao_esperada || 0} pts</span>
+                      {venda.status === 'matriculado' && venda.data_assinatura_contrato && (
+                        <span><strong>Data de Assinatura do Contrato:</strong> {new Date(venda.data_assinatura_contrato).toLocaleDateString('pt-BR')}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
