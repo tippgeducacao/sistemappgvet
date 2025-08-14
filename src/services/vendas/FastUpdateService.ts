@@ -31,6 +31,10 @@ export class FastUpdateService {
         if (status === 'matriculado') {
           updateData.data_aprovacao = new Date().toISOString();
           updateData.data_assinatura_contrato = dataAssinaturaContrato;
+        } else if (status === 'pendente' || status === 'desistiu') {
+          // Limpar data de assinatura quando voltar para pendente ou rejeitar
+          updateData.data_assinatura_contrato = null;
+          updateData.data_aprovacao = null;
         }
 
         if (pontuacaoValidada !== undefined) {
@@ -54,7 +58,30 @@ export class FastUpdateService {
         return true;
       }
       
-      // Usar a função RPC otimizada para casos simples
+      // Usar a função RPC otimizada para casos simples, mas atualizar para limpar data quando necessário
+      if (status === 'pendente' || status === 'desistiu') {
+        console.log('🗑️ FastUpdateService: Limpando data de assinatura para status:', status);
+        const { error } = await supabase
+          .from('form_entries')
+          .update({
+            status,
+            data_assinatura_contrato: null,
+            data_aprovacao: null,
+            pontuacao_validada: pontuacaoValidada || null,
+            motivo_pendencia: motivoPendencia || null,
+            atualizado_em: new Date().toISOString()
+          })
+          .eq('id', vendaId);
+
+        if (error) {
+          console.error('❌ FastUpdateService: Erro ao limpar data:', error);
+          return false;
+        }
+
+        return true;
+      }
+      
+      // Para outros casos, usar RPC
       const { data, error } = await supabase.rpc('update_venda_status_fast', {
         venda_id_param: vendaId,
         novo_status: status,

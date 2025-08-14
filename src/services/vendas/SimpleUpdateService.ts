@@ -19,6 +19,10 @@ export class SimpleUpdateService {
     if (status === 'matriculado') {
       updateData.data_aprovacao = new Date().toISOString();
       updateData.data_assinatura_contrato = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    } else if (status === 'pendente' || status === 'desistiu') {
+      // Limpar data de assinatura e aprovação quando voltar para pendente ou rejeitar
+      updateData.data_assinatura_contrato = null;
+      updateData.data_aprovacao = null;
     }
 
     if (pontuacaoValidada !== undefined) {
