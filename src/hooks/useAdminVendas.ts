@@ -57,13 +57,24 @@ export const useAdminVendas = () => {
       console.log('✅ MUTATION FAST: Concluída');
       return { vendaId, status, result };
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       console.log('🎉 MUTATION SUCCESS: Invalidando cache de forma otimizada...');
       
-      // Invalidar cache de forma mais eficiente
+      // Invalidar cache de vendas
       await queryClient.invalidateQueries({ 
         queryKey: ['admin-vendas'],
-        exact: true // Invalidar apenas esta query específica
+        exact: true 
+      });
+      
+      // Invalidar também os detalhes da venda para atualizar a interface imediatamente
+      await queryClient.invalidateQueries({ 
+        queryKey: ['form-details', data.vendaId],
+        exact: true 
+      });
+      
+      // Invalidar todas as queries relacionadas a vendas para garantir consistência
+      await queryClient.invalidateQueries({ 
+        queryKey: ['vendas']
       });
       
       toast({
