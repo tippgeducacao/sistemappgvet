@@ -462,16 +462,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       currentTuesday.setDate(currentTuesday.getDate() + 7);
     }
     
-    // Debug das semanas para agosto 2025
-    if (year === 2025 && month === 8) {
-      console.log(`📅 SEMANAS DE AGOSTO 2025:`, weeks.map(w => ({
-        semana: w.week,
-        periodo: `${w.startDate.toLocaleDateString('pt-BR')} até ${w.endDate.toLocaleDateString('pt-BR')}`,
-        startDate: w.startDate,
-        endDate: w.endDate
-      })));
-    }
-    
     return weeks;
   };
 
@@ -491,17 +481,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
             vendaDate = new Date(venda.enviado_em);
           }
           const isInRange = vendaDate >= week.startDate && vendaDate <= week.endDate;
-          
-          // Debug específico para vendedor teste e agosto 2025
-          if (vendedorId && venda.data_assinatura_contrato === '2025-08-20') {
-            console.log(`🔍 DEBUG VENDA 20/08 - Semana ${week.week}`);
-            console.log(`📅 Período da semana: ${week.startDate.toLocaleDateString('pt-BR')} até ${week.endDate.toLocaleDateString('pt-BR')}`);
-            console.log(`💰 Venda: ${venda.aluno?.nome}`);
-            console.log(`📆 Data assinatura: ${venda.data_assinatura_contrato}`);
-            console.log(`📊 Data calculada: ${vendaDate.toLocaleDateString('pt-BR')}`);
-            console.log(`✅ InRange: ${isInRange}`);
-            console.log(`💎 Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
-          }
           
           return isInRange;
         })

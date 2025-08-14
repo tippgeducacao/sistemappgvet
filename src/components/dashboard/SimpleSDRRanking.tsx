@@ -323,9 +323,9 @@ const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
                       
                       const pontosOntem = vendas.filter(venda => {
                         if (venda.vendedor_id !== sdr.id || venda.status !== 'matriculado') return false;
-                        // Priorizar data_assinatura_contrato
+                        // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
                         let vendaDate: Date;
-                        if (venda.data_assinatura_contrato) {
+                        if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
                           vendaDate = new Date(venda.data_assinatura_contrato);
                         } else {
                           vendaDate = new Date(venda.enviado_em);
@@ -340,9 +340,9 @@ const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
                       
                       const pontosHoje = vendas.filter(venda => {
                         if (venda.vendedor_id !== sdr.id || venda.status !== 'matriculado') return false;
-                        // Priorizar data_assinatura_contrato
+                        // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
                         let vendaDate: Date;
-                        if (venda.data_assinatura_contrato) {
+                        if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
                           vendaDate = new Date(venda.data_assinatura_contrato);
                         } else {
                           vendaDate = new Date(venda.enviado_em);

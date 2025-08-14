@@ -446,9 +446,10 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   // Filtrar vendas usando a regra de semana (quarta a terça) para a semana selecionada
   const vendasSemanaAtual = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
-    // Priorizar data_assinatura_contrato
+    
+    // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
     let vendaDate: Date;
-    if (venda.data_assinatura_contrato) {
+    if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
       vendaDate = new Date(venda.data_assinatura_contrato);
     } else {
       vendaDate = new Date(venda.enviado_em);
@@ -459,9 +460,10 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   // Filtrar vendas do mês atual usando a regra de semana
   const vendasMesAtual = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
-    // Priorizar data_assinatura_contrato
+    
+    // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
     let vendaDate: Date;
-    if (venda.data_assinatura_contrato) {
+    if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
       vendaDate = new Date(venda.data_assinatura_contrato);
     } else {
       vendaDate = new Date(venda.enviado_em);
@@ -477,9 +479,9 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   endOfDay.setHours(23, 59, 59, 999);
 
   const vendasDiaAtual = vendas.filter(venda => {
-    // Priorizar data_assinatura_contrato
+    // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
     let vendaDate: Date;
-    if (venda.data_assinatura_contrato) {
+    if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
       vendaDate = new Date(venda.data_assinatura_contrato);
     } else {
       vendaDate = new Date(venda.enviado_em);
@@ -846,9 +848,9 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         .filter(venda => {
           if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
           
-          // Priorizar data_assinatura_contrato
+          // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
           let vendaDate: Date;
-          if (venda.data_assinatura_contrato) {
+          if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
             vendaDate = new Date(venda.data_assinatura_contrato);
           } else {
             vendaDate = new Date(venda.enviado_em);
