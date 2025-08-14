@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,7 @@ export default function MetasHistoryTab({ userId, userType }: MetasHistoryTabPro
   const [loading, setLoading] = useState(false);
 
   // Buscar metas do vendedor
-  const buscarMetasVendedor = async () => {
+  const buscarMetasVendedor = useCallback(async () => {
     if (!userId) return;
     
     try {
@@ -38,12 +38,12 @@ export default function MetasHistoryTab({ userId, userType }: MetasHistoryTabPro
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, selectedYear, selectedMonth]);
 
   useEffect(() => {
     console.log(`🔍 MetasHistoryTab: Buscando metas para vendedor ${userId}, ano ${selectedYear}, mês ${selectedMonth}`);
     buscarMetasVendedor();
-  }, [userId, selectedYear, selectedMonth]);
+  }, [userId, selectedYear, selectedMonth, buscarMetasVendedor]);
 
   // Função para determinar o status da meta
   const getStatusMeta = (percentual: number) => {
