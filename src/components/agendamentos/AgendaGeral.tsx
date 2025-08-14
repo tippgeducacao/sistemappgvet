@@ -198,7 +198,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
         `)
         .gte('data_agendamento', `${dataFormatada}T00:00:00`)
         .lt('data_agendamento', `${dataFormatada}T23:59:59`)
-        .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda']);
+        .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'remarcado']);
 
       if (error) throw error;
       

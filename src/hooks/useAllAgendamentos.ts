@@ -29,7 +29,7 @@ export const useAllAgendamentos = () => {
             email
           )
         `)
-        .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'cancelado', 'realizado'])
+        .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'cancelado', 'realizado', 'remarcado'])
         .order('updated_at', { ascending: false });
 
       if (error) {

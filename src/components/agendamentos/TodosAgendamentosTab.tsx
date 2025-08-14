@@ -40,6 +40,8 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
       case 'finalizado': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'finalizado_venda': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
       case 'cancelado': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      case 'remarcado': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'realizado': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
   };
@@ -51,6 +53,8 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
       case 'finalizado': return 'Finalizado';
       case 'finalizado_venda': return 'Finalizado - Venda';
       case 'cancelado': return 'Cancelado';
+      case 'remarcado': return 'Remarcado';
+      case 'realizado': return 'Realizado';
       default: return status;
     }
   };
@@ -114,6 +118,8 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
             <SelectItem value="atrasado">Atrasado</SelectItem>
             <SelectItem value="finalizado">Finalizado</SelectItem>
             <SelectItem value="finalizado_venda">Finalizado - Venda</SelectItem>
+            <SelectItem value="remarcado">Remarcado</SelectItem>
+            <SelectItem value="realizado">Realizado</SelectItem>
             <SelectItem value="cancelado">Cancelado</SelectItem>
           </SelectContent>
         </Select>
