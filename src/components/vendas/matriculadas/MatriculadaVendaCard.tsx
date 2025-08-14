@@ -70,11 +70,19 @@ const MatriculadaVendaCard: React.FC<MatriculadaVendaCardProps> = ({
           <span className="ml-2 text-green-700 font-semibold">{venda.pontuacao_esperada || 0} pts</span>
         </div>
         <div>
-          <span className="font-medium text-gray-600">Data:</span>
+          <span className="font-medium text-gray-600">Data de Envio:</span>
           <span className="ml-2 text-gray-900">
             {venda.enviado_em ? DataFormattingService.formatDate(venda.enviado_em) : 'Não informada'}
           </span>
         </div>
+        {venda.data_assinatura_contrato && (
+          <div>
+            <span className="font-medium text-gray-600">Data de Assinatura do Contrato:</span>
+            <span className="ml-2 text-blue-700 font-semibold">
+              {DataFormattingService.formatDate(venda.data_assinatura_contrato)}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Botões de Ação */}
