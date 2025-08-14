@@ -140,10 +140,22 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       
       // Filtro por período usando a regra de semana (quarta a terça)
       if ((propSelectedMonth && propSelectedYear) || internalSelectedMonth) {
-        // Para vendas matriculadas, usar data de aprovação se disponível, senão data de envio
+        // CRÍTICO: Para vendas matriculadas, usar data de aprovação se disponível, senão data de envio
         const dataParaFiltro = venda.status === 'matriculado' && venda.data_aprovacao 
           ? new Date(venda.data_aprovacao)
           : new Date(venda.enviado_em);
+        
+        // Debug detalhado para identificar inconsistências no dashboard geral
+        console.log(`🔍 DASHBOARD GERAL - Processando venda:`, {
+          venda_id: venda.id.substring(0, 8),
+          aluno: venda.aluno?.nome,
+          status: venda.status,
+          data_aprovacao: venda.data_aprovacao,
+          data_enviado: venda.enviado_em,
+          data_usada: dataParaFiltro.toISOString(),
+          data_usada_br: dataParaFiltro.toLocaleDateString('pt-BR'),
+          pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0
+        });
         
         if (propSelectedMonth && propSelectedYear) {
           // Usar filtros externos do dashboard com regra de semana

@@ -205,12 +205,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
                 
-                // Usar data de aprovação (data_aprovacao) se disponível para vendas matriculadas
+                // CRÍTICO: Usar a mesma lógica do dashboard geral
+                // Usar data de aprovação se disponível, senão usar data de envio
                 const dataVenda = venda.data_aprovacao 
                   ? new Date(venda.data_aprovacao)
-                  : venda.atualizado_em 
-                    ? new Date(venda.atualizado_em) 
-                    : new Date(venda.enviado_em);
+                  : new Date(venda.enviado_em);
+                
                 // Ajustar para considerar a zona de tempo corretamente
                 dataVenda.setHours(0, 0, 0, 0);
                 
@@ -222,9 +222,18 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 
                 const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
                 
-                // Debug para entender melhor
+                // Debug detalhado para identificar inconsistências
                 if (isInRange) {
-                  console.log(`📅 Semana ${numeroSemana}: ${formatDate(startSemana)} - ${formatDate(endSemana)}, Venda: ${venda.aluno?.nome}, Data Aprovação: ${dataVenda.toLocaleDateString('pt-BR')}, Pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
+                  console.log(`🔍 DASHBOARD PESSOAL - Semana ${numeroSemana}:`, {
+                    venda_id: venda.id.substring(0, 8),
+                    aluno: venda.aluno?.nome,
+                    data_aprovacao: venda.data_aprovacao,
+                    data_enviado: venda.enviado_em,
+                    data_usada: dataVenda.toISOString(),
+                    data_usada_br: dataVenda.toLocaleDateString('pt-BR'),
+                    pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
+                    periodo_semana: `${formatDate(startSemana)} - ${formatDate(endSemana)}`
+                  });
                 }
                 
                 return isInRange;
@@ -350,9 +359,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                     const pontosDaSemana = vendas.filter(venda => {
                       if (venda.vendedor_id !== profile.id) return false;
                       if (venda.status !== 'matriculado') return false;
-                      // Usar data de aprovação para vendas matriculadas
-                      const dataVenda = venda.status === 'matriculado' && venda.atualizado_em 
-                        ? new Date(venda.atualizado_em) 
+                      // CRÍTICO: Usar a mesma lógica consistente - data de aprovação ou data de envio
+                      const dataVenda = venda.data_aprovacao 
+                        ? new Date(venda.data_aprovacao) 
                         : new Date(venda.enviado_em);
                       return dataVenda >= startSemana && dataVenda <= endSemana;
                     }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
@@ -375,9 +384,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                       const pontosDaSemana = vendas.filter(venda => {
                         if (venda.vendedor_id !== profile.id) return false;
                         if (venda.status !== 'matriculado') return false;
-                        // Usar data de aprovação para vendas matriculadas
-                        const dataVenda = venda.status === 'matriculado' && venda.atualizado_em 
-                          ? new Date(venda.atualizado_em) 
+                        // CRÍTICO: Usar a mesma lógica consistente - data de aprovação ou data de envio
+                        const dataVenda = venda.data_aprovacao 
+                          ? new Date(venda.data_aprovacao) 
                           : new Date(venda.enviado_em);
                         return dataVenda >= startSemana && dataVenda <= endSemana;
                       }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
