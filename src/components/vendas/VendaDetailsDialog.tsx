@@ -87,6 +87,24 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
   };
   
   const dataMatricula = formatarDataBrasileira(dataMatriculaRaw);
+  
+  // Formatar data de aprovação (assinatura do contrato)
+  const formatarDataAprovacao = (dataAprovacao: string | null): string => {
+    if (!dataAprovacao) return '';
+    
+    try {
+      const date = parseISO(dataAprovacao);
+      if (isValid(date)) {
+        return format(date, 'dd/MM/yyyy', { locale: ptBR });
+      }
+    } catch (error) {
+      console.error('Erro ao formatar data de aprovação:', error);
+    }
+    
+    return '';
+  };
+
+  const dataAssinatura = formatarDataAprovacao(venda.data_aprovacao);
 
   // Debug logs para entender o que está acontecendo
   console.log('🔍 Dados da venda para documento:', {
@@ -108,9 +126,18 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
               <DialogDescription>
                 Informações completas sobre a venda cadastrada
               </DialogDescription>
-              {dataMatricula && (
-                <div className="mt-2 text-sm text-gray-600">
-                  <span className="font-medium">Data de Matrícula:</span> {dataMatricula}
+              {(dataMatricula || dataAssinatura) && (
+                <div className="mt-2 space-y-1">
+                  {dataMatricula && (
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Data de Matrícula:</span> {dataMatricula}
+                    </div>
+                  )}
+                  {dataAssinatura && (
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Data de Assinatura do Contrato:</span> {dataAssinatura}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

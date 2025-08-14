@@ -194,9 +194,28 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   
   const dataMatricula = formatarDataBrasileira(dataMatriculaRaw);
   
+  // Formatar data de aprovação (assinatura do contrato)
+  const formatarDataAprovacao = (dataAprovacao: string | null): string => {
+    if (!dataAprovacao) return '';
+    
+    try {
+      const date = parseISO(dataAprovacao);
+      if (isValid(date)) {
+        return format(date, 'dd/MM/yyyy', { locale: ptBR });
+      }
+    } catch (error) {
+      console.error('Erro ao formatar data de aprovação:', error);
+    }
+    
+    return '';
+  };
+
+  const dataAssinatura = formatarDataAprovacao(venda.data_aprovacao);
+  
   console.log('🗓️ Debug formatação de data:', {
     dataMatriculaRaw,
     dataMatriculaFormatada: dataMatricula,
+    dataAssinatura,
     formDetails: formDetails?.map(r => ({ campo: r.campo_nome, valor: r.valor_informado }))
   });
   const handleSaveValidations = async (validations: any[]) => {
@@ -230,9 +249,18 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
                     Gerenciar Venda #{venda.id.substring(0, 8)}
                   </DialogTitle>
                 </div>
-                {dataMatricula && (
-                  <div className="text-sm text-gray-600">
-                    <span className="font-medium">Data de Matrícula:</span> {dataMatricula}
+                {(dataMatricula || dataAssinatura) && (
+                  <div className="space-y-1">
+                    {dataMatricula && (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Data de Matrícula:</span> {dataMatricula}
+                      </div>
+                    )}
+                    {dataAssinatura && (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Data de Assinatura do Contrato:</span> {dataAssinatura}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
