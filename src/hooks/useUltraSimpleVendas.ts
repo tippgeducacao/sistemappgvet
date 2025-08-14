@@ -95,6 +95,9 @@ export const useUltraSimpleVendas = () => {
         };
       });
       
+      console.log('🎯 DEBUG: Objeto venda mapeada exemplo:', JSON.stringify(vendasMapeadas[0], null, 2));
+      console.log('🎯 DEBUG: Venda teste mapeada:', vendasMapeadas.find(v => v.aluno?.email === 'teste@gmail.com'));
+      
       setVendas(vendasMapeadas);
     } catch (error) {
       console.error('❌ Erro inesperado:', error);

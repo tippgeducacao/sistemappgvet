@@ -28,8 +28,13 @@ const UltraSimpleGerenciarVendas: React.FC = () => {
     id: v.id?.substring(0, 8),
     status: v.status,
     data_assinatura_contrato: v.data_assinatura_contrato,
-    aluno: v.aluno?.nome
+    aluno: v.aluno?.nome,
+    raw_object: v
   })));
+
+  console.log('🔍 UltraSimple Debug - Venda teste específica:', 
+    vendasMatriculadas.find(v => v.aluno?.email === 'teste@gmail.com')
+  );
 
   if (isLoading) {
     return (
@@ -144,9 +149,31 @@ const UltraSimpleGerenciarVendas: React.FC = () => {
                     <p><strong>Enviado:</strong> {venda.enviado_em ? new Date(venda.enviado_em).toLocaleDateString('pt-BR') + ' ' + new Date(venda.enviado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Não informado'}</p>
                     <div className="flex items-center gap-4">
                       <span><strong>Pontuação:</strong> {venda.pontuacao_esperada || 0} pts</span>
-                      {venda.status === 'matriculado' && venda.data_assinatura_contrato && (
-                        <span><strong>Data de Assinatura do Contrato:</strong> {venda.data_assinatura_contrato}</span>
-                      )}
+                      {(() => {
+                        console.log('🎯 Renderizando venda:', {
+                          id: venda.id?.substring(0, 8),
+                          aluno_email: venda.aluno?.email,
+                          status: venda.status,
+                          data_assinatura_contrato_raw: venda.data_assinatura_contrato,
+                          data_assinatura_contrato_type: typeof venda.data_assinatura_contrato,
+                          condicao_status: venda.status === 'matriculado',
+                          condicao_data: !!venda.data_assinatura_contrato,
+                          deve_exibir: venda.status === 'matriculado' && venda.data_assinatura_contrato
+                        });
+                        
+                        if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
+                          console.log('✅ DEVE EXIBIR data de assinatura para:', venda.aluno?.email);
+                          return (
+                            <span><strong>Data de Assinatura do Contrato:</strong> {venda.data_assinatura_contrato}</span>
+                          );
+                        } else {
+                          console.log('❌ NÃO DEVE EXIBIR data de assinatura para:', venda.aluno?.email, 'motivo:', {
+                            status_ok: venda.status === 'matriculado',
+                            data_ok: !!venda.data_assinatura_contrato
+                          });
+                          return null;
+                        }
+                      })()}
                     </div>
                   </div>
                 </div>
