@@ -46,7 +46,8 @@ export const useAdminVendas = () => {
         vendaId,
         status,
         pontuacaoValidada,
-        motivoPendencia
+        motivoPendencia,
+        dataAssinaturaContrato
       );
       
       if (!result) {

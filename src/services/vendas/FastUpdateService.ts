@@ -5,7 +5,8 @@ export class FastUpdateService {
     vendaId: string,
     status: 'pendente' | 'matriculado' | 'desistiu',
     pontuacaoValidada?: number,
-    motivoPendencia?: string
+    motivoPendencia?: string,
+    dataAssinaturaContrato?: string
   ): Promise<boolean> {
     console.log('⚡ FastUpdateService: Iniciando atualização otimizada', { 
       vendaId: vendaId.substring(0, 8), 
@@ -16,7 +17,44 @@ export class FastUpdateService {
     const startTime = performance.now();
 
     try {
-      // Usar a nova função otimizada update_venda_status_fast
+      // Se tiver data de assinatura, usar o AdminVendaUpdateService que é mais completo
+      if (dataAssinaturaContrato && status === 'matriculado') {
+        console.log('📅 FastUpdateService: Usando AdminVendaUpdateService devido à data de assinatura');
+        const { AdminVendaUpdateService } = await import('./AdminVendaUpdateService');
+        
+        // Preparar dados para atualização
+        const updateData: any = {
+          status,
+          atualizado_em: new Date().toISOString()
+        };
+
+        if (status === 'matriculado') {
+          updateData.data_aprovacao = new Date().toISOString();
+          updateData.data_assinatura_contrato = dataAssinaturaContrato;
+        }
+
+        if (pontuacaoValidada !== undefined) {
+          updateData.pontuacao_validada = pontuacaoValidada;
+        }
+
+        if (motivoPendencia) {
+          updateData.motivo_pendencia = motivoPendencia;
+        }
+
+        const { error } = await supabase
+          .from('form_entries')
+          .update(updateData)
+          .eq('id', vendaId);
+
+        if (error) {
+          console.error('❌ FastUpdateService: Erro na atualização com data:', error);
+          return false;
+        }
+
+        return true;
+      }
+      
+      // Usar a função RPC otimizada para casos simples
       const { data, error } = await supabase.rpc('update_venda_status_fast', {
         venda_id_param: vendaId,
         novo_status: status,

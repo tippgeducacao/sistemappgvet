@@ -107,6 +107,11 @@ const AdminVendasList: React.FC = () => {
                         <div>
                           <span className="font-medium">Enviado:</span> {venda.enviado_em ? DataFormattingService.formatDateTime(venda.enviado_em) : 'Não informada'}
                         </div>
+                        {venda.data_assinatura_contrato && (
+                          <div>
+                            <span className="font-medium">Data de Assinatura do Contrato:</span> {DataFormattingService.formatDate(venda.data_assinatura_contrato)}
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-6 text-sm">
