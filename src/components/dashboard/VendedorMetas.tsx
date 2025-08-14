@@ -222,9 +222,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 
                 const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
                 
-                // Debug detalhado para identificar inconsistências
-                if (isInRange) {
-                  console.log(`🔍 DASHBOARD PESSOAL - Semana ${numeroSemana}:`, {
+                // Debug detalhado para identificar inconsistências no dashboard pessoal
+                if (profile?.name === 'Adones') {
+                  console.log(`🔍 DASHBOARD PESSOAL - Processando venda do Adones:`, {
                     venda_id: venda.id.substring(0, 8),
                     aluno: venda.aluno?.nome,
                     data_aprovacao: venda.data_aprovacao,
@@ -232,7 +232,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                     data_usada: dataVenda.toISOString(),
                     data_usada_br: dataVenda.toLocaleDateString('pt-BR'),
                     pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
-                    periodo_semana: `${formatDate(startSemana)} - ${formatDate(endSemana)}`
+                    periodo_semana: `${formatDate(startSemana)} - ${formatDate(endSemana)}`,
+                    numero_semana: numeroSemana,
+                    isInRange
                   });
                 }
                 
