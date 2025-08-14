@@ -158,7 +158,7 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas, showDeleteButto
                       )}
                       {venda.data_assinatura_contrato && (
                         <div>
-                          <span className="font-medium">Contrato:</span> 
+                          <span className="font-medium">Assinatura:</span> 
                           <span className="ml-1 text-blue-600 font-bold">
                             {DataFormattingService.formatDate(venda.data_assinatura_contrato)}
                           </span>
