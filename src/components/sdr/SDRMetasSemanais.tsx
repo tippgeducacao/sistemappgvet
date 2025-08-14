@@ -75,12 +75,20 @@ export const SDRMetasSemanais = () => {
     if (!profile?.id) return { realizados: 0, meta: 0, percentual: 0 };
 
     try {
-      // Ajustar as datas para incluir toda a semana (início às 00:00 e fim às 23:59)
+      // Garantir que só busca agendamentos realmente do período específico
       const startDateFormatted = new Date(startDate);
       startDateFormatted.setHours(0, 0, 0, 0);
       
       const endDateFormatted = new Date(endDate);
       endDateFormatted.setHours(23, 59, 59, 999);
+      
+      console.log(`🔍 CONSULTA EXATA:`, {
+        sdr_id: profile.id,
+        data_inicio: startDateFormatted.toISOString(),
+        data_fim: endDateFormatted.toISOString(),
+        mes_consultado: selectedMonth,
+        ano_consultado: selectedYear
+      });
       
       // Buscar agendamentos da semana específica que tiveram resultado positivo
       const { data: agendamentos, error } = await supabase
