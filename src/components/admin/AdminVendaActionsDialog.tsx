@@ -198,12 +198,13 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   const dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura do Contrato')?.valor_informado;
   const dataAssinatura = formatarDataBrasileira(dataAssinaturaRaw);
   
-  console.log('🗓️ Debug formatação de data:', {
+  console.log('🗓️ Debug completo formatação de data:', {
     dataMatriculaRaw,
     dataMatriculaFormatada: dataMatricula,
     dataAssinaturaRaw,
     dataAssinaturaFormatada: dataAssinatura,
-    formDetails: formDetails?.map(r => ({ campo: r.campo_nome, valor: r.valor_informado }))
+    formDetails: formDetails?.map(r => ({ campo: r.campo_nome, valor: r.valor_informado })),
+    totalCampos: formDetails?.length
   });
   const handleSaveValidations = async (validations: any[]) => {
     setIsSavingValidations(true);

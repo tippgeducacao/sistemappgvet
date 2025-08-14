@@ -93,11 +93,14 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
   const dataAssinatura = formatarDataBrasileira(dataAssinaturaRaw);
 
   // Debug logs para entender o que está acontecendo
-  console.log('🔍 Dados da venda para documento:', {
+  console.log('🔍 Debug completo da venda:', {
     vendaId: venda.id,
-    documentoComprobatorio: venda.documento_comprobatorio,
-    tipoVenda: tipoVenda,
-    formDetails: formDetails?.map(r => ({ campo: r.campo_nome, valor: r.valor_informado }))
+    dataMatriculaRaw,
+    dataMatricula,
+    dataAssinaturaRaw,
+    dataAssinatura,
+    formDetails: formDetails?.map(r => ({ campo: r.campo_nome, valor: r.valor_informado })),
+    totalCampos: formDetails?.length
   });
 
   return (
