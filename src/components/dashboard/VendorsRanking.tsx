@@ -469,40 +469,69 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   // Função para calcular pontos por semana do vendedor
   const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
     return weeks.map((week, index) => {
-      const weekPoints = vendasFiltradas
-        .filter((venda) => {
-          if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
-          
-          // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-          let dataVenda: Date;
-          
-          if (venda.data_assinatura_contrato) {
-            dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
+      console.log(`🔍 SEMANA ${week.week} - VENDEDOR ${vendedorId}:`);
+      
+      const vendasDaSemana = vendasFiltradas.filter((venda) => {
+        if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
+        
+        // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
+        let dataVenda: Date;
+        
+        if (venda.data_assinatura_contrato) {
+          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
+        } else {
+          const vendaWithResponses = vendasWithResponses.find(vwr => vwr.venda.id === venda.id);
+          const dataMatricula = vendaWithResponses ? getDataMatriculaFromRespostas(vendaWithResponses.respostas) : null;
+          if (dataMatricula) {
+            dataVenda = dataMatricula;
           } else {
-            const vendaWithResponses = vendasWithResponses.find(vwr => vwr.venda.id === venda.id);
-            const dataMatricula = vendaWithResponses ? getDataMatriculaFromRespostas(vendaWithResponses.respostas) : null;
-            if (dataMatricula) {
-              dataVenda = dataMatricula;
-            } else {
-              dataVenda = new Date(venda.enviado_em);
-            }
+            dataVenda = new Date(venda.enviado_em);
           }
-          
-          // CORREÇÃO: Aplicar a mesma lógica de validação de período do dashboard pessoal
-          const vendaPeriod = getVendaPeriod(dataVenda);
-          const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
-          
-          // Verificar se está na semana específica
-          dataVenda.setHours(0, 0, 0, 0);
-          const startSemanaUTC = new Date(week.startDate);
-          startSemanaUTC.setHours(0, 0, 0, 0);
-          const endSemanaUTC = new Date(week.endDate);
-          endSemanaUTC.setHours(23, 59, 59, 999);
-          const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
-          
-          return periodoCorreto && isInRange;
-        })
-        .reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+        }
+        
+        // CORREÇÃO: Aplicar a mesma lógica de validação de período do dashboard pessoal
+        const vendaPeriod = getVendaPeriod(dataVenda);
+        const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
+        
+        // Verificar se está na semana específica
+        dataVenda.setHours(0, 0, 0, 0);
+        const startSemanaUTC = new Date(week.startDate);
+        startSemanaUTC.setHours(0, 0, 0, 0);
+        const endSemanaUTC = new Date(week.endDate);
+        endSemanaUTC.setHours(23, 59, 59, 999);
+        const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+        
+        const isValid = periodoCorreto && isInRange;
+        
+        // Debug para vendedor específico
+        if (vendedorId.includes('Adones') || venda.vendedor?.name?.includes('Adones')) {
+          console.log(`📊 VENDA ADONES:`, {
+            vendaId: venda.id.substring(0, 8),
+            aluno: venda.aluno?.nome,
+            pontuacao: venda.pontuacao_validada || venda.pontuacao_esperada,
+            dataVenda: dataVenda.toLocaleDateString('pt-BR'),
+            semanaRange: `${startSemanaUTC.toLocaleDateString('pt-BR')} - ${endSemanaUTC.toLocaleDateString('pt-BR')}`,
+            vendaPeriod,
+            periodoCorreto,
+            isInRange,
+            isValid
+          });
+        }
+        
+        return isValid;
+      });
+      
+      const weekPoints = vendasDaSemana.reduce((sum, venda) => {
+        return sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0);
+      }, 0);
+      
+      if (vendedorId.includes('Adones') || weeks.some(w => w.week === index + 1)) {
+        console.log(`📈 SEMANA ${week.week} - TOTAL PONTOS:`, {
+          vendas: vendasDaSemana.length,
+          pontos: weekPoints,
+          vendedorId: vendedorId.substring(0, 8)
+        });
+      }
       
       return weekPoints;
     });
