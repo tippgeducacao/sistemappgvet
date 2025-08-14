@@ -404,23 +404,33 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                       if (venda.vendedor_id !== profile.id) return false;
                       if (venda.status !== 'matriculado') return false;
                       
-                      // NOVA LÓGICA: Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
+                      // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
                       let dataVenda: Date;
                       
                       if (venda.data_assinatura_contrato) {
-                        // CORREÇÃO: Adicionar horário para evitar problemas de timezone
                         dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
                       } else {
                         const dataMatricula = getDataMatriculaFromRespostas(respostas);
                         if (dataMatricula) {
                           dataVenda = dataMatricula;
                         } else {
-                          // Fallback para data de envio se não houver nenhuma outra data
                           dataVenda = new Date(venda.enviado_em);
                         }
                       }
                       
-                      return dataVenda >= startSemana && dataVenda <= endSemana;
+                      // CORREÇÃO: Aplicar a mesma lógica de validação de período
+                      const vendaPeriod = getVendaPeriod(dataVenda);
+                      const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
+                      
+                      // Verificar se está na semana específica
+                      dataVenda.setHours(0, 0, 0, 0);
+                      const startSemanaUTC = new Date(startSemana);
+                      startSemanaUTC.setHours(0, 0, 0, 0);
+                      const endSemanaUTC = new Date(endSemana);
+                      endSemanaUTC.setHours(23, 59, 59, 999);
+                      const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+                      
+                      return periodoCorreto && isInRange;
                     }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
                     
                     return total + pontosDaSemana;
@@ -445,22 +455,33 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                         if (venda.vendedor_id !== profile.id) return false;
                         if (venda.status !== 'matriculado') return false;
                         
-                        // NOVA LÓGICA: Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
+                        // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
                         let dataVenda: Date;
                         
                         if (venda.data_assinatura_contrato) {
-                          dataVenda = new Date(venda.data_assinatura_contrato);
+                          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
                         } else {
                           const dataMatricula = getDataMatriculaFromRespostas(respostas);
                           if (dataMatricula) {
                             dataVenda = dataMatricula;
                           } else {
-                            // Fallback para data de envio se não houver nenhuma outra data
                             dataVenda = new Date(venda.enviado_em);
                           }
                         }
                         
-                        return dataVenda >= startSemana && dataVenda <= endSemana;
+                        // CORREÇÃO: Aplicar a mesma lógica de validação de período
+                        const vendaPeriod = getVendaPeriod(dataVenda);
+                        const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
+                        
+                        // Verificar se está na semana específica
+                        dataVenda.setHours(0, 0, 0, 0);
+                        const startSemanaUTC = new Date(startSemana);
+                        startSemanaUTC.setHours(0, 0, 0, 0);
+                        const endSemanaUTC = new Date(endSemana);
+                        endSemanaUTC.setHours(23, 59, 59, 999);
+                        const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+                        
+                        return periodoCorreto && isInRange;
                       }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
                       
                       return total + pontosDaSemana;
