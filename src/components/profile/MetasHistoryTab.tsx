@@ -55,9 +55,9 @@ export const MetasHistoryTab = ({ userId, userType }: MetasHistoryTabProps) => {
   // Função para obter vendas de uma semana específica
   const getVendasSemana = (ano: number, semana: number) => {
     return userVendas.filter(venda => {
-      if (!venda.created_at) return false;
+      if (!venda.enviado_em) return false;
       
-      const dataVenda = new Date(venda.created_at);
+      const dataVenda = new Date(venda.enviado_em);
       const anoVenda = dataVenda.getFullYear();
       
       if (anoVenda !== ano) return false;
