@@ -194,22 +194,44 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   
   const dataMatricula = formatarDataBrasileira(dataMatriculaRaw);
   
-  // Extrair data de assinatura do contrato das respostas do formulário
-  // Tentar diferentes variações do nome do campo
-  let dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura do Contrato')?.valor_informado;
+  // Usar o valor diretamente do banco de dados sem conversão problemática
+  let dataAssinaturaRaw = venda.data_assinatura_contrato;
   if (!dataAssinaturaRaw) {
-    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de assinatura do contrato')?.valor_informado;
+    // Buscar nas respostas do formulário apenas se não estiver no banco
+    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura do Contrato')?.valor_informado;
+    if (!dataAssinaturaRaw) {
+      dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de assinatura do contrato')?.valor_informado;
+    }
+    if (!dataAssinaturaRaw) {
+      dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data Assinatura Contrato')?.valor_informado;
+    }
+    if (!dataAssinaturaRaw) {
+      dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura')?.valor_informado;
+    }
+    if (!dataAssinaturaRaw) {
+      dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'DataAssinaturaContrato')?.valor_informado;
+    }
   }
-  if (!dataAssinaturaRaw) {
-    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data Assinatura Contrato')?.valor_informado;
-  }
-  if (!dataAssinaturaRaw) {
-    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura')?.valor_informado;
-  }
-  if (!dataAssinaturaRaw) {
-    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'DataAssinaturaContrato')?.valor_informado;
-  }
-  const dataAssinatura = formatarDataBrasileira(dataAssinaturaRaw);
+  
+  // Formatação segura para data
+  const formatarDataSegura = (dataString: string | undefined): string => {
+    if (!dataString) return '';
+    
+    // Se já está no formato DD/MM/YYYY, retorna direto
+    if (dataString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      return dataString;
+    }
+    
+    // Se está no formato YYYY-MM-DD, converte para DD/MM/YYYY
+    if (dataString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [ano, mes, dia] = dataString.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+    
+    return dataString; // Retorna original se não conseguir identificar o formato
+  };
+  
+  const dataAssinatura = formatarDataSegura(dataAssinaturaRaw);
   
   console.log('🗓️ Debug completo formatação de data:', {
     dataMatriculaRaw,
