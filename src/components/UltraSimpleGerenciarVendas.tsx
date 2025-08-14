@@ -145,7 +145,7 @@ const UltraSimpleGerenciarVendas: React.FC = () => {
                     <div className="flex items-center gap-4">
                       <span><strong>Pontuação:</strong> {venda.pontuacao_esperada || 0} pts</span>
                       {venda.status === 'matriculado' && venda.data_assinatura_contrato && (
-                        <span><strong>Data de Assinatura do Contrato:</strong> {venda.data_assinatura_contrato}</span>
+                        <span><strong>Data de Assinatura do Contrato:</strong> {new Date(venda.data_assinatura_contrato).toLocaleDateString('pt-BR')}</span>
                       )}
                     </div>
                   </div>
