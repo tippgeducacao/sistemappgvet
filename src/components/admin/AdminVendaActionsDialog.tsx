@@ -51,7 +51,7 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   } = useToast();
   const [pontuacaoValidada, setPontuacaoValidada] = useState('');
   const [motivoPendencia, setMotivoPendencia] = useState('');
-  
+  const [dataAssinaturaContrato, setDataAssinaturaContrato] = useState('');
   const [pontuacaoExtra, setPontuacaoExtra] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -78,8 +78,20 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
   const handleApprove = () => {
     console.log('🎯 AdminVendaActionsDialog: BOTÃO APROVAÇÃO CLICADO!');
     console.log('📋 Dados da venda:', { id: venda.id.substring(0, 8), status: venda.status });
+    console.log('📅 Data assinatura:', dataAssinaturaContrato);
     
-    console.log('✅ Aprovando venda...');
+    // Validar se a data de assinatura foi preenchida
+    if (!dataAssinaturaContrato) {
+      console.log('❌ Faltou data de assinatura');
+      toast({
+        title: "Campo obrigatório",
+        description: "Para aprovar a venda é obrigatório informar a data de assinatura do contrato",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log('✅ Validação passou, chamando updateStatus...');
     // Calcular pontuação total (esperada + extra)
     const pontuacaoBase = venda.pontuacao_esperada || 0;
     const pontuacaoExtraValue = parseFloat(pontuacaoExtra) || 0;
@@ -92,7 +104,8 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
     updateStatus({
       vendaId: venda.id,
       status: 'matriculado',
-      pontuacaoValidada: pontuacaoTotal
+      pontuacaoValidada: pontuacaoTotal,
+      dataAssinaturaContrato
     });
     onOpenChange(false);
   };
@@ -389,23 +402,37 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
 
           {/* Seção de Gerenciamento */}
           <div className="border-t pt-3 space-y-3 flex-shrink-0">
-            <div>
-              <Label htmlFor="pontuacaoExtra" className="text-sm">Pontuação Extra (opcional)</Label>
-              <Input
-                id="pontuacaoExtra"
-                type="number"
-                step="0.1"
-                min="0"
-                value={pontuacaoExtra}
-                onChange={(e) => setPontuacaoExtra(e.target.value)}
-                placeholder="Ex: 2.5"
-                className="text-sm"
-              />
-              {pontuacaoExtra && (
-                <span className="text-xs text-gray-600">
-                  Total: {DataFormattingService.formatPoints((venda.pontuacao_esperada || 0) + (parseFloat(pontuacaoExtra) || 0))} pts
-                </span>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="dataAssinatura" className="text-sm">Data de Assinatura do Contrato *</Label>
+                <Input
+                  id="dataAssinatura"
+                  type="date"
+                  value={dataAssinaturaContrato}
+                  onChange={(e) => setDataAssinaturaContrato(e.target.value)}
+                  placeholder="Data de assinatura"
+                  className="text-sm"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="pontuacaoExtra" className="text-sm">Pontuação Extra (opcional)</Label>
+                <Input
+                  id="pontuacaoExtra"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={pontuacaoExtra}
+                  onChange={(e) => setPontuacaoExtra(e.target.value)}
+                  placeholder="Ex: 2.5"
+                  className="text-sm"
+                />
+                {pontuacaoExtra && (
+                  <span className="text-xs text-gray-600">
+                    Total: {DataFormattingService.formatPoints((venda.pontuacao_esperada || 0) + (parseFloat(pontuacaoExtra) || 0))} pts
+                  </span>
+                )}
+              </div>
             </div>
 
             <div>

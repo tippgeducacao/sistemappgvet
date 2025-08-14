@@ -30,12 +30,14 @@ export const useAdminVendas = () => {
       vendaId,
       status,
       pontuacaoValidada,
-      motivoPendencia
+      motivoPendencia,
+      dataAssinaturaContrato
     }: {
       vendaId: string;
       status: 'pendente' | 'matriculado' | 'desistiu';
       pontuacaoValidada?: number;
       motivoPendencia?: string;
+      dataAssinaturaContrato?: string;
     }) => {
       console.log('⚡ useAdminVendas: Usando AdminVendasService para performance otimizada');
       
@@ -43,7 +45,8 @@ export const useAdminVendas = () => {
         vendaId,
         status,
         pontuacaoValidada,
-        motivoPendencia
+        motivoPendencia,
+        dataAssinaturaContrato
       );
       
       if (!result) {
