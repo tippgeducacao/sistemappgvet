@@ -91,21 +91,27 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
   
   const dataMatricula = formatarDataBrasileira(dataMatriculaRaw);
   
-  // Extrair data de assinatura do contrato das respostas do formulário
-  // Tentar diferentes variações do nome do campo
-  let dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura do Contrato')?.valor_informado;
+  // Usar a data de assinatura da própria venda (que é limpa quando status muda para pendente/desistiu)
+  // Só usar as respostas do formulário se a data na venda não existir
+  let dataAssinaturaRaw = venda.data_assinatura_contrato;
+  
+  // Se não tiver na venda (casos antigos), buscar nas respostas do formulário
   if (!dataAssinaturaRaw) {
-    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de assinatura do contrato')?.valor_informado;
+    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura do Contrato')?.valor_informado;
+    if (!dataAssinaturaRaw) {
+      dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de assinatura do contrato')?.valor_informado;
+    }
+    if (!dataAssinaturaRaw) {
+      dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data Assinatura Contrato')?.valor_informado;
+    }
+    if (!dataAssinaturaRaw) {
+      dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura')?.valor_informado;
+    }
+    if (!dataAssinaturaRaw) {
+      dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'DataAssinaturaContrato')?.valor_informado;
+    }
   }
-  if (!dataAssinaturaRaw) {
-    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data Assinatura Contrato')?.valor_informado;
-  }
-  if (!dataAssinaturaRaw) {
-    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura')?.valor_informado;
-  }
-  if (!dataAssinaturaRaw) {
-    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'DataAssinaturaContrato')?.valor_informado;
-  }
+  
   const dataAssinatura = formatarDataBrasileira(dataAssinaturaRaw);
 
   // Debug logs para entender o que está acontecendo
