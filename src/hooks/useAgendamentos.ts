@@ -49,12 +49,12 @@ export const useAgendamentos = () => {
         .from('agendamentos')
         .select(`
           *,
-          lead:leads (
+          leads (
             nome,
             email,
             whatsapp
           ),
-          sdr:profiles!sdr_id (
+          profiles!agendamentos_sdr_id_fkey (
             name,
             email
           )
@@ -69,7 +69,21 @@ export const useAgendamentos = () => {
         return;
       }
 
-      setAgendamentos((data || []) as Agendamento[]);
+      console.log('🔍 DADOS RETORNADOS DO SUPABASE:', JSON.stringify(data, null, 2));
+      console.log('🔍 PRIMEIRO AGENDAMENTO:', data?.[0]);
+      console.log('🔍 SDR DO PRIMEIRO AGENDAMENTO:', data?.[0]?.profiles);
+
+      // Mapear os dados para o formato esperado
+      const agendamentosMapeados = (data || []).map(agendamento => ({
+        ...agendamento,
+        lead: agendamento.leads,
+        sdr: agendamento.profiles
+      }));
+
+      console.log('🔍 AGENDAMENTOS MAPEADOS:', agendamentosMapeados[0]);
+      console.log('🔍 SDR MAPEADO:', agendamentosMapeados[0]?.sdr);
+
+      setAgendamentos(agendamentosMapeados as Agendamento[]);
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
       toast.error('Erro ao carregar agendamentos');
@@ -86,12 +100,12 @@ export const useAgendamentos = () => {
         .from('agendamentos')
         .select(`
           *,
-          lead:leads (
+          leads (
             nome,
             email,
             whatsapp
           ),
-          sdr:profiles!sdr_id (
+          profiles!agendamentos_sdr_id_fkey (
             name,
             email
           )
@@ -106,7 +120,14 @@ export const useAgendamentos = () => {
         return [];
       }
 
-      return (data || []) as Agendamento[];
+      // Mapear os dados para o formato esperado
+      const agendamentosMapeados = (data || []).map(agendamento => ({
+        ...agendamento,
+        lead: agendamento.leads,
+        sdr: agendamento.profiles
+      }));
+
+      return agendamentosMapeados as Agendamento[];
     } catch (error) {
       console.error('Erro ao buscar agendamentos cancelados:', error);
       return [];

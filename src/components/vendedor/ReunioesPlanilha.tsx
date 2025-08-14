@@ -403,7 +403,12 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                     <strong>Horário:</strong> {formatarHorario(agendamentoSelecionado)}
                   </div>
                   <div>
-                    <strong>SDR Responsável:</strong> {agendamentoSelecionado.sdr?.name}
+                    <strong>SDR Responsável:</strong> {(() => {
+                      console.log('🔍 AGENDAMENTO SELECIONADO COMPLETO:', agendamentoSelecionado);
+                      console.log('🔍 SDR DATA:', agendamentoSelecionado.sdr);
+                      console.log('🔍 SDR NAME:', agendamentoSelecionado.sdr?.name);
+                      return agendamentoSelecionado.sdr?.name || 'Não informado';
+                    })()}
                   </div>
                   <div>
                     <strong>Status:</strong> {getStatusBadge(agendamentoSelecionado)}
