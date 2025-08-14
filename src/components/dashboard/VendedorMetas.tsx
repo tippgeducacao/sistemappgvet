@@ -11,6 +11,7 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useVendaWithFormResponses, getDataMatriculaFromRespostas } from '@/hooks/useVendaWithFormResponses';
 import { debugSemanasAgosto2025 } from '@/utils/semanasDebug';
+import { getVendaPeriod } from '@/utils/semanaUtils';
 
 interface VendedorMetasProps {
   selectedMonth: number;
@@ -223,58 +224,62 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               const periodoSemana = `${formatDate(startSemana)} - ${formatDate(endSemana)}`;
 
               // Calcular pontos da semana usando data de assinatura do contrato
+              // CORREÇÃO: Verificar se a venda realmente pertence ao período selecionado
               const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
                 
-                // NOVA LÓGICA: Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
+                // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
                 let dataVenda: Date;
                 
                 if (venda.data_assinatura_contrato) {
-                  // CORREÇÃO: Adicionar horário para evitar problemas de timezone
                   dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
                 } else {
                   const dataMatricula = getDataMatriculaFromRespostas(respostas);
                   if (dataMatricula) {
                     dataVenda = dataMatricula;
                   } else {
-                    // Fallback para data de envio se não houver nenhuma outra data
                     dataVenda = new Date(venda.enviado_em);
                   }
                 }
                 
-                // Ajustar para considerar a zona de tempo corretamente
-                dataVenda.setHours(0, 0, 0, 0);
+                // NOVA LÓGICA: Verificar se a venda pertence ao período correto usando a mesma regra das semanas
+                const vendaPeriod = getVendaPeriod(dataVenda);
+                const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
                 
+                // Verificar se está na semana específica
+                dataVenda.setHours(0, 0, 0, 0);
                 const startSemanaUTC = new Date(startSemana);
                 startSemanaUTC.setHours(0, 0, 0, 0);
-                
                 const endSemanaUTC = new Date(endSemana);
                 endSemanaUTC.setHours(23, 59, 59, 999);
-                
                 const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
                 
-                // DEBUG GERAL para todas as vendas matriculadas do vendedor teste
+                // Só incluir se AMBOS forem verdadeiros: está na semana E pertence ao período
+                const incluirVenda = periodoCorreto && isInRange;
+                
+                // Debug para vendedor teste
                 if (venda.status === 'matriculado' && profile?.name?.includes('teste')) {
-                  console.log(`🔍 VENDEDOR TESTE - Venda matriculada:`, {
+                  console.log(`🔍 VENDEDOR TESTE - Análise venda:`, {
                     venda_id: venda.id.substring(0, 8),
                     aluno: venda.aluno?.nome,
-                    status: venda.status,
                     data_assinatura_contrato: venda.data_assinatura_contrato,
-                    data_enviado: venda.enviado_em,
-                    data_usada: dataVenda.toISOString(),
-                    data_usada_br: dataVenda.toLocaleDateString('pt-BR'),
+                    data_usada: dataVenda.toLocaleDateString('pt-BR'),
                     pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
-                    periodo_semana: `${formatDate(startSemana)} - ${formatDate(endSemana)}`,
+                    venda_period: vendaPeriod,
+                    periodo_exibindo: `${mesParaExibir}/${anoParaExibir}`,
+                    periodo_correto: periodoCorreto,
+                    semana_periodo: `${formatDate(startSemana)} - ${formatDate(endSemana)}`,
                     numero_semana: numeroSemana,
-                    mes_ano_exibindo: `${mesParaExibir}/${anoParaExibir}`,
                     isInRange,
-                    vendedor_match: venda.vendedor_id === profile.id,
-                    status_match: venda.status === 'matriculado'
+                    incluir_venda: incluirVenda,
+                    motivo: !incluirVenda ? (
+                      !periodoCorreto ? 'Período incorreto' : 'Fora da semana'
+                    ) : 'Incluído'
                   });
                 }
                 
-                return isInRange;
+                return incluirVenda;
               }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
               
               console.log(`📊 Semana ${numeroSemana} - Total de pontos: ${pontosDaSemana}`);
