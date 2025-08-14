@@ -49,12 +49,12 @@ export const useAgendamentos = () => {
         .from('agendamentos')
         .select(`
           *,
-          lead:leads!agendamentos_lead_id_fkey (
+          lead:leads (
             nome,
             email,
             whatsapp
           ),
-          sdr:profiles!agendamentos_sdr_id_fkey (
+          sdr:profiles!sdr_id (
             name,
             email
           )
@@ -86,12 +86,12 @@ export const useAgendamentos = () => {
         .from('agendamentos')
         .select(`
           *,
-          lead:leads!agendamentos_lead_id_fkey (
+          lead:leads (
             nome,
             email,
             whatsapp
           ),
-          sdr:profiles!agendamentos_sdr_id_fkey (
+          sdr:profiles!sdr_id (
             name,
             email
           )
