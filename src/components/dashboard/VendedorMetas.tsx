@@ -219,7 +219,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 let dataVenda: Date;
                 
                 if (venda.data_assinatura_contrato) {
-                  dataVenda = new Date(venda.data_assinatura_contrato);
+                  // CORREÇÃO: Adicionar horário para evitar problemas de timezone
+                  dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
                 } else {
                   const dataMatricula = getDataMatriculaFromRespostas(respostas);
                   if (dataMatricula) {
@@ -396,7 +397,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                       let dataVenda: Date;
                       
                       if (venda.data_assinatura_contrato) {
-                        dataVenda = new Date(venda.data_assinatura_contrato);
+                        // CORREÇÃO: Adicionar horário para evitar problemas de timezone
+                        dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
                       } else {
                         const dataMatricula = getDataMatriculaFromRespostas(respostas);
                         if (dataMatricula) {

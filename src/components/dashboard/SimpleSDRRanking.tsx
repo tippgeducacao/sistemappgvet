@@ -81,7 +81,8 @@ const { mes: mesAtualSemana, ano: anoAtualSemana } = getVendaPeriod(hoje);
         // Usar data_assinatura_contrato se existir, senão usar enviado_em
         let dataVenda: Date;
         if (v.data_assinatura_contrato) {
-          dataVenda = new Date(v.data_assinatura_contrato);
+          // CORREÇÃO: Adicionar horário para evitar problemas de timezone
+          dataVenda = new Date(v.data_assinatura_contrato + 'T12:00:00');
         } else {
           dataVenda = new Date(v.enviado_em);
         }
@@ -94,7 +95,8 @@ const vendasMes = vendas.filter(v => {
         // Priorizar data_assinatura_contrato
         let dataVenda: Date;
         if (v.data_assinatura_contrato) {
-          dataVenda = new Date(v.data_assinatura_contrato);
+          // CORREÇÃO: Adicionar horário para evitar problemas de timezone
+          dataVenda = new Date(v.data_assinatura_contrato + 'T12:00:00');
         } else {
           dataVenda = v.data_aprovacao 
             ? new Date(v.data_aprovacao)
@@ -110,7 +112,8 @@ const vendasMes = vendas.filter(v => {
         // Priorizar data_assinatura_contrato
         let dataVenda: Date;
         if (v.data_assinatura_contrato) {
-          dataVenda = new Date(v.data_assinatura_contrato);
+          // CORREÇÃO: Adicionar horário para evitar problemas de timezone
+          dataVenda = new Date(v.data_assinatura_contrato + 'T12:00:00');
         } else {
           dataVenda = v.data_aprovacao 
             ? new Date(v.data_aprovacao)
@@ -324,7 +327,8 @@ const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
                         // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
                         let vendaDate: Date;
                         if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
-                          vendaDate = new Date(venda.data_assinatura_contrato);
+                          // CORREÇÃO: Adicionar horário para evitar problemas de timezone
+                          vendaDate = new Date(venda.data_assinatura_contrato + 'T12:00:00');
                         } else {
                           vendaDate = new Date(venda.enviado_em);
                         }
@@ -341,7 +345,8 @@ const metaVendasCursos = nivelConfig?.meta_vendas_cursos || 8;
                         // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
                         let vendaDate: Date;
                         if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
-                          vendaDate = new Date(venda.data_assinatura_contrato);
+                          // CORREÇÃO: Adicionar horário para evitar problemas de timezone
+                          vendaDate = new Date(venda.data_assinatura_contrato + 'T12:00:00');
                         } else {
                           vendaDate = new Date(venda.enviado_em);
                         }

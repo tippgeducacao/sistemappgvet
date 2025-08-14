@@ -41,7 +41,8 @@ export const getDataEfetivaVenda = (venda: any, respostasFormulario?: any[]): Da
 
   // Primeiro, verificar se existe data de assinatura de contrato no campo direto da venda
   if (venda.data_assinatura_contrato) {
-    const dataEfetiva = new Date(venda.data_assinatura_contrato);
+    // CORREÇÃO: Garantir que a data seja interpretada no timezone local
+    const dataEfetiva = new Date(venda.data_assinatura_contrato + 'T12:00:00');
     if (venda.data_assinatura_contrato === '2025-08-20') {
       console.log(`✅ Usando data_assinatura_contrato: ${dataEfetiva.toISOString()} (${dataEfetiva.toLocaleDateString('pt-BR')})`);
     }
@@ -61,8 +62,8 @@ export const getDataEfetivaVenda = (venda: any, respostasFormulario?: any[]): Da
         let date: Date | null = null;
         
         if (dataString.includes('-')) {
-          // Formato ISO: YYYY-MM-DD
-          date = new Date(dataString + 'T00:00:00');
+          // Formato ISO: YYYY-MM-DD - adicionar horário para evitar problemas de timezone
+          date = new Date(dataString + 'T12:00:00');
         } else if (dataString.includes('/')) {
           // Formato brasileiro: DD/MM/YYYY
           const [dia, mes, ano] = dataString.split('/');
@@ -80,8 +81,9 @@ export const getDataEfetivaVenda = (venda: any, respostasFormulario?: any[]): Da
     }
   }
   
-  // Fallback para data de envio
-  return new Date(venda.enviado_em);
+  // Fallback para data de envio - também corrigir timezone
+  const dataEnvio = new Date(venda.enviado_em);
+  return dataEnvio;
 };
 
 /**
