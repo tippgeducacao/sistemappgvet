@@ -47,6 +47,11 @@ const EditMatriculaDateDialog: React.FC<EditMatriculaDateDialogProps> = ({
 
     setIsLoading(true);
     try {
+      console.log('🔄 Iniciando atualização da data de assinatura de contrato:', {
+        vendaId,
+        selectedDate: format(selectedDate, 'yyyy-MM-dd')
+      });
+
       // Atualizar o campo data_assinatura_contrato na tabela form_entries
       const { error: updateError } = await supabase
         .from('form_entries')
@@ -55,20 +60,52 @@ const EditMatriculaDateDialog: React.FC<EditMatriculaDateDialogProps> = ({
         })
         .eq('id', vendaId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ Erro ao atualizar form_entries:', updateError);
+        throw updateError;
+      }
 
-      // Também inserir/atualizar nas respostas do formulário para compatibilidade
-      const { error: responseError } = await supabase
+      console.log('✅ Data atualizada na form_entries com sucesso');
+
+      // Verificar se já existe uma resposta com esse campo
+      const { data: existingResponse } = await supabase
         .from('respostas_formulario')
-        .upsert({
-          form_entry_id: vendaId,
-          campo_nome: 'Data de Assinatura do Contrato',
-          valor_informado: format(selectedDate, 'dd/MM/yyyy')
-        }, {
-          onConflict: 'form_entry_id,campo_nome'
-        });
+        .select('id')
+        .eq('form_entry_id', vendaId)
+        .eq('campo_nome', 'Data de Assinatura do Contrato')
+        .single();
 
-      if (responseError) throw responseError;
+      if (existingResponse) {
+        // Atualizar resposta existente
+        const { error: responseError } = await supabase
+          .from('respostas_formulario')
+          .update({
+            valor_informado: format(selectedDate, 'dd/MM/yyyy')
+          })
+          .eq('form_entry_id', vendaId)
+          .eq('campo_nome', 'Data de Assinatura do Contrato');
+
+        if (responseError) {
+          console.error('❌ Erro ao atualizar resposta existente:', responseError);
+          throw responseError;
+        }
+        console.log('✅ Resposta do formulário atualizada com sucesso');
+      } else {
+        // Inserir nova resposta
+        const { error: responseError } = await supabase
+          .from('respostas_formulario')
+          .insert({
+            form_entry_id: vendaId,
+            campo_nome: 'Data de Assinatura do Contrato',
+            valor_informado: format(selectedDate, 'dd/MM/yyyy')
+          });
+
+        if (responseError) {
+          console.error('❌ Erro ao inserir nova resposta:', responseError);
+          throw responseError;
+        }
+        console.log('✅ Nova resposta do formulário inserida com sucesso');
+      }
 
       toast({
         title: "Sucesso",
