@@ -32,7 +32,18 @@ export const useUltraSimpleVendas = () => {
       }
 
       console.log('✅ Vendas carregadas:', data?.length || 0);
+      console.log('🔍 DEBUG: Primeira venda completa:', JSON.stringify(data?.[0], null, 2));
       
+      // Debug específico para campos de data
+      data?.forEach((venda, index) => {
+        console.log(`🔍 Venda ${index + 1} (${venda.id?.substring(0, 8)}):`, {
+          status: venda.status,
+          data_assinatura_contrato: venda.data_assinatura_contrato,
+          data_aprovacao: venda.data_aprovacao,
+          created_at: venda.created_at,
+          enviado_em: venda.enviado_em
+        });
+      });
       const vendasMapeadas: VendaCompleta[] = (data || []).map(venda => {
         const aluno = Array.isArray(venda.alunos) ? venda.alunos[0] : venda.alunos;
         const vendedorProfile = Array.isArray(venda.profiles) ? venda.profiles[0] : venda.profiles;
@@ -48,7 +59,9 @@ export const useUltraSimpleVendas = () => {
           enviado_em: venda.created_at || new Date().toISOString(),
           atualizado_em: venda.atualizado_em || venda.created_at || new Date().toISOString(),
           motivo_pendencia: venda.motivo_pendencia,
-          data_assinatura_contrato: venda.data_assinatura_contrato,
+          data_assinatura_contrato: venda.data_assinatura_contrato || null,
+          data_aprovacao: venda.data_aprovacao || null,
+          documento_comprobatorio: venda.documento_comprobatorio || null,
           aluno: aluno ? {
             id: aluno.id,
             nome: aluno.nome,
