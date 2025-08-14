@@ -53,6 +53,10 @@ export const useAgendamentos = () => {
             nome,
             email,
             whatsapp
+          ),
+          sdr:profiles!sdr_id (
+            name,
+            email
           )
         `)
         .eq('vendedor_id', profile.id)
@@ -65,47 +69,7 @@ export const useAgendamentos = () => {
         return;
       }
 
-      console.log('🔍 DADOS RETORNADOS DO SUPABASE:', JSON.stringify(data, null, 2));
-      console.log('🔍 PRIMEIRO AGENDAMENTO:', data?.[0]);
-
-      // Buscar dados dos SDRs separadamente
-      const sdrIds = [...new Set((data || []).map(a => a.sdr_id).filter(Boolean))];
-      console.log('🔍 SDR IDs ENCONTRADOS:', sdrIds);
-      
-      let sdrsData: any[] = [];
-      if (sdrIds.length > 0) {
-        const { data: sdrs, error: sdrError } = await supabase
-          .from('profiles')
-          .select('id, name, email')
-          .in('id', sdrIds);
-        
-        if (sdrError) {
-          console.error('Erro ao buscar SDRs:', sdrError);
-        } else {
-          sdrsData = sdrs || [];
-          console.log('🔍 DADOS DOS SDRS:', sdrsData);
-        }
-      }
-
-      // Mapear os dados para o formato esperado
-      const agendamentosMapeados = (data || []).map(agendamento => {
-        const sdr = sdrsData.find(s => s.id === agendamento.sdr_id);
-        console.log(`🔍 MAPEANDO AGENDAMENTO ${agendamento.id}:`, {
-          sdr_id: agendamento.sdr_id,
-          sdr_encontrado: sdr
-        });
-        
-        return {
-          ...agendamento,
-          lead: agendamento.leads,
-          sdr: sdr || null
-        };
-      });
-
-      console.log('🔍 AGENDAMENTOS MAPEADOS:', agendamentosMapeados[0]);
-      console.log('🔍 SDR MAPEADO:', agendamentosMapeados[0]?.sdr);
-
-      setAgendamentos(agendamentosMapeados as Agendamento[]);
+      setAgendamentos((data || []) as Agendamento[]);
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
       toast.error('Erro ao carregar agendamentos');
@@ -126,6 +90,10 @@ export const useAgendamentos = () => {
             nome,
             email,
             whatsapp
+          ),
+          sdr:profiles!sdr_id (
+            name,
+            email
           )
         `)
         .eq('vendedor_id', profile.id)
@@ -138,32 +106,7 @@ export const useAgendamentos = () => {
         return [];
       }
 
-      // Buscar dados dos SDRs separadamente
-      const sdrIds = [...new Set((data || []).map(a => a.sdr_id).filter(Boolean))];
-      
-      let sdrsData: any[] = [];
-      if (sdrIds.length > 0) {
-        const { data: sdrs, error: sdrError } = await supabase
-          .from('profiles')
-          .select('id, name, email')
-          .in('id', sdrIds);
-        
-        if (!sdrError) {
-          sdrsData = sdrs || [];
-        }
-      }
-
-      // Mapear os dados para o formato esperado
-      const agendamentosMapeados = (data || []).map(agendamento => {
-        const sdr = sdrsData.find(s => s.id === agendamento.sdr_id);
-        return {
-          ...agendamento,
-          lead: agendamento.leads,
-          sdr: sdr || null
-        };
-      });
-
-      return agendamentosMapeados as Agendamento[];
+      return (data || []) as Agendamento[];
     } catch (error) {
       console.error('Erro ao buscar agendamentos cancelados:', error);
       return [];
