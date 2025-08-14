@@ -12,6 +12,20 @@ export const useVendaEffectiveDate = () => {
       return vendas.filter(venda => {
         if (!venda.enviado_em) return false;
         const vendaPeriod = getVendaEffectivePeriod(venda);
+        
+        // Debug específico para vendas do dia 20/08/2025
+        if (venda.data_assinatura_contrato === '2025-08-20') {
+          console.log(`🚨 HOOK useVendaEffectiveDate - Venda 20/08:`, {
+            venda_id: venda.id.substring(0, 8),
+            data_assinatura_contrato: venda.data_assinatura_contrato,
+            data_enviado: venda.enviado_em,
+            vendaPeriod,
+            selectedMonth,
+            selectedYear,
+            match: vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear
+          });
+        }
+        
         return vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
       });
     };
@@ -21,7 +35,21 @@ export const useVendaEffectiveDate = () => {
     return (vendas: VendaCompleta[], startDate: Date, endDate: Date) => {
       return vendas.filter(venda => {
         if (!venda.enviado_em) return false;
-        return isVendaInWeek(venda, startDate, endDate);
+        const isInWeek = isVendaInWeek(venda, startDate, endDate);
+        
+        // Debug específico para vendas do dia 20/08/2025
+        if (venda.data_assinatura_contrato === '2025-08-20') {
+          console.log(`🚨 HOOK useVendaEffectiveDate - filterVendasByWeek 20/08:`, {
+            venda_id: venda.id.substring(0, 8),
+            data_assinatura_contrato: venda.data_assinatura_contrato,
+            data_enviado: venda.enviado_em,
+            startDate: startDate.toLocaleDateString('pt-BR'),
+            endDate: endDate.toLocaleDateString('pt-BR'),
+            isInWeek
+          });
+        }
+        
+        return isInWeek;
       });
     };
   }, []);

@@ -42,23 +42,50 @@ export const isVendaInPeriod = (vendaDate: Date, targetMonth: number, targetYear
  * baseado na regra de semana (quarta a terça)
  */
 export const getVendaPeriod = (vendaDate: Date): { mes: number; ano: number } => {
+  // Debug específico para 20/08/2025
+  if (vendaDate.toISOString().includes('2025-08-20')) {
+    console.log(`🚨 semanaUtils.getVendaPeriod - Calculando período para 20/08/2025:`, {
+      vendaDate: vendaDate.toISOString(),
+      vendaDate_br: vendaDate.toLocaleDateString('pt-BR'),
+      day_of_week: vendaDate.getDay()
+    });
+  }
+
   // Encontrar a terça-feira que encerra a semana da venda
   let tercaQueEncerra = new Date(vendaDate);
   
   if (tercaQueEncerra.getDay() === 2) {
     // A venda foi feita numa terça-feira - a semana termina no mesmo dia
+    if (vendaDate.toISOString().includes('2025-08-20')) {
+      console.log(`📅 Venda foi numa terça-feira, semana termina no mesmo dia`);
+    }
   } else {
     // Encontrar a próxima terça-feira (que encerra a semana da venda)
     const diasAteTerca = (2 - tercaQueEncerra.getDay() + 7) % 7;
     const diasParaSomar = diasAteTerca === 0 ? 7 : diasAteTerca;
+    
+    if (vendaDate.toISOString().includes('2025-08-20')) {
+      console.log(`📅 Calculando próxima terça: dias até terça = ${diasAteTerca}, dias para somar = ${diasParaSomar}`);
+    }
+    
     tercaQueEncerra.setDate(tercaQueEncerra.getDate() + diasParaSomar);
+    
+    if (vendaDate.toISOString().includes('2025-08-20')) {
+      console.log(`📅 Próxima terça que encerra: ${tercaQueEncerra.toLocaleDateString('pt-BR')}`);
+    }
   }
   
-  // O mês/ano da venda é determinado pela terça-feira (fim da semana)
-  return {
+  const resultado = {
     mes: tercaQueEncerra.getMonth() + 1,
     ano: tercaQueEncerra.getFullYear()
   };
+  
+  if (vendaDate.toISOString().includes('2025-08-20')) {
+    console.log(`✅ Período final calculado: mês ${resultado.mes}, ano ${resultado.ano}`);
+  }
+  
+  // O mês/ano da venda é determinado pela terça-feira (fim da semana)
+  return resultado;
 };
 
 /**

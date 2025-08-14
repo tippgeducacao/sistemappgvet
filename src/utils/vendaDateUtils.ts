@@ -29,9 +29,23 @@ export const extractDataAssinaturaContrato = (observacoes: string | null): Date 
  * Se não disponível, usa a data de envio
  */
 export const getDataEfetivaVenda = (venda: any, respostasFormulario?: any[]): Date => {
+  // Debug específico para venda do dia 20/08/2025
+  if (venda.data_assinatura_contrato === '2025-08-20') {
+    console.log(`🚨 vendaDateUtils.getDataEfetivaVenda - Venda 20/08:`, {
+      venda_id: venda.id?.substring(0, 8),
+      data_assinatura_contrato: venda.data_assinatura_contrato,
+      data_enviado: venda.enviado_em,
+      tem_respostas_formulario: !!respostasFormulario
+    });
+  }
+
   // Primeiro, verificar se existe data de assinatura de contrato no campo direto da venda
   if (venda.data_assinatura_contrato) {
-    return new Date(venda.data_assinatura_contrato);
+    const dataEfetiva = new Date(venda.data_assinatura_contrato);
+    if (venda.data_assinatura_contrato === '2025-08-20') {
+      console.log(`✅ Usando data_assinatura_contrato: ${dataEfetiva.toISOString()} (${dataEfetiva.toLocaleDateString('pt-BR')})`);
+    }
+    return dataEfetiva;
   }
   
   // Se não existe no campo direto, tentar buscar nas respostas do formulário
@@ -88,5 +102,17 @@ export const isVendaInWeek = (
  */
 export const getVendaEffectivePeriod = (venda: any, respostasFormulario?: any[]): { mes: number; ano: number } => {
   const dataEfetiva = getDataEfetivaVenda(venda, respostasFormulario);
-  return getVendaPeriod(dataEfetiva);
+  const periodo = getVendaPeriod(dataEfetiva);
+  
+  // Debug específico para venda do dia 20/08/2025
+  if (venda.data_assinatura_contrato === '2025-08-20') {
+    console.log(`🚨 vendaDateUtils.getVendaEffectivePeriod - Venda 20/08:`, {
+      venda_id: venda.id?.substring(0, 8),
+      data_efetiva: dataEfetiva.toISOString(),
+      data_efetiva_br: dataEfetiva.toLocaleDateString('pt-BR'),
+      periodo_calculado: periodo
+    });
+  }
+  
+  return periodo;
 };

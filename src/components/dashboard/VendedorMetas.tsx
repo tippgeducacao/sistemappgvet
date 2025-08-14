@@ -10,6 +10,7 @@ import { useNiveis } from '@/hooks/useNiveis';
 import { useVendedores } from '@/hooks/useVendedores';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useVendaWithFormResponses, getDataMatriculaFromRespostas } from '@/hooks/useVendaWithFormResponses';
+import { debugSemanasAgosto2025 } from '@/utils/semanasDebug';
 
 interface VendedorMetasProps {
   selectedMonth: number;
@@ -138,6 +139,11 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   console.log('  📅 Exibindo:', mesParaExibir, '/', anoParaExibir);
   console.log('  📅 É semana atual?', isSemanaAtual);
   
+  // Debug específico para agosto 2025
+  if (selectedMonth === 8 && selectedYear === 2025) {
+    debugSemanasAgosto2025();
+  }
+  
   // Só buscar meta da semana atual se estivermos no mês correto da semana
   const metaSemanaAtual = isSemanaAtual
     ? metasSemanais.find(meta => 
@@ -235,11 +241,13 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 
                 const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
                 
-                // Debug detalhado para identificar inconsistências no dashboard pessoal
-                if (profile?.name === 'Adones') {
-                  console.log(`🔍 DASHBOARD PESSOAL - Processando venda do Adones:`, {
+                // DEBUG ESPECÍFICO para venda do dia 20/08
+                if (venda.data_assinatura_contrato === '2025-08-20' || 
+                    dataVenda.toISOString().includes('2025-08-20')) {
+                  console.log(`🚨 VENDA 20/08 - ANÁLISE DETALHADA:`, {
                     venda_id: venda.id.substring(0, 8),
                     aluno: venda.aluno?.nome,
+                    vendedor: profile?.name,
                     data_assinatura_contrato: venda.data_assinatura_contrato,
                     data_matricula_formulario: getDataMatriculaFromRespostas(respostas)?.toLocaleDateString('pt-BR'),
                     data_enviado: venda.enviado_em,
@@ -248,7 +256,14 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                     pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
                     periodo_semana: `${formatDate(startSemana)} - ${formatDate(endSemana)}`,
                     numero_semana: numeroSemana,
-                    isInRange
+                    mes_ano_exibindo: `${mesParaExibir}/${anoParaExibir}`,
+                    startSemana_ISO: startSemana.toISOString(),
+                    endSemana_ISO: endSemana.toISOString(),
+                    isInRange,
+                    comparacao: {
+                      'dataVenda >= startSemana': dataVenda >= startSemanaUTC,
+                      'dataVenda <= endSemana': dataVenda <= endSemanaUTC
+                    }
                   });
                 }
                 
