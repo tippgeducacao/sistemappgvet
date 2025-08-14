@@ -73,7 +73,40 @@ export const useVendaWithFormResponses = (vendas: any[]) => {
   };
 };
 
-// Função helper para extrair data de matrícula de uma venda específica
+// Função helper para extrair data de assinatura de contrato de uma venda específica
+export const getDataAssinaturaFromRespostas = (respostas: any[]): Date | null => {
+  const dataAssinaturaResponse = respostas.find(r => r.campo_nome === 'Data de Assinatura do Contrato');
+  
+  if (!dataAssinaturaResponse?.valor_informado) {
+    return null;
+  }
+
+  try {
+    const dataString = dataAssinaturaResponse.valor_informado;
+    let date: Date | null = null;
+    
+    if (dataString.includes('-')) {
+      // Formato ISO: YYYY-MM-DD
+      date = new Date(dataString + 'T00:00:00');
+    } else if (dataString.includes('/')) {
+      // Formato brasileiro: DD/MM/YYYY
+      const [dia, mes, ano] = dataString.split('/');
+      if (dia && mes && ano) {
+        date = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+      }
+    }
+    
+    if (date && !isNaN(date.getTime())) {
+      return date;
+    }
+  } catch (error) {
+    console.warn('Erro ao parsear data de assinatura de contrato:', error);
+  }
+
+  return null;
+};
+
+// Função helper para extrair data de matrícula de uma venda específica (mantida para compatibilidade)
 export const getDataMatriculaFromRespostas = (respostas: any[]): Date | null => {
   const dataMatriculaResponse = respostas.find(r => r.campo_nome === 'Data de Matrícula');
   

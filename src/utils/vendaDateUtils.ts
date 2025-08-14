@@ -24,21 +24,26 @@ export const extractDataAssinaturaContrato = (observacoes: string | null): Date 
 };
 
 /**
- * Obtém a data efetiva da venda (data de matrícula ou data de envio)
- * Para vendas matriculadas, usa a data de matrícula das respostas do formulário se disponível
- * Para outras, usa a data de envio
+ * Obtém a data efetiva da venda (data de assinatura de contrato ou data de envio)
+ * Para todas as vendas, usa a data de assinatura de contrato das respostas do formulário se disponível
+ * Se não disponível, usa a data de envio
  */
 export const getDataEfetivaVenda = (venda: any, respostasFormulario?: any[]): Date => {
-  // Se a venda está matriculada, tentar usar a data de matrícula do formulário
-  if (venda.status === 'matriculado' && respostasFormulario) {
-    const dataMatriculaResponse = respostasFormulario.find(r => 
-      r.campo_nome === 'Data de Matrícula' && r.form_entry_id === venda.id
+  // Primeiro, verificar se existe data de assinatura de contrato no campo direto da venda
+  if (venda.data_assinatura_contrato) {
+    return new Date(venda.data_assinatura_contrato);
+  }
+  
+  // Se não existe no campo direto, tentar buscar nas respostas do formulário
+  if (respostasFormulario) {
+    const dataAssinaturaResponse = respostasFormulario.find(r => 
+      r.campo_nome === 'Data de Assinatura do Contrato' && r.form_entry_id === venda.id
     );
     
-    if (dataMatriculaResponse?.valor_informado) {
+    if (dataAssinaturaResponse?.valor_informado) {
       try {
         // Tentar parsear a data do formulário (formato YYYY-MM-DD ou DD/MM/YYYY)
-        const dataString = dataMatriculaResponse.valor_informado;
+        const dataString = dataAssinaturaResponse.valor_informado;
         let date: Date | null = null;
         
         if (dataString.includes('-')) {
@@ -56,7 +61,7 @@ export const getDataEfetivaVenda = (venda: any, respostasFormulario?: any[]): Da
           return date;
         }
       } catch (error) {
-        console.warn('Erro ao parsear data de matrícula:', error);
+        console.warn('Erro ao parsear data de assinatura de contrato:', error);
       }
     }
   }

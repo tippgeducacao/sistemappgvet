@@ -295,6 +295,7 @@ export type Database = {
           created_at: string | null
           curso_id: string | null
           data_aprovacao: string | null
+          data_assinatura_contrato: string | null
           documento_comprobatorio: string | null
           enviado_em: string | null
           id: string
@@ -313,6 +314,7 @@ export type Database = {
           created_at?: string | null
           curso_id?: string | null
           data_aprovacao?: string | null
+          data_assinatura_contrato?: string | null
           documento_comprobatorio?: string | null
           enviado_em?: string | null
           id?: string
@@ -331,6 +333,7 @@ export type Database = {
           created_at?: string | null
           curso_id?: string | null
           data_aprovacao?: string | null
+          data_assinatura_contrato?: string | null
           documento_comprobatorio?: string | null
           enviado_em?: string | null
           id?: string
