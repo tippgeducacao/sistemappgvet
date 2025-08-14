@@ -89,7 +89,20 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
   const dataMatricula = formatarDataBrasileira(dataMatriculaRaw);
   
   // Extrair data de assinatura do contrato das respostas do formulário
-  const dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura do Contrato')?.valor_informado;
+  // Tentar diferentes variações do nome do campo
+  let dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura do Contrato')?.valor_informado;
+  if (!dataAssinaturaRaw) {
+    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de assinatura do contrato')?.valor_informado;
+  }
+  if (!dataAssinaturaRaw) {
+    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data Assinatura Contrato')?.valor_informado;
+  }
+  if (!dataAssinaturaRaw) {
+    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'Data de Assinatura')?.valor_informado;
+  }
+  if (!dataAssinaturaRaw) {
+    dataAssinaturaRaw = formDetails?.find(r => r.campo_nome === 'DataAssinaturaContrato')?.valor_informado;
+  }
   const dataAssinatura = formatarDataBrasileira(dataAssinaturaRaw);
 
   // Debug logs para entender o que está acontecendo
@@ -99,6 +112,7 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
     dataMatricula,
     dataAssinaturaRaw,
     dataAssinatura,
+    camposDisponiveis: formDetails?.map(r => r.campo_nome).sort(),
     formDetails: formDetails?.map(r => ({ campo: r.campo_nome, valor: r.valor_informado })),
     totalCampos: formDetails?.length
   });
