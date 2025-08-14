@@ -5,8 +5,7 @@ export class FastUpdateService {
     vendaId: string,
     status: 'pendente' | 'matriculado' | 'desistiu',
     pontuacaoValidada?: number,
-    motivoPendencia?: string,
-    dataAssinaturaContrato?: string
+    motivoPendencia?: string
   ): Promise<boolean> {
     console.log('⚡ FastUpdateService: Iniciando atualização otimizada', { 
       vendaId: vendaId.substring(0, 8), 
@@ -17,94 +16,7 @@ export class FastUpdateService {
     const startTime = performance.now();
 
     try {
-      // Se tiver data de assinatura, usar o AdminVendaUpdateService que é mais completo
-      if (dataAssinaturaContrato && status === 'matriculado') {
-        console.log('📅 FastUpdateService: Usando AdminVendaUpdateService devido à data de assinatura');
-        const { AdminVendaUpdateService } = await import('./AdminVendaUpdateService');
-        
-        // Preparar dados para atualização
-        const updateData: any = {
-          status,
-          atualizado_em: new Date().toISOString()
-        };
-
-        if (status === 'matriculado') {
-          updateData.data_aprovacao = new Date().toISOString();
-          updateData.data_assinatura_contrato = dataAssinaturaContrato;
-        } else if (status === 'pendente' || status === 'desistiu') {
-          // Limpar data de assinatura quando voltar para pendente ou rejeitar
-          updateData.data_assinatura_contrato = null;
-          updateData.data_aprovacao = null;
-        }
-
-        if (pontuacaoValidada !== undefined) {
-          updateData.pontuacao_validada = pontuacaoValidada;
-        }
-
-        if (motivoPendencia) {
-          updateData.motivo_pendencia = motivoPendencia;
-        }
-
-        const { error } = await supabase
-          .from('form_entries')
-          .update(updateData)
-          .eq('id', vendaId);
-
-        if (error) {
-          console.error('❌ FastUpdateService: Erro na atualização com data:', error);
-          return false;
-        }
-
-        return true;
-      }
-      
-      // Usar atualização direta para casos onde precisamos limpar data de assinatura
-      if (status === 'pendente' || status === 'desistiu') {
-        console.log('🗑️ FastUpdateService: Limpando data de assinatura para status:', status);
-        
-        const updateData = {
-          status,
-          data_assinatura_contrato: null,
-          data_aprovacao: null,
-          pontuacao_validada: pontuacaoValidada || null,
-          motivo_pendencia: motivoPendencia || null,
-          atualizado_em: new Date().toISOString()
-        };
-        
-        console.log('📝 FastUpdateService: Dados da atualização:', updateData);
-        
-        const { error } = await supabase
-          .from('form_entries')
-          .update(updateData)
-          .eq('id', vendaId);
-
-        if (error) {
-          console.error('❌ FastUpdateService: Erro ao limpar data:', error);
-          return false;
-        }
-
-        // Verificar se a atualização foi aplicada
-        const { data: vendaVerificada, error: verifyError } = await supabase
-          .from('form_entries')
-          .select('id, status, data_assinatura_contrato, data_aprovacao')
-          .eq('id', vendaId)
-          .single();
-        
-        if (verifyError) {
-          console.error('❌ FastUpdateService: Erro na verificação:', verifyError);
-          return false;
-        }
-        
-        console.log('✅ FastUpdateService: Verificação após limpeza:', {
-          status: vendaVerificada.status,
-          dataAssinatura: vendaVerificada.data_assinatura_contrato,
-          dataAprovacao: vendaVerificada.data_aprovacao
-        });
-
-        return true;
-      }
-      
-      // Para outros casos, usar RPC
+      // Usar RPC otimizada para todas as atualizações
       const { data, error } = await supabase.rpc('update_venda_status_fast', {
         venda_id_param: vendaId,
         novo_status: status,

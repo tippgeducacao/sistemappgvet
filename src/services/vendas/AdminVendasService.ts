@@ -12,16 +12,14 @@ export class AdminVendasService {
     vendaId: string, 
     status: 'pendente' | 'matriculado' | 'desistiu',
     pontuacaoValidada?: number,
-    motivoPendencia?: string,
-    dataAssinaturaContrato?: string
+    motivoPendencia?: string
   ): Promise<boolean> {
     console.log('🎯 AdminVendasService: Delegando para DirectUpdateService');
     return DirectUpdateService.updateVendaStatusDirect(
       vendaId,
       status,
       pontuacaoValidada,
-      motivoPendencia,
-      dataAssinaturaContrato
+      motivoPendencia
     );
   }
 }

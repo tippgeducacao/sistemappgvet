@@ -1,7 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminVendasService } from '@/services/vendas/AdminVendasService';
-import { FastUpdateService } from '@/services/vendas/FastUpdateService';
 import { useToast } from '@/hooks/use-toast';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
@@ -31,23 +30,20 @@ export const useAdminVendas = () => {
       vendaId,
       status,
       pontuacaoValidada,
-      motivoPendencia,
-      dataAssinaturaContrato
+      motivoPendencia
     }: {
       vendaId: string;
       status: 'pendente' | 'matriculado' | 'desistiu';
       pontuacaoValidada?: number;
       motivoPendencia?: string;
-      dataAssinaturaContrato?: string;
     }) => {
-      console.log('⚡ useAdminVendas: Usando FastUpdateService para performance otimizada');
+      console.log('⚡ useAdminVendas: Usando AdminVendasService para performance otimizada');
       
-      const result = await FastUpdateService.updateVendaStatus(
+      const result = await AdminVendasService.updateVendaStatus(
         vendaId,
         status,
         pontuacaoValidada,
-        motivoPendencia,
-        dataAssinaturaContrato
+        motivoPendencia
       );
       
       if (!result) {

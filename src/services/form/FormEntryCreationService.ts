@@ -20,7 +20,7 @@ export class FormEntryCreationService {
         status: 'pendente',
         pontuacao_esperada: pontuacaoEsperada,
         documento_comprobatorio: documentPath,
-        data_assinatura_contrato: formData.dataAssinaturaContrato || null
+        data_assinatura_contrato: null
       })
       .select()
       .single();
