@@ -78,14 +78,12 @@ const { mes: mesAtualSemana, ano: anoAtualSemana } = getVendaPeriod(hoje);
       const vendasSemana = vendas.filter(v => {
         if (v.vendedor_id !== sdr.id || v.status !== 'matriculado') return false;
         
-        // Priorizar data_assinatura_contrato
+        // Usar data_assinatura_contrato se existir, senão usar enviado_em
         let dataVenda: Date;
         if (v.data_assinatura_contrato) {
           dataVenda = new Date(v.data_assinatura_contrato);
         } else {
-          dataVenda = v.data_aprovacao 
-            ? new Date(v.data_aprovacao)
-            : new Date(v.enviado_em);
+          dataVenda = new Date(v.enviado_em);
         }
         
         return dataVenda >= inicioSemana && dataVenda <= fimSemana;

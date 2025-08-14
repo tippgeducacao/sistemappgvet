@@ -162,55 +162,23 @@ export const useMetasSemanais = () => {
 
   // Função para obter todas as semanas de um mês (baseado no término da semana - terça-feira)
   const getSemanasDoMes = (ano: number, mes: number) => {
-    // DEBUG para agosto 2025
-    if (ano === 2025 && mes === 8) {
-      console.log(`🚨 CALCULANDO SEMANAS DE AGOSTO 2025`);
-    }
-    
-    // Último dia do mês
-    const ultimaDataMes = new Date(ano, mes, 0);
-    
     // Encontrar a primeira terça-feira do mês
     let primeiraTerca = new Date(ano, mes - 1, 1);
     while (primeiraTerca.getDay() !== 2) { // 2 = Tuesday
       primeiraTerca.setDate(primeiraTerca.getDate() + 1);
     }
     
-    if (ano === 2025 && mes === 8) {
-      console.log(`🔍 Primeira terça-feira de agosto: ${primeiraTerca.toLocaleDateString('pt-BR')} (dia ${primeiraTerca.getDate()})`);
-    }
-    
-    // CORREÇÃO: Para agosto 2025, a primeira terça é dia 5, que está dentro da primeira semana
-    // Não devemos ajustar para semana anterior neste caso
-    if (primeiraTerca.getDate() > 7) {
-      const tercaAnterior = new Date(primeiraTerca);
-      tercaAnterior.setDate(tercaAnterior.getDate() - 7);
-      if (ano === 2025 && mes === 8) {
-        console.log(`⏪ Primeira terça está tarde (dia ${primeiraTerca.getDate()}), usando terça anterior: ${tercaAnterior.toLocaleDateString('pt-BR')}`);
-      }
-      primeiraTerca = tercaAnterior;
-    } else if (ano === 2025 && mes === 8) {
-      console.log(`✅ Primeira terça está ok (dia ${primeiraTerca.getDate()}), mantendo: ${primeiraTerca.toLocaleDateString('pt-BR')}`);
-    }
-    
+    // Para agosto 2025: primeira terça é dia 5, que é uma data OK (não > 7)
+    // Então não vamos ajustar para semana anterior
     const weeks = [];
     let currentTuesday = new Date(primeiraTerca);
     let weekNumber = 1;
     
-    // Só incluir semanas que terminam no mês (todas as terças do mês)
+    // Incluir semanas que terminam no mês
     while (currentTuesday.getMonth() === mes - 1 && currentTuesday.getFullYear() === ano) {
       weeks.push(weekNumber);
-      
-      if (ano === 2025 && mes === 8) {
-        console.log(`📅 Semana ${weekNumber}: termina em ${currentTuesday.toLocaleDateString('pt-BR')}`);
-      }
-      
       weekNumber++;
       currentTuesday.setDate(currentTuesday.getDate() + 7);
-    }
-    
-    if (ano === 2025 && mes === 8) {
-      console.log(`📊 Total de semanas de agosto 2025: ${weeks}`);
     }
     
     return weeks;
@@ -224,11 +192,6 @@ export const useMetasSemanais = () => {
       primeiraTerca.setDate(primeiraTerca.getDate() + 1);
     }
     
-    // CORREÇÃO: Manter consistência com getSemanasDoMes
-    if (primeiraTerca.getDate() > 7) {
-      primeiraTerca.setDate(primeiraTerca.getDate() - 7);
-    }
-    
     // Calcular a terça-feira da semana desejada
     const tercaSemana = new Date(primeiraTerca);
     tercaSemana.setDate(tercaSemana.getDate() + (numeroSemana - 1) * 7);
@@ -236,16 +199,6 @@ export const useMetasSemanais = () => {
     // Início da semana é a quarta-feira anterior à terça
     const inicioSemana = new Date(tercaSemana);
     inicioSemana.setDate(inicioSemana.getDate() - 6);
-    
-    // DEBUG para agosto 2025
-    if (ano === 2025 && mes === 8 && numeroSemana === 4) {
-      console.log(`🚨 SEMANA 4 AGOSTO - Cálculo de início:`, {
-        primeiraTerca: primeiraTerca.toLocaleDateString('pt-BR'),
-        tercaSemana: tercaSemana.toLocaleDateString('pt-BR'),
-        inicioSemana: inicioSemana.toLocaleDateString('pt-BR'),
-        numeroSemana
-      });
-    }
     
     return inicioSemana;
   };
@@ -258,23 +211,9 @@ export const useMetasSemanais = () => {
       primeiraTerca.setDate(primeiraTerca.getDate() + 1);
     }
     
-    // CORREÇÃO: Manter consistência com getSemanasDoMes  
-    if (primeiraTerca.getDate() > 7) {
-      primeiraTerca.setDate(primeiraTerca.getDate() - 7);
-    }
-    
     // Calcular a terça-feira da semana desejada (fim da semana)
     const fimSemana = new Date(primeiraTerca);
     fimSemana.setDate(fimSemana.getDate() + (numeroSemana - 1) * 7);
-    
-    // DEBUG para agosto 2025
-    if (ano === 2025 && mes === 8 && numeroSemana === 4) {
-      console.log(`🚨 SEMANA 4 AGOSTO - Cálculo de fim:`, {
-        primeiraTerca: primeiraTerca.toLocaleDateString('pt-BR'),
-        fimSemana: fimSemana.toLocaleDateString('pt-BR'),
-        numeroSemana
-      });
-    }
     
     return fimSemana;
   };
