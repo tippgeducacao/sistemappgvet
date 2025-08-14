@@ -294,6 +294,12 @@ const Validacoes: React.FC = () => {
                         <div>
                           <span className="font-medium">Pontuação:</span> 
                           <span className="ml-1 text-ppgvet-teal font-bold">{venda.pontuacao_esperada || 0} pts</span>
+                          {venda.status === 'matriculado' && venda.data_assinatura_contrato && (
+                            <span className="ml-4">
+                              <span className="font-medium">Data de Assinatura:</span> 
+                              <span className="ml-1 text-gray-600">{DataFormattingService.formatDate(venda.data_assinatura_contrato)}</span>
+                            </span>
+                          )}
                         </div>
                         {venda.pontuacao_validada && <div>
                             <span className="font-medium">Validada:</span> 
