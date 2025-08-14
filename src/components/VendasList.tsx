@@ -95,8 +95,13 @@ const VendasList: React.FC = () => {
                     {venda.curso?.nome || 'Curso não informado'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {venda.enviado_em ? DataFormattingService.formatDateTime(venda.enviado_em) : 'Data não informada'}
+                    Enviado: {venda.enviado_em ? DataFormattingService.formatDateTime(venda.enviado_em) : 'Data não informada'}
                   </p>
+                  {venda.data_assinatura_contrato && (
+                    <p className="text-xs text-muted-foreground">
+                      Data de Assinatura do Contrato: {DataFormattingService.formatDate(venda.data_assinatura_contrato)}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
