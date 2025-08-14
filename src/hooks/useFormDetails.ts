@@ -28,6 +28,8 @@ export const useFormDetails = (vendaId: string | undefined) => {
       }
 
       console.log('✅ Detalhes do formulário encontrados:', data?.length || 0);
+      console.log('📋 Campos disponíveis:', data?.map(r => r.campo_nome).sort());
+      console.log('📋 Dados completos:', data?.map(r => ({ campo: r.campo_nome, valor: r.valor_informado })));
       return data || [];
     },
     enabled: !!vendaId,
