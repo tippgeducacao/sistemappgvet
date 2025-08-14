@@ -24,16 +24,40 @@ export const extractDataAssinaturaContrato = (observacoes: string | null): Date 
 };
 
 /**
- * Obtém a data efetiva da venda (data de assinatura do contrato ou data de envio)
- * Para vendas matriculadas, usa a data de assinatura se disponível
+ * Obtém a data efetiva da venda (data de matrícula ou data de envio)
+ * Para vendas matriculadas, usa a data de matrícula das respostas do formulário se disponível
  * Para outras, usa a data de envio
  */
-export const getDataEfetivaVenda = (venda: any): Date => {
-  // Se a venda está matriculada, tentar usar a data de assinatura do contrato
-  if (venda.status === 'matriculado') {
-    const dataAssinatura = extractDataAssinaturaContrato(venda.observacoes);
-    if (dataAssinatura) {
-      return dataAssinatura;
+export const getDataEfetivaVenda = (venda: any, respostasFormulario?: any[]): Date => {
+  // Se a venda está matriculada, tentar usar a data de matrícula do formulário
+  if (venda.status === 'matriculado' && respostasFormulario) {
+    const dataMatriculaResponse = respostasFormulario.find(r => 
+      r.campo_nome === 'Data de Matrícula' && r.form_entry_id === venda.id
+    );
+    
+    if (dataMatriculaResponse?.valor_informado) {
+      try {
+        // Tentar parsear a data do formulário (formato YYYY-MM-DD ou DD/MM/YYYY)
+        const dataString = dataMatriculaResponse.valor_informado;
+        let date: Date | null = null;
+        
+        if (dataString.includes('-')) {
+          // Formato ISO: YYYY-MM-DD
+          date = new Date(dataString + 'T00:00:00');
+        } else if (dataString.includes('/')) {
+          // Formato brasileiro: DD/MM/YYYY
+          const [dia, mes, ano] = dataString.split('/');
+          if (dia && mes && ano) {
+            date = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+          }
+        }
+        
+        if (date && !isNaN(date.getTime())) {
+          return date;
+        }
+      } catch (error) {
+        console.warn('Erro ao parsear data de matrícula:', error);
+      }
     }
   }
   
@@ -47,16 +71,17 @@ export const getDataEfetivaVenda = (venda: any): Date => {
 export const isVendaInWeek = (
   venda: any, 
   startDate: Date, 
-  endDate: Date
+  endDate: Date,
+  respostasFormulario?: any[]
 ): boolean => {
-  const dataEfetiva = getDataEfetivaVenda(venda);
+  const dataEfetiva = getDataEfetivaVenda(venda, respostasFormulario);
   return dataEfetiva >= startDate && dataEfetiva <= endDate;
 };
 
 /**
  * Obtém o período (mês/ano) de uma venda baseado na data efetiva
  */
-export const getVendaEffectivePeriod = (venda: any): { mes: number; ano: number } => {
-  const dataEfetiva = getDataEfetivaVenda(venda);
+export const getVendaEffectivePeriod = (venda: any, respostasFormulario?: any[]): { mes: number; ano: number } => {
+  const dataEfetiva = getDataEfetivaVenda(venda, respostasFormulario);
   return getVendaPeriod(dataEfetiva);
 };

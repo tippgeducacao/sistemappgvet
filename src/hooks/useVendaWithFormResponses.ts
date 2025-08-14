@@ -1,0 +1,107 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface VendaWithFormResponses {
+  venda: any;
+  respostas: any[];
+}
+
+export const useVendaWithFormResponses = (vendas: any[]) => {
+  const [vendasWithResponses, setVendasWithResponses] = useState<VendaWithFormResponses[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFormResponses = async () => {
+      if (!vendas || vendas.length === 0) {
+        setVendasWithResponses([]);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        console.log('🔍 Buscando respostas do formulário para', vendas.length, 'vendas');
+        
+        const vendaIds = vendas.map(v => v.id);
+        
+        const { data: respostas, error } = await supabase
+          .from('respostas_formulario')
+          .select('*')
+          .in('form_entry_id', vendaIds);
+
+        if (error) {
+          console.error('Erro ao buscar respostas do formulário:', error);
+          throw error;
+        }
+
+        console.log('✅ Respostas encontradas:', respostas?.length || 0);
+
+        // Agrupar respostas por form_entry_id
+        const respostasPorVenda = (respostas || []).reduce((acc, resposta) => {
+          if (!acc[resposta.form_entry_id]) {
+            acc[resposta.form_entry_id] = [];
+          }
+          acc[resposta.form_entry_id].push(resposta);
+          return acc;
+        }, {} as Record<string, any[]>);
+
+        // Combinar vendas com suas respostas
+        const vendasComRespostas = vendas.map(venda => ({
+          venda,
+          respostas: respostasPorVenda[venda.id] || []
+        }));
+
+        setVendasWithResponses(vendasComRespostas);
+      } catch (error) {
+        console.error('Erro ao processar vendas com respostas:', error);
+        // Em caso de erro, retornar vendas sem respostas
+        const vendasSemRespostas = vendas.map(venda => ({
+          venda,
+          respostas: []
+        }));
+        setVendasWithResponses(vendasSemRespostas);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFormResponses();
+  }, [vendas]);
+
+  return {
+    vendasWithResponses,
+    isLoading
+  };
+};
+
+// Função helper para extrair data de matrícula de uma venda específica
+export const getDataMatriculaFromRespostas = (respostas: any[]): Date | null => {
+  const dataMatriculaResponse = respostas.find(r => r.campo_nome === 'Data de Matrícula');
+  
+  if (!dataMatriculaResponse?.valor_informado) {
+    return null;
+  }
+
+  try {
+    const dataString = dataMatriculaResponse.valor_informado;
+    let date: Date | null = null;
+    
+    if (dataString.includes('-')) {
+      // Formato ISO: YYYY-MM-DD
+      date = new Date(dataString + 'T00:00:00');
+    } else if (dataString.includes('/')) {
+      // Formato brasileiro: DD/MM/YYYY
+      const [dia, mes, ano] = dataString.split('/');
+      if (dia && mes && ano) {
+        date = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+      }
+    }
+    
+    if (date && !isNaN(date.getTime())) {
+      return date;
+    }
+  } catch (error) {
+    console.warn('Erro ao parsear data de matrícula:', error);
+  }
+
+  return null;
+};

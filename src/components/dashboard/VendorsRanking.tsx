@@ -39,6 +39,7 @@ import MonthYearSelector from '@/components/common/MonthYearSelector';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { useVendaWithFormResponses, getDataMatriculaFromRespostas } from '@/hooks/useVendaWithFormResponses';
 
 interface VendorsRankingProps {
   selectedVendedor?: string;
@@ -54,6 +55,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   const { data: agendamentos } = useAgendamentosLeads();
   const { currentUser, profile } = useAuthStore();
   const { todasAvaliacoes } = useAvaliacaoSemanal();
+  
+  // Buscar respostas do formulário para usar data de matrícula
+  const { vendasWithResponses, isLoading: isLoadingResponses } = useVendaWithFormResponses(vendas);
   
   // Estado interno para o filtro de mês (apenas quando não há filtro externo) - usar regra de semanas
   const { getMesAnoSemanaAtual } = useMetasSemanais();
@@ -132,54 +136,66 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
 
   // Filtrar vendas por período e vendedor se especificados
   const vendasFiltradas = useMemo(() => {
-    return vendas.filter(venda => {
-      // Filtro por vendedor
-      if (selectedVendedor && selectedVendedor !== 'todos' && venda.vendedor_id !== selectedVendedor) {
-        return false;
-      }
-      
-      // Filtro por período usando a regra de semana (quarta a terça)
-      if ((propSelectedMonth && propSelectedYear) || internalSelectedMonth) {
-        // CRÍTICO: Para vendas matriculadas, usar data de aprovação se disponível, senão data de envio
-        const dataParaFiltro = venda.status === 'matriculado' && venda.data_aprovacao 
-          ? new Date(venda.data_aprovacao)
-          : new Date(venda.enviado_em);
-        
-        // Debug detalhado para identificar inconsistências no dashboard geral
-        if (venda.vendedor?.name === 'Adones' && venda.status === 'matriculado') {
-          console.log(`🔍 DASHBOARD GERAL - Processando venda do Adones:`, {
-            venda_id: venda.id.substring(0, 8),
-            aluno: venda.aluno?.nome,
-            status: venda.status,
-            data_aprovacao: venda.data_aprovacao,
-            data_enviado: venda.enviado_em,
-            data_usada: dataParaFiltro.toISOString(),
-            data_usada_br: dataParaFiltro.toLocaleDateString('pt-BR'),
-            pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
-            periodo_filtro: `${propSelectedMonth}/${propSelectedYear}`
-          });
+    if (!vendasWithResponses || vendasWithResponses.length === 0) {
+      return [];
+    }
+    
+    return vendasWithResponses
+      .filter(({ venda, respostas }) => {
+        // Filtro por vendedor
+        if (selectedVendedor && selectedVendedor !== 'todos' && venda.vendedor_id !== selectedVendedor) {
+          return false;
         }
         
-        if (propSelectedMonth && propSelectedYear) {
-          // Usar filtros externos do dashboard com regra de semana
-          if (!isVendaInPeriod(dataParaFiltro, propSelectedMonth, propSelectedYear)) {
-            return false;
-          }
-        } else {
-          // Usar filtro interno mensal com regra de semana
-          const { mes: vendaMes, ano: vendaAno } = getVendaPeriod(dataParaFiltro);
-          const filterMonth = parseInt(internalSelectedMonth.split('-')[1]);
-          const filterYear = parseInt(internalSelectedMonth.split('-')[0]);
+        // Filtro por período usando a regra de semana (quarta a terça)
+        if ((propSelectedMonth && propSelectedYear) || internalSelectedMonth) {
+          // NOVA LÓGICA: Usar data de matrícula das respostas do formulário
+          let dataParaFiltro: Date;
+          const dataMatricula = getDataMatriculaFromRespostas(respostas);
           
-          if (vendaMes !== filterMonth || vendaAno !== filterYear) {
-            return false;
+          if (dataMatricula) {
+            dataParaFiltro = dataMatricula;
+          } else {
+            // Fallback para data de envio se não houver data de matrícula
+            dataParaFiltro = new Date(venda.enviado_em);
+          }
+          
+          // Debug detalhado para identificar inconsistências no dashboard geral
+          if (venda.vendedor?.name === 'Adones' && venda.status === 'matriculado') {
+            console.log(`🔍 DASHBOARD GERAL - Processando venda do Adones:`, {
+              venda_id: venda.id.substring(0, 8),
+              aluno: venda.aluno?.nome,
+              status: venda.status,
+              data_matricula_formulario: dataMatricula?.toLocaleDateString('pt-BR'),
+              data_enviado: venda.enviado_em,
+              data_usada: dataParaFiltro.toISOString(),
+              data_usada_br: dataParaFiltro.toLocaleDateString('pt-BR'),
+              pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
+              periodo_filtro: `${propSelectedMonth}/${propSelectedYear}`
+            });
+          }
+          
+          if (propSelectedMonth && propSelectedYear) {
+            // Usar filtros externos do dashboard com regra de semana
+            if (!isVendaInPeriod(dataParaFiltro, propSelectedMonth, propSelectedYear)) {
+              return false;
+            }
+          } else {
+            // Usar filtro interno mensal com regra de semana
+            const { mes: vendaMes, ano: vendaAno } = getVendaPeriod(dataParaFiltro);
+            const filterMonth = parseInt(internalSelectedMonth.split('-')[1]);
+            const filterYear = parseInt(internalSelectedMonth.split('-')[0]);
+            
+            if (vendaMes !== filterMonth || vendaAno !== filterYear) {
+              return false;
+            }
           }
         }
-      }
-      
-      return true;
-    });
-  }, [vendas, selectedVendedor, propSelectedMonth, propSelectedYear, internalSelectedMonth]);
+        
+        return true;
+      })
+      .map(({ venda }) => venda); // Retornar apenas as vendas, não o objeto completo
+  }, [vendasWithResponses, selectedVendedor, propSelectedMonth, propSelectedYear, internalSelectedMonth]);
 
   // Gerar lista de meses disponíveis usando a regra de semana
   const mesesDisponiveis = useMemo(() => {

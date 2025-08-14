@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useVendedores } from '@/hooks/useVendedores';
 import { ComissionamentoService } from '@/services/comissionamentoService';
+import { useVendaWithFormResponses, getDataMatriculaFromRespostas } from '@/hooks/useVendaWithFormResponses';
 
 interface VendedorMetasProps {
   selectedMonth: number;
@@ -25,6 +26,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   const { profile } = useAuthStore();
   const { niveis } = useNiveis();
   const { vendedores } = useVendedores();
+  
+  // Buscar respostas do formulário para usar data de matrícula
+  const { vendasWithResponses, isLoading: isLoadingResponses } = useVendaWithFormResponses(vendas);
   
   // Estado para armazenar os cálculos de comissão de cada semana
   const [comissoesPorSemana, setComissoesPorSemana] = useState<{[key: string]: {valor: number, multiplicador: number, percentual: number}}>({});
@@ -200,16 +204,21 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
               const periodoSemana = `${formatDate(startSemana)} - ${formatDate(endSemana)}`;
 
-              // Calcular pontos da semana usando data de aprovação quando aplicável
-              const pontosDaSemana = vendas.filter(venda => {
+              // Calcular pontos da semana usando data de matrícula do formulário
+              const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
                 
-                // CRÍTICO: Usar a mesma lógica do dashboard geral
-                // Usar data de aprovação se disponível, senão usar data de envio
-                const dataVenda = venda.data_aprovacao 
-                  ? new Date(venda.data_aprovacao)
-                  : new Date(venda.enviado_em);
+                // NOVA LÓGICA: Usar data de matrícula das respostas do formulário
+                let dataVenda: Date;
+                const dataMatricula = getDataMatriculaFromRespostas(respostas);
+                
+                if (dataMatricula) {
+                  dataVenda = dataMatricula;
+                } else {
+                  // Fallback para data de envio se não houver data de matrícula
+                  dataVenda = new Date(venda.enviado_em);
+                }
                 
                 // Ajustar para considerar a zona de tempo corretamente
                 dataVenda.setHours(0, 0, 0, 0);
@@ -227,7 +236,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   console.log(`🔍 DASHBOARD PESSOAL - Processando venda do Adones:`, {
                     venda_id: venda.id.substring(0, 8),
                     aluno: venda.aluno?.nome,
-                    data_aprovacao: venda.data_aprovacao,
+                    data_matricula_formulario: dataMatricula?.toLocaleDateString('pt-BR'),
                     data_enviado: venda.enviado_em,
                     data_usada: dataVenda.toISOString(),
                     data_usada_br: dataVenda.toLocaleDateString('pt-BR'),
@@ -239,7 +248,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 }
                 
                 return isInRange;
-              }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+              }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
               
               console.log(`📊 Semana ${numeroSemana} - Total de pontos: ${pontosDaSemana}`);
 
@@ -358,15 +367,25 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   {semanasDoMes.reduce((total, numeroSemana) => {
                     const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
                     const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
-                    const pontosDaSemana = vendas.filter(venda => {
+                    
+                    const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
                       if (venda.vendedor_id !== profile.id) return false;
                       if (venda.status !== 'matriculado') return false;
-                      // CRÍTICO: Usar a mesma lógica consistente - data de aprovação ou data de envio
-                      const dataVenda = venda.data_aprovacao 
-                        ? new Date(venda.data_aprovacao) 
-                        : new Date(venda.enviado_em);
+                      
+                      // NOVA LÓGICA: Usar data de matrícula das respostas do formulário
+                      let dataVenda: Date;
+                      const dataMatricula = getDataMatriculaFromRespostas(respostas);
+                      
+                      if (dataMatricula) {
+                        dataVenda = dataMatricula;
+                      } else {
+                        // Fallback para data de envio se não houver data de matrícula
+                        dataVenda = new Date(venda.enviado_em);
+                      }
+                      
                       return dataVenda >= startSemana && dataVenda <= endSemana;
-                    }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                    }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                    
                     return total + pontosDaSemana;
                   }, 0).toFixed(1)}
                 </div>
@@ -380,20 +399,32 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                       );
                       return total + (metaSemanal?.meta_vendas || 0);
                     }, 0);
+                    
                     const totalPontos = semanasDoMes.reduce((total, numeroSemana) => {
                       const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
                       const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
-                      const pontosDaSemana = vendas.filter(venda => {
+                      
+                      const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
                         if (venda.vendedor_id !== profile.id) return false;
                         if (venda.status !== 'matriculado') return false;
-                        // CRÍTICO: Usar a mesma lógica consistente - data de aprovação ou data de envio
-                        const dataVenda = venda.data_aprovacao 
-                          ? new Date(venda.data_aprovacao) 
-                          : new Date(venda.enviado_em);
+                        
+                        // NOVA LÓGICA: Usar data de matrícula das respostas do formulário
+                        let dataVenda: Date;
+                        const dataMatricula = getDataMatriculaFromRespostas(respostas);
+                        
+                        if (dataMatricula) {
+                          dataVenda = dataMatricula;
+                        } else {
+                          // Fallback para data de envio se não houver data de matrícula
+                          dataVenda = new Date(venda.enviado_em);
+                        }
+                        
                         return dataVenda >= startSemana && dataVenda <= endSemana;
-                      }).reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                      }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                      
                       return total + pontosDaSemana;
                     }, 0);
+                    
                     const percentualTotal = totalMeta > 0 ? (totalPontos / totalMeta) * 100 : 0;
                     return `${percentualTotal.toFixed(0)}%`;
                   })()}
