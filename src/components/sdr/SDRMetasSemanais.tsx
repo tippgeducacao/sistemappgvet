@@ -61,16 +61,25 @@ export const SDRMetasSemanais = () => {
     const startDate = getDataInicioSemana(selectedYear, selectedMonth, semana);
     const endDate = getDataFimSemana(selectedYear, selectedMonth, semana);
     
+    console.log(`🗓️ Buscando agendamentos para semana ${semana} (${selectedMonth}/${selectedYear}): ${startDate.toLocaleDateString('pt-BR')} - ${endDate.toLocaleDateString('pt-BR')}`);
+    
     if (!profile?.id) return { realizados: 0, meta: 0, percentual: 0 };
 
     try {
-      // Buscar agendamentos da semana que tiveram resultado positivo
+      // Ajustar as datas para incluir toda a semana (início às 00:00 e fim às 23:59)
+      const startDateFormatted = new Date(startDate);
+      startDateFormatted.setHours(0, 0, 0, 0);
+      
+      const endDateFormatted = new Date(endDate);
+      endDateFormatted.setHours(23, 59, 59, 999);
+      
+      // Buscar agendamentos da semana específica que tiveram resultado positivo
       const { data: agendamentos, error } = await supabase
         .from('agendamentos')
         .select('*')
         .eq('sdr_id', profile.id)
-        .gte('data_agendamento', startDate.toISOString())
-        .lte('data_agendamento', endDate.toISOString())
+        .gte('data_agendamento', startDateFormatted.toISOString())
+        .lte('data_agendamento', endDateFormatted.toISOString())
         .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
 
       if (error) throw error;
