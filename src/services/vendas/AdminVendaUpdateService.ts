@@ -23,6 +23,12 @@ export class AdminVendaUpdateService {
         atualizado_em: new Date().toISOString()
       };
 
+      // Se estiver aprovando (matriculando), definir data de aprovação e data de assinatura de contrato
+      if (status === 'matriculado') {
+        updateData.data_aprovacao = new Date().toISOString();
+        updateData.data_assinatura_contrato = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      }
+
       if (pontuacaoValidada !== undefined && pontuacaoValidada !== null) {
         updateData.pontuacao_validada = pontuacaoValidada;
       }
