@@ -56,6 +56,11 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     icon: 'BarChart3'
   },
   {
+    title: 'Agendamentos',
+    section: 'agendamentos',
+    icon: 'Calendar'
+  },
+  {
     title: 'Gestão de Leads',
     section: 'gestao-leads',
     icon: 'Target'

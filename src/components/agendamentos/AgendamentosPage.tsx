@@ -139,9 +139,11 @@ const AgendamentosPage: React.FC = () => {
   // Estado para SDRs
   const [sdrs, setSdrs] = useState<any[]>([]);
 
-  // Hook para verificar se é SDR
+  // Hook para verificar roles do usuário
   const { user } = useAuth();
   const [isSDR, setIsSDR] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isDiretor, setIsDiretor] = useState(false);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -154,6 +156,8 @@ const AgendamentosPage: React.FC = () => {
         
         if (!error && data) {
           setIsSDR(['sdr'].includes(data.user_type));
+          setIsAdmin(['admin'].includes(data.user_type));
+          setIsDiretor(['diretor'].includes(data.user_type));
         }
       }
     };
@@ -910,7 +914,12 @@ const AgendamentosPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Agendamentos</h1>
-          <p className="text-muted-foreground">Gerencie Reuniões entre SDRs, leads e vendedores</p>
+          <p className="text-muted-foreground">
+            {isAdmin 
+              ? "Visualize agendamentos de reuniões entre leads e vendedores (somente leitura)" 
+              : "Gerencie Reuniões entre SDRs, leads e vendedores"
+            }
+          </p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -929,11 +938,14 @@ const AgendamentosPage: React.FC = () => {
             <Calendar className="h-4 w-4" />
             Agenda Geral
           </Button>
-          <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Agendamento
-          </Button>
-          {isSDR && (
+          {/* Administradores só podem visualizar */}
+          {!isAdmin && (
+            <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Agendamento
+            </Button>
+          )}
+          {isSDR && !isAdmin && (
             <Button 
               onClick={() => setShowForcarAgendamento(true)} 
               variant="outline"
@@ -1695,34 +1707,44 @@ const AgendamentosPage: React.FC = () => {
 
       {/* Nova estrutura de abas: Meus Agendamentos vs Todos os Agendamentos */}
       <Tabs defaultValue="meus" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="meus" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Meus Agendamentos
-          </TabsTrigger>
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2' : 'grid-cols-4'}`}>
+          {/* Administradores não veem "Meus Agendamentos" */}
+          {!isAdmin && (
+            <TabsTrigger value="meus" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Meus Agendamentos
+            </TabsTrigger>
+          )}
           <TabsTrigger value="todos" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             Todos os Agendamentos
           </TabsTrigger>
-          <TabsTrigger value="calendario" className="flex items-center gap-2">
-            <Grid className="h-4 w-4" />
-            Calendário
-          </TabsTrigger>
-          <TabsTrigger value="cancelados" className="flex items-center gap-2">
-            <X className="h-4 w-4" />
-            Cancelados
-          </TabsTrigger>
+          {/* Administradores não veem "Calendário" e "Cancelados" */}
+          {!isAdmin && (
+            <>
+              <TabsTrigger value="calendario" className="flex items-center gap-2">
+                <Grid className="h-4 w-4" />
+                Calendário
+              </TabsTrigger>
+              <TabsTrigger value="cancelados" className="flex items-center gap-2">
+                <X className="h-4 w-4" />
+                Cancelados
+              </TabsTrigger>
+            </>
+          )}
         </TabsList>
 
-        <TabsContent value="meus">
-          <MeusAgendamentosTab 
-            agendamentos={meusAgendamentosSDR}
-            onRefresh={() => {
-              recarregarMeusAgendamentos();
-              carregarDados();
-            }}
-          />
-        </TabsContent>
+        {!isAdmin && (
+          <TabsContent value="meus">
+            <MeusAgendamentosTab 
+              agendamentos={meusAgendamentosSDR}
+              onRefresh={() => {
+                recarregarMeusAgendamentos();
+                carregarDados();
+              }}
+            />
+          </TabsContent>
+        )}
 
         <TabsContent value="todos">
           <TodosAgendamentosTab 
@@ -1733,7 +1755,8 @@ const AgendamentosPage: React.FC = () => {
         </TabsContent>
 
 
-        <TabsContent value="calendario">
+        {!isAdmin && (
+          <TabsContent value="calendario">
           <div className="space-y-4">
             <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium mb-4">
               <div>Dom</div>
@@ -1838,9 +1861,11 @@ const AgendamentosPage: React.FC = () => {
               </Card>
             )}
           </div>
-        </TabsContent>
+          </TabsContent>
+        )}
 
-        <TabsContent value="cancelados">
+        {!isAdmin && (
+          <TabsContent value="cancelados">
           <div className="grid gap-4">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -1937,7 +1962,8 @@ const AgendamentosPage: React.FC = () => {
                 ))
             )}
           </div>
-        </TabsContent>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Error Diagnosis Modal */}
