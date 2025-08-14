@@ -8,7 +8,7 @@ import VendaDocumentHeader from './components/VendaDocumentHeader';
 import VendaDocumentInfo from './components/VendaDocumentInfo';
 import VendaDocumentStatus from './components/VendaDocumentStatus';
 import VendaDocumentActions from './components/VendaDocumentActions';
-import VendaDocumentDebug from './components/VendaDocumentDebug';
+
 import VendaDocumentGallery from './components/VendaDocumentGallery';
 interface VendaDocumentCardProps {
   documentPath: string | null;
@@ -224,15 +224,11 @@ const VendaDocumentCard: React.FC<VendaDocumentCardProps> = ({
             {/* SEMPRE mostrar os botões, mesmo se currentDocumentPath for null */}
             <VendaDocumentActions currentDocumentPath={currentDocumentPath || 'placeholder'} isLoadingAction={isLoadingAction} onView={handleViewDocument} onDownload={handleDownloadDocument} onCopyPath={handleCopyPath} />
 
-            <VendaDocumentDebug vendaId={vendaId} documentPath={documentPath} currentDocumentPath={currentDocumentPath} tipoVenda={tipoVenda} requerComprovacao={requerComprovacao} isLoadingFormDetails={isLoadingFormDetails} isLoadingAction={isLoadingAction} />
+            
           </div>
         </CardContent>
       </Card>
 
-      {/* Nova Galeria de Debug */}
-      {process.env.NODE_ENV === 'development' && <Card>
-          
-        </Card>}
     </div>;
 };
 export default VendaDocumentCard;
