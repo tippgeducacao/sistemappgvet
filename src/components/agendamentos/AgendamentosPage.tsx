@@ -1838,6 +1838,9 @@ const AgendamentosPage: React.FC = () => {
                             <p className="text-sm text-muted-foreground">
                               Vendedor: {agendamento.vendedor?.name}
                             </p>
+                            <p className="text-sm text-muted-foreground">
+                              SDR: {agendamento.sdr?.name}
+                            </p>
                           </div>
                           <div className="flex items-center gap-2">
                             {getStatusBadge(agendamento.status)}

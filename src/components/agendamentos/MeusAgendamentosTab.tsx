@@ -152,6 +152,13 @@ const [modalOpen, setModalOpen] = useState(false);
                         </div>
                       )}
 
+                      {agendamento.sdr?.name && (
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">SDR: {agendamento.sdr.name}</span>
+                        </div>
+                      )}
+
                       {/* Data de criação da reunião */}
                       {agendamento.created_at && (
                         <div className="flex items-center gap-2">

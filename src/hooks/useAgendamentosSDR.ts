@@ -28,6 +28,10 @@ export interface AgendamentoSDR {
     name: string;
     email: string;
   };
+  sdr?: {
+    name: string;
+    email: string;
+  };
 }
 
 export const useAgendamentosSDR = () => {
@@ -51,6 +55,10 @@ export const useAgendamentosSDR = () => {
             whatsapp
           ),
           vendedor:profiles!agendamentos_vendedor_id_fkey (
+            name,
+            email
+          ),
+          sdr:profiles!agendamentos_sdr_id_fkey (
             name,
             email
           )
@@ -88,6 +96,10 @@ export const useAgendamentosSDR = () => {
             whatsapp
           ),
           vendedor:profiles!agendamentos_vendedor_id_fkey (
+            name,
+            email
+          ),
+          sdr:profiles!agendamentos_sdr_id_fkey (
             name,
             email
           )

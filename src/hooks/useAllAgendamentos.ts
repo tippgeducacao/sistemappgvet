@@ -27,6 +27,10 @@ export const useAllAgendamentos = () => {
           vendedor:profiles!agendamentos_vendedor_id_fkey (
             name,
             email
+          ),
+          sdr:profiles!agendamentos_sdr_id_fkey (
+            name,
+            email
           )
         `)
         .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'cancelado', 'realizado', 'remarcado'])
