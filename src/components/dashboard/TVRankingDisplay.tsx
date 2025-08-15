@@ -495,13 +495,25 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const vendasSemanaAtual = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
     
-    // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
+    // MESMA LÓGICA da getVendedorWeeklyPoints - priorizar data_assinatura_contrato
     let vendaDate: Date;
-    if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
-      vendaDate = new Date(venda.data_assinatura_contrato);
+    if (venda.data_assinatura_contrato) {
+      vendaDate = new Date(venda.data_assinatura_contrato + 'T12:00:00');
     } else {
-      vendaDate = new Date(venda.enviado_em);
+      // Buscar nas respostas do formulário se não tem data_assinatura_contrato
+      const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+      if (respostasVenda) {
+        const dataMatricula = getDataMatriculaFromRespostas(respostasVenda.respostas);
+        if (dataMatricula) {
+          vendaDate = dataMatricula;
+        } else {
+          vendaDate = new Date(venda.enviado_em);
+        }
+      } else {
+        vendaDate = new Date(venda.enviado_em);
+      }
     }
+    vendaDate.setHours(0, 0, 0, 0);
     return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
   });
 
@@ -509,12 +521,22 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const vendasMesAtual = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
     
-    // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
+    // MESMA LÓGICA - priorizar data_assinatura_contrato
     let vendaDate: Date;
-    if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
-      vendaDate = new Date(venda.data_assinatura_contrato);
+    if (venda.data_assinatura_contrato) {
+      vendaDate = new Date(venda.data_assinatura_contrato + 'T12:00:00');
     } else {
-      vendaDate = new Date(venda.enviado_em);
+      const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+      if (respostasVenda) {
+        const dataMatricula = getDataMatriculaFromRespostas(respostasVenda.respostas);
+        if (dataMatricula) {
+          vendaDate = dataMatricula;
+        } else {
+          vendaDate = new Date(venda.enviado_em);
+        }
+      } else {
+        vendaDate = new Date(venda.enviado_em);
+      }
     }
     const { mes, ano } = getVendaPeriod(vendaDate);
     return mes === currentMonth && ano === currentYear;
@@ -527,13 +549,24 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   endOfDay.setHours(23, 59, 59, 999);
 
   const vendasDiaAtual = vendas.filter(venda => {
-    // Para vendas matriculadas, usar data_assinatura_contrato, senão usar enviado_em
+    // MESMA LÓGICA - priorizar data_assinatura_contrato
     let vendaDate: Date;
-    if (venda.status === 'matriculado' && venda.data_assinatura_contrato) {
-      vendaDate = new Date(venda.data_assinatura_contrato);
+    if (venda.data_assinatura_contrato) {
+      vendaDate = new Date(venda.data_assinatura_contrato + 'T12:00:00');
     } else {
-      vendaDate = new Date(venda.enviado_em);
+      const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+      if (respostasVenda) {
+        const dataMatricula = getDataMatriculaFromRespostas(respostasVenda.respostas);
+        if (dataMatricula) {
+          vendaDate = dataMatricula;
+        } else {
+          vendaDate = new Date(venda.enviado_em);
+        }
+      } else {
+        vendaDate = new Date(venda.enviado_em);
+      }
     }
+    vendaDate.setHours(0, 0, 0, 0);
     return vendaDate >= startOfDay && vendaDate <= endOfDay && 
            venda.status === 'matriculado';
   });
