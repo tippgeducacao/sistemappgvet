@@ -881,31 +881,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         endSemanaUTC.setHours(23, 59, 59, 999);
         const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
         
-        // Debug específico para Adones na semana 2
-        if (vendedorId.includes('Adones') && week.week === 2) {
-          console.log(`🔍 TV DEBUG ADONES SEMANA 2:`, {
-            venda_id: venda.id.substring(0, 8),
-            data_assinatura_contrato: venda.data_assinatura_contrato,
-            dataVenda: dataVenda.toLocaleDateString('pt-BR'),
-            weekStart: startSemanaUTC.toLocaleDateString('pt-BR'),
-            weekEnd: endSemanaUTC.toLocaleDateString('pt-BR'),
-            isInRange,
-            periodoCorreto,
-            vendaPeriod,
-            currentMonth,
-            currentYear,
-            pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
-            passaFiltro: periodoCorreto && isInRange
-          });
-        }
-        
         return periodoCorreto && isInRange;
       }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-      
-      // Log final para Adones semana 2
-      if (vendedorId.includes('Adones') && week.week === 2) {
-        console.log(`📊 TV TOTAL ADONES SEMANA 2: ${pontosDaSemana} pontos`);
-      }
       
       return pontosDaSemana;
     });
