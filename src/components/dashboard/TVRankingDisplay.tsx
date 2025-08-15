@@ -845,20 +845,35 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return weeks;
   };
 
-  // Função para calcular pontos por semana do vendedor (usando a MESMA lógica corrigida)
+  // Função para calcular pontos por semana do vendedor (EXATAMENTE igual ao VendorsRanking)
   const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
+    const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
+    
     return weeks.map((week, index) => {
       // Usar vendasWithResponses diretamente como no dashboard pessoal
       const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
         if (venda.vendedor_id !== vendedorId) return false;
         if (venda.status !== 'matriculado') return false;
         
-        // Usar APENAS data_assinatura_contrato para validação de semana
-        if (!venda.data_assinatura_contrato) return false;
+        // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
+        let dataVenda: Date;
         
-        const dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
+        if (venda.data_assinatura_contrato) {
+          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
+        } else {
+          const dataMatricula = getDataMatriculaFromRespostas(respostas);
+          if (dataMatricula) {
+            dataVenda = dataMatricula;
+          } else {
+            dataVenda = new Date(venda.enviado_em);
+          }
+        }
         
-        // Validar se a data de assinatura está na semana específica
+        // Aplicar a mesma lógica de validação de período do dashboard pessoal
+        const vendaPeriod = getVendaPeriod(dataVenda);
+        const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
+        
+        // Verificar se está na semana específica
         dataVenda.setHours(0, 0, 0, 0);
         const startSemanaUTC = new Date(week.startDate);
         startSemanaUTC.setHours(0, 0, 0, 0);
@@ -866,14 +881,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         endSemanaUTC.setHours(23, 59, 59, 999);
         const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
         
-        // Aplicar validação de período apenas para vendas da semana correta
-        if (!isInRange) return false;
-        
-        const vendaPeriod = getVendaPeriod(dataVenda);
-        const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
-        const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
-        
-        return periodoCorreto;
+        return periodoCorreto && isInRange;
       }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       
       return pontosDaSemana;
