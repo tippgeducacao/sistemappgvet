@@ -845,50 +845,22 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return weeks;
   };
 
-  // Função para calcular pontos por semana do vendedor (CÓPIA EXATA do VendorsRanking)
+  // Função simplificada para evitar timeout
   const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
-    const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
-    
-    return weeks.map((week, index) => {
-      // Usar vendasWithResponses diretamente como no dashboard pessoal
-      const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
-        if (venda.vendedor_id !== vendedorId) return false;
-        if (venda.status !== 'matriculado') return false;
-        
-        // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-        let dataVenda: Date;
-        
-        if (venda.data_assinatura_contrato) {
-          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-        } else {
-          const dataMatricula = getDataMatriculaFromRespostas(respostas);
-          if (dataMatricula) {
-            dataVenda = dataMatricula;
-          } else {
-            dataVenda = new Date(venda.enviado_em);
-          }
-        }
-        
-        // Aplicar a mesma lógica de validação de período do dashboard pessoal
-        const vendaPeriod = getVendaPeriod(dataVenda);
-        const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
-        
-        // Verificar se está na semana específica
-        dataVenda.setHours(0, 0, 0, 0);
-        const startSemanaUTC = new Date(week.startDate);
-        startSemanaUTC.setHours(0, 0, 0, 0);
-        const endSemanaUTC = new Date(week.endDate);
-        endSemanaUTC.setHours(23, 59, 59, 999);
-        const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
-        
-        return periodoCorreto && isInRange;
-      }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+    return weeks.map((week) => {
+      const weekPoints = vendas
+        .filter(venda => {
+          if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
+          
+          const vendaDate = venda.data_assinatura_contrato 
+            ? new Date(venda.data_assinatura_contrato)
+            : new Date(venda.enviado_em);
+          
+          return vendaDate >= week.startDate && vendaDate <= week.endDate;
+        })
+        .reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       
-      return pontosDaSemana;
-    });
-  };
-      
-      return pontosDaSemana;
+      return weekPoints;
     });
   };
 
