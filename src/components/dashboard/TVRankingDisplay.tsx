@@ -711,6 +711,56 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
           }
         });
       }
+      // Debug específico para Adones
+      if (vendedor.name === 'Adones') {
+        console.log('🔍 DEBUG ADONES - Vendas da semana (calculados diretamente):', {
+          vendedorId: vendedor.id,
+          vendasSemana: vendasVendedorSemana.map(v => ({
+            data_assinatura: v.data_assinatura_contrato,
+            enviado_em: v.enviado_em,
+            pontuacao_validada: v.pontuacao_validada,
+            pontuacao_esperada: v.pontuacao_esperada,
+            status: v.status
+          })),
+          pontosSemana,
+          periodoSemana: {
+            inicio: startOfWeek.toISOString(),
+            fim: endOfWeek.toISOString()
+          },
+          semanaOffset
+        });
+        
+        // Também testar com getVendedorWeeklyPoints para comparar
+        const weeksTest = getWeeksOfMonth(currentYear, currentMonth);
+        const pointsTest = getVendedorWeeklyPoints(vendedor.id, weeksTest);
+        console.log('🔬 ADONES - Teste getVendedorWeeklyPoints:', {
+          weeks: weeksTest.length,
+          weeksDetalhes: weeksTest.map(w => ({
+            week: w.week,
+            label: w.label,
+            startDate: w.startDate.toISOString(),
+            endDate: w.endDate.toISOString()
+          })),
+          pointsPerWeek: pointsTest,
+          totalPoints: pointsTest.reduce((sum, p) => sum + p, 0),
+          semanaAtualRange: {
+            inicio: startOfWeek.toISOString(),
+            fim: endOfWeek.toISOString()
+          }
+        });
+        
+        // Verificar qual semana da lista corresponde à semana que estamos visualizando
+        const semanaCorrespondente = weeksTest.findIndex(w => {
+          const weekStart = new Date(w.startDate);
+          const weekEnd = new Date(w.endDate);
+          return (startOfWeek >= weekStart && startOfWeek <= weekEnd) ||
+                 (endOfWeek >= weekStart && endOfWeek <= weekEnd);
+        });
+        console.log('🎯 ADONES - Semana correspondente:', {
+          index: semanaCorrespondente,
+          pontosNestaSemana: semanaCorrespondente >= 0 ? pointsTest[semanaCorrespondente] : 'Não encontrada'
+        });
+      }
       
       console.log(`💰 Vendedor ${vendedor.name}:`, {
         vendedorId: vendedor.id,
@@ -869,7 +919,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
 
   // Função simplificada para evitar timeout
   const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
-    return weeks.map((week) => {
+    return weeks.map((week, weekIndex) => {
       // Usar vendasWithResponses como na planilha
       const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
         if (venda.vendedor_id !== vendedorId) return false;
@@ -889,7 +939,6 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
           }
         }
         
-        // CORREÇÃO: Não filtrar por período específico, apenas verificar se está na semana
         // Verificar se está na semana específica
         dataVenda.setHours(0, 0, 0, 0);
         const startSemanaUTC = new Date(week.startDate);
@@ -898,8 +947,30 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         endSemanaUTC.setHours(23, 59, 59, 999);
         const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
         
+        // Debug específico para vendedores especiais
+        const vendedorProfile = vendedores.find(v => v.id === vendedorId);
+        if (vendedorProfile?.name === 'Adones' && isInRange) {
+          console.log(`🔍 DEBUG ADONES getVendedorWeeklyPoints - Semana ${weekIndex + 1}:`, {
+            vendaId: venda.id,
+            data_assinatura: venda.data_assinatura_contrato,
+            dataVenda: dataVenda.toISOString(),
+            weekStart: startSemanaUTC.toISOString(),
+            weekEnd: endSemanaUTC.toISOString(),
+            pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
+            status: venda.status,
+            isInRange,
+            semanaOffset
+          });
+        }
+        
         return isInRange;
       }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+      
+      // Debug dos pontos totais por semana
+      const vendedorProfile = vendedores.find(v => v.id === vendedorId);
+      if (vendedorProfile?.name === 'Adones') {
+        console.log(`🎯 ADONES - Pontos Semana ${weekIndex + 1}:`, pontosDaSemana);
+      }
       
       return pontosDaSemana;
     });
