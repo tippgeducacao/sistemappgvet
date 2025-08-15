@@ -548,6 +548,66 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     semanaOffset,
     tercaAlvo: tercaAlvo.toISOString(),
     totalVendas: vendas.length,
+    vendasSemanaAtualCount: vendasSemanaAtual.length,
+    vendasMesAtualCount: vendasMesAtual.length,
+    vendasDiaAtualCount: vendasDiaAtual.length
+  });
+
+  // Função simplificada para evitar timeout - MOVIDA PARA CIMA PARA RESOLVER HOISTING
+  const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
+    return weeks.map((week, weekIndex) => {
+      // Usar vendasWithResponses como na planilha
+      const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
+        if (venda.vendedor_id !== vendedorId) return false;
+        if (venda.status !== 'matriculado') return false;
+        
+        // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
+        let dataVenda: Date;
+        
+        if (venda.data_assinatura_contrato) {
+          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
+        } else {
+          const dataMatricula = getDataMatriculaFromRespostas(respostas);
+          if (dataMatricula) {
+            dataVenda = dataMatricula;
+          } else {
+            dataVenda = new Date(venda.enviado_em);
+          }
+        }
+        
+        // Verificar se está na semana específica
+        dataVenda.setHours(0, 0, 0, 0);
+        const startSemanaUTC = new Date(week.startDate);
+        startSemanaUTC.setHours(0, 0, 0, 0);
+        const endSemanaUTC = new Date(week.endDate);
+        endSemanaUTC.setHours(23, 59, 59, 999);
+        const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+        
+        // Debug específico para vendedores especiais
+        const vendedorProfile = vendedores.find(v => v.id === vendedorId);
+        if (vendedorProfile?.name === 'Adones' && isInRange) {
+          console.log(`🔍 DEBUG ADONES getVendedorWeeklyPoints - Semana ${weekIndex + 1}:`, {
+            vendaId: venda.id,
+            data_assinatura: venda.data_assinatura_contrato,
+            dataVenda: dataVenda.toISOString(),
+            weekStart: startSemanaUTC.toISOString(),
+            weekEnd: endSemanaUTC.toISOString(),
+            pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
+            isInRange
+          });
+        }
+        
+        return isInRange;
+      });
+
+      return pontosDaSemana.reduce((total, { venda }) => {
+        return total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0);
+      }, 0);
+    });
+  };
+
+  // Debug das estatísticas
+  console.log('📊 TVRankingDisplay - Estatísticas:', {
     vendasMatriculadas: vendas.filter(v => v.status === 'matriculado').length,
     vendasSemana: vendasSemanaAtual.length,
     vendasMes: vendasMesAtual.length,
@@ -917,65 +977,6 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return dentroDoMes && compareceu;
   }).length;
 
-
-  // Função simplificada para evitar timeout
-  const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
-    return weeks.map((week, weekIndex) => {
-      // Usar vendasWithResponses como na planilha
-      const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
-        if (venda.vendedor_id !== vendedorId) return false;
-        if (venda.status !== 'matriculado') return false;
-        
-        // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-        let dataVenda: Date;
-        
-        if (venda.data_assinatura_contrato) {
-          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-        } else {
-          const dataMatricula = getDataMatriculaFromRespostas(respostas);
-          if (dataMatricula) {
-            dataVenda = dataMatricula;
-          } else {
-            dataVenda = new Date(venda.enviado_em);
-          }
-        }
-        
-        // Verificar se está na semana específica
-        dataVenda.setHours(0, 0, 0, 0);
-        const startSemanaUTC = new Date(week.startDate);
-        startSemanaUTC.setHours(0, 0, 0, 0);
-        const endSemanaUTC = new Date(week.endDate);
-        endSemanaUTC.setHours(23, 59, 59, 999);
-        const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
-        
-        // Debug específico para vendedores especiais
-        const vendedorProfile = vendedores.find(v => v.id === vendedorId);
-        if (vendedorProfile?.name === 'Adones' && isInRange) {
-          console.log(`🔍 DEBUG ADONES getVendedorWeeklyPoints - Semana ${weekIndex + 1}:`, {
-            vendaId: venda.id,
-            data_assinatura: venda.data_assinatura_contrato,
-            dataVenda: dataVenda.toISOString(),
-            weekStart: startSemanaUTC.toISOString(),
-            weekEnd: endSemanaUTC.toISOString(),
-            pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
-            status: venda.status,
-            isInRange,
-            semanaOffset
-          });
-        }
-        
-        return isInRange;
-      }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-      
-      // Debug dos pontos totais por semana
-      const vendedorProfile = vendedores.find(v => v.id === vendedorId);
-      if (vendedorProfile?.name === 'Adones') {
-        console.log(`🎯 ADONES - Pontos Semana ${weekIndex + 1}:`, pontosDaSemana);
-      }
-      
-      return pontosDaSemana;
-    });
-  };
 
   // Função para calcular comissão POR SEMANA usando as regras de comissionamento (copiada do VendorsRanking)
   const calculateWeeklyCommission = async (points: number, metaSemanal: number, variavelSemanal: number) => {
