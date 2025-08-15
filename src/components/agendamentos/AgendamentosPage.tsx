@@ -1707,7 +1707,7 @@ const AgendamentosPage: React.FC = () => {
 
       {/* Nova estrutura de abas: Meus Agendamentos vs Todos os Agendamentos */}
       <Tabs defaultValue="meus" className="space-y-4">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2' : 'grid-cols-4'}`}>
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-3' : 'grid-cols-4'}`}>
           {/* Administradores não veem "Meus Agendamentos" */}
           {!isAdmin && (
             <TabsTrigger value="meus" className="flex items-center gap-2">
@@ -1719,18 +1719,17 @@ const AgendamentosPage: React.FC = () => {
             <Eye className="h-4 w-4" />
             Todos os Agendamentos
           </TabsTrigger>
-          {/* Administradores não veem "Calendário" e "Cancelados" */}
+          {/* Administradores podem ver "Calendário" */}
+          <TabsTrigger value="calendario" className="flex items-center gap-2">
+            <Grid className="h-4 w-4" />
+            Calendário
+          </TabsTrigger>
+          {/* Administradores não veem "Cancelados" */}
           {!isAdmin && (
-            <>
-              <TabsTrigger value="calendario" className="flex items-center gap-2">
-                <Grid className="h-4 w-4" />
-                Calendário
-              </TabsTrigger>
-              <TabsTrigger value="cancelados" className="flex items-center gap-2">
-                <X className="h-4 w-4" />
-                Cancelados
-              </TabsTrigger>
-            </>
+            <TabsTrigger value="cancelados" className="flex items-center gap-2">
+              <X className="h-4 w-4" />
+              Cancelados
+            </TabsTrigger>
           )}
         </TabsList>
 
@@ -1755,8 +1754,7 @@ const AgendamentosPage: React.FC = () => {
         </TabsContent>
 
 
-        {!isAdmin && (
-          <TabsContent value="calendario">
+        <TabsContent value="calendario">
           <div className="space-y-4">
             <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium mb-4">
               <div>Dom</div>
@@ -1862,7 +1860,6 @@ const AgendamentosPage: React.FC = () => {
             )}
           </div>
           </TabsContent>
-        )}
 
         {!isAdmin && (
           <TabsContent value="cancelados">
