@@ -56,7 +56,7 @@ export const useAgendamentosSDR = () => {
           )
         `)
         .eq('sdr_id', profile.id)
-        .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda'])
+        .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'remarcado'])
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -115,7 +115,7 @@ export const useAgendamentosSDR = () => {
 
   // Filtrar agendamentos ativos (não cancelados)
   const agendamentosAtivos = agendamentos.filter(ag => 
-    ['agendado', 'atrasado', 'finalizado', 'finalizado_venda'].includes(ag.status)
+    ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'remarcado'].includes(ag.status)
   );
 
   return {
