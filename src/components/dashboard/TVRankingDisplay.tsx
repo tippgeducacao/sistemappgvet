@@ -424,28 +424,30 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const currentWeek = getSemanaAtual();
   const today = new Date();
 
-  // Calcular período da semana baseado no offset
-  const getDaysUntilWednesday = (date: Date) => {
-    const day = date.getDay(); // 0=domingo, 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado
-    if (day >= 3) { // Quinta, sexta, sábado ou quarta
-      return day - 3;
-    } else { // Domingo, segunda, terça
-      return day + 4; // Volta para quarta anterior
-    }
-  };
+  // Calcular período da semana baseado no offset - usar lógica correta
+  // Primeiro, encontrar a terça-feira que encerra a semana ATUAL
+  let tercaAtual = new Date(today);
+  
+  if (tercaAtual.getDay() === 2) {
+    // Hoje é terça-feira - a semana atual termina hoje
+  } else {
+    // Encontrar a próxima terça-feira (que encerra a semana atual)
+    const diasAteTerca = (2 - tercaAtual.getDay() + 7) % 7;
+    const diasParaSomar = diasAteTerca === 0 ? 7 : diasAteTerca;
+    tercaAtual.setDate(tercaAtual.getDate() + diasParaSomar);
+  }
 
-  // Calcular semana baseada no offset
-  const targetDate = new Date(today);
-  targetDate.setDate(today.getDate() + (semanaOffset * 7));
+  // Aplicar o offset de semanas à terça-feira
+  const tercaAlvo = new Date(tercaAtual);
+  tercaAlvo.setDate(tercaAtual.getDate() + (semanaOffset * 7));
   
-  const startOfWeek = new Date(targetDate);
-  const daysToWednesday = getDaysUntilWednesday(targetDate);
-  startOfWeek.setDate(targetDate.getDate() - daysToWednesday);
-  startOfWeek.setHours(0, 0, 0, 0);
-  
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6); // 6 dias depois (quarta + 6 = terça)
+  // A partir da terça-feira alvo, calcular início e fim da semana
+  const endOfWeek = new Date(tercaAlvo);
   endOfWeek.setHours(23, 59, 59, 999);
+  
+  const startOfWeek = new Date(tercaAlvo);
+  startOfWeek.setDate(tercaAlvo.getDate() - 6); // 6 dias antes da terça = quarta anterior
+  startOfWeek.setHours(0, 0, 0, 0);
 
   // Filtrar vendas usando a regra de semana (quarta a terça) para a semana selecionada
   const vendasSemanaAtual = vendas.filter(venda => {
@@ -501,7 +503,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     currentWeek,
     currentYear,
     currentMonth,
-    daysToWednesday,
+    semanaOffset,
+    tercaAlvo: tercaAlvo.toISOString(),
     totalVendas: vendas.length,
     vendasMatriculadas: vendas.filter(v => v.status === 'matriculado').length,
     vendasSemana: vendasSemanaAtual.length,
