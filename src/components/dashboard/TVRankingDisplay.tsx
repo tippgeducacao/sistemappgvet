@@ -449,6 +449,48 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   startOfWeek.setDate(tercaAlvo.getDate() - 6); // 6 dias antes da terça = quarta anterior
   startOfWeek.setHours(0, 0, 0, 0);
 
+  // Função para calcular as semanas do mês com datas (todas as semanas do mês)
+  const getWeeksOfMonth = (year: number, month: number) => {
+    const weeks = [];
+    let weekNumber = 1;
+    
+    // Encontrar a primeira terça-feira do mês
+    const firstDay = new Date(year, month - 1, 1);
+    let firstTuesday = new Date(firstDay);
+    
+    while (firstTuesday.getDay() !== 2) { // 2 = terça-feira
+      firstTuesday.setDate(firstTuesday.getDate() + 1);
+    }
+    
+    // Se a primeira terça está muito tarde no mês, verificar semana anterior
+    if (firstTuesday.getDate() > 7) {
+      firstTuesday.setDate(firstTuesday.getDate() - 7);
+    }
+    
+    let currentTuesday = new Date(firstTuesday);
+    
+    // Adicionar todas as terças-feiras que estão no mês
+    while (currentTuesday.getMonth() === month - 1 && currentTuesday.getFullYear() === year) {
+      const startOfWeek = new Date(currentTuesday);
+      startOfWeek.setDate(startOfWeek.getDate() - 6); // Quarta anterior
+      
+      const endOfWeek = new Date(currentTuesday); // Terça atual
+      endOfWeek.setHours(23, 59, 59, 999); // Final do dia da terça
+      
+      weeks.push({
+        week: weekNumber,
+        startDate: startOfWeek,
+        endDate: endOfWeek,
+        label: `${startOfWeek.getDate().toString().padStart(2, '0')}/${(startOfWeek.getMonth() + 1).toString().padStart(2, '0')} - ${endOfWeek.getDate().toString().padStart(2, '0')}/${(endOfWeek.getMonth() + 1).toString().padStart(2, '0')}`
+      });
+      
+      weekNumber++;
+      currentTuesday.setDate(currentTuesday.getDate() + 7);
+    }
+    
+    return weeks;
+  };
+
   // Filtrar vendas usando a regra de semana (quarta a terça) para a semana selecionada
   const vendasSemanaAtual = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
@@ -875,47 +917,6 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     return dentroDoMes && compareceu;
   }).length;
 
-  // Função para calcular as semanas do mês com datas (todas as semanas do mês)
-  const getWeeksOfMonth = (year: number, month: number) => {
-    const weeks = [];
-    let weekNumber = 1;
-    
-    // Encontrar a primeira terça-feira do mês
-    const firstDay = new Date(year, month - 1, 1);
-    let firstTuesday = new Date(firstDay);
-    
-    while (firstTuesday.getDay() !== 2) { // 2 = terça-feira
-      firstTuesday.setDate(firstTuesday.getDate() + 1);
-    }
-    
-    // Se a primeira terça está muito tarde no mês, verificar semana anterior
-    if (firstTuesday.getDate() > 7) {
-      firstTuesday.setDate(firstTuesday.getDate() - 7);
-    }
-    
-    let currentTuesday = new Date(firstTuesday);
-    
-    // Adicionar todas as terças-feiras que estão no mês
-    while (currentTuesday.getMonth() === month - 1 && currentTuesday.getFullYear() === year) {
-      const startOfWeek = new Date(currentTuesday);
-      startOfWeek.setDate(startOfWeek.getDate() - 6); // Quarta anterior
-      
-      const endOfWeek = new Date(currentTuesday); // Terça atual
-      endOfWeek.setHours(23, 59, 59, 999); // Final do dia da terça
-      
-      weeks.push({
-        week: weekNumber,
-        startDate: startOfWeek,
-        endDate: endOfWeek,
-        label: `${startOfWeek.getDate().toString().padStart(2, '0')}/${(startOfWeek.getMonth() + 1).toString().padStart(2, '0')} - ${endOfWeek.getDate().toString().padStart(2, '0')}/${(endOfWeek.getMonth() + 1).toString().padStart(2, '0')}`
-      });
-      
-      weekNumber++;
-      currentTuesday.setDate(currentTuesday.getDate() + 7);
-    }
-    
-    return weeks;
-  };
 
   // Função simplificada para evitar timeout
   const getVendedorWeeklyPoints = (vendedorId: string, weeks: any[]) => {
