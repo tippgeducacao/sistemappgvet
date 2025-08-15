@@ -600,9 +600,30 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         return isInRange;
       });
 
-      return pontosDaSemana.reduce((total, { venda }) => {
+      const totalPontos = pontosDaSemana.reduce((total, { venda }) => {
         return total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0);
       }, 0);
+
+      // Debug específico para Adones - pontos totais por semana
+      const vendedorProfile = vendedores.find(v => v.id === vendedorId);
+      if (vendedorProfile?.name === 'Adones') {
+        console.log(`🎯 ADONES getVendedorWeeklyPoints - Semana ${weekIndex + 1}:`, {
+          weekLabel: week.label,
+          startDate: week.startDate.toISOString(),
+          endDate: week.endDate.toISOString(),
+          vendasEncontradas: pontosDaSemana.length,
+          vendas: pontosDaSemana.map(({ venda }) => ({
+            id: venda.id,
+            pontos: venda.pontuacao_validada || venda.pontuacao_esperada,
+            dataAssinatura: venda.data_assinatura_contrato,
+            status: venda.status
+          })),
+          totalPontos,
+          semanaOffset
+        });
+      }
+
+      return totalPontos;
     });
   };
 
@@ -860,7 +881,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         });
         console.log('🎯 ADONES - Semana correspondente:', {
           index: semanaCorrespondente,
-          pontosNestaSemana: semanaCorrespondente >= 0 ? pointsTest[semanaCorrespondente] : 'Não encontrada'
+          pontosNestaSemana: semanaCorrespondente >= 0 ? pointsTest[semanaCorrespondente] : 'Não encontrada',
+          semanaOffset,
+          calculoDireto: pontosSemana,
+          comparacao: {
+            direto: pontosSemana,
+            pelaFuncao: semanaCorrespondente >= 0 ? pointsTest[semanaCorrespondente] : 0
+          }
         });
       }
       
@@ -912,6 +939,12 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   console.log('📊 TVRankingDisplay - Dados separados:', {
     vendedores: vendedoresOnly.length,
     sdrs: sdrsOnly.length,
+    semanaOffset,
+    periodoExibido: {
+      inicio: startOfWeek.toISOString(),
+      fim: endOfWeek.toISOString(),
+      descricao: semanaOffset === 0 ? 'Semana Atual' : semanaOffset === -1 ? 'Semana Anterior' : `Semana com offset ${semanaOffset}`
+    },
     vendedoresData: vendedoresOnly.map(v => ({ 
       name: v.name, 
       pontos: v.points, 
