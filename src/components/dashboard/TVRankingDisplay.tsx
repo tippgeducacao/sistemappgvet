@@ -853,26 +853,12 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         if (venda.vendedor_id !== vendedorId) return false;
         if (venda.status !== 'matriculado') return false;
         
-        // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-        let dataVenda: Date;
+        // Usar APENAS data_assinatura_contrato para validação de semana
+        if (!venda.data_assinatura_contrato) return false;
         
-        if (venda.data_assinatura_contrato) {
-          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-        } else {
-          const dataMatricula = getDataMatriculaFromRespostas(respostas);
-          if (dataMatricula) {
-            dataVenda = dataMatricula;
-          } else {
-            dataVenda = new Date(venda.enviado_em);
-          }
-        }
+        const dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
         
-        // Aplicar a mesma lógica de validação de período do dashboard pessoal
-        const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
-        const vendaPeriod = getVendaPeriod(dataVenda);
-        const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
-        
-        // Verificar se está na semana específica
+        // Validar se a data de assinatura está na semana específica
         dataVenda.setHours(0, 0, 0, 0);
         const startSemanaUTC = new Date(week.startDate);
         startSemanaUTC.setHours(0, 0, 0, 0);
@@ -880,7 +866,14 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         endSemanaUTC.setHours(23, 59, 59, 999);
         const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
         
-        return periodoCorreto && isInRange;
+        // Aplicar validação de período apenas para vendas da semana correta
+        if (!isInRange) return false;
+        
+        const vendaPeriod = getVendaPeriod(dataVenda);
+        const { mes: currentMonth, ano: currentYear } = getMesAnoSemanaAtual();
+        const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
+        
+        return periodoCorreto;
       }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       
       return pontosDaSemana;
