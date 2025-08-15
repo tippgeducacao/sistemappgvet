@@ -692,6 +692,25 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       const pontosMes = vendasVendedorMes.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       const pontosHoje = vendasVendedorHoje.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       const pontosOntem = vendasVendedorOntem.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+
+      // Debug específico para Adones
+      if (vendedor.name === 'Adones') {
+        console.log('🔍 DEBUG ADONES - Vendas da semana:', {
+          vendedorId: vendedor.id,
+          vendasSemana: vendasVendedorSemana.map(v => ({
+            data_assinatura: v.data_assinatura_contrato,
+            enviado_em: v.enviado_em,
+            pontuacao_validada: v.pontuacao_validada,
+            pontuacao_esperada: v.pontuacao_esperada,
+            status: v.status
+          })),
+          pontosSemana,
+          periodoSemana: {
+            inicio: startOfWeek.toISOString(),
+            fim: endOfWeek.toISOString()
+          }
+        });
+      }
       
       console.log(`💰 Vendedor ${vendedor.name}:`, {
         vendedorId: vendedor.id,
@@ -870,10 +889,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
           }
         }
         
-        // Aplicar a mesma lógica de validação de período da planilha
-        const vendaPeriod = getVendaPeriod(dataVenda);
-        const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
-        
+        // CORREÇÃO: Não filtrar por período específico, apenas verificar se está na semana
         // Verificar se está na semana específica
         dataVenda.setHours(0, 0, 0, 0);
         const startSemanaUTC = new Date(week.startDate);
@@ -882,7 +898,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         endSemanaUTC.setHours(23, 59, 59, 999);
         const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
         
-        return periodoCorreto && isInRange;
+        return isInRange;
       }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
       
       return pontosDaSemana;
