@@ -43,6 +43,11 @@ export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
     icon: 'Target'
   },
   {
+    title: 'Indicações',
+    section: 'indicacoes',
+    icon: 'Share'
+  },
+  {
     title: 'Gerenciar Níveis',
     section: 'gerenciar-niveis',
     icon: 'Trophy'
@@ -69,6 +74,11 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     title: 'Gestão de Leads',
     section: 'gestao-leads',
     icon: 'Target'
+  },
+  {
+    title: 'Indicações',
+    section: 'indicacoes',
+    icon: 'Share'
   },
   {
     title: 'Perfis de Usuários',

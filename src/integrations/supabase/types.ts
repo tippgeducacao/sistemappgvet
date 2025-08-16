@@ -515,6 +515,54 @@ export type Database = {
           },
         ]
       }
+      indicacoes: {
+        Row: {
+          area_interesse: string | null
+          cadastrado_por: string
+          created_at: string
+          formacao: string | null
+          id: string
+          nome_aluno: string
+          nome_indicado: string
+          observacoes: string | null
+          status: string
+          updated_at: string
+          vendedor_atribuido: string | null
+          whatsapp_aluno: string
+          whatsapp_indicado: string
+        }
+        Insert: {
+          area_interesse?: string | null
+          cadastrado_por: string
+          created_at?: string
+          formacao?: string | null
+          id?: string
+          nome_aluno: string
+          nome_indicado: string
+          observacoes?: string | null
+          status?: string
+          updated_at?: string
+          vendedor_atribuido?: string | null
+          whatsapp_aluno: string
+          whatsapp_indicado: string
+        }
+        Update: {
+          area_interesse?: string | null
+          cadastrado_por?: string
+          created_at?: string
+          formacao?: string | null
+          id?: string
+          nome_aluno?: string
+          nome_indicado?: string
+          observacoes?: string | null
+          status?: string
+          updated_at?: string
+          vendedor_atribuido?: string | null
+          whatsapp_aluno?: string
+          whatsapp_indicado?: string
+        }
+        Relationships: []
+      }
       lead_interactions: {
         Row: {
           created_at: string | null

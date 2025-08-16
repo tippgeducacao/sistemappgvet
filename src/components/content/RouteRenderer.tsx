@@ -12,6 +12,7 @@ import GerenciarVendedores from '@/components/GerenciarVendedores';
 import GerenciarPontuacoes from '@/components/GerenciarPontuacoes';
 import MinhasVendas from '@/components/MinhasVendas';
 import LeadsManager from '@/components/leads/LeadsManager';
+import GerenciarIndicacoes from '@/components/GerenciarIndicacoes';
 import GerenciarNiveis from '@/components/GerenciarNiveis';
 import AgendamentosPage from '@/components/agendamentos/AgendamentosPage';
 import { GerenciarEventosRecorrentes } from '@/components/agendamentos/GerenciarEventosRecorrentes';
@@ -104,6 +105,18 @@ const RouteRenderer: React.FC = () => {
 
     case 'gestao-leads':
       return <LeadsManager />;
+
+    case 'indicacoes':
+      // Apenas admin e diretor podem acessar indicações
+      if (isAdmin || isDiretor) {
+        return <GerenciarIndicacoes />;
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Apenas administradores e diretores podem acessar indicações.</p>
+        </div>
+      );
 
     case 'agendamentos':
       // SDRs, diretores e administradores podem acessar agendamentos
