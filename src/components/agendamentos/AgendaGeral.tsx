@@ -60,6 +60,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
   const [vendedoresFiltrados, setVendedoresFiltrados] = useState<Vendedor[]>([]);
   const [loading, setLoading] = useState(false);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [eventosEspeciais, setEventosEspeciais] = useState<any[]>([]);
   const [sdrs, setSdrs] = useState<any[]>([]);
   const [filtroGrupo, setFiltroGrupo] = useState<string>('todos');
   const [filtroSDR, setFiltroSDR] = useState<string>('todos');
@@ -188,6 +189,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     try {
       const dataFormatada = format(selectedDate, 'yyyy-MM-dd');
       
+      // Carregar agendamentos
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -202,6 +204,40 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
       if (error) throw error;
       
+      // Carregar eventos especiais para a data
+      const { data: eventosData, error: eventosError } = await supabase
+        .from('eventos_especiais')
+        .select('*');
+
+      if (eventosError) throw eventosError;
+
+      // Filtrar eventos que se aplicam à data selecionada
+      const eventosAplicaveis = (eventosData || []).filter(evento => {
+        if (!evento.is_recorrente) {
+          // Evento único - verificar se a data está no range
+          const dataInicio = new Date(evento.data_inicio).toDateString();
+          const dataFim = new Date(evento.data_fim).toDateString();
+          const dataAtual = selectedDate.toDateString();
+          return dataAtual >= dataInicio && dataAtual <= dataFim;
+        } else {
+          // Evento recorrente - verificar dia da semana e período
+          const diaSemana = selectedDate.getDay();
+          if (!evento.dias_semana?.includes(diaSemana)) return false;
+          
+          if (evento.data_inicio_recorrencia) {
+            const dataInicio = new Date(evento.data_inicio_recorrencia);
+            if (selectedDate < dataInicio) return false;
+          }
+          
+          if (evento.data_fim_recorrencia) {
+            const dataFim = new Date(evento.data_fim_recorrencia);
+            if (selectedDate > dataFim) return false;
+          }
+          
+          return true;
+        }
+      });
+      
       // Mapear os dados para incluir o nome do lead corretamente
       const agendamentosFormatados = (data || []).map(agendamento => ({
         ...agendamento,
@@ -211,7 +247,9 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       }));
       
       setAgendamentos(agendamentosFormatados);
+      setEventosEspeciais(eventosAplicaveis);
       console.log('📅 Agendamentos carregados:', agendamentosFormatados);
+      console.log('🎯 Eventos especiais aplicáveis:', eventosAplicaveis);
     } catch (error) {
       console.error('Erro ao carregar agendamentos da data:', error);
     }
@@ -251,6 +289,17 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       // Só mostrar o agendamento na linha da hora de INÍCIO
       // Isso evita duplicação nas células subsequentes
       return horaAgendamento === horaTimeline;
+    });
+  };
+
+  const getEventosEspeciaisParaHorario = (horario: string) => {
+    const horaTimeline = parseInt(horario.split(':')[0]);
+    
+    return eventosEspeciais.filter(evento => {
+      const horaInicio = parseInt(evento.hora_inicio.split(':')[0]);
+      const horaFim = parseInt(evento.hora_fim.split(':')[0]);
+      
+      return horaTimeline >= horaInicio && horaTimeline < horaFim;
     });
   };
 
@@ -468,20 +517,72 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
                         </div>
                         
                          {/* Colunas dos vendedores */}
-                         {vendedoresFiltrados.map((vendedor) => {
-                           const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
-                           const temConflito = detectarConflitos(vendedor.id, horario);
-                           
-                           return (
-                             <div 
-                               key={`${vendedor.id}-${horario}`} 
-                                className={`border-b border-l min-h-[120px] relative ${temConflito ? 'bg-red-50 dark:bg-red-950/20' : ''}`}
-                             >
-                                {temConflito && (
-                                  <div className="absolute top-1 right-1 z-20" title="Conflito de horário detectado">
-                                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                                  </div>
-                                )}
+                          {vendedoresFiltrados.map((vendedor) => {
+                            const agendamentosHorario = getAgendamentosParaVendedorEHorario(vendedor.id, horario);
+                            const eventosHorario = getEventosEspeciaisParaHorario(horario);
+                            const temConflito = detectarConflitos(vendedor.id, horario);
+                            const temEventoEspecial = eventosHorario.length > 0;
+                            
+                            return (
+                              <div 
+                                key={`${vendedor.id}-${horario}`} 
+                                 className={`border-b border-l min-h-[120px] relative ${temConflito ? 'bg-red-50 dark:bg-red-950/20' : ''} ${temEventoEspecial ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}
+                              >
+                                 {temConflito && (
+                                   <div className="absolute top-1 right-1 z-20" title="Conflito de horário detectado">
+                                     <AlertTriangle className="h-4 w-4 text-red-500" />
+                                   </div>
+                                 )}
+                                 
+                                 {/* Renderizar eventos especiais */}
+                                 {eventosHorario.map((evento, eventIndex) => {
+                                   const horaInicioEvento = parseInt(evento.hora_inicio.split(':')[0]);
+                                   const minutoInicioEvento = parseInt(evento.hora_inicio.split(':')[1]);
+                                   const horaFimEvento = parseInt(evento.hora_fim.split(':')[0]);
+                                   const minutoFimEvento = parseInt(evento.hora_fim.split(':')[1]);
+                                   
+                                   const horaTimeline = parseInt(horario.split(':')[0]);
+                                   
+                                   // Só mostrar o evento na linha da hora de início
+                                   if (horaTimeline !== horaInicioEvento) return null;
+                                   
+                                   const ALTURA_CELULA = 120;
+                                   const topOffset = (minutoInicioEvento / 60) * ALTURA_CELULA;
+                                   
+                                   // Calcular duração em minutos
+                                   const duracaoMinutos = (horaFimEvento * 60 + minutoFimEvento) - (horaInicioEvento * 60 + minutoInicioEvento);
+                                   const altura = (duracaoMinutos / 60) * ALTURA_CELULA;
+                                   
+                                   return (
+                                     <div
+                                       key={`evento-${evento.id}-${eventIndex}`}
+                                       className="absolute left-1 right-1 rounded-sm border-l-4 border-orange-500 bg-orange-200 dark:bg-orange-800 p-2 text-xs"
+                                       style={{
+                                         top: `${topOffset + 2}px`,
+                                         height: `${Math.max(altura - 4, 24)}px`,
+                                         zIndex: 5
+                                       }}
+                                       title={`${evento.titulo} | ${evento.hora_inicio} - ${evento.hora_fim}${evento.descricao ? ` | ${evento.descricao}` : ''} | EVENTO ESPECIAL - HORÁRIO BLOQUEADO`}
+                                     >
+                                       <div className="h-full flex flex-col justify-start overflow-hidden">
+                                         <div className="font-semibold text-xs leading-tight text-orange-800 dark:text-orange-200">
+                                           🎯 {evento.hora_inicio} - {evento.hora_fim}
+                                         </div>
+                                         <div className="font-medium text-xs leading-tight mt-1 overflow-hidden break-words text-orange-900 dark:text-orange-100">
+                                           {evento.titulo}
+                                         </div>
+                                         {evento.descricao && (
+                                           <div className="text-[10px] leading-tight opacity-80 mt-0.5 overflow-hidden break-words text-orange-700 dark:text-orange-300">
+                                             {evento.descricao}
+                                           </div>
+                                         )}
+                                         <div className="text-[9px] leading-tight opacity-70 mt-0.5 text-orange-600 dark:text-orange-400">
+                                           BLOQUEADO
+                                         </div>
+                                       </div>
+                                     </div>
+                                   );
+                                 })}
                                {agendamentosHorario.map((agendamento, index) => {
                                  const { top, height } = calcularPosicaoEAltura(agendamento, horario);
                                  const isConflito = temConflito && agendamentosHorario.length > 1;
