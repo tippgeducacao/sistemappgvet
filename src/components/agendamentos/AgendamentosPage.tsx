@@ -394,10 +394,16 @@ const AgendamentosPage: React.FC = () => {
       console.log(`🎯 ✅ HORÁRIO VÁLIDO: ${vendedor.name}`);
       
       // SEGUNDO: Verificar conflitos com eventos especiais
+      console.log('🎯 SELEÇÃO AUTOMÁTICA - Verificando eventos especiais para:', vendedor.name);
+      console.log('🎯 SELEÇÃO AUTOMÁTICA - DataHora:', dataHora);
+      console.log('🎯 SELEÇÃO AUTOMÁTICA - DataFim:', dataFimAgendamento);
+      
       const temConflitosEventos = await AgendamentosService.verificarConflitosEventosEspeciais(
         dataHora,
         dataFimAgendamento
       );
+      
+      console.log(`🎯 SELEÇÃO AUTOMÁTICA - Resultado eventos especiais para ${vendedor.name}:`, temConflitosEventos);
       
       if (temConflitosEventos) {
         console.log(`🎯 ❌ CONFLITO COM EVENTO ESPECIAL: ${vendedor.name} - horário bloqueado por evento`);

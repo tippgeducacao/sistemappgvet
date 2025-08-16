@@ -669,19 +669,53 @@ export class AgendamentosService {
 
   static async verificarConflitosEventosEspeciais(dataAgendamento: string, dataFimAgendamento?: string): Promise<boolean> {
     try {
-      console.log('🎯 Verificando conflitos com eventos especiais:', {
+      console.log('🎯 ===== VERIFICANDO CONFLITOS COM EVENTOS ESPECIAIS =====');
+      console.log('🎯 Dados recebidos:', {
         dataAgendamento,
         dataFimAgendamento
       });
 
       // Se não há data de fim, assumir 45 minutos
       const dataFim = dataFimAgendamento || new Date(new Date(dataAgendamento).getTime() + 45 * 60 * 1000).toISOString();
+      
+      console.log('🎯 Dados processados:', {
+        dataInicio: dataAgendamento,
+        dataFim: dataFim
+      });
+
+      // TESTE 1: Verificar se há eventos especiais na base
+      const { data: todosEventos, error: errorTodos } = await supabase
+        .from('eventos_especiais')
+        .select('*');
+        
+      console.log('🎯 TESTE 1 - Todos os eventos na base:', todosEventos?.length || 0, todosEventos);
+      
+      if (errorTodos) {
+        console.error('❌ Erro ao buscar todos os eventos:', errorTodos);
+      }
+
+      // TESTE 2: Verificar qual dia da semana é a data do agendamento
+      const dataObj = new Date(dataAgendamento);
+      const diaSemana = dataObj.getDay();
+      console.log('🎯 TESTE 2 - Data do agendamento:', {
+        dataOriginal: dataAgendamento,
+        dataObj: dataObj.toISOString(),
+        diaSemana: diaSemana,
+        diaSemanaTexto: ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'][diaSemana]
+      });
 
       // Usar a função SQL para verificar conflitos
+      console.log('🎯 TESTE 3 - Chamando função SQL com:', {
+        data_inicio_agendamento: dataAgendamento,
+        data_fim_agendamento: dataFim
+      });
+      
       const { data, error } = await supabase.rpc('verificar_conflito_evento_especial', {
         data_inicio_agendamento: dataAgendamento,
         data_fim_agendamento: dataFim
       });
+
+      console.log('🎯 TESTE 4 - Resultado da função SQL:', { data, error });
 
       if (error) {
         console.error('❌ Erro ao verificar conflitos com eventos especiais:', error);
@@ -689,7 +723,8 @@ export class AgendamentosService {
         return true;
       }
 
-      console.log('🎯 Resultado verificação eventos especiais:', data);
+      console.log('🎯 RESULTADO FINAL:', data === true ? 'CONFLITO DETECTADO' : 'SEM CONFLITOS');
+      console.log('🎯 ===============================================');
       return data === true;
     } catch (error) {
       console.error('❌ Erro na verificação de eventos especiais:', error);
