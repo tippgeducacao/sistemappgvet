@@ -41,11 +41,26 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
       if (!profile?.id || metasSemanaisLoading) return;
       
       try {
-        console.log(`🔄 Sincronizando metas para Carlos ${profile.id} em ${selectedMonth}/${selectedYear}`);
-        await syncMetasWithNivel(profile.id, selectedYear, selectedMonth);
-        console.log(`✅ Metas sincronizadas com sucesso`);
+        console.log(`🔄 CARLOS DEBUG - Iniciando sincronização para vendedor:`, {
+          id: profile.id,
+          email: profile.email,
+          nome: profile.name,
+          periodo: `${selectedMonth}/${selectedYear}`
+        });
+        
+        const metasAtualizadas = await syncMetasWithNivel(profile.id, selectedYear, selectedMonth);
+        
+        console.log(`✅ CARLOS DEBUG - Metas sincronizadas:`, metasAtualizadas);
+        console.log(`✅ CARLOS DEBUG - Total de metas atualizadas: ${metasAtualizadas.length}`);
+        
+        // Forçar atualização da página após 1 segundo
+        setTimeout(() => {
+          console.log('🔄 CARLOS DEBUG - Forçando reload da página...');
+          window.location.reload();
+        }, 1000);
+        
       } catch (error) {
-        console.error('❌ Erro ao sincronizar metas:', error);
+        console.error('❌ CARLOS DEBUG - Erro ao sincronizar metas:', error);
       }
     };
     
