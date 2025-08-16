@@ -143,8 +143,32 @@ export class MetasSemanaisService {
         .single();
 
       if (metaExistente) {
-        console.log(`✅ Meta já existe para semana ${semana}/${ano}`);
-        metasCriadas.push(metaExistente);
+        // Atualizar meta existente com a meta atual do nível do vendedor
+        const metaCorreta = perfilVendedor.tipo_usuario === 'sdr' ? 
+          configNivel.meta_semanal_inbound : 
+          configNivel.meta_semanal_vendedor || 0;
+        
+        if (metaExistente.meta_vendas !== metaCorreta) {
+          console.log(`🔄 Atualizando meta da semana ${semana}/${ano} de ${metaExistente.meta_vendas} para ${metaCorreta}`);
+          
+          const { data: metaAtualizada, error: updateError } = await supabase
+            .from('metas_semanais_vendedores')
+            .update({ meta_vendas: metaCorreta })
+            .eq('id', metaExistente.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error(`❌ Erro ao atualizar meta para semana ${semana}:`, updateError);
+            metasCriadas.push(metaExistente);
+          } else {
+            console.log(`✅ Meta atualizada para semana ${semana}/${ano}:`, metaAtualizada);
+            metasCriadas.push(metaAtualizada);
+          }
+        } else {
+          console.log(`✅ Meta já está correta para semana ${semana}/${ano}`);
+          metasCriadas.push(metaExistente);
+        }
         continue;
       }
 
