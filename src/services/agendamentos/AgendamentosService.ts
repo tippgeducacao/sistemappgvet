@@ -590,6 +590,12 @@ export class AgendamentosService {
           throw new Error(verificacaoHorario.motivo || 'Horário inválido');
         }
 
+        // Verificar conflitos com eventos especiais
+        const temConflitosEventos = await this.verificarConflitosEventosEspeciais(dados.data_agendamento, dados.data_fim_agendamento);
+        if (temConflitosEventos) {
+          throw new Error('Este horário está bloqueado por um evento especial/recorrente');
+        }
+
         // Verificar conflitos de agenda (ignorando o próprio agendamento)
         const temConflito = await this.verificarConflitosAgenda(
           agendamento.vendedor_id,
@@ -663,39 +669,96 @@ export class AgendamentosService {
 
   static async verificarConflitosEventosEspeciais(dataAgendamento: string, dataFimAgendamento?: string): Promise<boolean> {
     try {
-      console.log('🔍 VERIFICANDO CONFLITOS COM EVENTOS ESPECIAIS:', {
+      console.log('🎯 Verificando conflitos com eventos especiais:', {
         dataAgendamento,
         dataFimAgendamento
       });
 
-      const dataInicio = new Date(dataAgendamento);
-      const dataFim = dataFimAgendamento 
-        ? new Date(dataFimAgendamento)
-        : new Date(dataInicio.getTime() + 45 * 60 * 1000);
+      // Se não há data de fim, assumir 45 minutos
+      const dataFim = dataFimAgendamento || new Date(new Date(dataAgendamento).getTime() + 45 * 60 * 1000).toISOString();
 
-      console.log('📅 Verificação de eventos especiais:', {
-        dataInicio: dataInicio.toISOString(),
-        dataFim: dataFim.toISOString()
-      });
-
-      // Chamar a função do Supabase para verificar conflitos
+      // Usar a função SQL para verificar conflitos
       const { data, error } = await supabase.rpc('verificar_conflito_evento_especial', {
-        data_inicio_agendamento: dataInicio.toISOString(),
-        data_fim_agendamento: dataFim.toISOString()
+        data_inicio_agendamento: dataAgendamento,
+        data_fim_agendamento: dataFim
       });
 
       if (error) {
-        console.error('❌ Erro na verificação de eventos especiais:', error);
-        // Em caso de erro, assumir que não há conflito para não bloquear agendamentos
-        return false;
+        console.error('❌ Erro ao verificar conflitos com eventos especiais:', error);
+        // Em caso de erro, ser conservador e retornar true (conflito)
+        return true;
       }
 
-      console.log('📅 Resultado da verificação de eventos especiais:', data);
-      return data || false;
+      console.log('🎯 Resultado verificação eventos especiais:', data);
+      return data === true;
     } catch (error) {
-      console.error('Erro ao verificar conflitos com eventos especiais:', error);
-      // Em caso de erro, assumir que não há conflito
-      return false;
+      console.error('❌ Erro na verificação de eventos especiais:', error);
+      // Em caso de erro, ser conservador
+      return true;
+    }
+  }
+
+  static async atualizarAgendamentoDiretor(
+    id: string,
+    dados: {
+      data_agendamento?: string;
+      data_fim_agendamento?: string;
+      pos_graduacao_interesse?: string;
+      observacoes?: string;
+      resultado_reuniao?: string;
+      observacoes_resultado?: string;
+    }
+  ): Promise<boolean> {
+    try {
+      // Se está alterando a data, verificar conflitos
+      if (dados.data_agendamento) {
+        // Buscar o vendedor do agendamento
+        const { data: agendamento, error: agendamentoError } = await supabase
+          .from('agendamentos')
+          .select('vendedor_id')
+          .eq('id', id)
+          .single();
+
+        if (agendamentoError || !agendamento) {
+          throw new Error('Agendamento não encontrado');
+        }
+
+        // Verificar conflitos com eventos especiais
+        const temConflitosEventos = await this.verificarConflitosEventosEspeciais(dados.data_agendamento, dados.data_fim_agendamento);
+        if (temConflitosEventos) {
+          throw new Error('Este horário está bloqueado por um evento especial/recorrente');
+        }
+
+        // Verificar conflitos de agenda (ignorando o próprio agendamento)
+        const temConflito = await this.verificarConflitosAgenda(
+          agendamento.vendedor_id,
+          dados.data_agendamento,
+          dados.data_fim_agendamento,
+          id
+        );
+        if (temConflito) {
+          throw new Error('Vendedor já possui agendamento neste horário');
+        }
+      }
+
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({
+          ...dados,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar agendamento (Diretor):', error);
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Erro inesperado ao atualizar agendamento');
     }
   }
 }
