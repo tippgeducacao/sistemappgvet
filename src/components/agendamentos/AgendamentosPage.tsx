@@ -378,14 +378,6 @@ const AgendamentosPage: React.FC = () => {
       // Verificar conflito de agenda - usar dataHoraFim se fornecida
       const dataFimAgendamento = dataHoraFim || new Date(new Date(dataHora).getTime() + 60 * 60 * 1000).toISOString();
       
-      const temConflito = await AgendamentosService.verificarConflitosAgenda(
-        vendedor.id,
-        dataHora,
-        dataFimAgendamento
-      );
-      
-      console.log(`🎯 CONFLITO: ${vendedor.name} tem conflito:`, temConflito);
-      
       // PRIMEIRO: Verificar horário de trabalho
       const verificacaoHorario = await AgendamentosService.verificarHorarioTrabalho(
         vendedor.id, 
@@ -401,7 +393,29 @@ const AgendamentosPage: React.FC = () => {
       
       console.log(`🎯 ✅ HORÁRIO VÁLIDO: ${vendedor.name}`);
       
-      // SEGUNDO: Verificar conflitos de agenda
+      // SEGUNDO: Verificar conflitos com eventos especiais
+      const temConflitosEventos = await AgendamentosService.verificarConflitosEventosEspeciais(
+        dataHora,
+        dataFimAgendamento
+      );
+      
+      if (temConflitosEventos) {
+        console.log(`🎯 ❌ CONFLITO COM EVENTO ESPECIAL: ${vendedor.name} - horário bloqueado por evento`);
+        vendedoresComConflito++;
+        continue; // Pula este vendedor
+      }
+      
+      console.log(`🎯 ✅ SEM CONFLITOS COM EVENTOS ESPECIAIS: ${vendedor.name}`);
+      
+      // TERCEIRO: Verificar conflitos de agenda
+      const temConflito = await AgendamentosService.verificarConflitosAgenda(
+        vendedor.id,
+        dataHora,
+        dataFimAgendamento
+      );
+      
+      console.log(`🎯 CONFLITO: ${vendedor.name} tem conflito:`, temConflito);
+      
       if (temConflito) {
         console.log(`🎯 ❌ CONFLITO: ${vendedor.name} tem conflito de horário`);
         vendedoresComConflito++;
