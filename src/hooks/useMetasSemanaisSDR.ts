@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useAuthStore } from '@/stores/AuthStore';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface MetaSemanalSDR {
   id: string;
@@ -15,10 +16,29 @@ export interface MetaSemanalSDR {
 
 export const useMetasSemanaisSDR = () => {
   const [loading, setLoading] = useState(false);
+  const [metasPersonalizadas, setMetasPersonalizadas] = useState<any[]>([]);
   const { niveis } = useNiveis();
   const { profile, currentUser } = useAuthStore();
 
-  // Buscar meta semanal específica do SDR baseada no nível do usuário
+  // Buscar metas personalizadas da tabela
+  useEffect(() => {
+    const fetchMetasPersonalizadas = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('metas_semanais_vendedores')
+          .select('*');
+        
+        if (error) throw error;
+        setMetasPersonalizadas(data || []);
+      } catch (error) {
+        console.error('Erro ao buscar metas personalizadas:', error);
+      }
+    };
+
+    fetchMetasPersonalizadas();
+  }, []);
+
+  // Buscar meta semanal específica do SDR baseada primeiro na tabela, depois no nível
   const getMetaSemanalSDR = (vendedorId: string, ano: number, semana: number): MetaSemanalSDR | undefined => {
     // Buscar o nível do usuário
     const userType = profile?.user_type;
@@ -45,14 +65,37 @@ export const useMetasSemanaisSDR = () => {
       profile: profile ? { id: profile.id, user_type: profile.user_type, nivel: (profile as any).nivel } : null 
     });
     
-    // Para SDRs, buscar meta direto do banco baseado no nível atual
+    // PRIMEIRO: Verificar se existe meta personalizada na tabela
+    const metaPersonalizada = metasPersonalizadas.find(meta => 
+      meta.vendedor_id === vendedorId && 
+      meta.ano === ano && 
+      meta.semana === semana
+    );
+    
+    if (metaPersonalizada) {
+      console.log('✅ Meta personalizada encontrada na tabela:', metaPersonalizada.meta_vendas);
+      const resultado = {
+        id: metaPersonalizada.id,
+        vendedor_id: vendedorId,
+        ano,
+        semana,
+        meta_vendas_cursos: metaPersonalizada.meta_vendas,
+        created_at: metaPersonalizada.created_at,
+        updated_at: metaPersonalizada.updated_at,
+      };
+      
+      console.log('✅ getMetaSemanalSDR: Meta personalizada retornada', resultado);
+      return resultado;
+    }
+    
+    // SEGUNDO: Se não tem meta personalizada, usar padrão do nível
     const nivel = (profile as any)?.nivel || 'junior';
-    console.log('🔍 Buscando meta para SDR nível:', nivel);
+    console.log('🔍 Buscando meta padrão para SDR nível:', nivel);
     
     const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
     const metaCursos = nivelConfig?.meta_vendas_cursos || 8;
     
-    console.log('📊 Meta de cursos encontrada:', metaCursos, 'para nível:', nivel);
+    console.log('📊 Meta padrão de cursos encontrada:', metaCursos, 'para nível:', nivel);
     
     const resultado = {
       id: `${vendedorId}-${ano}-${semana}`,
@@ -64,7 +107,7 @@ export const useMetasSemanaisSDR = () => {
       updated_at: new Date().toISOString(),
     };
     
-    console.log('✅ getMetaSemanalSDR: Meta encontrada', resultado);
+    console.log('✅ getMetaSemanalSDR: Meta padrão retornada', resultado);
     return resultado;
   };
 
