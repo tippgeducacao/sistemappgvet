@@ -23,7 +23,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   selectedYear
 }) => {
   console.log('🚨 VENDEDOR METAS - Props recebidas:', { selectedMonth, selectedYear });
-  const { metasSemanais, getSemanaAtual, getMesAnoSemanaAtual, getSemanasDoMes, getDataInicioSemana, getDataFimSemana, loading: metasSemanaisLoading } = useMetasSemanais();
+  const { metasSemanais, getSemanaAtual, getMesAnoSemanaAtual, getSemanasDoMes, getDataInicioSemana, getDataFimSemana, syncMetasWithNivel, loading: metasSemanaisLoading } = useMetasSemanais();
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { profile } = useAuthStore();
   const { niveis } = useNiveis();
@@ -34,6 +34,23 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   
   // Estado para armazenar os cálculos de comissão de cada semana
   const [comissoesPorSemana, setComissoesPorSemana] = useState<{[key: string]: {valor: number, multiplicador: number, percentual: number}}>({});
+
+  // Sincronizar metas com o nível atual do vendedor
+  useEffect(() => {
+    const sincronizarMetas = async () => {
+      if (!profile?.id || metasSemanaisLoading) return;
+      
+      try {
+        console.log(`🔄 Sincronizando metas para Carlos ${profile.id} em ${selectedMonth}/${selectedYear}`);
+        await syncMetasWithNivel(profile.id, selectedYear, selectedMonth);
+        console.log(`✅ Metas sincronizadas com sucesso`);
+      } catch (error) {
+        console.error('❌ Erro ao sincronizar metas:', error);
+      }
+    };
+    
+    sincronizarMetas();
+  }, [profile?.id, selectedMonth, selectedYear, metasSemanaisLoading]);
 
   // Calcular comissões quando os dados mudarem
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { MetasSemanaisService } from '@/services/metas/MetasSemanaisService';
 
 export interface MetaSemanal {
   id: string;
@@ -84,6 +85,28 @@ export const useMetasSemanais = () => {
       return data;
     } catch (error) {
       console.error('Error updating meta semanal:', error);
+      throw error;
+    }
+  };
+
+  const syncMetasWithNivel = async (vendedorId: string, ano: number, mes: number) => {
+    try {
+      console.log(`🔄 Sincronizando metas com nível atual para vendedor ${vendedorId}, período: ${mes}/${ano}`);
+      const metasAtualizadas = await MetasSemanaisService.criarMetasSemanaisAutomaticamente(vendedorId, ano, mes);
+      
+      // Atualizar estado local com as metas sincronizadas
+      setMetasSemanais(prev => {
+        const metasFiltered = prev.filter(meta => 
+          !(meta.vendedor_id === vendedorId && meta.ano === ano && 
+            MetasSemanaisService.getSemanasDoMes(ano, mes).includes(meta.semana))
+        );
+        return [...metasFiltered, ...metasAtualizadas];
+      });
+      
+      console.log(`✅ Metas sincronizadas: ${metasAtualizadas.length} metas`);
+      return metasAtualizadas;
+    } catch (error) {
+      console.error('Erro ao sincronizar metas:', error);
       throw error;
     }
   };
@@ -268,6 +291,7 @@ export const useMetasSemanais = () => {
     fetchMetasSemanais,
     createMetaSemanal,
     updateMetaSemanal,
+    syncMetasWithNivel,
     getMetaSemanalVendedor,
     getSemanaAtual,
     getMesAnoSemanaAtual,
