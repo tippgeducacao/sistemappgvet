@@ -97,13 +97,13 @@ serve(async (req) => {
 
     // Map the incoming data to our indicacoes table structure
     const indicacaoData = {
-      cadastrado_por: requestData.cadastrado_por || requestData['Cadastrado por'] || '',
-      nome_aluno: requestData.nome_aluno || requestData['Nome do Aluno'] || '',
-      whatsapp_aluno: requestData.whatsapp_aluno || requestData['WhatsApp do Aluno (Indicador)'] || '',
+      cadastrado_por: requestData.cadastrado_por || requestData['Cadastrado por'] || requestData['Nome do Indicador'] || '',
+      nome_aluno: requestData.nome_aluno || requestData['Nome do Aluno'] || requestData['Nome do Indicador'] || '',
+      whatsapp_aluno: requestData.whatsapp_aluno || requestData['WhatsApp do Aluno (Indicador)'] || requestData['WhatsApp do Indicador'] || '',
       nome_indicado: requestData.nome_indicado || requestData['Nome do Indicado'] || '',
-      whatsapp_indicado: requestData.whatsapp_indicado || requestData['Whatsapp do Indicado'] || '',
-      formacao: requestData.formacao || requestData['Formação'] || '',
-      area_interesse: requestData.area_interesse || requestData['Área de Interesse'] || '',
+      whatsapp_indicado: requestData.whatsapp_indicado || requestData['Whatsapp do Indicado'] || requestData['WhatsApp do Indicado'] || '',
+      formacao: requestData.formacao || requestData['Formação'] || requestData['Profissão/Área do Indicador'] || '',
+      area_interesse: requestData.area_interesse || requestData['Área de Interesse'] || requestData['Área de Interesse do Indicado'] || '',
       observacoes: requestData.observacoes || requestData['Observações'] || '',
       status: 'novo'
     };
