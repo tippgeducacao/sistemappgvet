@@ -35,6 +35,22 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   // Estado para armazenar os cálculos de comissão de cada semana
   const [comissoesPorSemana, setComissoesPorSemana] = useState<{[key: string]: {valor: number, multiplicador: number, percentual: number}}>({});
 
+  // Função para obter meta baseada no nível do vendedor
+  const getMetaBaseadaNivel = (semana: number) => {
+    if (!profile?.nivel || !profile?.user_type) return 0;
+    
+    const nivelConfig = niveis.find(n => 
+      n.nivel === profile.nivel && 
+      n.tipo_usuario === profile.user_type
+    );
+    
+    if (!nivelConfig) return 0;
+    
+    return profile.user_type === 'vendedor' ? 
+      nivelConfig.meta_semanal_vendedor : 
+      nivelConfig.meta_semanal_inbound || 0;
+  };
+
   // Sincronizar metas com o nível atual do vendedor
   useEffect(() => {
     const sincronizarMetas = async () => {
@@ -357,8 +373,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   
                   {/* Meta */}
                   <div className="flex items-center">
-                    <Badge variant={metaSemanal ? "default" : "outline"} className="text-[10px] h-4 px-1">
-                      {metaSemanal?.meta_vendas || 0}
+                    <Badge variant="default" className="text-[10px] h-4 px-1">
+                      {getMetaBaseadaNivel(numeroSemana)}
                     </Badge>
                   </div>
                   
@@ -413,12 +429,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 <div className="text-muted-foreground">-</div>
                 <div className="font-bold">
                   {semanasDoMes.reduce((total, numeroSemana) => {
-                    const metaSemanal = metasSemanais.find(meta => 
-                      meta.vendedor_id === profile.id && 
-                      meta.ano === anoParaExibir && 
-                      meta.semana === numeroSemana
-                    );
-                    return total + (metaSemanal?.meta_vendas || 0);
+                    return total + getMetaBaseadaNivel(numeroSemana);
                   }, 0)}
                 </div>
                 <div className="font-bold text-primary">
