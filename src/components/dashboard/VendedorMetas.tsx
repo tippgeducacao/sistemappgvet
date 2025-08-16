@@ -37,18 +37,32 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
   // Função para obter meta baseada no nível do vendedor
   const getMetaBaseadaNivel = (semana: number) => {
-    if (!profile?.nivel || !profile?.user_type) return 0;
+    if (!profile?.nivel || !profile?.user_type) {
+      console.log('⚠️ Profile ou nível não encontrado:', { nivel: profile?.nivel, user_type: profile?.user_type });
+      return 0;
+    }
+    
+    console.log('🔍 Buscando nível para:', { nivel: profile.nivel, user_type: profile.user_type });
+    console.log('📋 Níveis disponíveis:', niveis);
     
     const nivelConfig = niveis.find(n => 
       n.nivel === profile.nivel && 
       n.tipo_usuario === profile.user_type
     );
     
-    if (!nivelConfig) return 0;
+    console.log('⚙️ Configuração encontrada:', nivelConfig);
     
-    return profile.user_type === 'vendedor' ? 
+    if (!nivelConfig) {
+      console.warn('❌ Configuração de nível não encontrada');
+      return 0;
+    }
+    
+    const meta = profile.user_type === 'vendedor' ? 
       nivelConfig.meta_semanal_vendedor : 
       nivelConfig.meta_semanal_inbound || 0;
+      
+    console.log('🎯 Meta calculada:', meta);
+    return meta;
   };
 
   // Sincronizar metas com o nível atual do vendedor
