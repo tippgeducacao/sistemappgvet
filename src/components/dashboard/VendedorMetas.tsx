@@ -53,12 +53,6 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         console.log(`✅ CARLOS DEBUG - Metas sincronizadas:`, metasAtualizadas);
         console.log(`✅ CARLOS DEBUG - Total de metas atualizadas: ${metasAtualizadas.length}`);
         
-        // Forçar atualização da página após 1 segundo
-        setTimeout(() => {
-          console.log('🔄 CARLOS DEBUG - Forçando reload da página...');
-          window.location.reload();
-        }, 1000);
-        
       } catch (error) {
         console.error('❌ CARLOS DEBUG - Erro ao sincronizar metas:', error);
       }
