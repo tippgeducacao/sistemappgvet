@@ -18,6 +18,9 @@ export default function MetasHistoryTab({ userId, userType }: MetasHistoryTabPro
   const [metas, setMetas] = useState<MetaSemanalVendedor[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Debug: Log do userType recebido
+  console.log('🔍 MetasHistoryTab - userType recebido:', userType);
+
   // Buscar metas do vendedor
   const buscarMetasVendedor = useCallback(async () => {
     if (!userId) return;
