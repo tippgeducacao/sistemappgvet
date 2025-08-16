@@ -101,10 +101,21 @@ export class AgendamentosService {
           console.error('❌ Horário inválido:', verificacaoHorario.motivo);
           throw new Error(verificacaoHorario.motivo || 'Horário inválido');
         }
-        console.log('✅ Horário de trabalho validado');
+      console.log('✅ Horário de trabalho validado');
       } else {
         console.log('🚀 AGENDAMENTO FORÇADO - Pulando validação de horário de trabalho');
       }
+
+      // Verificar conflitos com eventos especiais
+      console.log('📅 Verificando conflitos com eventos especiais...');
+      const temConflitosEventos = await this.verificarConflitosEventosEspeciais(dados.data_agendamento, dados.data_fim_agendamento);
+      console.log('📅 Resultado verificação eventos especiais:', temConflitosEventos);
+      
+      if (temConflitosEventos) {
+        console.error('❌ Conflito com evento especial detectado');
+        throw new Error('Este horário está bloqueado por um evento especial/recorrente');
+      }
+      console.log('✅ Sem conflitos com eventos especiais');
 
       // Sempre verificar conflitos de agenda, mesmo em agendamentos forçados
       console.log('⚔️ Verificando conflitos de agenda...');
@@ -646,6 +657,44 @@ export class AgendamentosService {
       return true;
     } catch (error) {
       console.error('Erro ao atualizar link da reunião:', error);
+      return false;
+    }
+  }
+
+  static async verificarConflitosEventosEspeciais(dataAgendamento: string, dataFimAgendamento?: string): Promise<boolean> {
+    try {
+      console.log('🔍 VERIFICANDO CONFLITOS COM EVENTOS ESPECIAIS:', {
+        dataAgendamento,
+        dataFimAgendamento
+      });
+
+      const dataInicio = new Date(dataAgendamento);
+      const dataFim = dataFimAgendamento 
+        ? new Date(dataFimAgendamento)
+        : new Date(dataInicio.getTime() + 45 * 60 * 1000);
+
+      console.log('📅 Verificação de eventos especiais:', {
+        dataInicio: dataInicio.toISOString(),
+        dataFim: dataFim.toISOString()
+      });
+
+      // Chamar a função do Supabase para verificar conflitos
+      const { data, error } = await supabase.rpc('verificar_conflito_evento_especial', {
+        data_inicio_agendamento: dataInicio.toISOString(),
+        data_fim_agendamento: dataFim.toISOString()
+      });
+
+      if (error) {
+        console.error('❌ Erro na verificação de eventos especiais:', error);
+        // Em caso de erro, assumir que não há conflito para não bloquear agendamentos
+        return false;
+      }
+
+      console.log('📅 Resultado da verificação de eventos especiais:', data);
+      return data || false;
+    } catch (error) {
+      console.error('Erro ao verificar conflitos com eventos especiais:', error);
+      // Em caso de erro, assumir que não há conflito
       return false;
     }
   }

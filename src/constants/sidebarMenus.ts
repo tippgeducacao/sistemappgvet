@@ -46,6 +46,11 @@ export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
     title: 'Gerenciar Níveis',
     section: 'gerenciar-niveis',
     icon: 'Trophy'
+  },
+  {
+    title: 'Eventos Recorrentes',
+    section: 'eventos-recorrentes',
+    icon: 'CalendarCheck'
   }
 ];
 

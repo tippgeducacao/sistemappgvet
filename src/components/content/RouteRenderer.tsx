@@ -14,6 +14,7 @@ import MinhasVendas from '@/components/MinhasVendas';
 import LeadsManager from '@/components/leads/LeadsManager';
 import GerenciarNiveis from '@/components/GerenciarNiveis';
 import AgendamentosPage from '@/components/agendamentos/AgendamentosPage';
+import { GerenciarEventosRecorrentes } from '@/components/agendamentos/GerenciarEventosRecorrentes';
 import VendedorReunioes from '@/components/vendedor/VendedorReunioes';
 import { RelatorioDiario } from '@/components/vendedor/RelatorioDiario';
 
@@ -125,6 +126,18 @@ const RouteRenderer: React.FC = () => {
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
           <p className="text-gray-600 mt-2">Apenas administradores e diretores podem gerenciar níveis.</p>
+        </div>
+      );
+
+    case 'eventos-recorrentes':
+      // Apenas diretores podem gerenciar eventos recorrentes
+      if (isDiretor) {
+        return <GerenciarEventosRecorrentes />;
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Apenas diretores podem gerenciar eventos recorrentes.</p>
         </div>
       );
 
