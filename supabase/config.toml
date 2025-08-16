@@ -1,5 +1,8 @@
 project_id = "lrpyxyhhqfzozrkklxwu"
 
+[functions.webhook-indicacoes]
+verify_jwt = false
+
 [functions.webhook-leads]
 verify_jwt = false
 
