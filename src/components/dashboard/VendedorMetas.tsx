@@ -373,8 +373,10 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
               const variavelSemanal = nivelConfig?.variavel_semanal || 0;
 
-              const progressoSemanal = metaSemanal?.meta_vendas && metaSemanal.meta_vendas > 0 
-                ? (pontosDaSemana / metaSemanal.meta_vendas) * 100 
+              // Usar a meta baseada no nível para o cálculo de progresso
+              const metaBaseadaNivel = getMetaBaseadaNivel(numeroSemana);
+              const progressoSemanal = metaBaseadaNivel > 0 
+                ? (pontosDaSemana / metaBaseadaNivel) * 100 
                 : 0;
 
               // Buscar dados de comissão calculados
@@ -515,59 +517,55 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   }, 0).toFixed(1)}
                 </div>
                 <div className="font-bold">
-                  {(() => {
-                    const totalMeta = semanasDoMes.reduce((total, numeroSemana) => {
-                      const metaSemanal = metasSemanais.find(meta => 
-                        meta.vendedor_id === profile.id && 
-                        meta.ano === anoParaExibir && 
-                        meta.semana === numeroSemana
-                      );
-                      return total + (metaSemanal?.meta_vendas || 0);
-                    }, 0);
-                    
-                    const totalPontos = semanasDoMes.reduce((total, numeroSemana) => {
-                      const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
-                      const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
-                      
-                      const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
-                        if (venda.vendedor_id !== profile.id) return false;
-                        if (venda.status !== 'matriculado') return false;
-                        
-                        // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-                        let dataVenda: Date;
-                        
-                        if (venda.data_assinatura_contrato) {
-                          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-                        } else {
-                          const dataMatricula = getDataMatriculaFromRespostas(respostas);
-                          if (dataMatricula) {
-                            dataVenda = dataMatricula;
-                          } else {
-                            dataVenda = new Date(venda.enviado_em);
-                          }
-                        }
-                        
-                        // CORREÇÃO: Aplicar a mesma lógica de validação de período
-                        const vendaPeriod = getVendaPeriod(dataVenda);
-                        const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
-                        
-                        // Verificar se está na semana específica
-                        dataVenda.setHours(0, 0, 0, 0);
-                        const startSemanaUTC = new Date(startSemana);
-                        startSemanaUTC.setHours(0, 0, 0, 0);
-                        const endSemanaUTC = new Date(endSemana);
-                        endSemanaUTC.setHours(23, 59, 59, 999);
-                        const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
-                        
-                        return periodoCorreto && isInRange;
-                      }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-                      
-                      return total + pontosDaSemana;
-                    }, 0);
-                    
-                    const percentualTotal = totalMeta > 0 ? (totalPontos / totalMeta) * 100 : 0;
-                    return `${percentualTotal.toFixed(0)}%`;
-                  })()}
+                   {(() => {
+                     // Usar metas baseadas no nível para o cálculo total
+                     const totalMetaNivel = semanasDoMes.reduce((total, numeroSemana) => {
+                       return total + getMetaBaseadaNivel(numeroSemana);
+                     }, 0);
+                     
+                     const totalPontos = semanasDoMes.reduce((total, numeroSemana) => {
+                       const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
+                       const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
+                       
+                       const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
+                         if (venda.vendedor_id !== profile.id) return false;
+                         if (venda.status !== 'matriculado') return false;
+                         
+                         // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
+                         let dataVenda: Date;
+                         
+                         if (venda.data_assinatura_contrato) {
+                           dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
+                         } else {
+                           const dataMatricula = getDataMatriculaFromRespostas(respostas);
+                           if (dataMatricula) {
+                             dataVenda = dataMatricula;
+                           } else {
+                             dataVenda = new Date(venda.enviado_em);
+                           }
+                         }
+                         
+                         // CORREÇÃO: Aplicar a mesma lógica de validação de período
+                         const vendaPeriod = getVendaPeriod(dataVenda);
+                         const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
+                         
+                         // Verificar se está na semana específica
+                         dataVenda.setHours(0, 0, 0, 0);
+                         const startSemanaUTC = new Date(startSemana);
+                         startSemanaUTC.setHours(0, 0, 0, 0);
+                         const endSemanaUTC = new Date(endSemana);
+                         endSemanaUTC.setHours(23, 59, 59, 999);
+                         const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+                         
+                         return periodoCorreto && isInRange;
+                       }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                       
+                       return total + pontosDaSemana;
+                     }, 0);
+                     
+                     const percentualTotal = totalMetaNivel > 0 ? (totalPontos / totalMetaNivel) * 100 : 0;
+                     return `${percentualTotal.toFixed(0)}%`;
+                   })()}
                 </div>
                 <div>-</div>
                 <div className="font-bold text-green-600">
