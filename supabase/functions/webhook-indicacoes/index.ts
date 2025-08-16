@@ -44,6 +44,7 @@ serve(async (req) => {
     const body = await req.text();
     console.log(`✅ Body lido com sucesso!`);
     console.log(`📏 Tamanho do body: ${body.length} caracteres`);
+    console.log(`🔍 BODY RAW:`, body);
 
     let requestData: IndicacaoWebhookData;
 
@@ -51,24 +52,35 @@ serve(async (req) => {
     const contentType = req.headers.get('content-type')?.toLowerCase() || '';
     console.log(`🔍 Content-Type detectado: ${contentType}`);
 
-    if (contentType.includes('application/json')) {
-      console.log(`📋 Parseando como JSON...`);
-      requestData = JSON.parse(body);
-      console.log(`✅ JSON parseado com sucesso!`);
-    } else if (contentType.includes('application/x-www-form-urlencoded')) {
-      console.log(`📋 Parseando como form-urlencoded...`);
-      const params = new URLSearchParams(body);
-      requestData = Object.fromEntries(params.entries());
-      console.log(`✅ Form-urlencoded parseado com sucesso!`);
-    } else {
-      console.log(`📋 Tentando parsear como JSON (fallback)...`);
-      try {
+    try {
+      if (contentType.includes('application/json')) {
+        console.log(`📋 Parseando como JSON...`);
         requestData = JSON.parse(body);
-        console.log(`✅ JSON parseado com sucesso no fallback!`);
-      } catch {
-        console.log(`⚠️ Fallback para texto simples`);
-        requestData = { observacoes: body };
+        console.log(`✅ JSON parseado com sucesso!`);
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        console.log(`📋 Parseando como form-urlencoded...`);
+        const params = new URLSearchParams(body);
+        requestData = Object.fromEntries(params.entries());
+        console.log(`✅ Form-urlencoded parseado com sucesso!`);
+      } else {
+        console.log(`📋 Tentando parsear como JSON (fallback)...`);
+        try {
+          requestData = JSON.parse(body);
+          console.log(`✅ JSON parseado com sucesso no fallback!`);
+        } catch {
+          console.log(`⚠️ Fallback para texto simples`);
+          requestData = { observacoes: body };
+        }
       }
+    } catch (parseError) {
+      console.error(`❌ Erro no parsing:`, parseError);
+      return new Response(
+        JSON.stringify({ error: 'Error parsing request data', details: parseError.message }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     console.log(`🔍 DADOS RECEBIDOS:`);
