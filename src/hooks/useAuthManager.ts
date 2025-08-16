@@ -38,7 +38,8 @@ export const useAuthManager = () => {
                   user_type: session.user.user_metadata?.user_type || 'vendedor',
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
-                  photo_url: null
+                  photo_url: null,
+                  nivel: 'junior'
                 };
                 setProfile(basicProfile);
               } else {
@@ -50,7 +51,8 @@ export const useAuthManager = () => {
                   user_type: profileData.user_type as 'secretaria' | 'vendedor' | 'admin' | 'diretor' | 'sdr',
                   created_at: profileData.created_at,
                   updated_at: profileData.updated_at,
-                  photo_url: profileData.photo_url
+                  photo_url: profileData.photo_url,
+                  nivel: profileData.nivel
                 };
                 setProfile(profile);
               }
@@ -64,7 +66,8 @@ export const useAuthManager = () => {
                 user_type: session.user.user_metadata?.user_type || 'vendedor',
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
-                photo_url: null
+                photo_url: null,
+                nivel: 'junior'
               };
               setProfile(basicProfile);
             }
