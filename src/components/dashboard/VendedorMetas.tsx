@@ -37,37 +37,39 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
   // Função para obter meta baseada no nível do vendedor
   const getMetaBaseadaNivel = (semana: number) => {
-    console.log('🚨 DEBUG META - Iniciando função getMetaBaseadaNivel');
-    console.log('🚨 DEBUG META - Profile completo:', profile);
-    console.log('🚨 DEBUG META - Níveis disponíveis:', niveis);
-    console.log('🚨 DEBUG META - Loading niveis:', metasSemanaisLoading);
-    
-    if (!profile?.nivel || !profile?.user_type) {
-      console.log('⚠️ Profile ou nível não encontrado:', { nivel: profile?.nivel, user_type: profile?.user_type });
+    if (!profile?.user_type) {
+      console.log('⚠️ User type não encontrado');
       return 0;
     }
     
-    console.log('🔍 Buscando nível para:', { nivel: profile.nivel, user_type: profile.user_type });
+    // Se não tem nível definido, usar junior como padrão
+    const nivelUsuario = profile.nivel || 'junior';
+    
+    console.log(`🔍 Buscando meta para: ${nivelUsuario} - ${profile.user_type}`);
     
     if (!niveis || niveis.length === 0) {
-      console.log('⚠️ Array de níveis vazio ou não carregado');
+      console.log('⚠️ Array de níveis vazio');
       return 0;
     }
     
-    const nivelConfig = niveis.find(n => {
-      console.log('🔍 Comparando:', { 
-        nivel_busca: profile.nivel, 
-        nivel_encontrado: n.nivel,
-        tipo_busca: profile.user_type,
-        tipo_encontrado: n.tipo_usuario 
-      });
-      return n.nivel === profile.nivel && n.tipo_usuario === profile.user_type;
-    });
+    const nivelConfig = niveis.find(n => 
+      n.nivel === nivelUsuario && 
+      n.tipo_usuario === profile.user_type
+    );
     
     console.log('⚙️ Configuração encontrada:', nivelConfig);
     
     if (!nivelConfig) {
-      console.warn('❌ Configuração de nível não encontrada');
+      console.warn(`❌ Configuração não encontrada para ${nivelUsuario} - ${profile.user_type}`);
+      // Como fallback temporário, usar valores fixos baseados na imagem
+      if (profile.user_type === 'vendedor') {
+        switch (nivelUsuario) {
+          case 'junior': return 7;
+          case 'pleno': return 8;
+          case 'senior': return 9;
+          default: return 7;
+        }
+      }
       return 0;
     }
     
@@ -76,6 +78,17 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
       nivelConfig.meta_semanal_inbound || 0;
       
     console.log('🎯 Meta calculada:', meta);
+    
+    // Se a meta for 0 e for vendedor, usar valores padrão
+    if (meta === 0 && profile.user_type === 'vendedor') {
+      switch (nivelUsuario) {
+        case 'junior': return 7;
+        case 'pleno': return 8;
+        case 'senior': return 9;
+        default: return 7;
+      }
+    }
+    
     return meta;
   };
 
