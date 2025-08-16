@@ -37,18 +37,32 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
   // Função para obter meta baseada no nível do vendedor
   const getMetaBaseadaNivel = (semana: number) => {
+    console.log('🚨 DEBUG META - Iniciando função getMetaBaseadaNivel');
+    console.log('🚨 DEBUG META - Profile completo:', profile);
+    console.log('🚨 DEBUG META - Níveis disponíveis:', niveis);
+    console.log('🚨 DEBUG META - Loading niveis:', metasSemanaisLoading);
+    
     if (!profile?.nivel || !profile?.user_type) {
       console.log('⚠️ Profile ou nível não encontrado:', { nivel: profile?.nivel, user_type: profile?.user_type });
       return 0;
     }
     
     console.log('🔍 Buscando nível para:', { nivel: profile.nivel, user_type: profile.user_type });
-    console.log('📋 Níveis disponíveis:', niveis);
     
-    const nivelConfig = niveis.find(n => 
-      n.nivel === profile.nivel && 
-      n.tipo_usuario === profile.user_type
-    );
+    if (!niveis || niveis.length === 0) {
+      console.log('⚠️ Array de níveis vazio ou não carregado');
+      return 0;
+    }
+    
+    const nivelConfig = niveis.find(n => {
+      console.log('🔍 Comparando:', { 
+        nivel_busca: profile.nivel, 
+        nivel_encontrado: n.nivel,
+        tipo_busca: profile.user_type,
+        tipo_encontrado: n.tipo_usuario 
+      });
+      return n.nivel === profile.nivel && n.tipo_usuario === profile.user_type;
+    });
     
     console.log('⚙️ Configuração encontrada:', nivelConfig);
     
