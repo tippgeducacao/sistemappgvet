@@ -58,8 +58,8 @@ export default function MetasHistoryTab({ userId, userType }: MetasHistoryTabPro
     }
   };
 
-  // Se for SDR, usar o componente específico
-  if (userType.includes('sdr')) {
+  // Se for SDR, usar o componente específico (verificação mais rigorosa)
+  if (userType === 'sdr' || userType === 'sdr_inbound' || userType === 'sdr_outbound') {
     return <SDRMetasHistory userId={userId} />;
   }
 
