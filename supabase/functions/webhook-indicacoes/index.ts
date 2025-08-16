@@ -72,8 +72,9 @@ serve(async (req) => {
     }
 
     console.log(`🔍 DADOS RECEBIDOS:`);
-    console.log(`- Dados completos:`, requestData);
+    console.log(`- Dados completos:`, JSON.stringify(requestData, null, 2));
     console.log(`- Número de campos: ${Object.keys(requestData).length}`);
+    console.log(`- Chaves dos campos:`, Object.keys(requestData));
 
     // Initialize Supabase client
     console.log(`🔗 Criando cliente Supabase...`);
