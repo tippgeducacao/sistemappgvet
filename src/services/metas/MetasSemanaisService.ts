@@ -144,9 +144,9 @@ export class MetasSemanaisService {
 
       if (metaExistente) {
         // Atualizar meta existente com a meta atual do nível do vendedor
-        const metaCorreta = perfilVendedor.tipo_usuario === 'sdr' ? 
-          configNivel.meta_semanal_inbound : 
-          configNivel.meta_semanal_vendedor || 0;
+        const metaCorreta = perfilVendedor.tipo_usuario === 'vendedor' ? 
+          configNivel.meta_semanal_vendedor : 
+          configNivel.meta_semanal_inbound || 0;
         
         if (metaExistente.meta_vendas !== metaCorreta) {
           console.log(`🔄 Atualizando meta da semana ${semana}/${ano} de ${metaExistente.meta_vendas} para ${metaCorreta}`);
@@ -177,9 +177,9 @@ export class MetasSemanaisService {
         vendedor_id: vendedorId,
         ano,
         semana,
-        meta_vendas: perfilVendedor.tipo_usuario === 'sdr' ? 
-          configNivel.meta_semanal_inbound : 
-          configNivel.meta_semanal_vendedor || 0,
+        meta_vendas: perfilVendedor.tipo_usuario === 'vendedor' ? 
+          configNivel.meta_semanal_vendedor : 
+          configNivel.meta_semanal_inbound || 0,
       };
 
       const { data: metaCriada, error } = await supabase
