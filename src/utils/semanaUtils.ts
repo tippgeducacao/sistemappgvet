@@ -95,3 +95,32 @@ export const getMesAnoSemanaAtual = (): { mes: number; ano: number } => {
   const now = new Date();
   return getVendaPeriod(now);
 };
+
+/**
+ * Obtém o range (início e fim) da semana atual seguindo a regra quarta-terça
+ */
+export const getWeekRange = (referenceDate: Date = new Date()): { start: Date; end: Date } => {
+  const date = new Date(referenceDate);
+  date.setHours(0, 0, 0, 0);
+  
+  // Encontrar a quarta-feira que inicia a semana
+  let startOfWeek = new Date(date);
+  const dayOfWeek = date.getDay();
+  
+  if (dayOfWeek === 3) {
+    // É quarta-feira, a semana começa hoje
+  } else if (dayOfWeek < 3) {
+    // Domingo (0), Segunda (1), Terça (2) - voltar para quarta anterior
+    startOfWeek.setDate(date.getDate() - (dayOfWeek + 4));
+  } else {
+    // Quinta (4), Sexta (5), Sábado (6) - voltar para quarta da semana atual
+    startOfWeek.setDate(date.getDate() - (dayOfWeek - 3));
+  }
+  
+  // Fim da semana é sempre terça-feira (6 dias após quarta)
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+  
+  return { start: startOfWeek, end: endOfWeek };
+};

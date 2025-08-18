@@ -5,6 +5,7 @@ import { Target, TrendingUp } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useMetas } from '@/hooks/useMetas';
 import { useVendedores } from '@/hooks/useVendedores';
+import { getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 
 interface GoalsAchievementChartProps {
   selectedVendedor: string;
@@ -21,13 +22,11 @@ const GoalsAchievementChart: React.FC<GoalsAchievementChartProps> = ({
   const { metas } = useMetas();
   const { vendedores } = useVendedores();
 
-  // Filtrar vendas matriculadas do período
+  // Filtrar vendas matriculadas do período - usar data efetiva
   const vendasMatriculadas = vendas.filter(venda => {
-    const vendaDate = new Date(venda.enviado_em);
-    const vendaMonth = vendaDate.getMonth() + 1;
-    const vendaYear = vendaDate.getFullYear();
+    const vendaPeriod = getVendaEffectivePeriod(venda);
     
-    const matchesPeriod = vendaMonth === selectedMonth && vendaYear === selectedYear;
+    const matchesPeriod = vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
     const matchesVendedor = selectedVendedor === 'todos' || venda.vendedor_id === selectedVendedor;
     const isMatriculado = venda.status === 'matriculado';
     

@@ -13,6 +13,7 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { useMetas } from '@/hooks/useMetas';
 import { useNiveis } from '@/hooks/useNiveis';
 import { isVendaInPeriod } from '@/utils/semanaUtils';
+import { getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 
 interface VendorStat {
   id: string;
@@ -58,8 +59,8 @@ const MiniRankingDisplay: React.FC<MiniRankingDisplayProps> = ({
         if (v.vendedor_id !== vendedor.id || v.status !== 'matriculado') return false;
         if (!selectedMonth || !selectedYear) return true;
         
-        const vendaDate = new Date(v.enviado_em);
-        return vendaDate.getMonth() + 1 === selectedMonth && vendaDate.getFullYear() === selectedYear;
+        const vendaPeriod = getVendaEffectivePeriod(v);
+        return vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
       });
       
       // Usar pontos simples por enquanto - 1 ponto por venda matriculada

@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { useVendedores } from '@/hooks/useVendedores';
 import { VendasDataService } from '@/services/vendas/VendasDataService';
 import type { VendaCompleta } from '@/hooks/useVendas';
+import { getDataEfetivaVenda, getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 
 interface WeeklyData {
   week: string;
@@ -100,11 +101,11 @@ const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ sel
           return false;
         }
         
-        // Filtro por período
+        // Filtro por período - usar data efetiva
         if (selectedMonth && selectedYear && venda.enviado_em) {
-          const dataVenda = new Date(venda.enviado_em);
-          console.log(`📊 WEEKLY CHART: Venda ${venda.id?.substring(0, 8)} - Data venda: ${dataVenda.toLocaleDateString()} - Mês/Ano filtro: ${selectedMonth}/${selectedYear}`);
-          if (dataVenda.getMonth() + 1 !== selectedMonth || dataVenda.getFullYear() !== selectedYear) {
+          const vendaPeriod = getVendaEffectivePeriod(venda);
+          console.log(`📊 WEEKLY CHART: Venda ${venda.id?.substring(0, 8)} - Período efetivo: ${vendaPeriod.mes}/${vendaPeriod.ano} - Filtro: ${selectedMonth}/${selectedYear}`);
+          if (vendaPeriod.mes !== selectedMonth || vendaPeriod.ano !== selectedYear) {
             console.log(`📊 WEEKLY CHART: Venda ${venda.id?.substring(0, 8)} rejeitada por período`);
             return false;
           }
@@ -136,7 +137,7 @@ const WeeklyApprovedSalesChart: React.FC<WeeklyApprovedSalesChartProps> = ({ sel
             return false;
           }
           
-          const vendaDate = new Date(venda.enviado_em);
+          const vendaDate = getDataEfetivaVenda(venda);
           const isInWeek = vendaDate >= week.start && vendaDate <= week.end;
           console.log(`📊 WEEKLY CHART: Venda ${venda.id?.substring(0, 8)} (${vendaDate.toISOString()}) na semana ${week.label}? ${isInWeek}`);
           return isInWeek;
