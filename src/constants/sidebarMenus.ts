@@ -33,6 +33,11 @@ export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
     icon: 'Users'
   },
   {
+    title: 'Grupos Supervisores',
+    section: 'gerenciar-grupos',
+    icon: 'UsersRound'
+  },
+  {
     title: 'Gerenciar Pontuações',
     section: 'gerenciar-pontuacoes',
     icon: 'Star'
@@ -196,26 +201,6 @@ export const SUPERVISOR_MENU_ITEMS: MenuItem[] = [
     title: 'Agendamentos',
     section: 'agendamentos',
     icon: 'Calendar'
-  },
-  {
-    title: 'Gerenciar Grupos',
-    section: 'gerenciar-grupos',
-    icon: 'Users'
-  },
-  {
-    title: 'Nova Venda',
-    section: 'nova-venda',
-    icon: 'Plus'
-  },
-  {
-    title: 'Minhas Vendas',
-    section: 'minhas-vendas',
-    icon: 'ShoppingCart'
-  },
-  {
-    title: 'Relatório Diário',
-    section: 'relatorio-diario',
-    icon: 'FileText'
   }
 ];
 

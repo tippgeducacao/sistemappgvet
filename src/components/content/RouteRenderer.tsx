@@ -4,6 +4,7 @@ import { useAppStateStore } from '@/stores/AppStateStore';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import VendedorDashboard from '@/components/vendedor/VendedorDashboard';
 import SDRDashboard from '@/components/sdr/SDRDashboard';
+import SupervisorDashboard from '@/components/supervisor/SupervisorDashboard';
 import DashboardContainer from '@/components/dashboard/DashboardContainer';
 import NovaVendaForm from '@/components/NovaVendaForm';
 import GerenciarVendas from '@/components/GerenciarVendas';
@@ -21,7 +22,7 @@ import { RelatorioDiario } from '@/components/vendedor/RelatorioDiario';
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
-  const { isDiretor, isAdmin, isSecretaria, isVendedor, isSDR } = useUserRoles();
+  const { isDiretor, isAdmin, isSecretaria, isVendedor, isSDR, isSupervisor } = useUserRoles();
 
   console.log('🔄 RouteRenderer: Estado atual:', { 
     activeSection, 
@@ -45,6 +46,9 @@ const RouteRenderer: React.FC = () => {
       }
       if (isSDR) {
         return <SDRDashboard />;
+      }
+      if (isSupervisor) {
+        return <SupervisorDashboard />;
       }
       // Para diretor, admin e secretaria, usar o DashboardContainer completo
       return <DashboardContainer userType={isDiretor ? 'diretor' : (isAdmin ? 'admin' : 'secretaria')} />;
@@ -73,6 +77,23 @@ const RouteRenderer: React.FC = () => {
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
           <p className="text-gray-600 mt-2">Apenas diretores podem gerenciar usuários.</p>
+        </div>
+      );
+
+    case 'gerenciar-grupos':
+      // Apenas diretores podem gerenciar grupos supervisores
+      if (isDiretor) {
+        const GerenciarGrupos = React.lazy(() => import('@/components/supervisor/GerenciarGrupos'));
+        return (
+          <React.Suspense fallback={<div>Carregando...</div>}>
+            <GerenciarGrupos />
+          </React.Suspense>
+        );
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Apenas diretores podem gerenciar grupos supervisores.</p>
         </div>
       );
 
@@ -119,14 +140,14 @@ const RouteRenderer: React.FC = () => {
       );
 
     case 'agendamentos':
-      // SDRs, diretores e administradores podem acessar agendamentos
-      if (isSDR || isDiretor || isAdmin) {
+      // SDRs, supervisores, diretores e administradores podem acessar agendamentos
+      if (isSDR || isSupervisor || isDiretor || isAdmin) {
         return <AgendamentosPage />;
       }
       return (
         <div className="p-6">
           <h1 className="text-3xl font-bold">Acesso Negado</h1>
-          <p className="text-gray-600 mt-2">Apenas SDRs, diretores e administradores podem acessar agendamentos.</p>
+          <p className="text-gray-600 mt-2">Apenas SDRs, supervisores, diretores e administradores podem acessar agendamentos.</p>
         </div>
       );
 
