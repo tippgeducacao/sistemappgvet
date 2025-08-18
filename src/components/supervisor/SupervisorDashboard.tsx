@@ -4,17 +4,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Users, Target, TrendingUp, Calendar } from 'lucide-react';
-import MonthYearFilter from '@/components/common/MonthYearFilter';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAgendamentosStatsAdmin } from '@/hooks/useAgendamentosStatsAdmin';
-import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAuthStore } from '@/stores/AuthStore';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const SupervisorDashboard: React.FC = () => {
   const { profile } = useAuthStore();
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
   const { grupos, loading: gruposLoading } = useGruposSupervisores();
   const { statsData, isLoading: statsLoading } = useAgendamentosStatsAdmin();
@@ -34,11 +30,10 @@ const SupervisorDashboard: React.FC = () => {
     ) || [];
   }, [meuGrupo]);
 
-  // Calcular métricas do supervisor
+  // Calcular métricas consolidadas
   const metricas = useMemo(() => {
     const totalSDRs = meusSDRs.length;
-    // Meta fixa para SDRs junior por exemplo
-    const metaTotal = meusSDRs.length * 55; // 55 agendamentos por SDR
+    const metaTotal = totalSDRs * 55; // Meta padrão de 55 agendamentos por SDR
     
     const agendamentosTotal = meusSDRs.reduce((sum, sdr) => {
       const stats = statsData.find(stat => stat.sdr_id === sdr.usuario_id);
@@ -57,108 +52,87 @@ const SupervisorDashboard: React.FC = () => {
       metaTotal,
       agendamentosTotal,
       conversaoTotal,
-      percentualAtingimento,
-      taxaConversao: agendamentosTotal > 0 ? (conversaoTotal / agendamentosTotal) * 100 : 0
+      percentualAtingimento
     };
   }, [meusSDRs, statsData]);
 
   if (gruposLoading || statsLoading) {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-8">
-          <LoadingSpinner />
-          <p className="mt-4 text-lg font-medium">Carregando dashboard...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner />
       </div>
     );
   }
 
   if (!meuGrupo) {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-12">
-          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum grupo atribuído</h3>
-          <p className="text-gray-600">Você ainda não foi atribuído a nenhum grupo de supervisão.</p>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+        <Users className="h-16 w-16 text-muted-foreground mb-4" />
+        <h3 className="text-xl font-semibold mb-2">Nenhum grupo atribuído</h3>
+        <p className="text-muted-foreground">Você ainda não foi atribuído a nenhum grupo de supervisão.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Olá, {profile?.name}! 👋
-          </h1>
-          <p className="text-muted-foreground">
-            Supervisão do grupo: <strong>{meuGrupo.nome_grupo}</strong>
-          </p>
-        </div>
-        
-        <MonthYearFilter
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
-          onMonthChange={setSelectedMonth}
-          onYearChange={setSelectedYear}
-        />
+    <div className="space-y-8">
+      {/* Header simples */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">
+          Dashboard Supervisor
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Supervisão: <span className="font-medium">{meuGrupo.nome_grupo}</span>
+        </p>
       </div>
 
-      {/* Cards de Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Cards de métricas principais */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">SDRs Supervisionados</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metricas.totalSDRs}</div>
-            <p className="text-xs text-muted-foreground">
-              Em {meuGrupo.nome_grupo}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Meta Semanal Total</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metricas.metaTotal}</div>
-            <p className="text-xs text-muted-foreground">
-              Agendamentos da equipe
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Atingimento</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {metricas.percentualAtingimento.toFixed(1)}%
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">SDRs</p>
+                <p className="text-3xl font-bold">{metricas.totalSDRs}</p>
+              </div>
+              <Users className="h-8 w-8 text-muted-foreground" />
             </div>
-            <Progress value={metricas.percentualAtingimento} className="mt-2" />
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {metricas.taxaConversao.toFixed(1)}%
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Meta Semanal</p>
+                <p className="text-3xl font-bold">{metricas.metaTotal}</p>
+              </div>
+              <Target className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              {metricas.conversaoTotal} de {metricas.agendamentosTotal} agendamentos
-            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Realizados</p>
+                <p className="text-3xl font-bold">{metricas.agendamentosTotal}</p>
+              </div>
+              <Calendar className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Atingimento</p>
+                <p className="text-3xl font-bold">{metricas.percentualAtingimento.toFixed(0)}%</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-muted-foreground" />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -166,10 +140,7 @@ const SupervisorDashboard: React.FC = () => {
       {/* Tabela de Performance dos SDRs */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Performance Semanal dos SDRs
-          </CardTitle>
+          <CardTitle>Performance da Equipe</CardTitle>
         </CardHeader>
         <CardContent>
           {meusSDRs.length > 0 ? (
@@ -177,54 +148,58 @@ const SupervisorDashboard: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>SDR</TableHead>
-                  <TableHead>Nível</TableHead>
-                  <TableHead>Meta Semanal</TableHead>
-                  <TableHead>Realizados</TableHead>
-                  <TableHead>Atingimento</TableHead>
-                  <TableHead>Convertidos</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="text-center">Meta</TableHead>
+                  <TableHead className="text-center">Realizados</TableHead>
+                  <TableHead className="text-center">Convertidos</TableHead>
+                  <TableHead className="text-center">Atingimento</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {meusSDRs.map((sdr) => {
                   const stats = statsData.find(stat => stat.sdr_id === sdr.usuario_id);
-                  const metaSemanal = 55; // Meta fixa para demonstração
+                  const metaSemanal = 55;
                   const realizados = stats?.total || 0;
                   const convertidos = stats?.convertidas || 0;
                   const percentual = metaSemanal > 0 ? (realizados / metaSemanal) * 100 : 0;
                   
                   const getStatusColor = (percentual: number) => {
-                    if (percentual >= 100) return 'bg-green-100 text-green-800';
-                    if (percentual >= 80) return 'bg-yellow-100 text-yellow-800';
-                    return 'bg-red-100 text-red-800';
+                    if (percentual >= 100) return 'bg-green-100 text-green-800 border-green-200';
+                    if (percentual >= 80) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                    return 'bg-red-100 text-red-800 border-red-200';
                   };
                   
                   const getStatusText = (percentual: number) => {
-                    if (percentual >= 100) return 'Meta Atingida';
-                    if (percentual >= 80) return 'Próximo da Meta';
-                    return 'Abaixo da Meta';
+                    if (percentual >= 100) return 'Atingiu';
+                    if (percentual >= 80) return 'Próximo';
+                    return 'Baixo';
                   };
 
                   return (
                     <TableRow key={sdr.id}>
                       <TableCell className="font-medium">
-                        {sdr.usuario?.name || 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {sdr.usuario?.nivel || 'N/A'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{metaSemanal}</TableCell>
-                      <TableCell>{realizados}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span>{percentual.toFixed(1)}%</span>
-                          <Progress value={percentual} className="w-16" />
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">
+                              {sdr.usuario?.name?.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium">{sdr.usuario?.name}</p>
+                            <p className="text-sm text-muted-foreground">{sdr.usuario?.nivel}</p>
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell>{convertidos}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">{metaSemanal}</TableCell>
+                      <TableCell className="text-center">{realizados}</TableCell>
+                      <TableCell className="text-center">{convertidos}</TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center gap-2 justify-center">
+                          <span className="text-sm font-medium">{percentual.toFixed(0)}%</span>
+                          <Progress value={percentual} className="w-16 h-2" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
                         <Badge className={getStatusColor(percentual)}>
                           {getStatusText(percentual)}
                         </Badge>
@@ -236,8 +211,8 @@ const SupervisorDashboard: React.FC = () => {
             </Table>
           ) : (
             <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Nenhum SDR encontrado no seu grupo</p>
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Nenhum SDR encontrado no grupo</p>
             </div>
           )}
         </CardContent>
