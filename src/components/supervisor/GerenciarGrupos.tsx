@@ -24,7 +24,8 @@ const GerenciarGrupos: React.FC = () => {
   
   const [novoGrupo, setNovoGrupo] = useState({
     nome: '',
-    descricao: ''
+    descricao: '',
+    supervisorId: ''
   });
   
   const [novaMeta, setNovaMeta] = useState({
@@ -37,8 +38,8 @@ const GerenciarGrupos: React.FC = () => {
 
   const handleCreateGrupo = async () => {
     try {
-      await createGrupo(novoGrupo.nome, novoGrupo.descricao);
-      setNovoGrupo({ nome: '', descricao: '' });
+      await createGrupo(novoGrupo.nome, novoGrupo.descricao, novoGrupo.supervisorId);
+      setNovoGrupo({ nome: '', descricao: '', supervisorId: '' });
       setShowNewGrupoDialog(false);
     } catch (error) {
       console.error('Erro ao criar grupo:', error);
@@ -78,10 +79,12 @@ const GerenciarGrupos: React.FC = () => {
     }
   };
 
-  // Filtrar vendedores disponíveis (que não estão no grupo selecionado)
+  // Filtrar SDRs disponíveis (que não estão no grupo selecionado)
   const vendedoresDisponiveis = vendedores.filter(vendedor => {
     const grupo = grupos.find(g => g.id === selectedGrupo);
-    return !grupo?.membros?.some(m => m.usuario_id === vendedor.id);
+    return vendedor.user_type === 'sdr' && 
+           vendedor.ativo && 
+           !grupo?.membros?.some(m => m.usuario_id === vendedor.id);
   });
 
   if (loading) {
@@ -125,6 +128,23 @@ const GerenciarGrupos: React.FC = () => {
                 />
               </div>
               <div>
+                <Label htmlFor="supervisorResponsavel">Supervisor Responsável</Label>
+                <Select value={novoGrupo.supervisorId} onValueChange={(value) => setNovoGrupo(prev => ({ ...prev, supervisorId: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um supervisor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendedores
+                      .filter(v => v.user_type === 'supervisor' && v.ativo)
+                      .map(supervisor => (
+                        <SelectItem key={supervisor.id} value={supervisor.id}>
+                          {supervisor.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label htmlFor="descricaoGrupo">Descrição (opcional)</Label>
                 <Textarea
                   id="descricaoGrupo"
@@ -137,7 +157,11 @@ const GerenciarGrupos: React.FC = () => {
                 <Button variant="outline" onClick={() => setShowNewGrupoDialog(false)} className="flex-1">
                   Cancelar
                 </Button>
-                <Button onClick={handleCreateGrupo} className="flex-1 bg-ppgvet-teal hover:bg-ppgvet-teal/90">
+                <Button 
+                  onClick={handleCreateGrupo} 
+                  className="flex-1 bg-ppgvet-teal hover:bg-ppgvet-teal/90"
+                  disabled={!novoGrupo.nome || !novoGrupo.supervisorId}
+                >
                   Criar Grupo
                 </Button>
               </div>
@@ -196,7 +220,7 @@ const GerenciarGrupos: React.FC = () => {
                               <SelectContent>
                                 {vendedoresDisponiveis.map((vendedor) => (
                                   <SelectItem key={vendedor.id} value={vendedor.id}>
-                                    {vendedor.name} - {vendedor.user_type}
+                                    {vendedor.name} - SDR ({vendedor.nivel || 'N/A'})
                                   </SelectItem>
                                 ))}
                               </SelectContent>

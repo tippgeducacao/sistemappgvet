@@ -80,7 +80,7 @@ export const useGruposSupervisores = () => {
     }
   };
 
-  const createGrupo = async (nome: string, descricao?: string) => {
+  const createGrupo = async (nome: string, descricao?: string, supervisorId?: string) => {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Usuário não autenticado');
@@ -88,13 +88,13 @@ export const useGruposSupervisores = () => {
       const { data, error } = await (supabase as any)
         .from('grupos_supervisores')
         .insert({
-          supervisor_id: user.user.id,
+          supervisor_id: supervisorId || user.user.id,
           nome_grupo: nome,
           descricao,
           created_by: user.user.id
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       
