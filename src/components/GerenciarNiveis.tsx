@@ -42,7 +42,8 @@ const GerenciarNiveis: React.FC = () => {
       dados.meta_semanal_inbound = parseInt(formData.get('meta_semanal_sdr') as string);
       dados.meta_vendas_cursos = parseInt(formData.get('meta_vendas_cursos') as string);
     } else if (editingNivel.tipo_usuario === 'supervisor') {
-      // Para supervisor, não há metas de pontos/reuniões específicas
+      // Para supervisor, incluir o bônus por reunião B2B
+      dados.bonus_reuniao_b2b = parseFloat(formData.get('bonus_reuniao_b2b') as string);
       dados.meta_semanal_vendedor = 0;
       dados.meta_semanal_inbound = 0;
       dados.meta_vendas_cursos = 0;
@@ -110,7 +111,12 @@ const GerenciarNiveis: React.FC = () => {
             </Label>
             <p className="text-lg font-semibold">{formatCurrency(nivel.variavel_semanal)}</p>
           </div>
-          {nivel.tipo_usuario !== 'supervisor' && (
+          {nivel.tipo_usuario === 'supervisor' ? (
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">Bônus por Reunião B2B</Label>
+              <p className="text-lg font-semibold">{formatCurrency(nivel.bonus_reuniao_b2b || 0)}</p>
+            </div>
+          ) : (
             <div>
               <Label className="text-sm font-medium text-muted-foreground">
                 {nivel.tipo_usuario === 'sdr' ? 'Metas Semanais' : 'Meta Semanal'}
@@ -280,6 +286,19 @@ const GerenciarNiveis: React.FC = () => {
                        name="meta_semanal_vendedor"
                        type="number"
                        defaultValue={editingNivel.meta_semanal_vendedor}
+                       required
+                     />
+                   </div>
+                 )}
+                 {editingNivel.tipo_usuario === 'supervisor' && (
+                   <div>
+                     <Label htmlFor="bonus_reuniao_b2b">Bônus por Reunião B2B (R$)</Label>
+                     <Input
+                       id="bonus_reuniao_b2b"
+                       name="bonus_reuniao_b2b"
+                       type="number"
+                       step="0.01"
+                       defaultValue={editingNivel.bonus_reuniao_b2b || 0}
                        required
                      />
                    </div>

@@ -746,6 +746,7 @@ export type Database = {
       }
       niveis_vendedores: {
         Row: {
+          bonus_reuniao_b2b: number | null
           created_at: string
           created_by: string | null
           fixo_mensal: number
@@ -761,6 +762,7 @@ export type Database = {
           variavel_semanal: number
         }
         Insert: {
+          bonus_reuniao_b2b?: number | null
           created_at?: string
           created_by?: string | null
           fixo_mensal?: number
@@ -776,6 +778,7 @@ export type Database = {
           variavel_semanal?: number
         }
         Update: {
+          bonus_reuniao_b2b?: number | null
           created_at?: string
           created_by?: string | null
           fixo_mensal?: number
