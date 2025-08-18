@@ -48,7 +48,12 @@ const RouteRenderer: React.FC = () => {
         return <SDRDashboard />;
       }
       if (isSupervisor) {
-        return <SupervisorSimpleDashboard />;
+        const SupervisorDashboardAtualizado = React.lazy(() => import('@/components/supervisor/SupervisorDashboardAtualizado').then(m => ({ default: m.SupervisorDashboardAtualizado })));
+        return (
+          <React.Suspense fallback={<div>Carregando...</div>}>
+            <SupervisorDashboardAtualizado />
+          </React.Suspense>
+        );
       }
       // Para diretor, admin e secretaria, usar o DashboardContainer completo
       return <DashboardContainer userType={isDiretor ? 'diretor' : (isAdmin ? 'admin' : 'secretaria')} />;

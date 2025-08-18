@@ -435,6 +435,36 @@ export type Database = {
           },
         ]
       }
+      grupos_supervisores: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome_grupo: string
+          supervisor_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome_grupo: string
+          supervisor_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome_grupo?: string
+          supervisor_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       historico_mensal_planilhas: {
         Row: {
           ano: number
@@ -674,6 +704,82 @@ export type Database = {
             columns: ["vendedor_atribuido"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membros_grupos_supervisores: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          grupo_id: string
+          id: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          grupo_id: string
+          id?: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          grupo_id?: string
+          id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membros_grupos_supervisores_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos_supervisores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metas_mensais_supervisores: {
+        Row: {
+          ano: number
+          created_at: string
+          created_by: string | null
+          grupo_id: string | null
+          id: string
+          mes: number
+          meta_vendas: number
+          supervisor_id: string
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          created_by?: string | null
+          grupo_id?: string | null
+          id?: string
+          mes: number
+          meta_vendas?: number
+          supervisor_id: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          created_by?: string | null
+          grupo_id?: string | null
+          id?: string
+          mes?: number
+          meta_vendas?: number
+          supervisor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metas_mensais_supervisores_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos_supervisores"
             referencedColumns: ["id"]
           },
         ]
