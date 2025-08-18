@@ -4,7 +4,7 @@ import { useAppStateStore } from '@/stores/AppStateStore';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import VendedorDashboard from '@/components/vendedor/VendedorDashboard';
 import SDRDashboard from '@/components/sdr/SDRDashboard';
-import SupervisorDashboard from '@/components/supervisor/SupervisorDashboard';
+import SupervisorSimpleDashboard from '@/components/supervisor/SupervisorSimpleDashboard';
 import DashboardContainer from '@/components/dashboard/DashboardContainer';
 import NovaVendaForm from '@/components/NovaVendaForm';
 import GerenciarVendas from '@/components/GerenciarVendas';
@@ -48,7 +48,7 @@ const RouteRenderer: React.FC = () => {
         return <SDRDashboard />;
       }
       if (isSupervisor) {
-        return <SupervisorDashboard />;
+        return <SupervisorSimpleDashboard />;
       }
       // Para diretor, admin e secretaria, usar o DashboardContainer completo
       return <DashboardContainer userType={isDiretor ? 'diretor' : (isAdmin ? 'admin' : 'secretaria')} />;
