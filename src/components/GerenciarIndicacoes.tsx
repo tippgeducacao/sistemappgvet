@@ -6,8 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Phone, User, GraduationCap, MessageSquare } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Search, Phone, User, GraduationCap, MessageSquare, Eye, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Indicacao {
   id: string;
@@ -25,9 +29,20 @@ interface Indicacao {
   updated_at: string;
 }
 
+interface IndicadorStats {
+  cadastrado_por: string;
+  total_indicados: number;
+  indicados_hoje: number;
+  indicados_esta_semana: number;
+  indicados_este_mes: number;
+}
+
 const GerenciarIndicacoes: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [cadastradoPorFilter, setCadastradoPorFilter] = useState<string>('all');
+  const [dataFilter, setDataFilter] = useState<string>('all');
+  const [areaInteresseFilter, setAreaInteresseFilter] = useState<string>('all');
 
   const { data: indicacoes, isLoading, refetch } = useQuery({
     queryKey: ['indicacoes'],
@@ -55,6 +70,63 @@ const GerenciarIndicacoes: React.FC = () => {
       return data;
     },
   });
+
+  // Calcular estatísticas dos indicadores
+  const indicadoresStats = React.useMemo(() => {
+    if (!indicacoes) return [];
+    
+    const agora = new Date();
+    const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+    const inicioSemana = new Date(hoje);
+    inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+
+    const stats = indicacoes.reduce((acc, indicacao) => {
+      const cadastrador = indicacao.cadastrado_por;
+      const dataIndicacao = new Date(indicacao.created_at);
+      
+      if (!acc[cadastrador]) {
+        acc[cadastrador] = {
+          cadastrado_por: cadastrador,
+          total_indicados: 0,
+          indicados_hoje: 0,
+          indicados_esta_semana: 0,
+          indicados_este_mes: 0,
+        };
+      }
+      
+      acc[cadastrador].total_indicados++;
+      
+      if (dataIndicacao >= hoje) {
+        acc[cadastrador].indicados_hoje++;
+      }
+      
+      if (dataIndicacao >= inicioSemana) {
+        acc[cadastrador].indicados_esta_semana++;
+      }
+      
+      if (dataIndicacao >= inicioMes) {
+        acc[cadastrador].indicados_este_mes++;
+      }
+      
+      return acc;
+    }, {} as Record<string, IndicadorStats>);
+
+    return Object.values(stats).sort((a, b) => b.total_indicados - a.total_indicados);
+  }, [indicacoes]);
+
+  // Filtros únicos para os selects
+  const cadastradoresPor = React.useMemo(() => {
+    if (!indicacoes) return [];
+    const cadastradores = [...new Set(indicacoes.map(i => i.cadastrado_por))];
+    return cadastradores.sort();
+  }, [indicacoes]);
+
+  const areasInteresse = React.useMemo(() => {
+    if (!indicacoes) return [];
+    const areas = [...new Set(indicacoes.filter(i => i.area_interesse).map(i => i.area_interesse))];
+    return areas.sort();
+  }, [indicacoes]);
 
   const updateIndicacaoStatus = async (id: string, status: string) => {
     const { error } = await supabase
@@ -86,27 +158,42 @@ const GerenciarIndicacoes: React.FC = () => {
     refetch();
   };
 
+  // Filtros para a aba "Todos os indicados"
   const filteredIndicacoes = indicacoes?.filter((indicacao) => {
     const matchesSearch = 
-      indicacao.nome_aluno.toLowerCase().includes(searchTerm.toLowerCase()) ||
       indicacao.nome_indicado.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      indicacao.nome_aluno.toLowerCase().includes(searchTerm.toLowerCase()) ||
       indicacao.whatsapp_aluno.includes(searchTerm) ||
       indicacao.whatsapp_indicado.includes(searchTerm);
     
-    const matchesStatus = statusFilter === 'all' || indicacao.status === statusFilter;
+    const matchesCadastradoPor = cadastradoPorFilter === 'all' || indicacao.cadastrado_por === cadastradoPorFilter;
+    const matchesAreaInteresse = areaInteresseFilter === 'all' || indicacao.area_interesse === areaInteresseFilter;
     
-    return matchesSearch && matchesStatus;
-  });
-
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'novo': return 'bg-blue-500';
-      case 'em_andamento': return 'bg-yellow-500';
-      case 'convertido': return 'bg-green-500';
-      case 'descartado': return 'bg-red-500';
-      default: return 'bg-gray-500';
+    // Filtro por data
+    let matchesData = true;
+    if (dataFilter !== 'all') {
+      const agora = new Date();
+      const dataIndicacao = new Date(indicacao.created_at);
+      
+      switch (dataFilter) {
+        case 'hoje':
+          const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+          matchesData = dataIndicacao >= hoje;
+          break;
+        case 'esta_semana':
+          const inicioSemana = new Date(agora);
+          inicioSemana.setDate(agora.getDate() - agora.getDay());
+          matchesData = dataIndicacao >= inicioSemana;
+          break;
+        case 'este_mes':
+          const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+          matchesData = dataIndicacao >= inicioMes;
+          break;
+      }
     }
-  };
+    
+    return matchesSearch && matchesCadastradoPor && matchesAreaInteresse && matchesData;
+  });
 
   if (isLoading) {
     return (
@@ -128,166 +215,243 @@ const GerenciarIndicacoes: React.FC = () => {
             Gerencie todas as indicações recebidas
           </p>
         </div>
-        <Badge variant="outline" className="text-lg px-3 py-1">
-          {filteredIndicacoes?.length || 0} indicações
-        </Badge>
       </div>
 
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Buscar por nome ou WhatsApp..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="novo">Novo</SelectItem>
-                <SelectItem value="em_andamento">Em andamento</SelectItem>
-                <SelectItem value="convertido">Convertido</SelectItem>
-                <SelectItem value="descartado">Descartado</SelectItem>
-              </SelectContent>
-            </Select>
+      <Tabs defaultValue="todos-indicados" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="lista-indicadores">Lista de indicadores</TabsTrigger>
+          <TabsTrigger value="todos-indicados">Todos os indicados</TabsTrigger>
+        </TabsList>
+
+        {/* Aba Lista de Indicadores */}
+        <TabsContent value="lista-indicadores" className="space-y-4">
+          <div className="grid gap-4">
+            {indicadoresStats.map((indicador) => (
+              <Card key={indicador.cadastrado_por}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {indicador.cadastrado_por.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-semibold text-lg">{indicador.cadastrado_por}</h3>
+                        <div className="grid grid-cols-4 gap-4 mt-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">LEADS INDICADOS:</span>
+                            <span className="font-medium ml-1">{indicador.total_indicados}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">HOJE:</span>
+                            <span className="font-medium ml-1">{indicador.indicados_hoje}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">ESSA SEMANA:</span>
+                            <span className="font-medium ml-1">{indicador.indicados_esta_semana}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">ESSE MÊS:</span>
+                            <span className="font-medium ml-1">{indicador.indicados_este_mes}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Botão para ver os leads de quem cadastrou
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* Lista de Indicações */}
-      <div className="grid gap-4">
-        {filteredIndicacoes?.map((indicacao) => (
-          <Card key={indicacao.id}>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg">
-                    {indicacao.nome_aluno} → {indicacao.nome_indicado}
-                  </CardTitle>
-                  <CardDescription>
-                    Cadastrado por: {indicacao.cadastrado_por}
-                  </CardDescription>
-                </div>
-                <Badge className={`${getStatusBadgeColor(indicacao.status)} text-white`}>
-                  {indicacao.status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Dados do Aluno (Indicador)
-                  </h4>
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-3 w-3" />
-                      {indicacao.whatsapp_aluno}
-                    </div>
-                    {indicacao.formacao && (
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-3 w-3" />
-                        {indicacao.formacao}
-                      </div>
-                    )}
+        {/* Aba Todos os Indicados */}
+        <TabsContent value="todos-indicados" className="space-y-4">
+          {/* Filtros */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Caixa de pesquisa por nome do indicado</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Nome do indicado..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Dados do Indicado
-                  </h4>
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-3 w-3" />
-                      {indicacao.whatsapp_indicado}
-                    </div>
-                    {indicacao.area_interesse && (
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-3 w-3" />
-                        Interesse: {indicacao.area_interesse}
-                      </div>
-                    )}
-                  </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Filtro por cadastrado por</label>
+                  <Select value={cadastradoPorFilter} onValueChange={setCadastradoPorFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Cadastrado por" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {cadastradoresPor.map((cadastrador) => (
+                        <SelectItem key={cadastrador} value={cadastrador}>
+                          {cadastrador}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
 
-              {indicacao.observacoes && (
-                <div className="space-y-2">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Observações
-                  </h4>
-                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded">
-                    {indicacao.observacoes}
-                  </p>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Filtro por data</label>
+                  <Select value={dataFilter} onValueChange={setDataFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Data" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as datas</SelectItem>
+                      <SelectItem value="hoje">Hoje</SelectItem>
+                      <SelectItem value="esta_semana">Esta semana</SelectItem>
+                      <SelectItem value="este_mes">Este mês</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
 
-              <div className="flex gap-2 pt-2">
-                <Select 
-                  value={indicacao.status} 
-                  onValueChange={(value) => updateIndicacaoStatus(indicacao.id, value)}
-                >
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="novo">Novo</SelectItem>
-                    <SelectItem value="em_andamento">Em andamento</SelectItem>
-                    <SelectItem value="convertido">Convertido</SelectItem>
-                    <SelectItem value="descartado">Descartado</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select 
-                  value={indicacao.vendedor_atribuido || ''} 
-                  onValueChange={(value) => assignVendedor(indicacao.id, value)}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Atribuir vendedor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vendedores?.map((vendedor) => (
-                      <SelectItem key={vendedor.id} value={vendedor.id}>
-                        {vendedor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Filtro por área de interesse</label>
+                  <Select value={areaInteresseFilter} onValueChange={setAreaInteresseFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Área de interesse" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as áreas</SelectItem>
+                      {areasInteresse.map((area) => (
+                        <SelectItem key={area} value={area!}>
+                          {area}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {filteredIndicacoes?.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <div className="text-muted-foreground">
-              {searchTerm || statusFilter !== 'all' 
-                ? 'Nenhuma indicação encontrada com os filtros aplicados'
-                : 'Nenhuma indicação cadastrada ainda'
-              }
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          {/* Lista de Indicados */}
+          <div className="grid gap-4">
+            {filteredIndicacoes?.map((indicacao) => (
+              <Card key={indicacao.id}>
+                <CardContent className="p-6">
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Cadastrado Por:</label>
+                        <p className="text-sm">{indicacao.cadastrado_por}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Nome do aluno:</label>
+                        <p className="text-sm">{indicacao.nome_aluno}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">WhatsApp do aluno:</label>
+                        <p className="text-sm">{indicacao.whatsapp_aluno}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Nome do indicado:</label>
+                        <p className="text-sm">{indicacao.nome_indicado}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">WhatsApp do indicado:</label>
+                        <p className="text-sm">{indicacao.whatsapp_indicado}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Formação:</label>
+                        <p className="text-sm">{indicacao.formacao || 'Não informado'}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Área de interesse:</label>
+                        <p className="text-sm">{indicacao.area_interesse || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Observações:</label>
+                        <p className="text-sm">{indicacao.observacoes || 'Nenhuma observação'}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Data de cadastro:</label>
+                        <p className="text-sm">
+                          {format(new Date(indicacao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                    <div className="flex gap-2">
+                      <Select 
+                        value={indicacao.status} 
+                        onValueChange={(value) => updateIndicacaoStatus(indicacao.id, value)}
+                      >
+                        <SelectTrigger className="w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="novo">Novo</SelectItem>
+                          <SelectItem value="em_andamento">Em andamento</SelectItem>
+                          <SelectItem value="convertido">Convertido</SelectItem>
+                          <SelectItem value="descartado">Descartado</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Select 
+                        value={indicacao.vendedor_atribuido || ''} 
+                        onValueChange={(value) => assignVendedor(indicacao.id, value)}
+                      >
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Atribuir vendedor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vendedores?.map((vendedor) => (
+                            <SelectItem key={vendedor.id} value={vendedor.id}>
+                              {vendedor.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ver todas as informações
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {filteredIndicacoes?.length === 0 && (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <div className="text-muted-foreground">
+                  {searchTerm || cadastradoPorFilter !== 'all' || dataFilter !== 'all' || areaInteresseFilter !== 'all'
+                    ? 'Nenhuma indicação encontrada com os filtros aplicados'
+                    : 'Nenhuma indicação cadastrada ainda'
+                  }
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
