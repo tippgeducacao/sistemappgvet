@@ -405,40 +405,7 @@ const GerenciarIndicacoes: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                    <div className="flex gap-2">
-                      <Select 
-                        value={indicacao.status} 
-                        onValueChange={(value) => updateIndicacaoStatus(indicacao.id, value)}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="novo">Novo</SelectItem>
-                          <SelectItem value="em_andamento">Em andamento</SelectItem>
-                          <SelectItem value="convertido">Convertido</SelectItem>
-                          <SelectItem value="descartado">Descartado</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select 
-                        value={indicacao.vendedor_atribuido || ''} 
-                        onValueChange={(value) => assignVendedor(indicacao.id, value)}
-                      >
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Atribuir vendedor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {vendedores?.map((vendedor) => (
-                            <SelectItem key={vendedor.id} value={vendedor.id}>
-                              {vendedor.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
+                  <div className="flex justify-end items-center mt-4 pt-4 border-t">
                     <Button variant="outline" size="sm">
                       <Eye className="h-4 w-4 mr-2" />
                       Ver todas as informações
