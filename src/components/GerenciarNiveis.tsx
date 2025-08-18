@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNiveis } from '@/hooks/useNiveis';
 import { NiveisService, type NivelVendedor } from '@/services/niveisService';
-import { Pencil, Trophy, Users, Target, Calculator } from 'lucide-react';
+import { Pencil, Trophy, Users, Target, Calculator, Shield } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { GerenciarComissionamento } from './comissionamento/GerenciarComissionamento';
 
@@ -19,6 +19,7 @@ const GerenciarNiveis: React.FC = () => {
 
   const niveisVendedores = niveis.filter(n => n.tipo_usuario === 'vendedor');
   const niveisSDR = niveis.filter(n => n.tipo_usuario === 'sdr');
+  const niveisSupervisor = niveis.filter(n => n.tipo_usuario === 'supervisor');
 
 
   const handleEditNivel = (nivel: NivelVendedor) => {
@@ -40,7 +41,11 @@ const GerenciarNiveis: React.FC = () => {
     if (editingNivel.tipo_usuario === 'sdr') {
       dados.meta_semanal_inbound = parseInt(formData.get('meta_semanal_sdr') as string);
       dados.meta_vendas_cursos = parseInt(formData.get('meta_vendas_cursos') as string);
-    // Para SDR, usar somente as configurações já definidas acima
+    } else if (editingNivel.tipo_usuario === 'supervisor') {
+      // Para supervisor, não há metas de pontos/reuniões específicas
+      dados.meta_semanal_vendedor = 0;
+      dados.meta_semanal_inbound = 0;
+      dados.meta_vendas_cursos = 0;
     } else {
       dados.meta_semanal_vendedor = parseInt(formData.get('meta_semanal_vendedor') as string);
     }
@@ -70,9 +75,10 @@ const GerenciarNiveis: React.FC = () => {
             {NiveisService.getNivelLabel(nivel.nivel, nivel.tipo_usuario)}
           </CardTitle>
            <Badge variant="outline" className={NiveisService.getNivelColor(nivel.nivel)}>
-             {nivel.tipo_usuario === 'vendedor' ? 'Vendedor' : 
-              nivel.tipo_usuario === 'sdr' ? 'SDR' :
-              'SDR'}
+              {nivel.tipo_usuario === 'vendedor' ? 'Vendedor' : 
+               nivel.tipo_usuario === 'sdr' ? 'SDR' :
+               nivel.tipo_usuario === 'supervisor' ? 'Supervisor' :
+               'Supervisor'}
            </Badge>
         </div>
         <Button
@@ -87,30 +93,38 @@ const GerenciarNiveis: React.FC = () => {
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-sm font-medium text-muted-foreground">Fixo Mensal</Label>
+            <Label className="text-sm font-medium text-muted-foreground">
+              {nivel.tipo_usuario === 'supervisor' ? 'Salário Fixo (CLT)' : 'Fixo Mensal'}
+            </Label>
             <p className="text-lg font-semibold">{formatCurrency(nivel.fixo_mensal)}</p>
           </div>
           <div>
-            <Label className="text-sm font-medium text-muted-foreground">Vale</Label>
+            <Label className="text-sm font-medium text-muted-foreground">
+              {nivel.tipo_usuario === 'supervisor' ? 'Vale (Alimentação)' : 'Vale'}
+            </Label>
             <p className="text-lg font-semibold">{formatCurrency(nivel.vale)}</p>
           </div>
           <div>
-            <Label className="text-sm font-medium text-muted-foreground">Variável Semanal</Label>
+            <Label className="text-sm font-medium text-muted-foreground">
+              {nivel.tipo_usuario === 'supervisor' ? 'Variável Mensal (Meta Coletiva)' : 'Variável Semanal'}
+            </Label>
             <p className="text-lg font-semibold">{formatCurrency(nivel.variavel_semanal)}</p>
           </div>
-          <div>
-            <Label className="text-sm font-medium text-muted-foreground">
-              {nivel.tipo_usuario === 'sdr' ? 'Metas Semanais' : 'Meta Semanal'}
-            </Label>
-            {nivel.tipo_usuario === 'sdr' ? (
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Reuniões: {nivel.meta_semanal_inbound} por semana</p>
-                <p className="text-sm font-medium text-orange-600">Cursos: {nivel.meta_vendas_cursos} por semana</p>
-              </div>
-            ) : (
-              <p className="text-lg font-semibold">{nivel.meta_semanal_vendedor} pontos</p>
-            )}
-          </div>
+          {nivel.tipo_usuario !== 'supervisor' && (
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">
+                {nivel.tipo_usuario === 'sdr' ? 'Metas Semanais' : 'Meta Semanal'}
+              </Label>
+              {nivel.tipo_usuario === 'sdr' ? (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Reuniões: {nivel.meta_semanal_inbound} por semana</p>
+                  <p className="text-sm font-medium text-orange-600">Cursos: {nivel.meta_vendas_cursos} por semana</p>
+                </div>
+              ) : (
+                <p className="text-lg font-semibold">{nivel.meta_semanal_vendedor} pontos</p>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -128,7 +142,7 @@ const GerenciarNiveis: React.FC = () => {
       </div>
 
       <Tabs defaultValue="vendedores" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="vendedores" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Vendedores
@@ -136,6 +150,10 @@ const GerenciarNiveis: React.FC = () => {
           <TabsTrigger value="sdr" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
             SDR
+          </TabsTrigger>
+          <TabsTrigger value="supervisor" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Supervisor
           </TabsTrigger>
           <TabsTrigger value="comissionamento" className="flex items-center gap-2">
             <Calculator className="h-4 w-4" />
@@ -179,6 +197,24 @@ const GerenciarNiveis: React.FC = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="supervisor" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Níveis de Supervisor
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {niveisSupervisor.map((nivel) => (
+                  <NivelCard key={nivel.id} nivel={nivel} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="comissionamento" className="space-y-4">
           <GerenciarComissionamento />
         </TabsContent>
@@ -195,52 +231,60 @@ const GerenciarNiveis: React.FC = () => {
           {editingNivel && (
             <form onSubmit={handleSaveNivel} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="fixo_mensal">Fixo Mensal (R$)</Label>
-                  <Input
-                    id="fixo_mensal"
-                    name="fixo_mensal"
-                    type="number"
-                    step="0.01"
-                    defaultValue={editingNivel.fixo_mensal}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="vale">Vale (R$)</Label>
-                  <Input
-                    id="vale"
-                    name="vale"
-                    type="number"
-                    step="0.01"
-                    defaultValue={editingNivel.vale}
-                    required
-                  />
-                </div>
+                 <div>
+                   <Label htmlFor="fixo_mensal">
+                     {editingNivel.tipo_usuario === 'supervisor' ? 'Salário Fixo (CLT) (R$)' : 'Fixo Mensal (R$)'}
+                   </Label>
+                   <Input
+                     id="fixo_mensal"
+                     name="fixo_mensal"
+                     type="number"
+                     step="0.01"
+                     defaultValue={editingNivel.fixo_mensal}
+                     required
+                   />
+                 </div>
+                 <div>
+                   <Label htmlFor="vale">
+                     {editingNivel.tipo_usuario === 'supervisor' ? 'Vale (Alimentação) (R$)' : 'Vale (R$)'}
+                   </Label>
+                   <Input
+                     id="vale"
+                     name="vale"
+                     type="number"
+                     step="0.01"
+                     defaultValue={editingNivel.vale}
+                     required
+                   />
+                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="variavel_semanal">Variável Semanal (R$)</Label>
-                  <Input
-                    id="variavel_semanal"
-                    name="variavel_semanal"
-                    type="number"
-                    step="0.01"
-                    defaultValue={editingNivel.variavel_semanal}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="meta_semanal_vendedor">Meta Semanal (pontos)</Label>
-                  <Input
-                    id="meta_semanal_vendedor"
-                    name="meta_semanal_vendedor"
-                    type="number"
-                    defaultValue={editingNivel.meta_semanal_vendedor}
-                    required
-                  />
-                </div>
-                </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <Label htmlFor="variavel_semanal">
+                     {editingNivel.tipo_usuario === 'supervisor' ? 'Variável Mensal (Meta Coletiva) (R$)' : 'Variável Semanal (R$)'}
+                   </Label>
+                   <Input
+                     id="variavel_semanal"
+                     name="variavel_semanal"
+                     type="number"
+                     step="0.01"
+                     defaultValue={editingNivel.variavel_semanal}
+                     required
+                   />
+                 </div>
+                 {editingNivel.tipo_usuario !== 'supervisor' && (
+                   <div>
+                     <Label htmlFor="meta_semanal_vendedor">Meta Semanal (pontos)</Label>
+                     <Input
+                       id="meta_semanal_vendedor"
+                       name="meta_semanal_vendedor"
+                       type="number"
+                       defaultValue={editingNivel.meta_semanal_vendedor}
+                       required
+                     />
+                   </div>
+                 )}
+                 </div>
                {editingNivel.tipo_usuario === 'sdr' && (
                 <>
                   <div>

@@ -2,8 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface NivelVendedor {
   id: string;
-  nivel: 'junior' | 'pleno' | 'senior';
-  tipo_usuario: 'vendedor' | 'sdr';
+  nivel: 'junior' | 'pleno' | 'senior' | 'supervisor';
+  tipo_usuario: 'vendedor' | 'sdr' | 'supervisor';
   fixo_mensal: number;
   vale: number;
   variavel_semanal: number;
@@ -34,8 +34,8 @@ export class NiveisService {
     console.log('✅ Níveis encontrados:', data?.length);
     return (data || []).map(item => ({
       ...item,
-      nivel: item.nivel as 'junior' | 'pleno' | 'senior',
-      tipo_usuario: item.tipo_usuario as 'vendedor' | 'sdr'
+      nivel: item.nivel as 'junior' | 'pleno' | 'senior' | 'supervisor',
+      tipo_usuario: item.tipo_usuario as 'vendedor' | 'sdr' | 'supervisor'
     }));
   }
 
@@ -56,7 +56,7 @@ export class NiveisService {
     console.log('✅ Nível atualizado com sucesso:', data);
   }
 
-  static async updateVendedorNivel(vendedorId: string, nivel: 'junior' | 'pleno' | 'senior'): Promise<void> {
+  static async updateVendedorNivel(vendedorId: string, nivel: 'junior' | 'pleno' | 'senior' | 'supervisor'): Promise<void> {
     console.log('🔄 Atualizando nível do vendedor:', vendedorId, 'para', nivel);
     
     // Manter o user_type existente, apenas atualizar o nível
@@ -90,6 +90,11 @@ export class NiveisService {
   }
 
   static getNivelLabel(nivel: string, tipoUsuario?: string): string {
+    // Se for Supervisor, sempre retornar "Supervisor"
+    if (tipoUsuario === 'supervisor') {
+      return 'Supervisor';
+    }
+    
     // Se for SDR, mostrar apenas "Junior", "Pleno" ou "Senior"
     if (tipoUsuario === 'sdr') {
       switch (nivel) {
@@ -125,6 +130,8 @@ export class NiveisService {
         return 'bg-blue-100 text-blue-800';
       case 'senior':
         return 'bg-purple-100 text-purple-800';
+      case 'supervisor':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
