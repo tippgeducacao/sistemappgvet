@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Phone, User, GraduationCap, MessageSquare, Eye, Calendar } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Search, Phone, User, GraduationCap, MessageSquare, Eye, Calendar, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -43,6 +44,7 @@ const GerenciarIndicacoes: React.FC = () => {
   const [cadastradoPorFilter, setCadastradoPorFilter] = useState<string>('all');
   const [dataFilter, setDataFilter] = useState<string>('all');
   const [areaInteresseFilter, setAreaInteresseFilter] = useState<string>('all');
+  const [indicadorSelecionado, setIndicadorSelecionado] = useState<string | null>(null);
 
   const { data: indicacoes, isLoading, refetch } = useQuery({
     queryKey: ['indicacoes'],
@@ -195,6 +197,11 @@ const GerenciarIndicacoes: React.FC = () => {
     return matchesSearch && matchesCadastradoPor && matchesAreaInteresse && matchesData;
   });
 
+  // Filtrar indicações do indicador selecionado
+  const indicacoesDoIndicador = indicacoes?.filter(indicacao => 
+    indicacao.cadastrado_por === indicadorSelecionado
+  ) || [];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -258,9 +265,13 @@ const GerenciarIndicacoes: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIndicadorSelecionado(indicador.cadastrado_por)}
+                    >
                       <Eye className="h-4 w-4 mr-2" />
-                      Botão para ver os leads de quem cadastrou
+                      Ver leads ({indicador.total_indicados})
                     </Button>
                   </div>
                 </CardContent>
@@ -452,6 +463,87 @@ const GerenciarIndicacoes: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Modal para mostrar leads do indicador */}
+      <Dialog open={!!indicadorSelecionado} onOpenChange={() => setIndicadorSelecionado(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Leads de {indicadorSelecionado}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIndicadorSelecionado(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {indicacoesDoIndicador.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum lead encontrado para este indicador
+              </div>
+            ) : (
+              indicacoesDoIndicador.map((indicacao) => (
+                <Card key={indicacao.id}>
+                  <CardContent className="p-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Nome do indicado:</label>
+                          <p className="text-sm font-medium">{indicacao.nome_indicado}</p>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">WhatsApp:</label>
+                          <p className="text-sm">{indicacao.whatsapp_indicado}</p>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Formação:</label>
+                          <p className="text-sm">{indicacao.formacao || 'Não informado'}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Área de interesse:</label>
+                          <p className="text-sm">{indicacao.area_interesse || 'Não informado'}</p>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Status:</label>
+                          <Badge variant={
+                            indicacao.status === 'novo' ? 'default' :
+                            indicacao.status === 'em_andamento' ? 'secondary' :
+                            indicacao.status === 'convertido' ? 'default' : 'destructive'
+                          }>
+                            {indicacao.status === 'novo' ? 'Novo' :
+                             indicacao.status === 'em_andamento' ? 'Em andamento' :
+                             indicacao.status === 'convertido' ? 'Convertido' : 'Descartado'}
+                          </Badge>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Data de cadastro:</label>
+                          <p className="text-sm">
+                            {format(new Date(indicacao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {indicacao.observacoes && (
+                      <div className="mt-3 pt-3 border-t">
+                        <label className="text-xs font-medium text-muted-foreground">Observações:</label>
+                        <p className="text-sm mt-1">{indicacao.observacoes}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
