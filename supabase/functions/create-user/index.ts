@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
         name: name.trim(),
         user_type: userType,
         ativo: true,
-        nivel: userType === 'admin' ? undefined : (nivel || 'junior')
+        nivel: userType === 'admin' ? 'admin' : userType === 'supervisor' ? 'supervisor' : (nivel || 'junior')
       }, {
         onConflict: 'id'
       })
