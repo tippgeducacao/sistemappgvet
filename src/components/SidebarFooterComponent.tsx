@@ -43,6 +43,10 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
         return 'Vendedor';
       case 'sdr':
         return 'SDR';
+      case 'supervisor':
+        return 'Supervisor';
+      case 'coordenador':
+        return 'Coordenador';
       default:
         return 'Usuário';
     }
