@@ -4,6 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Target, TrendingUp, Calendar } from 'lucide-react';
 import { useMetas } from '@/hooks/useMetas';
 import { useVendas } from '@/hooks/useVendas';
+import { getDataEfetivaVenda } from '@/utils/vendaDateUtils';
 
 interface VendorGoalsProgressProps {
   selectedMonth: number;
@@ -58,7 +59,7 @@ const VendorGoalsProgress: React.FC<VendorGoalsProgressProps> = ({
       if (venda.vendedor_id !== vendedorId) return false;
       if (venda.status !== 'matriculado') return false;
       
-        const vendaDate = new Date(venda.enviado_em);
+        const vendaDate = getDataEfetivaVenda(venda);
       return vendaDate >= startDate && vendaDate <= endDate;
     }).length;
   };
@@ -76,7 +77,7 @@ const VendorGoalsProgress: React.FC<VendorGoalsProgressProps> = ({
         if (venda.vendedor_id !== vendedorId) return false;
         if (venda.status !== 'matriculado') return false;
         
-        const vendaDate = new Date(venda.enviado_em);
+        const vendaDate = getDataEfetivaVenda(venda);
         return vendaDate >= week.start && vendaDate <= week.end;
       }).length;
       

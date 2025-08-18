@@ -13,6 +13,7 @@ import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useAuthStore } from '@/stores/AuthStore';
 import { isVendaInPeriod, getVendaPeriod, getMesAnoSemanaAtual } from '@/utils/semanaUtils';
+import { getDataEfetivaVenda, getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
 import { ComissionamentoService } from '@/services/comissionamentoService';
@@ -495,25 +496,24 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const vendasSemanaAtual = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
     
-    // MESMA LÓGICA da getVendedorWeeklyPoints - priorizar data_assinatura_contrato
-    let vendaDate: Date;
-    if (venda.data_assinatura_contrato) {
-      vendaDate = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-    } else {
-      // Buscar nas respostas do formulário se não tem data_assinatura_contrato
-      const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
-      if (respostasVenda) {
-        const dataMatricula = getDataMatriculaFromRespostas(respostasVenda.respostas);
-        if (dataMatricula) {
-          vendaDate = dataMatricula;
-        } else {
-          vendaDate = new Date(venda.enviado_em);
-        }
-      } else {
-        vendaDate = new Date(venda.enviado_em);
-      }
-    }
+    // Usar função utilitária que já tem correções de timezone
+    const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+    const vendaDate = getDataEfetivaVenda(venda, respostasVenda?.respostas);
     vendaDate.setHours(0, 0, 0, 0);
+    
+    // Debug para detectar problema do dia 13
+    if (venda.data_assinatura_contrato === '2025-08-13') {
+      console.log(`🚨 DEBUG TVRanking - Venda dia 13:`, {
+        venda_id: venda.id?.substring(0, 8),
+        data_assinatura_contrato: venda.data_assinatura_contrato,
+        vendaDate: vendaDate.toISOString(),
+        vendaDate_br: vendaDate.toLocaleDateString('pt-BR'),
+        startOfWeek: startOfWeek.toLocaleDateString('pt-BR'),
+        endOfWeek: endOfWeek.toLocaleDateString('pt-BR'),
+        esta_na_semana: vendaDate >= startOfWeek && vendaDate <= endOfWeek
+      });
+    }
+    
     return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
   });
 
