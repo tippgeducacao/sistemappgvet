@@ -42,7 +42,10 @@ const SupervisorMetasColetivas: React.FC = () => {
       <CardContent className="space-y-4">
         {grupo.membros.map((membro) => {
           console.log('🔍 Renderizando membro:', membro);
+          console.log('🔍 Usuario completo:', membro.usuario);
           console.log('🔍 URL da foto:', membro.usuario?.photo_url);
+          console.log('🔍 Photo URL existe?', !!membro.usuario?.photo_url);
+          console.log('🔍 Photo URL não é null?', membro.usuario?.photo_url !== null);
           const vendas = 0; // TODO: Buscar vendas reais
           const meta = 55; // TODO: Buscar meta real
           const percentual = meta > 0 ? (vendas / meta) * 100 : 0;
