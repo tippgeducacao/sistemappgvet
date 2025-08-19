@@ -1,10 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
-import { Edit } from 'lucide-react';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 
 const SupervisorMetasColetivas: React.FC = () => {
@@ -21,7 +17,7 @@ const SupervisorMetasColetivas: React.FC = () => {
     );
   }
 
-  const grupo = grupos[0]; // Assumindo que há pelo menos um grupo
+  const grupo = grupos[0];
 
   if (!grupo || !grupo.membros) {
     return (
@@ -31,87 +27,113 @@ const SupervisorMetasColetivas: React.FC = () => {
     );
   }
 
+  // Calcular metas coletivas
+  const totalReunioes = 10; // Mock data - deve ser calculado baseado nos agendamentos
+  const metaColetiva = grupo.membros.length * 55; // Assumindo meta de 55 por SDR
+  const totalVendas = 60; // Mock data - deve ser calculado baseado nas vendas
+  const percentualColetivo = metaColetiva > 0 ? (totalVendas / metaColetiva) * 100 : 0;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl font-bold">META COLETIVA</CardTitle>
+    <div className="space-y-6">
+      {/* Header com informações do mês/semana */}
+      <div className="text-center space-y-2">
         <p className="text-sm text-muted-foreground">
-          Desempenho individual dos SDRs da sua equipe
+          Os meses tem o mesmo sistema de semanas que começam na quarta e terminam na terça, 
+          onde o último dia da semana que é na terça acaba naquele mês aquela semana é daquele 
+          mês, o padrão que já tem no sistema
         </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {grupo.membros.map((membro) => {
-          console.log('🔍 Renderizando membro:', membro);
-          console.log('🔍 Usuario completo:', membro.usuario);
-          console.log('🔍 URL da foto:', membro.usuario?.photo_url);
-          console.log('🔍 Photo URL existe?', !!membro.usuario?.photo_url);
-          console.log('🔍 Photo URL não é null?', membro.usuario?.photo_url !== null);
-          const vendas = 0; // TODO: Buscar vendas reais
-          const meta = 55; // TODO: Buscar meta real
-          const percentual = meta > 0 ? (vendas / meta) * 100 : 0;
-          
-          return (
-            <div key={membro.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 text-primary font-medium flex items-center justify-center overflow-hidden">
-                  {membro.usuario?.photo_url ? (
-                    <img 
-                      src={membro.usuario.photo_url}
-                      alt={membro.usuario?.name || 'User'}
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        console.error('🚨 Erro ao carregar imagem:', {
-                          src: membro.usuario?.photo_url,
-                          nome: membro.usuario?.name,
-                          error: e
-                        });
-                        // Esconder a imagem em caso de erro
-                        e.currentTarget.style.display = 'none';
-                      }}
-                      onLoad={() => {
-                        console.log('✅ Imagem carregada com sucesso:', {
-                          src: membro.usuario?.photo_url,
-                          nome: membro.usuario?.name
-                        });
-                      }}
-                    />
-                  ) : null}
-                  <span className={`font-medium ${membro.usuario?.photo_url ? 'hidden' : 'block'}`}>
-                    {membro.usuario?.name?.charAt(0).toUpperCase() || 'U'}
-                  </span>
+        
+        <div className="flex justify-center items-center gap-8 mt-4">
+          <div className="border rounded-lg px-4 py-2">
+            <span className="text-sm font-medium">MÊS</span>
+          </div>
+          <div className="border rounded-lg px-4 py-2 flex items-center gap-2">
+            <span className="text-sm">←</span>
+            <span className="text-sm font-medium">SEMANA</span>
+            <span className="text-sm">→</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Informações das reuniões e meta */}
+      <div className="flex justify-between items-center">
+        <div className="text-left">
+          <p className="text-xs text-muted-foreground uppercase">
+            Deve ser as reuniões comparecidas do próprio supervisor, 
+            ele em si não tem meta própria, a meta dele é a soma de 
+            todas as metas dos usuários do grupo dele
+          </p>
+          <div className="mt-2">
+            <span className="text-lg font-semibold">Minhas reuniões</span>
+            <div className="text-2xl font-bold">{totalReunioes}</div>
+          </div>
+        </div>
+        
+        <div className="text-right">
+          <p className="text-xs text-muted-foreground uppercase">Sua Meta</p>
+          <div className="text-lg font-semibold">{totalVendas}/{metaColetiva}</div>
+          <div className="text-sm text-muted-foreground">{percentualColetivo.toFixed(1)}%</div>
+        </div>
+      </div>
+
+      {/* Meta Coletiva */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-center">META COLETIVA</CardTitle>
+          <p className="text-xs text-muted-foreground text-center">
+            DEVE BUSCAR A IMAGEM DE PERFIL DE CADA USUÁRIO
+          </p>
+          <p className="text-xs text-muted-foreground text-center">
+            ESSA META DEVE SER PEGA DO PAINEL INDIVIDUAL DE CADA USUÁRIO
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {grupo.membros.map((membro, index) => {
+            // Mock data - estes valores devem vir da API real
+            const vendas = index === 3 ? 50 : 0; // Apenas um SDR com progresso para demonstrar
+            const meta = index === 3 ? 100 : 55;
+            const percentual = meta > 0 ? (vendas / meta) * 100 : 0;
+            
+            return (
+              <div key={membro.id} className="flex items-center gap-3 p-2">
+                {/* Foto do perfil */}
+                <div className="relative">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-background">
+                    {membro.usuario?.photo_url ? (
+                      <img 
+                        src={membro.usuario.photo_url}
+                        alt={membro.usuario?.name || 'User'}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : null}
+                    <span 
+                      className={`text-xs font-medium text-primary ${membro.usuario?.photo_url ? 'hidden' : 'block'}`}
+                    >
+                      {membro.usuario?.name?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium">{membro.usuario?.name}</h3>
-                  <Badge variant="secondary" className="text-xs">
-                    {membro.usuario?.user_type?.toUpperCase()}
-                  </Badge>
+
+                {/* Nome e progresso */}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">{membro.usuario?.name || 'SDR'}</span>
+                    <span className="text-sm font-medium">{vendas}/{meta}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Progress value={percentual} className="flex-1 h-2 mr-2" />
+                    <span className="text-xs text-muted-foreground">{percentual.toFixed(0)}%</span>
+                  </div>
                 </div>
               </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
-                  <div className="font-medium">{vendas}/{meta}</div>
-                  <div className="text-sm text-muted-foreground">{percentual.toFixed(0)}%</div>
-                </div>
-                
-                <div className="w-32">
-                  <Progress value={percentual} className="h-2" />
-                </div>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="text-red-600 border-red-600 hover:bg-red-50"
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Precisa melhorar
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </CardContent>
-    </Card>
+            );
+          })}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
