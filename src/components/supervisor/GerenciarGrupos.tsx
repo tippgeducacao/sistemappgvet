@@ -254,9 +254,16 @@ const GerenciarGrupos: React.FC = () => {
                       <Users className="h-5 w-5" />
                       {grupo.nome_grupo}
                     </CardTitle>
-                    {grupo.descricao && (
-                      <p className="text-sm text-muted-foreground mt-1">{grupo.descricao}</p>
-                    )}
+                    <div className="mt-1 space-y-1">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium">Supervisor:</span> {
+                          vendedores.find(v => v.id === grupo.supervisor_id)?.name || 'Não encontrado'
+                        }
+                      </p>
+                      {grupo.descricao && (
+                        <p className="text-sm text-muted-foreground">{grupo.descricao}</p>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Dialog open={showAddMembroDialog && selectedGrupo === grupo.id} onOpenChange={(open) => {
