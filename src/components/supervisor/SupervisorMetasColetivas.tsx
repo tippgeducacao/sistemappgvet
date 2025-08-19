@@ -53,30 +53,33 @@ const SupervisorMetasColetivas: React.FC = () => {
           return (
             <div key={membro.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center space-x-3">
-                {membro.usuario?.photo_url ? (
-                  <img 
-                    src={membro.usuario.photo_url}
-                    alt={membro.usuario?.name || 'User'}
-                    className="h-10 w-10 rounded-full object-cover"
-                    onError={(e) => {
-                      console.error('🚨 Erro ao carregar imagem:', {
-                        src: membro.usuario?.photo_url,
-                        nome: membro.usuario?.name,
-                        error: e
-                      });
-                    }}
-                    onLoad={() => {
-                      console.log('✅ Imagem carregada com sucesso:', {
-                        src: membro.usuario?.photo_url,
-                        nome: membro.usuario?.name
-                      });
-                    }}
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary font-medium flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-primary/10 text-primary font-medium flex items-center justify-center overflow-hidden">
+                  {membro.usuario?.photo_url ? (
+                    <img 
+                      src={membro.usuario.photo_url}
+                      alt={membro.usuario?.name || 'User'}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        console.error('🚨 Erro ao carregar imagem:', {
+                          src: membro.usuario?.photo_url,
+                          nome: membro.usuario?.name,
+                          error: e
+                        });
+                        // Esconder a imagem em caso de erro
+                        e.currentTarget.style.display = 'none';
+                      }}
+                      onLoad={() => {
+                        console.log('✅ Imagem carregada com sucesso:', {
+                          src: membro.usuario?.photo_url,
+                          nome: membro.usuario?.name
+                        });
+                      }}
+                    />
+                  ) : null}
+                  <span className={`font-medium ${membro.usuario?.photo_url ? 'hidden' : 'block'}`}>
                     {membro.usuario?.name?.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                )}
+                  </span>
+                </div>
                 <div>
                   <h3 className="font-medium">{membro.usuario?.name}</h3>
                   <Badge variant="secondary" className="text-xs">
