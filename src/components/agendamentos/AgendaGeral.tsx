@@ -319,12 +319,20 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
   const getEventosEspeciaisParaHorario = (horario: string) => {
     const horaTimeline = parseInt(horario.split(':')[0]);
+    const minutoTimeline = parseInt(horario.split(':')[1] || '0');
+    const horarioTimelineMinutos = horaTimeline * 60 + minutoTimeline;
     
     return eventosEspeciais.filter(evento => {
-      const horaInicio = parseInt(evento.hora_inicio.split(':')[0]);
-      const horaFim = parseInt(evento.hora_fim.split(':')[0]);
+      // Converter horários de início e fim para minutos
+      const [horaInicio, minutoInicio] = evento.hora_inicio.split(':').map(Number);
+      const [horaFim, minutoFim] = evento.hora_fim.split(':').map(Number);
       
-      return horaTimeline >= horaInicio && horaTimeline < horaFim;
+      const inicioMinutos = horaInicio * 60 + (minutoInicio || 0);
+      const fimMinutos = horaFim * 60 + (minutoFim || 0);
+      
+      // O evento aparece se a hora da timeline está dentro do intervalo do evento
+      // ou se a hora da timeline é a hora de início (para eventos que começam nesta hora)
+      return horarioTimelineMinutos >= inicioMinutos && horarioTimelineMinutos < fimMinutos;
     });
   };
 
