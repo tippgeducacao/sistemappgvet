@@ -405,12 +405,6 @@ const GerenciarIndicacoes: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-end items-center mt-4 pt-4 border-t">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-2" />
-                      Ver todas as informações
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
             ))}
