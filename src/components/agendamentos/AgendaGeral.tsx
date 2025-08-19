@@ -211,29 +211,56 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
       if (eventosError) throw eventosError;
 
+      console.log('🎯 TODOS os eventos da DB:', eventosData);
+      console.log('📅 Data selecionada para filtro:', selectedDate);
+      console.log('📅 Dia da semana da data selecionada:', selectedDate.getDay());
+
       // Filtrar eventos que se aplicam à data selecionada
       const eventosAplicaveis = (eventosData || []).filter(evento => {
+        console.log(`🔍 Verificando evento "${evento.titulo}":`, {
+          isRecorrente: evento.is_recorrente,
+          diasSemana: evento.dias_semana,
+          dataInicioRecorrencia: evento.data_inicio_recorrencia,
+          dataFimRecorrencia: evento.data_fim_recorrencia
+        });
+        
         if (!evento.is_recorrente) {
           // Evento único - verificar se a data está no range
           const dataInicio = new Date(evento.data_inicio).toDateString();
           const dataFim = new Date(evento.data_fim).toDateString();
           const dataAtual = selectedDate.toDateString();
-          return dataAtual >= dataInicio && dataAtual <= dataFim;
+          const resultado = dataAtual >= dataInicio && dataAtual <= dataFim;
+          console.log(`  ➡️ Evento único: ${resultado ? 'APLICÁVEL' : 'NÃO APLICÁVEL'}`);
+          return resultado;
         } else {
           // Evento recorrente - verificar dia da semana e período
           const diaSemana = selectedDate.getDay();
-          if (!evento.dias_semana?.includes(diaSemana)) return false;
+          console.log(`  ➡️ Dia da semana atual: ${diaSemana}, dias configurados:`, evento.dias_semana);
+          
+          if (!evento.dias_semana?.includes(diaSemana)) {
+            console.log(`  ❌ Dia ${diaSemana} não está nos dias configurados`);
+            return false;
+          }
           
           if (evento.data_inicio_recorrencia) {
             const dataInicio = new Date(evento.data_inicio_recorrencia);
-            if (selectedDate < dataInicio) return false;
+            console.log(`  ➡️ Verificando data início recorrência: ${dataInicio} <= ${selectedDate}?`);
+            if (selectedDate < dataInicio) {
+              console.log(`  ❌ Data anterior ao início da recorrência`);
+              return false;
+            }
           }
           
           if (evento.data_fim_recorrencia) {
             const dataFim = new Date(evento.data_fim_recorrencia);
-            if (selectedDate > dataFim) return false;
+            console.log(`  ➡️ Verificando data fim recorrência: ${selectedDate} <= ${dataFim}?`);
+            if (selectedDate > dataFim) {
+              console.log(`  ❌ Data posterior ao fim da recorrência`);
+              return false;
+            }
           }
           
+          console.log(`  ✅ Evento recorrente APLICÁVEL`);
           return true;
         }
       });
