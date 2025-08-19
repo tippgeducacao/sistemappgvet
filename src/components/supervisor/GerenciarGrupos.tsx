@@ -25,7 +25,8 @@ const GerenciarGrupos: React.FC = () => {
   const [novoGrupo, setNovoGrupo] = useState({
     nome: '',
     descricao: '',
-    supervisorId: ''
+    supervisorId: '',
+    sdrsIniciais: [] as string[]
   });
   
   const [novaMeta, setNovaMeta] = useState({
@@ -38,8 +39,18 @@ const GerenciarGrupos: React.FC = () => {
 
   const handleCreateGrupo = async () => {
     try {
-      await createGrupo(novoGrupo.nome, novoGrupo.descricao, novoGrupo.supervisorId);
-      setNovoGrupo({ nome: '', descricao: '', supervisorId: '' });
+      console.log('🚀 Iniciando criação do grupo:', novoGrupo);
+      const grupo = await createGrupo(novoGrupo.nome, novoGrupo.descricao, novoGrupo.supervisorId);
+      
+      // Adicionar SDRs selecionados como membros
+      if (grupo && novoGrupo.sdrsIniciais.length > 0) {
+        console.log('👥 Adicionando SDRs ao grupo:', novoGrupo.sdrsIniciais);
+        for (const sdrId of novoGrupo.sdrsIniciais) {
+          await addMembroGrupo(grupo.id, sdrId);
+        }
+      }
+      
+      setNovoGrupo({ nome: '', descricao: '', supervisorId: '', sdrsIniciais: [] });
       setShowNewGrupoDialog(false);
     } catch (error) {
       console.error('Erro ao criar grupo:', error);
@@ -78,6 +89,13 @@ const GerenciarGrupos: React.FC = () => {
       console.error('Erro ao criar meta:', error);
     }
   };
+
+  // SDRs disponíveis para adição inicial ao grupo
+  const sdrsDisponiveis = vendedores.filter(vendedor => 
+    vendedor.user_type === 'sdr' && 
+    vendedor.ativo &&
+    !novoGrupo.sdrsIniciais.includes(vendedor.id)
+  );
 
   // Filtrar SDRs disponíveis (que não estão no grupo selecionado)
   const vendedoresDisponiveis = vendedores.filter(vendedor => {
@@ -143,6 +161,51 @@ const GerenciarGrupos: React.FC = () => {
                       ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label htmlFor="sdrsIniciais">SDRs Iniciais (opcional)</Label>
+                <Select onValueChange={(value) => {
+                  if (value && !novoGrupo.sdrsIniciais.includes(value)) {
+                    setNovoGrupo(prev => ({ 
+                      ...prev, 
+                      sdrsIniciais: [...prev.sdrsIniciais, value] 
+                    }));
+                  }
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Adicionar SDR ao grupo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sdrsDisponiveis.map(sdr => (
+                      <SelectItem key={sdr.id} value={sdr.id}>
+                        {sdr.name} - {sdr.nivel || 'N/A'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {novoGrupo.sdrsIniciais.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {novoGrupo.sdrsIniciais.map(sdrId => {
+                      const sdr = vendedores.find(v => v.id === sdrId);
+                      return (
+                        <Badge key={sdrId} variant="secondary" className="flex items-center gap-1">
+                          {sdr?.name}
+                          <button
+                            type="button"
+                            onClick={() => setNovoGrupo(prev => ({
+                              ...prev,
+                              sdrsIniciais: prev.sdrsIniciais.filter(id => id !== sdrId)
+                            }))}
+                            className="ml-1 text-xs hover:text-red-500"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <div>
                 <Label htmlFor="descricaoGrupo">Descrição (opcional)</Label>

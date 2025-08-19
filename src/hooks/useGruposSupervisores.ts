@@ -115,21 +115,43 @@ export const useGruposSupervisores = () => {
 
   const createGrupo = async (nome: string, descricao?: string, supervisorId?: string) => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('Usuário não autenticado');
+      console.log('🔄 Iniciando criação de grupo...');
+      console.log('📝 Dados:', { nome, descricao, supervisorId });
+
+      const { data: user, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('❌ Erro de autenticação:', authError);
+        throw authError;
+      }
+      
+      if (!user.user) {
+        console.error('❌ Usuário não encontrado');
+        throw new Error('Usuário não autenticado');
+      }
+
+      console.log('👤 Usuário autenticado:', user.user.id);
+
+      const grupoData = {
+        supervisor_id: supervisorId || user.user.id,
+        nome_grupo: nome,
+        descricao,
+        created_by: user.user.id
+      };
+
+      console.log('📊 Dados do grupo para inserir:', grupoData);
 
       const { data, error } = await (supabase as any)
         .from('grupos_supervisores')
-        .insert({
-          supervisor_id: supervisorId || user.user.id,
-          nome_grupo: nome,
-          descricao,
-          created_by: user.user.id
-        })
+        .insert(grupoData)
         .select()
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro na inserção:', error);
+        throw error;
+      }
+      
+      console.log('✅ Grupo criado com sucesso:', data);
       
       await fetchGrupos();
       toast({
@@ -139,10 +161,10 @@ export const useGruposSupervisores = () => {
       
       return data;
     } catch (error) {
-      console.error('Erro ao criar grupo:', error);
+      console.error('💥 Erro ao criar grupo:', error);
       toast({
         title: "Erro",
-        description: "Erro ao criar grupo",
+        description: `Erro ao criar grupo: ${error?.message || 'Erro desconhecido'}`,
         variant: "destructive",
       });
       throw error;
