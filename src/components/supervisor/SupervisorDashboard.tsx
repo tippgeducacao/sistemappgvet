@@ -8,6 +8,7 @@ import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAgendamentosStatsAdmin } from '@/hooks/useAgendamentosStatsAdmin';
 import { useAuthStore } from '@/stores/AuthStore';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SupervisorMetasColetivas from './SupervisorMetasColetivas';
 
 const SupervisorDashboard: React.FC = () => {
   const { profile } = useAuthStore();
@@ -159,6 +160,9 @@ const SupervisorDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Metas Coletivas */}
+      <SupervisorMetasColetivas />
 
       {/* Tabela de Controle da Equipe */}
       <Card>
