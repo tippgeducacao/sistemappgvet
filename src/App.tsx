@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NovaVenda from "./pages/NovaVenda";
 import Reunioes from "./pages/Reunioes";
+import PublicTVRanking from "./pages/PublicTVRanking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/nova-venda" element={<NovaVenda />} />
               <Route path="/reunioes" element={<Reunioes />} />
+              <Route path="/tv-ranking" element={<PublicTVRanking />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
