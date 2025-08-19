@@ -189,7 +189,7 @@ export const useGruposSupervisores = () => {
           created_by: user.user.id
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       
