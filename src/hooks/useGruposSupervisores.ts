@@ -60,32 +60,47 @@ export const useGruposSupervisores = () => {
         throw authError;
       }
 
-      const { data, error } = await (supabase as any)
+      // Buscar grupos primeiro
+      const { data: gruposData, error: gruposError } = await (supabase as any)
         .from('grupos_supervisores')
-        .select(`
-          *,
-          membros:membros_grupos_supervisores(
-            *,
-            usuario:profiles(
-              id,
-              name,
-              email,
-              user_type,
-              nivel
-            )
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('📊 Resposta da query grupos:', { data, error });
-
-      if (error) {
-        console.error('❌ Erro na query:', error);
-        throw error;
+      if (gruposError) {
+        console.error('❌ Erro na query grupos:', gruposError);
+        throw gruposError;
       }
-      
-      console.log('✅ Grupos encontrados:', data?.length || 0);
-      setGrupos(data as GrupoSupervisor[] || []);
+
+      console.log('📊 Grupos encontrados:', gruposData?.length || 0);
+
+      // Para cada grupo, buscar os membros separadamente
+      const gruposComMembros = await Promise.all(
+        (gruposData || []).map(async (grupo) => {
+          const { data: membrosData, error: membrosError } = await (supabase as any)
+            .from('membros_grupos_supervisores')
+            .select(`
+              *,
+              usuario:profiles!usuario_id(
+                id,
+                name,
+                email,
+                user_type,
+                nivel
+              )
+            `)
+            .eq('grupo_id', grupo.id);
+
+          if (membrosError) {
+            console.error('❌ Erro ao buscar membros do grupo:', grupo.id, membrosError);
+            return { ...grupo, membros: [] };
+          }
+
+          return { ...grupo, membros: membrosData || [] };
+        })
+      );
+
+      console.log('✅ Grupos com membros processados:', gruposComMembros.length);
+      setGrupos(gruposComMembros as GrupoSupervisor[]);
     } catch (error) {
       console.error('💥 Erro ao buscar grupos:', error);
       toast({
