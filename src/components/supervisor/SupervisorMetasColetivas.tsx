@@ -51,8 +51,21 @@ const SupervisorMetasColetivas: React.FC = () => {
               <div className="flex items-center space-x-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage 
-                    src={membro.usuario?.photo_url || ''} 
-                    alt={membro.usuario?.name || 'User'} 
+                    src={membro.usuario?.photo_url || undefined} 
+                    alt={membro.usuario?.name || 'User'}
+                    onError={(e) => {
+                      console.error('🚨 Erro ao carregar imagem:', {
+                        src: membro.usuario?.photo_url,
+                        nome: membro.usuario?.name,
+                        error: e
+                      });
+                    }}
+                    onLoad={() => {
+                      console.log('✅ Imagem carregada com sucesso:', {
+                        src: membro.usuario?.photo_url,
+                        nome: membro.usuario?.name
+                      });
+                    }}
                   />
                   <AvatarFallback className="bg-primary/10 text-primary font-medium">
                     {membro.usuario?.name?.charAt(0).toUpperCase() || 'U'}
