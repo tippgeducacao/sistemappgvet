@@ -48,7 +48,18 @@ export const useGruposSupervisores = () => {
 
   const fetchGrupos = async () => {
     try {
+      console.log('🔄 Iniciando busca de grupos...');
       setLoading(true);
+      
+      // Verificar autenticação
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      console.log('👤 Usuário atual:', userData?.user?.id, userData?.user?.email);
+      
+      if (authError) {
+        console.error('❌ Erro de autenticação:', authError);
+        throw authError;
+      }
+
       const { data, error } = await (supabase as any)
         .from('grupos_supervisores')
         .select(`
@@ -66,13 +77,20 @@ export const useGruposSupervisores = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('📊 Resposta da query grupos:', { data, error });
+
+      if (error) {
+        console.error('❌ Erro na query:', error);
+        throw error;
+      }
+      
+      console.log('✅ Grupos encontrados:', data?.length || 0);
       setGrupos(data as GrupoSupervisor[] || []);
     } catch (error) {
-      console.error('Erro ao buscar grupos:', error);
+      console.error('💥 Erro ao buscar grupos:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar grupos",
+        description: `Erro ao carregar grupos: ${error?.message || 'Erro desconhecido'}`,
         variant: "destructive",
       });
     } finally {
