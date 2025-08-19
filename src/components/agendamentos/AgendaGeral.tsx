@@ -213,6 +213,8 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
 
       // Filtrar eventos que se aplicam à data selecionada
       const eventosAplicaveis = (eventosData || []).filter(evento => {
+        console.log('🔍 Verificando evento:', evento.titulo, evento);
+        
         if (!evento.is_recorrente) {
           // Evento único - verificar se a data está no range
           const dataInicio = new Date(evento.data_inicio).toDateString();
@@ -222,18 +224,31 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
         } else {
           // Evento recorrente - verificar dia da semana e período
           const diaSemana = selectedDate.getDay();
-          if (!evento.dias_semana?.includes(diaSemana)) return false;
+          console.log('📅 Data selecionada:', selectedDate, 'Dia da semana (JS):', diaSemana);
+          console.log('📅 Dias configurados no evento:', evento.dias_semana);
+          
+          if (!evento.dias_semana?.includes(diaSemana)) {
+            console.log('❌ Dia da semana não está nos dias configurados');
+            return false;
+          }
           
           if (evento.data_inicio_recorrencia) {
             const dataInicio = new Date(evento.data_inicio_recorrencia);
-            if (selectedDate < dataInicio) return false;
+            if (selectedDate < dataInicio) {
+              console.log('❌ Data selecionada anterior ao início da recorrência');
+              return false;
+            }
           }
           
           if (evento.data_fim_recorrencia) {
             const dataFim = new Date(evento.data_fim_recorrencia);
-            if (selectedDate > dataFim) return false;
+            if (selectedDate > dataFim) {
+              console.log('❌ Data selecionada posterior ao fim da recorrência');
+              return false;
+            }
           }
           
+          console.log('✅ Evento aplicável à data selecionada');
           return true;
         }
       });
