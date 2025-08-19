@@ -42,6 +42,7 @@ const SupervisorMetasColetivas: React.FC = () => {
       <CardContent className="space-y-4">
         {grupo.membros.map((membro) => {
           console.log('🔍 Renderizando membro:', membro);
+          console.log('🔍 URL da foto:', membro.usuario?.photo_url);
           const vendas = 0; // TODO: Buscar vendas reais
           const meta = 55; // TODO: Buscar meta real
           const percentual = meta > 0 ? (vendas / meta) * 100 : 0;
@@ -49,10 +50,11 @@ const SupervisorMetasColetivas: React.FC = () => {
           return (
             <div key={membro.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center space-x-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage 
-                    src={membro.usuario?.photo_url || undefined} 
+                {membro.usuario?.photo_url ? (
+                  <img 
+                    src={membro.usuario.photo_url}
                     alt={membro.usuario?.name || 'User'}
+                    className="h-10 w-10 rounded-full object-cover"
                     onError={(e) => {
                       console.error('🚨 Erro ao carregar imagem:', {
                         src: membro.usuario?.photo_url,
@@ -67,10 +69,11 @@ const SupervisorMetasColetivas: React.FC = () => {
                       });
                     }}
                   />
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary font-medium flex items-center justify-center">
                     {membro.usuario?.name?.charAt(0).toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
+                  </div>
+                )}
                 <div>
                   <h3 className="font-medium">{membro.usuario?.name}</h3>
                   <Badge variant="secondary" className="text-xs">
