@@ -1,8 +1,8 @@
 import React from 'react';
-import SupervisorMetasColetivas from './SupervisorMetasColetivas';
+import SupervisorDashboardNovo from './SupervisorDashboardNovo';
 
 const SupervisorDashboard: React.FC = () => {
-  return <SupervisorMetasColetivas />;
+  return <SupervisorDashboardNovo />;
 };
 
 export default SupervisorDashboard;
