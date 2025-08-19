@@ -732,6 +732,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_membros_grupos_supervisores_grupo"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos_supervisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_membros_grupos_supervisores_usuario"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "membros_grupos_supervisores_grupo_id_fkey"
             columns: ["grupo_id"]
             isOneToOne: false
