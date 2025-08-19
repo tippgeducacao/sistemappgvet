@@ -351,64 +351,68 @@ const GerenciarIndicacoes: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Lista de Indicados */}
-          <div className="grid gap-4">
-            {filteredIndicacoes?.map((indicacao) => (
-              <Card key={indicacao.id}>
-                <CardContent className="p-6">
-                  <div className="grid md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Cadastrado Por:</label>
-                        <p className="text-sm">{indicacao.cadastrado_por}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Nome do aluno:</label>
-                        <p className="text-sm">{indicacao.nome_aluno}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">WhatsApp do aluno:</label>
-                        <p className="text-sm">{indicacao.whatsapp_aluno}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Nome do indicado:</label>
-                        <p className="text-sm">{indicacao.nome_indicado}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">WhatsApp do indicado:</label>
-                        <p className="text-sm">{indicacao.whatsapp_indicado}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Formação:</label>
-                        <p className="text-sm">{indicacao.formacao || 'Não informado'}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Área de interesse:</label>
-                        <p className="text-sm">{indicacao.area_interesse || 'Não informado'}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Observações:</label>
-                        <p className="text-sm">{indicacao.observacoes || 'Nenhuma observação'}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Data de cadastro:</label>
-                        <p className="text-sm">
-                          {format(new Date(indicacao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {/* Tabela de Indicados */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b">
+                    <tr className="bg-muted/50">
+                      <th className="text-left p-4 font-medium">Nome do Indicado</th>
+                      <th className="text-left p-4 font-medium">WhatsApp Indicado</th>
+                      <th className="text-left p-4 font-medium">Nome do Aluno</th>
+                      <th className="text-left p-4 font-medium">WhatsApp Aluno</th>
+                      <th className="text-left p-4 font-medium">Data Cadastro</th>
+                      <th className="text-left p-4 font-medium">Status</th>
+                      <th className="text-left p-4 font-medium">Formação</th>
+                      <th className="text-left p-4 font-medium">Área de Interesse</th>
+                      <th className="text-left p-4 font-medium">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredIndicacoes?.map((indicacao) => (
+                      <tr key={indicacao.id} className="border-b hover:bg-muted/25">
+                        <td className="p-4">{indicacao.nome_indicado}</td>
+                        <td className="p-4 text-green-600">{indicacao.whatsapp_indicado}</td>
+                        <td className="p-4">{indicacao.nome_aluno}</td>
+                        <td className="p-4 text-green-600">{indicacao.whatsapp_aluno}</td>
+                        <td className="p-4">
+                          {format(new Date(indicacao.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                        </td>
+                        <td className="p-4">
+                          <Badge 
+                            variant={indicacao.status === 'novo' ? 'default' : 'secondary'}
+                            className={
+                              indicacao.status === 'novo' ? 'bg-blue-100 text-blue-800' :
+                              indicacao.status === 'reuniao' ? 'bg-orange-100 text-orange-800' :
+                              'bg-gray-100 text-gray-800'
+                            }
+                          >
+                            {indicacao.status === 'novo' ? 'Novo' : 
+                             indicacao.status === 'reuniao' ? 'Reunião' : indicacao.status}
+                          </Badge>
+                        </td>
+                        <td className="p-4">{indicacao.formacao || 'Não informado'}</td>
+                        <td className="p-4">{indicacao.area_interesse || 'Não informado'}</td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title="Ver detalhes"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
 
           {filteredIndicacoes?.length === 0 && (
             <Card>
