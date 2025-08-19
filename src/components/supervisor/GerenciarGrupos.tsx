@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -373,6 +374,7 @@ const GerenciarGrupos: React.FC = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead>Foto</TableHead>
                           <TableHead>Nome</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Tipo</TableHead>
@@ -383,6 +385,14 @@ const GerenciarGrupos: React.FC = () => {
                       <TableBody>
                         {grupo.membros.map((membro) => (
                           <TableRow key={membro.id}>
+                            <TableCell>
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={membro.usuario?.photo_url || ''} alt={membro.usuario?.name} />
+                                <AvatarFallback>
+                                  {membro.usuario?.name?.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                            </TableCell>
                             <TableCell>{membro.usuario?.name}</TableCell>
                             <TableCell>{membro.usuario?.email}</TableCell>
                             <TableCell>

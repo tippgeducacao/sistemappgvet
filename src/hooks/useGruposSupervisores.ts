@@ -25,6 +25,7 @@ export interface MembroGrupo {
     email: string;
     user_type: string;
     nivel?: string;
+    photo_url?: string;
   };
 }
 
@@ -85,7 +86,8 @@ export const useGruposSupervisores = () => {
                 name,
                 email,
                 user_type,
-                nivel
+                nivel,
+                photo_url
               )
             `)
             .eq('grupo_id', grupo.id);
