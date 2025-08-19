@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, ChevronLeft, ChevronRight, Clock, User, ExternalLink } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -27,9 +27,13 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
   const mesAnterior = () => setMesAtual(subMonths(mesAtual, 1));
   const proximoMes = () => setMesAtual(addMonths(mesAtual, 1));
 
-  const diasDoMes = eachDayOfInterval({
-    start: startOfMonth(mesAtual),
-    end: endOfMonth(mesAtual)
+  // Criar grade completa do calendário (semanas completas)
+  const inicioCalendario = startOfWeek(startOfMonth(mesAtual), { weekStartsOn: 0 }); // Começar no domingo
+  const fimCalendario = endOfWeek(endOfMonth(mesAtual), { weekStartsOn: 0 });
+  
+  const diasDoCalendario = eachDayOfInterval({
+    start: inicioCalendario,
+    end: fimCalendario
   });
 
   const getAgendamentosDoDia = (dia: Date) => {
@@ -107,7 +111,7 @@ const ReunisoesCalendario: React.FC<ReunisoesCalendarioProps> = ({
           </div>
           
           <div className="grid grid-cols-7 gap-2">
-            {diasDoMes.map(dia => {
+            {diasDoCalendario.map(dia => {
               const agendamentosDoDia = getAgendamentosDoDia(dia);
               const isOutsideMonth = !isSameMonth(dia, mesAtual);
               
