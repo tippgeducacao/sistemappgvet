@@ -265,6 +265,7 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
       setEventosEspeciais(eventosAplicaveis);
       console.log('📅 Agendamentos carregados:', agendamentosFormatados);
       console.log('🎯 Eventos especiais aplicáveis:', eventosAplicaveis);
+      console.log('📊 Total de eventos carregados da DB:', eventosData?.length || 0);
     } catch (error) {
       console.error('Erro ao carregar agendamentos da data:', error);
     }
