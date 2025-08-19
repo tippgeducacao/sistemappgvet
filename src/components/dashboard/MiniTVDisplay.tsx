@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ZoomIn, Trophy, TrendingUp, Target, Users } from 'lucide-react';
+import { ZoomIn, Trophy, Monitor, Copy } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 import TVRankingDisplay from './TVRankingDisplay';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
@@ -33,6 +34,17 @@ const MiniTVDisplay: React.FC<MiniTVDisplayProps> = ({
   selectedYear 
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopyTVLink = () => {
+    const tvUrl = `${window.location.origin}/tv-ranking`;
+    navigator.clipboard.writeText(tvUrl).then(() => {
+      toast({
+        title: "Link copiado!",
+        description: "Link da TV do ranking copiado para a área de transferência.",
+      });
+    });
+  };
   
   // Hooks para dados
   const { vendas, isLoading: vendasLoading } = useAllVendas();
@@ -126,15 +138,34 @@ const MiniTVDisplay: React.FC<MiniTVDisplayProps> = ({
               <Trophy className="h-6 w-6 text-yellow-400" />
               Ranking de Vendas - TV
             </CardTitle>
-            <Button
-              onClick={() => setIsExpanded(true)}
-              variant="outline"
-              size="sm"
-              className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
-            >
-              <ZoomIn className="h-4 w-4" />
-              Expandir
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => window.open('/tv-ranking', '_blank')}
+                variant="outline"
+                size="sm"
+                className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                <Monitor className="h-4 w-4" />
+                TV Público
+              </Button>
+              <Button
+                onClick={handleCopyTVLink}
+                variant="outline"
+                size="sm"
+                className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={() => setIsExpanded(true)}
+                variant="outline"
+                size="sm"
+                className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                <ZoomIn className="h-4 w-4" />
+                Expandir
+              </Button>
+            </div>
           </div>
         </CardHeader>
         

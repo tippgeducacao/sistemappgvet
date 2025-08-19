@@ -15,10 +15,13 @@ import { ReunioesAdminChart } from './ReunioesAdminChart';
 import { ReunioesVendedoresChart } from './ReunioesVendedoresChart';
 
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Monitor, Copy } from 'lucide-react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
+import { useToast } from '@/hooks/use-toast';
 import type { UserType } from '@/types/user';
 
 interface DashboardContainerProps {
@@ -28,6 +31,7 @@ interface DashboardContainerProps {
 const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => {
   const { isDiretor, isAdmin, isSecretaria } = useUserRoles();
   const { vendedores } = useVendedores();
+  const { toast } = useToast();
   
   // Usar lógica de semanas consistente - igual aos SDRs
   const { getMesAnoSemanaAtual } = useMetasSemanais();
@@ -39,6 +43,16 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   
   // Estado para filtro por vendedor
   const [selectedVendedor, setSelectedVendedor] = useState<string>('todos');
+
+  const handleCopyTVLink = () => {
+    const tvUrl = `${window.location.origin}/tv-ranking`;
+    navigator.clipboard.writeText(tvUrl).then(() => {
+      toast({
+        title: "Link copiado!",
+        description: "Link da TV do ranking copiado para a área de transferência.",
+      });
+    });
+  };
 
   const handleMonthChange = (month: number) => {
     setSelectedMonth(month);
@@ -62,7 +76,7 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   if (isDiretor || isAdmin || isSecretaria || userType === 'diretor' || userType === 'admin' || userType === 'secretaria') {
     return (
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Vendedor:</span>
             <Select value={selectedVendedor} onValueChange={setSelectedVendedor}>
@@ -78,6 +92,27 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => window.open('/tv-ranking', '_blank')}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <Monitor className="h-4 w-4" />
+              Abrir TV (público)
+            </Button>
+            <Button
+              onClick={handleCopyTVLink}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              Copiar link
+            </Button>
           </div>
         </div>
         
