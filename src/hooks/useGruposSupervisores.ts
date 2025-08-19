@@ -77,6 +77,8 @@ export const useGruposSupervisores = () => {
       // Para cada grupo, buscar os membros separadamente
       const gruposComMembros = await Promise.all(
         (gruposData || []).map(async (grupo) => {
+          console.log(`🔍 Buscando membros do grupo: ${grupo.nome_grupo} (${grupo.id})`);
+          
           const { data: membrosData, error: membrosError } = await (supabase as any)
             .from('membros_grupos_supervisores')
             .select(`
@@ -96,6 +98,9 @@ export const useGruposSupervisores = () => {
             console.error('❌ Erro ao buscar membros do grupo:', grupo.id, membrosError);
             return { ...grupo, membros: [] };
           }
+
+          console.log(`👥 Membros encontrados para grupo ${grupo.nome_grupo}:`, membrosData?.length || 0);
+          console.log('📋 Dados dos membros:', membrosData);
 
           return { ...grupo, membros: membrosData || [] };
         })
