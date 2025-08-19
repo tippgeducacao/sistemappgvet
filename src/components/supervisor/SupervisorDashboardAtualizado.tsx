@@ -1,14 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Calendar, Target, TrendingUp, Edit } from 'lucide-react';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAuthStore } from '@/stores/AuthStore';
+import MonthYearSelector from '@/components/common/MonthYearSelector';
 
 export const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
   const { grupos, loading } = useGruposSupervisores();
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   // Encontrar o grupo do supervisor logado
   const meuGrupo = useMemo(() => {
@@ -41,6 +44,28 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
       </div>
 
       <div className="px-6 py-6 space-y-6">
+        {/* Filtros de Período */}
+        <Card className="bg-white shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-gray-700">Filtrar por período:</span>
+                <MonthYearSelector
+                  selectedMonth={selectedMonth}
+                  selectedYear={selectedYear}
+                  onMonthChange={setSelectedMonth}
+                  onYearChange={setSelectedYear}
+                  showAll={false}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm">Semana</Button>
+                <Button variant="default" size="sm">Mês</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Cards de Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Minhas Reuniões */}
