@@ -38,11 +38,11 @@ const [modalOpen, setModalOpen] = useState(false);
 
   // Separar por status
   const agendamentosAgendados = todosAgendamentos.filter(ag => 
-    ['agendado', 'remarcado'].includes(ag.status)
+    ag.status === 'agendado'
   );
   
   const agendamentosFinalizados = todosAgendamentos.filter(ag => 
-    ['finalizado', 'finalizado_venda', 'cancelado', 'atrasado'].includes(ag.status)
+    ag.status !== 'agendado'
   );
 
   console.log('Agendados:', agendamentosAgendados.length, 'Finalizados:', agendamentosFinalizados.length);
