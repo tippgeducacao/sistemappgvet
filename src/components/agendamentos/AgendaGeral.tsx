@@ -189,7 +189,18 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
     try {
       const dataFormatada = format(selectedDate, 'yyyy-MM-dd');
       
-      // Carregar agendamentos
+      console.log('🔍 AGENDA GERAL - Carregando agendamentos para:', dataFormatada);
+      
+      // Carregar agendamentos - USANDO FUSO HORÁRIO BRASILEIRO PARA CONSULTA
+      // Isso garante que agendamentos criados no Brasil sejam exibidos na data correta
+      const inicioDataBrasil = `${dataFormatada}T00:00:00-03:00`;
+      const fimDataBrasil = `${dataFormatada}T23:59:59-03:00`;
+      
+      console.log('📅 AGENDA GERAL - Consultando com fuso brasileiro:', {
+        inicio: inicioDataBrasil,
+        fim: fimDataBrasil
+      });
+      
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -198,8 +209,8 @@ const AgendaGeral: React.FC<AgendaGeralProps> = ({ isOpen, onClose }) => {
           sdr:profiles!agendamentos_sdr_id_fkey(name),
           leads!inner(nome)
         `)
-        .gte('data_agendamento', `${dataFormatada}T00:00:00`)
-        .lt('data_agendamento', `${dataFormatada}T23:59:59`)
+        .gte('data_agendamento', inicioDataBrasil)
+        .lt('data_agendamento', fimDataBrasil)
         .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'remarcado']);
 
       if (error) throw error;
