@@ -682,9 +682,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     vendasDia: vendasDiaAtual.length
   });
 
-  // Calcular dados dos vendedores (filtrar apenas vendedores e SDRs, excluir admins)
+  // Calcular dados dos vendedores (filtrar apenas vendedores e SDRs ativos, excluir admins)
   const vendedoresData: VendedorData[] = vendedores
-    .filter(vendedor => vendedor.user_type && !vendedor.user_type.includes('admin'))
+    .filter(vendedor => 
+      vendedor.user_type && 
+      !vendedor.user_type.includes('admin') && 
+      vendedor.ativo === true
+    )
     .map(vendedor => {
     const isSDR = vendedor.user_type?.includes('sdr') || false;
     

@@ -5,15 +5,20 @@ export class SemanasConsecutivasService {
     console.log('🔄 Calculando semanas consecutivas para vendedor:', vendedorId);
     
     try {
-      // Buscar o perfil do vendedor
+      // Buscar o perfil do vendedor e verificar se está ativo
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('user_type, nivel')
+        .select('user_type, nivel, ativo')
         .eq('id', vendedorId)
         .single();
 
       if (profileError || !profile) {
         console.error('❌ Erro ao buscar perfil:', profileError);
+        return 0;
+      }
+
+      if (!profile.ativo) {
+        console.log(`⚠️ Vendedor desativado: ${vendedorId}`);
         return 0;
       }
 
@@ -95,14 +100,19 @@ export class SemanasConsecutivasService {
       return 0;
     }
 
-    // Buscar tipo do SDR e data de criação
+    // Buscar tipo do SDR, data de criação e verificar se está ativo
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_type, created_at')
+      .select('user_type, created_at, ativo')
       .eq('id', vendedorId)
       .single();
 
     if (profileError || !profile) {
+      return 0;
+    }
+
+    if (!profile.ativo) {
+      console.log(`⚠️ SDR desativado: ${vendedorId}`);
       return 0;
     }
 
@@ -232,6 +242,18 @@ export class SemanasConsecutivasService {
   }
 
   static async atualizarSemanasConsecutivas(vendedorId: string): Promise<void> {
+    // Verificar se o usuário está ativo antes de atualizar
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('ativo')
+      .eq('id', vendedorId)
+      .single();
+    
+    if (!profile?.ativo) {
+      console.log(`⚠️ Usuário desativado, não atualizando semanas consecutivas: ${vendedorId}`);
+      return;
+    }
+    
     const semanas = await this.calcularSemanasConsecutivas(vendedorId);
     
     const { error } = await supabase

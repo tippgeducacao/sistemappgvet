@@ -23,12 +23,13 @@ export class SDRComissionamentoService {
     semana: number
   ): Promise<SDRComissionamentoData | null> {
     try {
-      // Buscar dados do SDR
+      // Buscar dados do SDR e verificar se está ativo
       const { data: sdrData, error: sdrError } = await supabase
         .from('profiles')
-        .select('name, nivel, user_type')
+        .select('name, nivel, user_type, ativo')
         .eq('id', sdrId)
         .eq('user_type', 'sdr')
+        .eq('ativo', true)
         .single();
 
       if (sdrError || !sdrData) {

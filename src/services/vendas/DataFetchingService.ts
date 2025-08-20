@@ -21,7 +21,7 @@ export class DataFetchingService {
     const [alunosResult, cursosResult, profilesResult, rulesResult] = await Promise.allSettled([
       supabase.from('alunos').select('*'),
       supabase.from('cursos').select('*'), // Buscar TODOS os cursos para resolver vendas existentes
-      supabase.from('profiles').select('*'),
+      supabase.from('profiles').select('*').eq('ativo', true), // CORREÇÃO: Filtrar apenas usuários ativos
       this.fetchScoringRules()
     ]);
 
