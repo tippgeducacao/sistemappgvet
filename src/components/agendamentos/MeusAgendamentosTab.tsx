@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw, List, History } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -12,6 +13,7 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
 import AgendamentoDetailsModal from './AgendamentoDetailsModal';
 import EditarHorarioSDRDialog from './EditarHorarioSDRDialog';
+import HistoricoReunioes from '@/components/sdr/HistoricoReunioes';
 
 interface MeusAgendamentosTabProps {
   agendamentos: AgendamentoSDR[];
@@ -26,9 +28,9 @@ const [modalOpen, setModalOpen] = useState(false);
   const [editingAgendamento, setEditingAgendamento] = useState<AgendamentoSDR | null>(null);
 
 
-  // Filtrar agendamentos do SDR logado
-  const todosAgendamentos = agendamentos
-    .filter(ag => ag.sdr_id === profile?.id)
+  // Filtrar agendamentos do SDR logado - apenas os que ainda estão agendados
+  const agendamentosAgendados = agendamentos
+    .filter(ag => ag.sdr_id === profile?.id && ['agendado', 'remarcado'].includes(ag.status))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const cancelarAgendamento = async (agendamentoId: string) => {
@@ -233,7 +235,7 @@ const [modalOpen, setModalOpen] = useState(false);
         <div>
           <h3 className="text-lg font-semibold">Meus Agendamentos</h3>
           <p className="text-sm text-muted-foreground">
-            Agendamentos que você criou - você pode cancelar
+            Agendamentos que você criou e histórico de reuniões
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -246,12 +248,31 @@ const [modalOpen, setModalOpen] = useState(false);
             <RefreshCw className="h-4 w-4" />
           </Button>
           <Badge variant="outline">
-            {todosAgendamentos.length} agendamento(s)
+            {agendamentosAgendados.length} agendamento(s) ativo(s)
           </Badge>
         </div>
       </div>
 
-      {renderAgendamentosList(todosAgendamentos, "Você ainda não tem agendamentos")}
+      <Tabs defaultValue="agendados" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="agendados" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            Agendados ({agendamentosAgendados.length})
+          </TabsTrigger>
+          <TabsTrigger value="historico" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Histórico
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="agendados">
+          {renderAgendamentosList(agendamentosAgendados, "Você ainda não tem agendamentos pendentes")}
+        </TabsContent>
+
+        <TabsContent value="historico">
+          <HistoricoReunioes />
+        </TabsContent>
+      </Tabs>
 
       <AgendamentoDetailsModal
         agendamento={selectedAgendamento}
