@@ -41,7 +41,7 @@ const [modalOpen, setModalOpen] = useState(false);
   );
   
   const agendamentosFinalizados = todosAgendamentos.filter(ag => 
-    ag.resultado_reuniao && ['finalizado', 'finalizado_venda'].includes(ag.status)
+    !['agendado', 'remarcado'].includes(ag.status)
   );
 
   const cancelarAgendamento = async (agendamentoId: string) => {
