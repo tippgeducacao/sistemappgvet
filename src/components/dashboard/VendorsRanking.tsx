@@ -787,10 +787,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         
         const reunioesNaSemana = agendamentos?.filter(agendamento => {
           if (agendamento.sdr_id !== sdr.id) return false;
+          
+          // CRÍTICO: Apenas agendamentos finalizados/realizados
+          if (agendamento.status !== 'realizado') return false;
+          
           // Contar apenas reuniões onde houve comparecimento confirmado (mesma lógica do TV)
           const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
                             agendamento.resultado_reuniao === 'comprou';
           if (!compareceu) return false;
+          
           const dataAgendamento = new Date(agendamento.data_agendamento);
           return dataAgendamento >= startDate && dataAgendamento <= endDate;
         }) || [];
