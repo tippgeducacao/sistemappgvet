@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw, List } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -13,6 +14,7 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
 import AgendamentoDetailsModal from './AgendamentoDetailsModal';
 import EditarHorarioSDRDialog from './EditarHorarioSDRDialog';
+import MeusAgendamentosCalendario from './MeusAgendamentosCalendario';
 
 interface MeusAgendamentosTabProps {
   agendamentos: AgendamentoSDR[];
@@ -27,16 +29,21 @@ const [modalOpen, setModalOpen] = useState(false);
   const [editingAgendamento, setEditingAgendamento] = useState<AgendamentoSDR | null>(null);
 
 
-  // Filtrar apenas os agendamentos do SDR logado que não foram finalizados
-  // Ordenar pelo último criado primeiro (created_at decrescente)
-  const meusAgendamentos = agendamentos
-    .filter(ag => 
-      ag.sdr_id === profile?.id && (
-        !['finalizado', 'finalizado_venda'].includes(ag.status) ||
-        !ag.resultado_reuniao
-      )
-    )
+  // Filtrar agendamentos do SDR logado
+  const todosAgendamentos = agendamentos
+    .filter(ag => ag.sdr_id === profile?.id)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // Separar por status
+  const agendamentosAgendados = todosAgendamentos.filter(ag => 
+    !['finalizado', 'finalizado_venda', 'cancelado'].includes(ag.status) ||
+    ((['finalizado', 'finalizado_venda'].includes(ag.status)) && !ag.resultado_reuniao)
+  );
+  
+  const agendamentosFinalizados = todosAgendamentos.filter(ag => 
+    (['finalizado', 'finalizado_venda'].includes(ag.status) && ag.resultado_reuniao) ||
+    ag.status === 'cancelado'
+  );
 
   const cancelarAgendamento = async (agendamentoId: string) => {
     try {
@@ -79,31 +86,9 @@ const [modalOpen, setModalOpen] = useState(false);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Meus Agendamentos</h3>
-          <p className="text-sm text-muted-foreground">
-            Agendamentos que você criou - você pode cancelar
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            title="Atualizar agendamentos"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Badge variant="outline">
-            {meusAgendamentos.length} agendamento(s)
-          </Badge>
-        </div>
-      </div>
-
-      {meusAgendamentos.length === 0 ? (
+  const renderAgendamentosList = (agendamentosList: AgendamentoSDR[], emptyMessage: string) => {
+    if (agendamentosList.length === 0) {
+      return (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
@@ -111,104 +96,117 @@ const [modalOpen, setModalOpen] = useState(false);
               Nenhum agendamento encontrado
             </h3>
             <p className="text-sm text-muted-foreground text-center">
-              Você ainda não criou nenhum agendamento
+              {emptyMessage}
             </p>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-4">
-          {meusAgendamentos.map((agendamento) => (
-            <Card key={agendamento.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(agendamento.status)}>
-                        {getStatusText(agendamento.status)}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        Agendado para {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })} das {format(new Date(agendamento.data_agendamento), "HH:mm", { locale: ptBR })}
-                        {agendamento.data_fim_agendamento && 
-                          ` às ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm', { locale: ptBR })}`
-                        }
-                      </span>
-                    </div>
+      );
+    }
 
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{agendamento.lead?.nome}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{agendamento.pos_graduacao_interesse}</span>
-                      </div>
-
-                      {agendamento.vendedor?.name && (
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">Vendedor: {agendamento.vendedor.name}</span>
-                        </div>
-                      )}
-
-                      {agendamento.sdr?.name && (
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">SDR: {agendamento.sdr.name}</span>
-                        </div>
-                      )}
-
-                      {/* Data de criação da reunião */}
-                      {agendamento.created_at && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">
-                            Reunião criada em: {format(new Date(agendamento.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          </span>
-                        </div>
-                      )}
-
-                      {agendamento.observacoes && (
-                        <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
-                          {agendamento.observacoes}
-                        </div>
-                      )}
-                    </div>
+    return (
+      <div className="grid gap-4">
+        {agendamentosList.map((agendamento) => (
+          <Card key={agendamento.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Badge className={getStatusColor(agendamento.status)}>
+                      {getStatusText(agendamento.status)}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Agendado para {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })} das {format(new Date(agendamento.data_agendamento), "HH:mm", { locale: ptBR })}
+                      {agendamento.data_fim_agendamento && 
+                        ` às ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm', { locale: ptBR })}`
+                      }
+                    </span>
                   </div>
 
-<div className="flex items-center gap-2 ml-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{agendamento.lead?.nome}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{agendamento.pos_graduacao_interesse}</span>
+                    </div>
+
+                    {agendamento.vendedor?.name && (
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Vendedor: {agendamento.vendedor.name}</span>
+                      </div>
+                    )}
+
+                    {agendamento.sdr?.name && (
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">SDR: {agendamento.sdr.name}</span>
+                      </div>
+                    )}
+
+                    {/* Data de criação da reunião */}
+                    {agendamento.created_at && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
+                          Reunião criada em: {format(new Date(agendamento.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                    )}
+
+                    {agendamento.observacoes && (
+                      <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                        {agendamento.observacoes}
+                      </div>
+                    )}
+
+                    {agendamento.resultado_reuniao && (
+                      <div className="text-sm">
+                        <strong>Resultado:</strong> {
+                          agendamento.resultado_reuniao === 'nao_compareceu' ? 'Não Compareceu' :
+                          agendamento.resultado_reuniao === 'compareceu_nao_comprou' ? 'Compareceu mas Não Comprou' :
+                          agendamento.resultado_reuniao === 'comprou' ? 'Comprou' : agendamento.resultado_reuniao
+                        }
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 ml-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedAgendamento(agendamento);
+                      setModalOpen(true);
+                    }}
+                    title="Visualizar detalhes do agendamento"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  {(['agendado','atrasado'].includes(agendamento.status)) && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setSelectedAgendamento(agendamento);
-                        setModalOpen(true);
+                        setEditingAgendamento(agendamento);
+                        setEditOpen(true);
                       }}
-                      title="Visualizar detalhes do agendamento"
+                      title="Editar horário da reunião"
                     >
-                      <Eye className="h-4 w-4" />
+                      <Edit className="h-4 w-4" />
                     </Button>
-                    {(['agendado','atrasado'].includes(agendamento.status)) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingAgendamento(agendamento);
-                          setEditOpen(true);
-                        }}
-                        title="Editar horário da reunião"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    )}
+                  )}
 
+                  {agendamento.status !== 'cancelado' && !agendamento.resultado_reuniao && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled={agendamento.status === 'cancelado'}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -233,13 +231,69 @@ const [modalOpen, setModalOpen] = useState(false);
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Meus Agendamentos</h3>
+          <p className="text-sm text-muted-foreground">
+            Agendamentos que você criou - você pode cancelar
+          </p>
         </div>
-      )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRefresh}
+            title="Atualizar agendamentos"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Badge variant="outline">
+            {todosAgendamentos.length} agendamento(s)
+          </Badge>
+        </div>
+      </div>
+
+      <Tabs defaultValue="agendados" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="agendados" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            Agendados ({agendamentosAgendados.length})
+          </TabsTrigger>
+          <TabsTrigger value="finalizados" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            Finalizados ({agendamentosFinalizados.length})
+          </TabsTrigger>
+          <TabsTrigger value="calendario" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Calendário
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="agendados">
+          {renderAgendamentosList(agendamentosAgendados, "Você ainda não tem agendamentos pendentes")}
+        </TabsContent>
+
+        <TabsContent value="finalizados">
+          {renderAgendamentosList(agendamentosFinalizados, "Você ainda não tem agendamentos finalizados")}
+        </TabsContent>
+
+        <TabsContent value="calendario">
+          <MeusAgendamentosCalendario agendamentos={todosAgendamentos} />
+        </TabsContent>
+      </Tabs>
+
 
       <AgendamentoDetailsModal
         agendamento={selectedAgendamento}
