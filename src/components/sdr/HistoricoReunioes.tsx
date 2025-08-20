@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye, Filter, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/AuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingState from '@/components/ui/loading-state';
@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import type { DateRange } from 'react-day-picker';
 
@@ -44,8 +45,16 @@ const HistoricoReunioes: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useAuthStore();
 
-  // Estado para filtros de período
+  // Estado para filtros
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+
+  // Opções de status de resultado
+  const statusOptions = [
+    { value: 'comprou', label: 'Converteu', color: 'bg-green-100 text-green-800' },
+    { value: 'compareceu_nao_comprou', label: 'Compareceu', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'nao_compareceu', label: 'Não Compareceu', color: 'bg-red-100 text-red-800' }
+  ];
 
   const fetchHistoricoReunioes = async () => {
     if (!profile?.id) return;
@@ -87,16 +96,39 @@ const HistoricoReunioes: React.FC = () => {
     fetchHistoricoReunioes();
   }, [profile?.id]);
 
-  // Filtrar reuniões pelo período selecionado
+  // Filtrar reuniões pelo período e status selecionados
   const reunioesFiltradas = reunioes.filter(reuniao => {
-    if (!dateRange?.from && !dateRange?.to) return true;
+    // Filtro por período
+    if (dateRange?.from || dateRange?.to) {
+      const dataAgendamento = new Date(reuniao.data_agendamento);
+      if (dateRange.from && dataAgendamento < dateRange.from) return false;
+      if (dateRange.to && dataAgendamento > dateRange.to) return false;
+    }
     
-    const dataAgendamento = new Date(reuniao.data_agendamento);
-    if (dateRange.from && dataAgendamento < dateRange.from) return false;
-    if (dateRange.to && dataAgendamento > dateRange.to) return false;
+    // Filtro por status de resultado 
+    if (selectedStatus.length > 0) {
+      if (!reuniao.resultado_reuniao || !selectedStatus.includes(reuniao.resultado_reuniao)) {
+        return false;
+      }
+    }
     
     return true;
   });
+
+  const handleStatusToggle = (status: string) => {
+    setSelectedStatus(prev => 
+      prev.includes(status) 
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setDateRange(undefined);
+    setSelectedStatus([]);
+  };
+
+  const hasActiveFilters = dateRange?.from || dateRange?.to || selectedStatus.length > 0;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -148,8 +180,9 @@ const HistoricoReunioes: React.FC = () => {
           <CardDescription>Todas as reuniões que você agendou</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Filtro por período */}
-          <div className="mb-6">
+          {/* Área de Filtros */}
+          <div className="flex flex-wrap gap-3 mb-6">
+            {/* Filtro por período */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto">
@@ -185,11 +218,66 @@ const HistoricoReunioes: React.FC = () => {
                     className="w-full"
                     onClick={() => setDateRange(undefined)}
                   >
-                    Limpar Filtro
+                    Limpar Período
                   </Button>
                 </div>
               </PopoverContent>
             </Popover>
+
+            {/* Filtro por status */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Status
+                  {selectedStatus.length > 0 && (
+                    <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                      {selectedStatus.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3 z-50" align="start">
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm">Filtrar por resultado</h4>
+                  {statusOptions.map((option) => (
+                    <div key={option.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={option.value}
+                        checked={selectedStatus.includes(option.value)}
+                        onCheckedChange={() => handleStatusToggle(option.value)}
+                      />
+                      <label
+                        htmlFor={option.value}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {option.label}
+                      </label>
+                    </div>
+                  ))}
+                  {selectedStatus.length > 0 && (
+                    <div className="pt-2 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setSelectedStatus([])}
+                      >
+                        Limpar Status
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Botão para limpar todos os filtros */}
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                <X className="mr-2 h-4 w-4" />
+                Limpar Filtros
+              </Button>
+            )}
           </div>
           
           <div className="text-center py-8 text-muted-foreground">
@@ -207,15 +295,24 @@ const HistoricoReunioes: React.FC = () => {
       <CardHeader>
         <CardTitle>Histórico de Reuniões</CardTitle>
         <CardDescription>
-          {reunioesFiltradas.length} reuniões encontradas no período selecionado
+          {reunioesFiltradas.length} reuniões encontradas
+          {hasActiveFilters && (
+            <>
+              {" com os filtros aplicados"}
+              {selectedStatus.length > 0 && (
+                <> (status: {selectedStatus.map(s => statusOptions.find(opt => opt.value === s)?.label).join(", ")})</>
+              )}
+            </>
+          )}
           {reunioes.length > reunioesFiltradas.length && 
             ` (${reunioes.length} total)`
           }
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Filtro por período */}
-        <div className="mb-6">
+        {/* Área de Filtros */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          {/* Filtro por período */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -251,11 +348,66 @@ const HistoricoReunioes: React.FC = () => {
                   className="w-full"
                   onClick={() => setDateRange(undefined)}
                 >
-                  Limpar Filtro
+                  Limpar Período
                 </Button>
               </div>
             </PopoverContent>
           </Popover>
+
+          {/* Filtro por status */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                <Filter className="mr-2 h-4 w-4" />
+                Status
+                {selectedStatus.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                    {selectedStatus.length}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3 z-50" align="start">
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm">Filtrar por resultado</h4>
+                {statusOptions.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={option.value}
+                      checked={selectedStatus.includes(option.value)}
+                      onCheckedChange={() => handleStatusToggle(option.value)}
+                    />
+                    <label
+                      htmlFor={option.value}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {option.label}
+                    </label>
+                  </div>
+                ))}
+                {selectedStatus.length > 0 && (
+                  <div className="pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setSelectedStatus([])}
+                    >
+                      Limpar Status
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Botão para limpar todos os filtros */}
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+              <X className="mr-2 h-4 w-4" />
+              Limpar Filtros
+            </Button>
+          )}
         </div>
 
         {reunioesFiltradas.length === 0 ? (
