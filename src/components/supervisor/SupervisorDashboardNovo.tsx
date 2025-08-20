@@ -1,14 +1,31 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Calendar, Target, TrendingUp, Edit } from 'lucide-react';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
+import { useSDRMetasEstats } from '@/hooks/useSDRMetasEstats';
+import { useAuthStore } from '@/stores/AuthStore';
 
 const SupervisorDashboard: React.FC = () => {
+  const { user } = useAuthStore();
   const { grupos, loading } = useGruposSupervisores();
 
-  if (loading) {
+  // Encontrar o grupo do supervisor atual
+  const meuGrupo = useMemo(() => {
+    return grupos.find(grupo => grupo.supervisor_id === user?.id);
+  }, [user, grupos]);
+
+  // Extrair IDs dos SDRs do grupo
+  const sdrIds = useMemo(() => {
+    if (!meuGrupo?.membros) return [];
+    return meuGrupo.membros.map(membro => membro.usuario_id);
+  }, [meuGrupo]);
+
+  // Buscar estatísticas dos SDRs usando o hook corrigido
+  const { stats: sdrStats, loading: statsLoading } = useSDRMetasEstats(sdrIds);
+
+  if (loading || statsLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -16,8 +33,7 @@ const SupervisorDashboard: React.FC = () => {
     );
   }
 
-  const grupo = grupos[0];
-  if (!grupo || !grupo.membros) {
+  if (!meuGrupo || !meuGrupo.membros) {
     return (
       <div className="text-center p-8">
         <p className="text-muted-foreground">Nenhum grupo encontrado</p>
@@ -91,11 +107,13 @@ const SupervisorDashboard: React.FC = () => {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          {grupo.membros.map((membro) => {
-            // Dados mockados baseados na imagem
-            const vendas = membro.usuario?.name === 'Regiane' || membro.usuario?.name === 'Debora' ? 0 : 0;
-            const meta = membro.usuario?.name === 'Regiane' || membro.usuario?.name === 'Debora' ? 55 : 0;
-            const percentual = meta > 0 ? (vendas / meta) * 100 : 0;
+          {meuGrupo.membros.map((membro) => {
+            // Buscar estatísticas reais do SDR
+            const sdrStat = sdrStats.find(stat => stat.sdr_id === membro.usuario_id);
+            const reunioesFeitas = sdrStat?.agendamentos_feitos || 0;
+            const metaSemanal = sdrStat?.meta_semanal || 55;
+            const percentualAtingido = sdrStat?.percentual_atingido || 0;
+            const conversoes = sdrStat?.conversoes || 0;
             
             return (
               <div key={membro.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -118,19 +136,19 @@ const SupervisorDashboard: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-base">{membro.usuario?.name}</h3>
-                    <p className="text-sm text-muted-foreground">SDR</p>
+                    <p className="text-sm text-muted-foreground">SDR - {conversoes} conversões</p>
                   </div>
                 </div>
 
                 {/* Métricas e Progresso */}
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <div className="font-semibold">{vendas}/{meta}</div>
-                    <div className="text-sm text-muted-foreground">{percentual.toFixed(0)}%</div>
+                    <div className="font-semibold">{reunioesFeitas}/{metaSemanal * 4}</div>
+                    <div className="text-sm text-muted-foreground">{percentualAtingido.toFixed(1)}%</div>
                   </div>
                   
                   <div className="w-32">
-                    <Progress value={percentual} className="h-2" />
+                    <Progress value={Math.min(percentualAtingido, 100)} className="h-2" />
                   </div>
                   
                   <div className="flex items-center gap-2">
@@ -139,10 +157,10 @@ const SupervisorDashboard: React.FC = () => {
                     </Button>
                     <Button 
                       size="sm" 
-                      variant="destructive"
-                      className="bg-red-500 hover:bg-red-600 text-white"
+                      variant={percentualAtingido >= 80 ? "default" : "destructive"}
+                      className={percentualAtingido >= 80 ? "" : "bg-red-500 hover:bg-red-600 text-white"}
                     >
-                      Precisa melhorar
+                      {percentualAtingido >= 80 ? "Boa performance" : "Precisa melhorar"}
                     </Button>
                   </div>
                 </div>
