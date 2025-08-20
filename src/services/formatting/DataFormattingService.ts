@@ -2,26 +2,46 @@
 export class DataFormattingService {
   static formatDate(dateString: string): string {
     try {
+      console.log(`📅 DataFormattingService.formatDate - Input:`, dateString);
+      
       // Se a string contém apenas data (YYYY-MM-DD), tratar como data local
       // para evitar problemas de fuso horário
       if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = dateString.split('-');
         const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-        return date.toLocaleDateString('pt-BR', {
+        const result = date.toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric'
         });
+        
+        console.log(`📅 DataFormattingService.formatDate - YYYY-MM-DD format:`, {
+          input: dateString,
+          parsedDate: date.toISOString(),
+          result
+        });
+        
+        return result;
       }
       
       // Para outros formatos, usar o comportamento padrão
       const date = new Date(dateString);
-      return date.toLocaleDateString('pt-BR', {
+      const result = date.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
       });
+      
+      console.log(`📅 DataFormattingService.formatDate - Other format:`, {
+        input: dateString,
+        parsedDate: date.toISOString(),
+        result,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      });
+      
+      return result;
     } catch (error) {
+      console.error(`❌ DataFormattingService.formatDate - Error:`, error);
       return 'Data inválida';
     }
   }

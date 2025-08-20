@@ -42,12 +42,19 @@ export const isVendaInPeriod = (vendaDate: Date, targetMonth: number, targetYear
  * baseado na regra de semana (quarta a terça)
  */
 export const getVendaPeriod = (vendaDate: Date): { mes: number; ano: number } => {
-  // Debug específico para 20/08/2025
-  if (vendaDate.toISOString().includes('2025-08-20')) {
-    console.log(`🚨 semanaUtils.getVendaPeriod - Calculando período para 20/08/2025:`, {
+  // Debug específico para identificar problemas de data
+  const hoje = new Date();
+  const isToday = vendaDate.toDateString() === hoje.toDateString();
+  
+  if (isToday || vendaDate.toISOString().includes('2025-08-20')) {
+    console.log(`🚨 semanaUtils.getVendaPeriod - Calculando período:`, {
       vendaDate: vendaDate.toISOString(),
       vendaDate_br: vendaDate.toLocaleDateString('pt-BR'),
-      day_of_week: vendaDate.getDay()
+      vendaDate_time: vendaDate.toLocaleString('pt-BR'),
+      day_of_week: vendaDate.getDay(),
+      isToday,
+      hoje: hoje.toISOString(),
+      hoje_br: hoje.toLocaleDateString('pt-BR')
     });
   }
 
