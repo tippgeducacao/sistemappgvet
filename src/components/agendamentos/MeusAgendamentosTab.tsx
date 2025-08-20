@@ -36,12 +36,13 @@ const [modalOpen, setModalOpen] = useState(false);
 
   // Separar por status
   const agendamentosAgendados = todosAgendamentos.filter(ag => 
-    !['finalizado', 'finalizado_venda', 'cancelado'].includes(ag.status) ||
+    ['agendado', 'remarcado'].includes(ag.status) ||
     ((['finalizado', 'finalizado_venda'].includes(ag.status)) && !ag.resultado_reuniao)
   );
   
   const agendamentosFinalizados = todosAgendamentos.filter(ag => 
-    !['agendado', 'remarcado'].includes(ag.status)
+    ['finalizado', 'finalizado_venda', 'cancelado', 'atrasado'].includes(ag.status) &&
+    !((['finalizado', 'finalizado_venda'].includes(ag.status)) && !ag.resultado_reuniao)
   );
 
   const cancelarAgendamento = async (agendamentoId: string) => {
