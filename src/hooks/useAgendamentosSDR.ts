@@ -64,7 +64,6 @@ export const useAgendamentosSDR = () => {
           )
         `)
         .eq('sdr_id', profile.id)
-        .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'remarcado'])
         .order('created_at', { ascending: false });
 
       if (error) {
