@@ -53,14 +53,48 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
   const metaMensal = metaSemanal * weeks.length;
   const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
   
-  // TESTE: Removendo toda lógica de reuniões - deixar tudo zerado
-  const reunioesPorSemana = weeks.map(week => {
-    console.log(`🚫 TESTE ZERADO - ${sdr.name} - Semana sempre 0 reuniões`);
-    return 0; // Sempre retorna 0 para testar
+  // NOVA LÓGICA DO ZERO - Baseada no painel TV
+  const reunioesPorSemana = weeks.map((week, weekIndex) => {
+    const startOfWeek = new Date(week.startDate);
+    const endOfWeek = new Date(week.endDate);
+    
+    console.log(`🗓️ NOVA LÓGICA - ${sdr.name} - Semana ${weekIndex + 1}: ${startOfWeek.toLocaleDateString()} a ${endOfWeek.toLocaleDateString()}`);
+    
+    // Buscar agendamentos do SDR que estão dentro desta semana
+    const agendamentosValidosNaSemana = agendamentos?.filter(agendamento => {
+      // 1. Verificar se é do SDR
+      const isDoSDR = agendamento.sdr_id === sdr.id;
+      if (!isDoSDR) return false;
+      
+      // 2. Verificar se está dentro da semana
+      const dataAgendamento = new Date(agendamento.data_agendamento);
+      const dentroDaSemana = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
+      if (!dentroDaSemana) return false;
+      
+      // 3. Verificar se compareceu (não comprou) ou comprou - SEM verificar status
+      const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                         agendamento.resultado_reuniao === 'comprou';
+      
+      if (compareceu) {
+        console.log(`✅ NOVA LÓGICA - ${sdr.name} - CONTADA: resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}, status=${agendamento.status}`);
+      } else {
+        console.log(`🚫 NOVA LÓGICA - ${sdr.name} - REJEITADA: resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}`);
+      }
+      
+      return compareceu;
+    }) || [];
+    
+    const totalNaSemana = agendamentosValidosNaSemana.length;
+    console.log(`📊 NOVA LÓGICA - ${sdr.name} - Semana ${weekIndex + 1}: ${totalNaSemana} reuniões válidas`);
+    
+    return totalNaSemana;
   });
   
-  const totalReunioes = 0; // Sempre 0
-  const achievementPercentage = 0; // Sempre 0
+  // Calcular totais
+  const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
+  const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
+  
+  console.log(`🎯 NOVA LÓGICA - ${sdr.name} - RESUMO: ${totalReunioes} reuniões total, ${achievementPercentage.toFixed(1)}% da meta`);
   
   useEffect(() => {
     const calculateSDRCommissions = async () => {
