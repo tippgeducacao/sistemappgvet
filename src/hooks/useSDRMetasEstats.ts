@@ -106,7 +106,8 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
       const currentMonth = today.getMonth() + 1; // Janeiro = 1
       const currentYear = today.getFullYear();
       
-      console.log(`🔍 SDR METAS STATS - Calculando semana por semana para ${currentMonth}/${currentYear}`);
+      console.log(`🚀 SDR METAS STATS INICIADO - ${currentMonth}/${currentYear} para SDRs:`, sdrIds);
+      console.log(`🔍 Data atual:`, today.toISOString());
 
       // Buscar perfis dos SDRs
       const { data: profiles, error: profilesError } = await supabase
@@ -215,8 +216,9 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
   };
 
   useEffect(() => {
+    console.log('🔄 useEffect disparado - forçando nova busca');
     fetchStats();
-  }, [sdrIds.join(',')]);
+  }, [sdrIds.join(',')]); // Removido Date.now() que causava loop
 
   return {
     stats,
