@@ -25,55 +25,36 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
     try {
       setLoading(true);
       
-      // Usar exatamente a mesma lógica da planilha detalhada
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1; // Janeiro = 1
-      const currentYear = now.getFullYear();
+      // Usar EXATAMENTE a mesma lógica do TVRankingDisplay
+      const today = new Date();
+      const semanaOffset = 0; // Semana atual, como no painel TV
       
-      console.log(`🔍 SDR METAS STATS - Ano/Mês: ${currentYear}/${currentMonth}`);
+      // Calcular período da semana baseado no offset - IGUAL ao TVRankingDisplay
+      // Primeiro, encontrar a terça-feira que encerra a semana ATUAL
+      let tercaAtual = new Date(today);
       
-      // Encontrar qual semana do mês estamos (baseada na terça que encerra)
-      let tercaQueEncerra = new Date(now);
-      if (tercaQueEncerra.getDay() !== 2) {
-        const diasAteTerca = (2 - tercaQueEncerra.getDay() + 7) % 7;
-        if (diasAteTerca === 0) {
-          tercaQueEncerra.setDate(tercaQueEncerra.getDate() + 7);
-        } else {
-          tercaQueEncerra.setDate(tercaQueEncerra.getDate() + diasAteTerca);
-        }
+      if (tercaAtual.getDay() === 2) {
+        // Hoje é terça-feira - a semana atual termina hoje
+      } else {
+        // Encontrar a próxima terça-feira (que encerra a semana atual)
+        const diasAteTerca = (2 - tercaAtual.getDay() + 7) % 7;
+        const diasParaSomar = diasAteTerca === 0 ? 7 : diasAteTerca;
+        tercaAtual.setDate(tercaAtual.getDate() + diasParaSomar);
       }
-      
-      // Encontrar primeira terça do mês atual
-      let primeiraTerca = new Date(currentYear, currentMonth - 1, 1);
-      while (primeiraTerca.getDay() !== 2) {
-        primeiraTerca.setDate(primeiraTerca.getDate() + 1);
-      }
-      
-      // Calcular qual semana do mês é a terça que encerra
-      const semanaAtual = Math.floor((tercaQueEncerra.getDate() - primeiraTerca.getDate()) / 7) + 1;
-      
-      // Usar as mesmas funções da planilha para calcular início e fim da semana
-      const getDataInicioSemana = (numeroSemana: number) => {
-        const tercaSemana = new Date(primeiraTerca);
-        tercaSemana.setDate(tercaSemana.getDate() + (numeroSemana - 1) * 7);
-        const inicioSemana = new Date(tercaSemana);
-        inicioSemana.setDate(inicioSemana.getDate() - 6); // Quarta anterior
-        return inicioSemana;
-      };
-      
-      const getDataFimSemana = (numeroSemana: number) => {
-        const fimSemana = new Date(primeiraTerca);
-        fimSemana.setDate(fimSemana.getDate() + (numeroSemana - 1) * 7);
-        return fimSemana;
-      };
-      
-      const startOfWeek = getDataInicioSemana(semanaAtual);
-      startOfWeek.setHours(0, 0, 0, 0);
-      
-      const endOfWeek = getDataFimSemana(semanaAtual);
-      endOfWeek.setHours(23, 59, 59, 999);
 
-      console.log(`🗓️ SDR METAS STATS - Semana ${semanaAtual} do mês ${currentMonth}:`, {
+      // Aplicar o offset de semanas à terça-feira
+      const tercaAlvo = new Date(tercaAtual);
+      tercaAlvo.setDate(tercaAtual.getDate() + (semanaOffset * 7));
+      
+      // A partir da terça-feira alvo, calcular início e fim da semana
+      const endOfWeek = new Date(tercaAlvo);
+      endOfWeek.setHours(23, 59, 59, 999);
+      
+      const startOfWeek = new Date(tercaAlvo);
+      startOfWeek.setDate(tercaAlvo.getDate() - 6); // 6 dias antes da terça = quarta anterior
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      console.log(`🔍 SDR METAS STATS - Usando mesma lógica do TVRanking:`, {
         startOfWeek: startOfWeek.toISOString(),
         endOfWeek: endOfWeek.toISOString(),
         periodo: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`
