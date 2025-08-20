@@ -25,14 +25,14 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
     try {
       setLoading(true);
       
-      // Usar a mesma lógica da planilha detalhada
+      // Usar exatamente a mesma lógica da planilha detalhada
       const now = new Date();
       const currentMonth = now.getMonth() + 1; // Janeiro = 1
       const currentYear = now.getFullYear();
       
-      console.log(`🔍 SDR METAS STATS - Buscando para mês atual: ${currentMonth}/${currentYear}`);
+      console.log(`🔍 SDR METAS STATS - Ano/Mês: ${currentYear}/${currentMonth}`);
       
-      // Encontrar semana atual do mês (baseada na terça que encerra)
+      // Encontrar qual semana do mês estamos (baseada na terça que encerra)
       let tercaQueEncerra = new Date(now);
       if (tercaQueEncerra.getDay() !== 2) {
         const diasAteTerca = (2 - tercaQueEncerra.getDay() + 7) % 7;
@@ -43,23 +43,37 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
         }
       }
       
-      // Encontrar qual semana do mês é esta terça
+      // Encontrar primeira terça do mês atual
       let primeiraTerca = new Date(currentYear, currentMonth - 1, 1);
       while (primeiraTerca.getDay() !== 2) {
         primeiraTerca.setDate(primeiraTerca.getDate() + 1);
       }
       
+      // Calcular qual semana do mês é a terça que encerra
       const semanaAtual = Math.floor((tercaQueEncerra.getDate() - primeiraTerca.getDate()) / 7) + 1;
       
-      // Calcular datas da semana atual (quarta a terça)
-      const startOfWeek = new Date(tercaQueEncerra);
-      startOfWeek.setDate(tercaQueEncerra.getDate() - 6); // Quarta anterior
+      // Usar as mesmas funções da planilha para calcular início e fim da semana
+      const getDataInicioSemana = (numeroSemana: number) => {
+        const tercaSemana = new Date(primeiraTerca);
+        tercaSemana.setDate(tercaSemana.getDate() + (numeroSemana - 1) * 7);
+        const inicioSemana = new Date(tercaSemana);
+        inicioSemana.setDate(inicioSemana.getDate() - 6); // Quarta anterior
+        return inicioSemana;
+      };
+      
+      const getDataFimSemana = (numeroSemana: number) => {
+        const fimSemana = new Date(primeiraTerca);
+        fimSemana.setDate(fimSemana.getDate() + (numeroSemana - 1) * 7);
+        return fimSemana;
+      };
+      
+      const startOfWeek = getDataInicioSemana(semanaAtual);
       startOfWeek.setHours(0, 0, 0, 0);
       
-      const endOfWeek = new Date(tercaQueEncerra);
+      const endOfWeek = getDataFimSemana(semanaAtual);
       endOfWeek.setHours(23, 59, 59, 999);
 
-      console.log(`🗓️ SDR METAS STATS - Período semana ${semanaAtual}:`, {
+      console.log(`🗓️ SDR METAS STATS - Semana ${semanaAtual} do mês ${currentMonth}:`, {
         startOfWeek: startOfWeek.toISOString(),
         endOfWeek: endOfWeek.toISOString(),
         periodo: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`
@@ -105,6 +119,7 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
       const statsData: SDRMetaEstat[] = sdrIds.map(sdrId => {
         const profile = profiles?.find(p => p.id === sdrId);
         const nivelConfig = niveis?.find(n => n.nivel === profile?.nivel);
+        
         // Mesma lógica do painel TV: compareceu_nao_comprou OU comprou
         const sdrAgendamentos = agendamentos?.filter(a => {
           const isDoSDR = a.sdr_id === sdrId;
@@ -130,7 +145,7 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
           percentual_atingido: Math.round(percentualAtingido * 10) / 10
         };
 
-        console.log(`👤 SDR ${profile?.name}: ${agendamentosFeitos} agendamentos de meta ${metaSemanal}`);
+        console.log(`👤 SDR ${profile?.name}: ${agendamentosFeitos} agendamentos (meta: ${metaSemanal}) = ${percentualAtingido.toFixed(1)}%`);
 
         return resultado;
       });
