@@ -58,16 +58,30 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
     const startDate = new Date(week.startDate);
     const endDate = new Date(week.endDate);
     
+    console.log(`🗓️ ${sdr.name} - Semana ${week.startDate} a ${week.endDate}`);
+    
     const reunioesNaSemana = agendamentos?.filter(agendamento => {
       const dataAgendamento = new Date(agendamento.data_agendamento);
       const isDoSDR = agendamento.sdr_id === sdr.id;
       const dentroDaSemana = dataAgendamento >= startDate && dataAgendamento <= endDate;
-      const foiRealizada = agendamento.status === 'realizado'; // CRÍTICO: só reuniões finalizadas
+      
+      // Log de debug para cada agendamento do SDR na semana
+      if (isDoSDR && dentroDaSemana) {
+        console.log(`📋 ${sdr.name} - Agendamento: status=${agendamento.status}, resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}`);
+      }
+      
+      // Contar apenas reuniões onde houve comparecimento confirmado - SEM EXIGIR STATUS REALIZADO
       const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
                          agendamento.resultado_reuniao === 'comprou';
-      return isDoSDR && dentroDaSemana && foiRealizada && compareceu;
+      
+      if (isDoSDR && dentroDaSemana && compareceu) {
+        console.log(`✅ ${sdr.name} - CONTADA: resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}`);
+      }
+      
+      return isDoSDR && dentroDaSemana && compareceu;
     }).length || 0;
     
+    console.log(`📊 ${sdr.name} - Total na semana: ${reunioesNaSemana} reuniões`);
     return reunioesNaSemana;
   });
   
