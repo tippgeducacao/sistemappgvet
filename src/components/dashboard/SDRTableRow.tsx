@@ -53,40 +53,14 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
   const metaMensal = metaSemanal * weeks.length;
   const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
   
-  // Calcular reuniões por semana
+  // TESTE: Removendo toda lógica de reuniões - deixar tudo zerado
   const reunioesPorSemana = weeks.map(week => {
-    const startDate = new Date(week.startDate);
-    const endDate = new Date(week.endDate);
-    
-    console.log(`🗓️ ${sdr.name} - Semana ${week.startDate} a ${week.endDate}`);
-    
-    const reunioesNaSemana = agendamentos?.filter(agendamento => {
-      const dataAgendamento = new Date(agendamento.data_agendamento);
-      const isDoSDR = agendamento.sdr_id === sdr.id;
-      const dentroDaSemana = dataAgendamento >= startDate && dataAgendamento <= endDate;
-      
-      // Log de debug para cada agendamento do SDR na semana
-      if (isDoSDR && dentroDaSemana) {
-        console.log(`📋 ${sdr.name} - Agendamento: status=${agendamento.status}, resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}`);
-      }
-      
-      // Contar apenas reuniões onde houve comparecimento confirmado - SEM EXIGIR STATUS REALIZADO
-      const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                         agendamento.resultado_reuniao === 'comprou';
-      
-      if (isDoSDR && dentroDaSemana && compareceu) {
-        console.log(`✅ ${sdr.name} - CONTADA: resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}`);
-      }
-      
-      return isDoSDR && dentroDaSemana && compareceu;
-    }).length || 0;
-    
-    console.log(`📊 ${sdr.name} - Total na semana: ${reunioesNaSemana} reuniões`);
-    return reunioesNaSemana;
+    console.log(`🚫 TESTE ZERADO - ${sdr.name} - Semana sempre 0 reuniões`);
+    return 0; // Sempre retorna 0 para testar
   });
   
-  const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
-  const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
+  const totalReunioes = 0; // Sempre 0
+  const achievementPercentage = 0; // Sempre 0
   
   useEffect(() => {
     const calculateSDRCommissions = async () => {
