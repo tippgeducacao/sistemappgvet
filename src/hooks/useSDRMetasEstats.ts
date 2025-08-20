@@ -16,6 +16,83 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Funções para calcular semanas - IGUAL ao sistema
+  const getSemanasDoMes = (ano: number, mes: number): number[] => {
+    const semanas: number[] = [];
+    const primeiroDia = new Date(ano, mes - 1, 1);
+    const ultimoDia = new Date(ano, mes, 0);
+    
+    // Começar da primeira terça-feira do mês
+    let tercaAtual = new Date(primeiroDia);
+    while (tercaAtual.getDay() !== 2) { // 2 = terça-feira
+      tercaAtual.setDate(tercaAtual.getDate() + 1);
+    }
+    
+    let numeroSemana = 1;
+    
+    // Para cada terça-feira que está no mês, criar uma semana
+    while (tercaAtual.getMonth() === mes - 1 && tercaAtual <= ultimoDia) {
+      semanas.push(numeroSemana);
+      numeroSemana++;
+      tercaAtual.setDate(tercaAtual.getDate() + 7);
+    }
+    
+    return semanas;
+  };
+
+  const getDataInicioSemana = (ano: number, mes: number, numeroSemana: number): Date => {
+    // Encontrar a primeira terça-feira do mês
+    const primeiroDia = new Date(ano, mes - 1, 1);
+    const ultimoDia = new Date(ano, mes, 0);
+    
+    let dataAtual = new Date(primeiroDia);
+    while (dataAtual.getDay() !== 2) {
+      dataAtual.setDate(dataAtual.getDate() + 1);
+    }
+    
+    // Avançar para a terça-feira da semana especificada
+    dataAtual.setDate(dataAtual.getDate() + (numeroSemana - 1) * 7);
+    
+    // Verificar se ainda está no mês correto
+    if (dataAtual.getMonth() !== mes - 1) {
+      dataAtual = new Date(ultimoDia);
+      while (dataAtual.getDay() !== 2) {
+        dataAtual.setDate(dataAtual.getDate() - 1);
+      }
+    }
+    
+    // Calcular a quarta-feira anterior (início da semana)
+    const inicioSemana = new Date(dataAtual);
+    inicioSemana.setDate(inicioSemana.getDate() - 6); // Voltar 6 dias para a quarta anterior
+    inicioSemana.setHours(0, 0, 0, 0);
+    return inicioSemana;
+  };
+
+  const getDataFimSemana = (ano: number, mes: number, numeroSemana: number): Date => {
+    // Encontrar a primeira terça-feira do mês
+    const primeiroDia = new Date(ano, mes - 1, 1);
+    const ultimoDia = new Date(ano, mes, 0);
+    
+    let dataAtual = new Date(primeiroDia);
+    while (dataAtual.getDay() !== 2) {
+      dataAtual.setDate(dataAtual.getDate() + 1);
+    }
+    
+    // Avançar para a terça-feira da semana especificada
+    dataAtual.setDate(dataAtual.getDate() + (numeroSemana - 1) * 7);
+    
+    // Verificar se ainda está no mês correto
+    if (dataAtual.getMonth() !== mes - 1) {
+      dataAtual = new Date(ultimoDia);
+      while (dataAtual.getDay() !== 2) {
+        dataAtual.setDate(dataAtual.getDate() - 1);
+      }
+    }
+    
+    dataAtual.setHours(23, 59, 59, 999);
+    return dataAtual;
+  };
+
   const fetchStats = async () => {
     if (sdrIds.length === 0) {
       setStats([]);
@@ -25,54 +102,11 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
     try {
       setLoading(true);
       
-      // Calcular o MÊS COMPLETO (como mostrado na planilha)
       const today = new Date();
       const currentMonth = today.getMonth() + 1; // Janeiro = 1
       const currentYear = today.getFullYear();
       
-      // Calcular início e fim do MÊS INTEIRO (primeira quarta até última terça)
-      const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
-      const lastDayOfMonth = new Date(currentYear, currentMonth, 0);
-      
-      // Encontrar a primeira quarta-feira do mês (início do ciclo)
-      let startOfMonth = new Date(firstDayOfMonth);
-      while (startOfMonth.getDay() !== 3) { // 3 = quarta-feira
-        startOfMonth.setDate(startOfMonth.getDate() - 1);
-      }
-      startOfMonth.setHours(0, 0, 0, 0);
-      
-      // Encontrar a última terça-feira do mês (fim do ciclo)
-      let endOfMonth = new Date(lastDayOfMonth);
-      while (endOfMonth.getDay() !== 2) { // 2 = terça-feira
-        endOfMonth.setDate(endOfMonth.getDate() + 1);
-      }
-      endOfMonth.setHours(23, 59, 59, 999);
-
-      console.log(`🔍 SDR METAS STATS - Calculando MÊS COMPLETO:`, {
-        mes: currentMonth,
-        ano: currentYear,
-        startOfMonth: startOfMonth.toISOString(),
-        endOfMonth: endOfMonth.toISOString(),
-        periodo: `${startOfMonth.toLocaleDateString('pt-BR')} - ${endOfMonth.toLocaleDateString('pt-BR')}`
-      });
-
-      // Buscar agendamentos do MÊS COMPLETO para os SDRs
-      const { data: agendamentos, error: agendamentosError } = await supabase
-        .from('agendamentos')
-        .select(`
-          sdr_id,
-          resultado_reuniao,
-          data_agendamento
-        `)
-        .in('sdr_id', sdrIds)
-        .gte('data_agendamento', startOfMonth.toISOString())
-        .lte('data_agendamento', endOfMonth.toISOString());
-
-      if (agendamentosError) throw agendamentosError;
-
-      console.log(`📊 SDR METAS STATS - Agendamentos encontrados:`, {
-        total: agendamentos?.length || 0
-      });
+      console.log(`🔍 SDR METAS STATS - Calculando semana por semana para ${currentMonth}/${currentYear}`);
 
       // Buscar perfis dos SDRs
       const { data: profiles, error: profilesError } = await supabase
@@ -92,45 +126,69 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
 
       if (niveisError) throw niveisError;
 
-      // Processar dados
-      const statsData: SDRMetaEstat[] = sdrIds.map(sdrId => {
+      // Obter semanas do mês atual
+      const semanasDoMes = getSemanasDoMes(currentYear, currentMonth);
+      console.log(`📅 Semanas do mês ${currentMonth}/${currentYear}:`, semanasDoMes);
+
+      // Para cada SDR, calcular o total de reuniões somando todas as semanas
+      const statsData: SDRMetaEstat[] = [];
+      
+      for (const sdrId of sdrIds) {
         const profile = profiles?.find(p => p.id === sdrId);
         const nivelConfig = niveis?.find(n => n.nivel === profile?.nivel);
         
-        // Mesma lógica do painel TV: compareceu_nao_comprou OU comprou
-        const sdrAgendamentos = agendamentos?.filter(a => {
-          const isDoSDR = a.sdr_id === sdrId;
-          const compareceu = a.resultado_reuniao === 'compareceu_nao_comprou' || 
-                             a.resultado_reuniao === 'comprou';
-          return isDoSDR && compareceu;
-        }) || [];
+        let totalAgendamentosFeitos = 0;
+        let totalConversoes = 0;
         
-        const agendamentosFeitos = sdrAgendamentos.length;
-        const conversoes = sdrAgendamentos.filter(a => 
-          a.resultado_reuniao === 'comprou'
-        ).length;
+        console.log(`\n👤 Processando SDR: ${profile?.name}`);
+        
+        // Para cada semana do mês, buscar as reuniões
+        for (const numeroSemana of semanasDoMes) {
+          const inicioSemana = getDataInicioSemana(currentYear, currentMonth, numeroSemana);
+          const fimSemana = getDataFimSemana(currentYear, currentMonth, numeroSemana);
+          
+          console.log(`📊 Semana ${numeroSemana}: ${inicioSemana.toLocaleDateString('pt-BR')} - ${fimSemana.toLocaleDateString('pt-BR')}`);
+          
+          // Buscar agendamentos desta semana específica
+          const { data: agendamentosSemana, error: agendamentosError } = await supabase
+            .from('agendamentos')
+            .select('sdr_id, resultado_reuniao, data_agendamento')
+            .eq('sdr_id', sdrId)
+            .gte('data_agendamento', inicioSemana.toISOString())
+            .lte('data_agendamento', fimSemana.toISOString())
+            .in('resultado_reuniao', ['compareceu_nao_comprou', 'comprou']);
+
+          if (agendamentosError) {
+            console.error('❌ Erro ao buscar agendamentos da semana:', agendamentosError);
+            continue;
+          }
+
+          const reunioesSemana = agendamentosSemana?.length || 0;
+          const conversoesSemana = agendamentosSemana?.filter(a => a.resultado_reuniao === 'comprou').length || 0;
+          
+          totalAgendamentosFeitos += reunioesSemana;
+          totalConversoes += conversoesSemana;
+          
+          console.log(`   ✅ Semana ${numeroSemana}: ${reunioesSemana} reuniões, ${conversoesSemana} vendas`);
+        }
         
         const metaSemanal = nivelConfig?.meta_semanal_inbound || 0;
-        
-        // Calcular quantas semanas tem no mês (para meta mensal)
-        const weeksInMonth = Math.ceil((endOfMonth.getTime() - startOfMonth.getTime()) / (7 * 24 * 60 * 60 * 1000));
-        const metaMensal = metaSemanal * weeksInMonth;
-        
-        const percentualAtingido = metaMensal > 0 ? (agendamentosFeitos / metaMensal) * 100 : 0;
+        const metaMensal = metaSemanal * semanasDoMes.length;
+        const percentualAtingido = metaMensal > 0 ? (totalAgendamentosFeitos / metaMensal) * 100 : 0;
 
         const resultado = {
           sdr_id: sdrId,
           sdr_name: profile?.name || 'SDR',
           meta_semanal: metaSemanal,
-          agendamentos_feitos: agendamentosFeitos,
-          conversoes,
+          agendamentos_feitos: totalAgendamentosFeitos,
+          conversoes: totalConversoes,
           percentual_atingido: Math.round(percentualAtingido * 10) / 10
         };
 
-        console.log(`👤 SDR ${profile?.name}: ${agendamentosFeitos} agendamentos (meta: ${metaSemanal}) = ${percentualAtingido.toFixed(1)}%`);
+        console.log(`🎯 RESULTADO FINAL - ${profile?.name}: ${totalAgendamentosFeitos} reuniões totais (meta mensal: ${metaMensal}) = ${percentualAtingido.toFixed(1)}%`);
 
-        return resultado;
-      });
+        statsData.push(resultado);
+      }
 
       setStats(statsData);
     } catch (error) {
