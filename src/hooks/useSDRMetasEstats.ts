@@ -38,17 +38,20 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
 
-      // Buscar agendamentos da semana para os SDRs
+      // Buscar agendamentos da semana para os SDRs (apenas finalizados com resultado)
       const { data: agendamentos, error: agendamentosError } = await supabase
         .from('agendamentos')
         .select(`
           sdr_id,
           resultado_reuniao,
-          data_agendamento
+          data_agendamento,
+          status
         `)
         .in('sdr_id', sdrIds)
         .gte('data_agendamento', startOfWeek.toISOString())
-        .lte('data_agendamento', endOfWeek.toISOString());
+        .lte('data_agendamento', endOfWeek.toISOString())
+        .in('resultado_reuniao', ['compareceu', 'comprou', 'compareceu_nao_comprou'])
+        .eq('status', 'finalizado');
 
       if (agendamentosError) throw agendamentosError;
 
@@ -78,11 +81,10 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
         const meta = metas?.find(m => m.vendedor_id === sdrId);
         const sdrAgendamentos = agendamentos?.filter(a => a.sdr_id === sdrId) || [];
         
+        // Agora já filtramos apenas as reuniões realizadas na query
         const agendamentosFeitos = sdrAgendamentos.length;
         const conversoes = sdrAgendamentos.filter(a => 
-          a.resultado_reuniao === 'presente' || 
-          a.resultado_reuniao === 'compareceu' || 
-          a.resultado_reuniao === 'realizada'
+          a.resultado_reuniao === 'comprou'
         ).length;
         
         const metaSemanal = meta?.meta_vendas || 0;
