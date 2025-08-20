@@ -549,9 +549,10 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   endOfDay.setHours(23, 59, 59, 999);
 
   const vendasDiaAtual = vendas.filter(venda => {
-    // MESMA LÓGICA - priorizar data_assinatura_contrato
+    // CORREÇÃO: Usar mesma lógica para tratar fuso horário
     let vendaDate: Date;
     if (venda.data_assinatura_contrato) {
+      // CORREÇÃO: Adicionar horário para evitar problemas de fuso horário
       vendaDate = new Date(venda.data_assinatura_contrato + 'T12:00:00');
     } else {
       const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
@@ -567,6 +568,19 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       }
     }
     vendaDate.setHours(0, 0, 0, 0);
+    
+    console.log(`🐛 TVRankingDisplay - Resumo Geral - Venda do dia:`, {
+      vendaId: venda.id,
+      vendedor: venda.vendedor?.name,
+      dataOriginal: venda.data_assinatura_contrato || venda.enviado_em,
+      vendaDate: vendaDate.toISOString(),
+      vendaDateBR: vendaDate.toLocaleDateString('pt-BR'),
+      startOfDay: startOfDay.toISOString(),
+      endOfDay: endOfDay.toISOString(),
+      isDayMatch: vendaDate >= startOfDay && vendaDate <= endOfDay,
+      status: venda.status
+    });
+    
     return vendaDate >= startOfDay && vendaDate <= endOfDay && 
            venda.status === 'matriculado';
   });
@@ -806,14 +820,24 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         if (venda.vendedor_id !== vendedor.id) return false;
         if (venda.status !== 'matriculado') return false;
         
-        // Priorizar data_assinatura_contrato
+        // Priorizar data_assinatura_contrato e tratar como horário local
         let dataVenda: Date;
         if (venda.data_assinatura_contrato) {
-          dataVenda = new Date(venda.data_assinatura_contrato);
+          // CORREÇÃO: Adicionar horário para evitar problemas de fuso horário
+          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
         } else {
           dataVenda = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
         }
         dataVenda.setHours(0, 0, 0, 0);
+        
+        console.log(`🐛 TVRankingDisplay - Vendedor ${vendedor.name} - Venda hoje:`, {
+          vendaId: venda.id,
+          dataOriginal: venda.data_assinatura_contrato || venda.data_aprovacao || venda.enviado_em,
+          dataProcessada: dataVenda.toISOString(),
+          dataProcessadaBR: dataVenda.toLocaleDateString('pt-BR'),
+          hojeComparacao: hoje.toISOString(),
+          isToday: dataVenda.getTime() === hoje.getTime()
+        });
         
         return dataVenda.getTime() === hoje.getTime();
       });
@@ -826,14 +850,24 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         if (venda.vendedor_id !== vendedor.id) return false;
         if (venda.status !== 'matriculado') return false;
         
-        // Priorizar data_assinatura_contrato
+        // Priorizar data_assinatura_contrato e tratar como horário local
         let dataVenda: Date;
         if (venda.data_assinatura_contrato) {
-          dataVenda = new Date(venda.data_assinatura_contrato);
+          // CORREÇÃO: Adicionar horário para evitar problemas de fuso horário
+          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
         } else {
           dataVenda = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
         }
         dataVenda.setHours(0, 0, 0, 0);
+        
+        console.log(`🐛 TVRankingDisplay - Vendedor ${vendedor.name} - Venda ontem:`, {
+          vendaId: venda.id,
+          dataOriginal: venda.data_assinatura_contrato || venda.data_aprovacao || venda.enviado_em,
+          dataProcessada: dataVenda.toISOString(),
+          dataProcessadaBR: dataVenda.toLocaleDateString('pt-BR'),
+          ontemComparacao: ontem.toISOString(),
+          isYesterday: dataVenda.getTime() === ontem.getTime()
+        });
         
         return dataVenda.getTime() === ontem.getTime();
       });
@@ -998,13 +1032,27 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   // Calcular totais de vendas da semana e mês atual
   const totalVendasSemana = vendas.filter(v => {
     if (v.status !== 'matriculado') return false;
-    // Priorizar data_assinatura_contrato
+    // CORREÇÃO: Priorizar data_assinatura_contrato e tratar fuso horário
     let dataVenda: Date;
     if (v.data_assinatura_contrato) {
-      dataVenda = new Date(v.data_assinatura_contrato);
+      // CORREÇÃO: Adicionar horário para evitar problemas de fuso horário
+      dataVenda = new Date(v.data_assinatura_contrato + 'T12:00:00');
     } else {
       dataVenda = v.data_aprovacao ? new Date(v.data_aprovacao) : new Date(v.enviado_em || v.atualizado_em);
     }
+    
+    console.log(`🐛 totalVendasSemana - Venda:`, {
+      vendaId: v.id,
+      vendedor: v.vendedor?.name,
+      dataOriginal: v.data_assinatura_contrato || v.data_aprovacao || v.enviado_em,
+      dataProcessada: dataVenda.toISOString(),
+      dataProcessadaBR: dataVenda.toLocaleDateString('pt-BR'),
+      startOfWeek: startOfWeek.toISOString(),
+      endOfWeek: endOfWeek.toISOString(),
+      isInRange: dataVenda >= startOfWeek && dataVenda <= endOfWeek,
+      status: v.status
+    });
+    
     return dataVenda >= startOfWeek && dataVenda <= endOfWeek;
   }).length;
   
@@ -1014,10 +1062,11 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   
   const totalVendasMes = vendas.filter(v => {
     if (v.status !== 'matriculado') return false;
-    // Priorizar data_assinatura_contrato
+    // CORREÇÃO: Priorizar data_assinatura_contrato e tratar fuso horário
     let dataVenda: Date;
     if (v.data_assinatura_contrato) {
-      dataVenda = new Date(v.data_assinatura_contrato);
+      // CORREÇÃO: Adicionar horário para evitar problemas de fuso horário
+      dataVenda = new Date(v.data_assinatura_contrato + 'T12:00:00');
     } else {
       dataVenda = v.data_aprovacao ? new Date(v.data_aprovacao) : new Date(v.enviado_em || v.atualizado_em);
     }
