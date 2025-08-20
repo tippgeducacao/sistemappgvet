@@ -34,7 +34,10 @@ const [modalOpen, setModalOpen] = useState(false);
     .filter(ag => ag.sdr_id === profile?.id)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  console.log('Todos agendamentos:', todosAgendamentos.map(ag => ({ id: ag.id, status: ag.status, resultado: ag.resultado_reuniao })));
+  console.log('📊 Profile ID atual:', profile?.id);
+  console.log('📊 Total agendamentos carregados:', agendamentos.length);
+  console.log('📊 Agendamentos filtrados para o SDR:', todosAgendamentos.length);
+  console.log('📊 Todos agendamentos:', todosAgendamentos.map(ag => ({ id: ag.id, status: ag.status, sdr_id: ag.sdr_id })));
 
   // Separar por status
   const agendamentosAgendados = todosAgendamentos.filter(ag => 
@@ -45,7 +48,7 @@ const [modalOpen, setModalOpen] = useState(false);
     ag.status !== 'agendado'
   );
 
-  console.log('Agendados:', agendamentosAgendados.length, 'Finalizados:', agendamentosFinalizados.length);
+  console.log('📊 Agendados:', agendamentosAgendados.length, 'Finalizados:', agendamentosFinalizados.length);
 
   const cancelarAgendamento = async (agendamentoId: string) => {
     try {

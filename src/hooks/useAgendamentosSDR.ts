@@ -40,7 +40,12 @@ export const useAgendamentosSDR = () => {
   const { profile } = useAuthStore();
 
   const fetchAgendamentos = async () => {
-    if (!profile?.id) return;
+    if (!profile?.id) {
+      console.log('❌ Profile ID não encontrado:', profile);
+      return;
+    }
+
+    console.log('🔍 Buscando agendamentos para SDR:', profile.id);
 
     try {
       setIsLoading(true);
@@ -67,14 +72,17 @@ export const useAgendamentosSDR = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar agendamentos:', error);
+        console.error('❌ Erro ao buscar agendamentos:', error);
         toast.error('Erro ao carregar agendamentos');
         return;
       }
 
+      console.log('✅ Agendamentos retornados:', data?.length || 0);
+      console.log('📋 Status dos agendamentos:', data?.map(ag => ({ id: ag.id, status: ag.status })) || []);
+
       setAgendamentos((data || []) as AgendamentoSDR[]);
     } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error);
+      console.error('❌ Erro ao buscar agendamentos:', error);
       toast.error('Erro ao carregar agendamentos');
     } finally {
       setIsLoading(false);
