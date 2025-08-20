@@ -65,19 +65,17 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
         periodo: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`
       });
 
-      // Buscar agendamentos da semana para os SDRs (mesma lógica da planilha)
+      // Buscar agendamentos da semana para os SDRs (mesma lógica do painel TV)
       const { data: agendamentos, error: agendamentosError } = await supabase
         .from('agendamentos')
         .select(`
           sdr_id,
           resultado_reuniao,
-          data_agendamento,
-          status
+          data_agendamento
         `)
         .in('sdr_id', sdrIds)
         .gte('data_agendamento', startOfWeek.toISOString())
-        .lte('data_agendamento', endOfWeek.toISOString())
-        .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
+        .lte('data_agendamento', endOfWeek.toISOString());
 
       if (agendamentosError) throw agendamentosError;
 
@@ -107,9 +105,14 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
       const statsData: SDRMetaEstat[] = sdrIds.map(sdrId => {
         const profile = profiles?.find(p => p.id === sdrId);
         const nivelConfig = niveis?.find(n => n.nivel === profile?.nivel);
-        const sdrAgendamentos = agendamentos?.filter(a => a.sdr_id === sdrId) || [];
+        // Mesma lógica do painel TV: compareceu_nao_comprou OU comprou
+        const sdrAgendamentos = agendamentos?.filter(a => {
+          const isDoSDR = a.sdr_id === sdrId;
+          const compareceu = a.resultado_reuniao === 'compareceu_nao_comprou' || 
+                             a.resultado_reuniao === 'comprou';
+          return isDoSDR && compareceu;
+        }) || [];
         
-        // Agora já filtramos apenas as reuniões realizadas na query
         const agendamentosFeitos = sdrAgendamentos.length;
         const conversoes = sdrAgendamentos.filter(a => 
           a.resultado_reuniao === 'comprou'
