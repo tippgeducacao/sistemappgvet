@@ -20,6 +20,7 @@ interface TodosAgendamentosTabProps {
 const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamentos, sdrs, onEditarAgendamento }) => {
   const [filtroSDR, setFiltroSDR] = useState<string>('todos');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [filtroResultado, setFiltroResultado] = useState<string>('todos');
   const [pesquisaLead, setPesquisaLead] = useState<string>('');
   const [selectedAgendamento, setSelectedAgendamento] = useState<AgendamentoSDR | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -29,6 +30,7 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
   const agendamentosFiltrados = agendamentos.filter(agendamento => {
     if (filtroSDR !== 'todos' && agendamento.sdr_id !== filtroSDR) return false;
     if (filtroStatus !== 'todos' && agendamento.status !== filtroStatus) return false;
+    if (filtroResultado !== 'todos' && agendamento.resultado_reuniao !== filtroResultado) return false;
     if (pesquisaLead && !agendamento.lead?.nome?.toLowerCase().includes(pesquisaLead.toLowerCase())) return false;
     return true;
   });
@@ -124,13 +126,26 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
           </SelectContent>
         </Select>
 
-        {(filtroSDR !== 'todos' || filtroStatus !== 'todos' || pesquisaLead) && (
+        <Select value={filtroResultado} onValueChange={setFiltroResultado}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Resultado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os Resultados</SelectItem>
+            <SelectItem value="comprou">Comprou</SelectItem>
+            <SelectItem value="compareceu_nao_comprou">Compareceu e não comprou</SelectItem>
+            <SelectItem value="nao_compareceu">Não compareceu</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {(filtroSDR !== 'todos' || filtroStatus !== 'todos' || filtroResultado !== 'todos' || pesquisaLead) && (
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => {
               setFiltroSDR('todos');
               setFiltroStatus('todos');
+              setFiltroResultado('todos');
               setPesquisaLead('');
             }}
           >
