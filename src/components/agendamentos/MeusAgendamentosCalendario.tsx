@@ -1,19 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, ChevronLeft, ChevronRight, Clock, User, Users } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
+import { useAuthStore } from '@/stores/AuthStore';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MeusAgendamentosCalendarioProps {
-  agendamentos: AgendamentoSDR[];
+  agendamentosAtivos: AgendamentoSDR[];
 }
 
 const MeusAgendamentosCalendario: React.FC<MeusAgendamentosCalendarioProps> = ({
-  agendamentos
+  agendamentosAtivos
 }) => {
   const [mesAtual, setMesAtual] = useState(new Date());
+  const [historicoReunioes, setHistoricoReunioes] = useState<AgendamentoSDR[]>([]);
+  const { profile } = useAuthStore();
+
+  // Buscar histórico completo de reuniões
+  useEffect(() => {
+    const fetchHistorico = async () => {
+      if (!profile?.id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('agendamentos')
+          .select(`
+            *,
+            lead:leads!agendamentos_lead_id_fkey (
+              nome,
+              email,
+              whatsapp
+            ),
+            vendedor:profiles!agendamentos_vendedor_id_fkey (
+              name,
+              email
+            ),
+            sdr:profiles!agendamentos_sdr_id_fkey (
+              name,
+              email
+            )
+          `)
+          .eq('sdr_id', profile.id)
+          .order('data_agendamento', { ascending: false });
+
+        if (!error && data) {
+          setHistoricoReunioes(data as AgendamentoSDR[]);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar histórico:', error);
+      }
+    };
+
+    fetchHistorico();
+  }, [profile?.id]);
+
+  // Combinar agendamentos ativos com histórico, removendo duplicatas
+  const todosAgendamentos = [...agendamentosAtivos];
+  
+  // Adicionar agendamentos do histórico que não estão nos ativos
+  historicoReunioes.forEach(historico => {
+    if (!agendamentosAtivos.some(ativo => ativo.id === historico.id)) {
+      todosAgendamentos.push(historico);
+    }
+  });
 
   const mesAnterior = () => setMesAtual(subMonths(mesAtual, 1));
   const proximoMes = () => setMesAtual(addMonths(mesAtual, 1));
@@ -28,7 +80,7 @@ const MeusAgendamentosCalendario: React.FC<MeusAgendamentosCalendarioProps> = ({
   });
 
   const getAgendamentosDoDia = (dia: Date) => {
-    return agendamentos.filter(agendamento => 
+    return todosAgendamentos.filter(agendamento => 
       isSameDay(new Date(agendamento.data_agendamento), dia)
     );
   };

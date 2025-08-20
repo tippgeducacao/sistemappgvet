@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, User, ExternalLink, Eye } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye } from 'lucide-react';
 import { useAuthStore } from '@/stores/AuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingState from '@/components/ui/loading-state';
-import MonthYearFilter from '@/components/common/MonthYearFilter';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import type { DateRange } from 'react-day-picker';
 
 interface HistoricoReuniao {
   id: string;
@@ -42,9 +45,7 @@ const HistoricoReunioes: React.FC = () => {
   const { profile } = useAuthStore();
 
   // Estado para filtros de período
-  const currentDate = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const fetchHistoricoReunioes = async () => {
     if (!profile?.id) return;
@@ -84,13 +85,17 @@ const HistoricoReunioes: React.FC = () => {
 
   useEffect(() => {
     fetchHistoricoReunioes();
-  }, [profile?.id, selectedMonth, selectedYear]);
+  }, [profile?.id]);
 
-  // Filtrar reuniões pelo mês/ano selecionado
+  // Filtrar reuniões pelo período selecionado
   const reunioesFiltradas = reunioes.filter(reuniao => {
+    if (!dateRange?.from && !dateRange?.to) return true;
+    
     const dataAgendamento = new Date(reuniao.data_agendamento);
-    return dataAgendamento.getMonth() + 1 === selectedMonth && 
-           dataAgendamento.getFullYear() === selectedYear;
+    if (dateRange.from && dataAgendamento < dateRange.from) return false;
+    if (dateRange.to && dataAgendamento > dateRange.to) return false;
+    
+    return true;
   });
 
   const getStatusBadge = (status: string) => {
@@ -145,16 +150,50 @@ const HistoricoReunioes: React.FC = () => {
         <CardContent>
           {/* Filtro por período */}
           <div className="mb-6">
-            <MonthYearFilter
-              selectedMonth={selectedMonth}
-              selectedYear={selectedYear}
-              onMonthChange={setSelectedMonth}
-              onYearChange={setSelectedYear}
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
+                        {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+                      </>
+                    ) : (
+                      format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                    )
+                  ) : (
+                    "Filtrar por período"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+                <div className="p-3 border-t">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setDateRange(undefined)}
+                  >
+                    Limpar Filtro
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           
           <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-lg mb-2">Nenhuma reunião agendada ainda</p>
             <p className="text-sm">Suas reuniões aparecerão aqui quando você começar a agendar</p>
           </div>
@@ -177,19 +216,53 @@ const HistoricoReunioes: React.FC = () => {
       <CardContent>
         {/* Filtro por período */}
         <div className="mb-6">
-          <MonthYearFilter
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            onMonthChange={setSelectedMonth}
-            onYearChange={setSelectedYear}
-          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
+                      {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+                    </>
+                  ) : (
+                    format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                  )
+                ) : (
+                  "Filtrar por período"
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                locale={ptBR}
+                className={cn("p-3 pointer-events-auto")}
+              />
+              <div className="p-3 border-t">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setDateRange(undefined)}
+                >
+                  Limpar Filtro
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {reunioesFiltradas.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-lg mb-2">Nenhuma reunião encontrada neste período</p>
-            <p className="text-sm">Selecione outro mês/ano ou aguarde novas reuniões</p>
+            <p className="text-sm">Selecione outro período ou aguarde novas reuniões</p>
           </div>
         ) : (
           <div className="space-y-4">

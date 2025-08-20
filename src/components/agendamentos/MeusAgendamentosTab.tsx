@@ -14,6 +14,7 @@ import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
 import AgendamentoDetailsModal from './AgendamentoDetailsModal';
 import EditarHorarioSDRDialog from './EditarHorarioSDRDialog';
 import HistoricoReunioes from '@/components/sdr/HistoricoReunioes';
+import MeusAgendamentosCalendario from './MeusAgendamentosCalendario';
 
 interface MeusAgendamentosTabProps {
   agendamentos: AgendamentoSDR[];
@@ -263,6 +264,10 @@ const [modalOpen, setModalOpen] = useState(false);
             <History className="h-4 w-4" />
             Histórico
           </TabsTrigger>
+          <TabsTrigger value="calendario" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Calendário
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="agendados">
@@ -271,6 +276,10 @@ const [modalOpen, setModalOpen] = useState(false);
 
         <TabsContent value="historico">
           <HistoricoReunioes />
+        </TabsContent>
+
+        <TabsContent value="calendario">
+          <MeusAgendamentosCalendario agendamentosAtivos={agendamentosAgendados} />
         </TabsContent>
       </Tabs>
 
