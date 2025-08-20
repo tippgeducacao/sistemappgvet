@@ -62,9 +62,10 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
       const dataAgendamento = new Date(agendamento.data_agendamento);
       const isDoSDR = agendamento.sdr_id === sdr.id;
       const dentroDaSemana = dataAgendamento >= startDate && dataAgendamento <= endDate;
+      const foiRealizada = agendamento.status === 'realizado'; // CRÍTICO: só reuniões finalizadas
       const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
                          agendamento.resultado_reuniao === 'comprou';
-      return isDoSDR && dentroDaSemana && compareceu;
+      return isDoSDR && dentroDaSemana && foiRealizada && compareceu;
     }).length || 0;
     
     return reunioesNaSemana;
