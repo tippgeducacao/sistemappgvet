@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw, List } from 'lucide-react';
+import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -14,7 +12,6 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
 import AgendamentoDetailsModal from './AgendamentoDetailsModal';
 import EditarHorarioSDRDialog from './EditarHorarioSDRDialog';
-import MeusAgendamentosCalendario from './MeusAgendamentosCalendario';
 
 interface MeusAgendamentosTabProps {
   agendamentos: AgendamentoSDR[];
@@ -33,22 +30,6 @@ const [modalOpen, setModalOpen] = useState(false);
   const todosAgendamentos = agendamentos
     .filter(ag => ag.sdr_id === profile?.id)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-  console.log('📊 Profile ID atual:', profile?.id);
-  console.log('📊 Total agendamentos carregados:', agendamentos.length);
-  console.log('📊 Agendamentos filtrados para o SDR:', todosAgendamentos.length);
-  console.log('📊 Todos agendamentos:', todosAgendamentos.map(ag => ({ id: ag.id, status: ag.status, sdr_id: ag.sdr_id })));
-
-  // Separar por status
-  const agendamentosAgendados = todosAgendamentos.filter(ag => 
-    ag.status === 'agendado'
-  );
-  
-  const agendamentosFinalizados = todosAgendamentos.filter(ag => 
-    ag.status !== 'agendado'
-  );
-
-  console.log('📊 Agendados:', agendamentosAgendados.length, 'Finalizados:', agendamentosFinalizados.length);
 
   const cancelarAgendamento = async (agendamentoId: string) => {
     try {
@@ -270,35 +251,7 @@ const [modalOpen, setModalOpen] = useState(false);
         </div>
       </div>
 
-      <Tabs defaultValue="agendados" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="agendados" className="flex items-center gap-2">
-            <List className="h-4 w-4" />
-            Agendados ({agendamentosAgendados.length})
-          </TabsTrigger>
-          <TabsTrigger value="finalizados" className="flex items-center gap-2">
-            <List className="h-4 w-4" />
-            Finalizados ({agendamentosFinalizados.length})
-          </TabsTrigger>
-          <TabsTrigger value="calendario" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Calendário
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="agendados">
-          {renderAgendamentosList(agendamentosAgendados, "Você ainda não tem agendamentos pendentes")}
-        </TabsContent>
-
-        <TabsContent value="finalizados">
-          {renderAgendamentosList(agendamentosFinalizados, "Você ainda não tem agendamentos finalizados")}
-        </TabsContent>
-
-        <TabsContent value="calendario">
-          <MeusAgendamentosCalendario agendamentos={todosAgendamentos} />
-        </TabsContent>
-      </Tabs>
-
+      {renderAgendamentosList(todosAgendamentos, "Você ainda não tem agendamentos")}
 
       <AgendamentoDetailsModal
         agendamento={selectedAgendamento}
