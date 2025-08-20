@@ -4,9 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Users, MapPin, Filter, Eye, Edit2, Search } from 'lucide-react';
+import { Calendar, Users, MapPin, Filter, Eye, Edit2, Search, CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import { AgendamentoSDR } from '@/hooks/useAgendamentosSDR';
 import AgendamentoDetailsModal from './AgendamentoDetailsModal';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -22,6 +25,8 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [filtroResultado, setFiltroResultado] = useState<string>('todos');
   const [pesquisaLead, setPesquisaLead] = useState<string>('');
+  const [dataInicio, setDataInicio] = useState<Date | undefined>(undefined);
+  const [dataFim, setDataFim] = useState<Date | undefined>(undefined);
   const [selectedAgendamento, setSelectedAgendamento] = useState<AgendamentoSDR | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const { isDiretor } = useUserRoles();
@@ -32,6 +37,25 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
     if (filtroStatus !== 'todos' && agendamento.status !== filtroStatus) return false;
     if (filtroResultado !== 'todos' && agendamento.resultado_reuniao !== filtroResultado) return false;
     if (pesquisaLead && !agendamento.lead?.nome?.toLowerCase().includes(pesquisaLead.toLowerCase())) return false;
+    
+    // Filtro por data de início
+    if (dataInicio) {
+      const dataAgendamento = new Date(agendamento.data_agendamento);
+      dataAgendamento.setHours(0, 0, 0, 0);
+      const inicio = new Date(dataInicio);
+      inicio.setHours(0, 0, 0, 0);
+      if (dataAgendamento < inicio) return false;
+    }
+    
+    // Filtro por data de fim
+    if (dataFim) {
+      const dataAgendamento = new Date(agendamento.data_agendamento);
+      dataAgendamento.setHours(23, 59, 59, 999);
+      const fim = new Date(dataFim);
+      fim.setHours(23, 59, 59, 999);
+      if (dataAgendamento > fim) return false;
+    }
+    
     return true;
   });
 
@@ -93,6 +117,56 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
           />
         </div>
 
+        {/* Filtro de Data de Início */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-[160px] justify-start text-left font-normal",
+                !dataInicio && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dataInicio ? format(dataInicio, "dd/MM/yyyy", { locale: ptBR }) : "Data início"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dataInicio}
+              onSelect={setDataInicio}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+
+        {/* Filtro de Data de Fim */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-[160px] justify-start text-left font-normal",
+                !dataFim && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dataFim ? format(dataFim, "dd/MM/yyyy", { locale: ptBR }) : "Data fim"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dataFim}
+              onSelect={setDataFim}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
           <Select value={filtroSDR} onValueChange={setFiltroSDR}>
@@ -138,7 +212,7 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
           </SelectContent>
         </Select>
 
-        {(filtroSDR !== 'todos' || filtroStatus !== 'todos' || filtroResultado !== 'todos' || pesquisaLead) && (
+        {(filtroSDR !== 'todos' || filtroStatus !== 'todos' || filtroResultado !== 'todos' || pesquisaLead || dataInicio || dataFim) && (
           <Button 
             variant="outline" 
             size="sm" 
@@ -147,6 +221,8 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
               setFiltroStatus('todos');
               setFiltroResultado('todos');
               setPesquisaLead('');
+              setDataInicio(undefined);
+              setDataFim(undefined);
             }}
           >
             Limpar Filtros
