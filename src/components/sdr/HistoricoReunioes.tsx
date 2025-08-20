@@ -168,16 +168,16 @@ const HistoricoReunioes: React.FC = () => {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 z-50" align="start">
                 <Calendar
                   initialFocus
                   mode="range"
                   defaultMonth={dateRange?.from}
                   selected={dateRange}
                   onSelect={setDateRange}
-                  numberOfMonths={2}
+                  numberOfMonths={1}
                   locale={ptBR}
-                  className={cn("p-3 pointer-events-auto")}
+                  className="p-3 pointer-events-auto"
                 />
                 <div className="p-3 border-t">
                   <Button
@@ -234,16 +234,16 @@ const HistoricoReunioes: React.FC = () => {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 z-50" align="start">
               <Calendar
                 initialFocus
                 mode="range"
                 defaultMonth={dateRange?.from}
                 selected={dateRange}
                 onSelect={setDateRange}
-                numberOfMonths={2}
+                numberOfMonths={1}
                 locale={ptBR}
-                className={cn("p-3 pointer-events-auto")}
+                className="p-3 pointer-events-auto"
               />
               <div className="p-3 border-t">
                 <Button
@@ -275,10 +275,10 @@ const HistoricoReunioes: React.FC = () => {
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{reuniao.lead?.nome}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    {format(new Date(reuniao.data_agendamento), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                  </div>
+                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                     <CalendarIcon className="h-4 w-4" />
+                     {format(new Date(reuniao.data_agendamento), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="h-4 w-4" />
                     {format(new Date(reuniao.data_agendamento), 'HH:mm')}
