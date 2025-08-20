@@ -25,42 +25,38 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
     try {
       setLoading(true);
       
-      // Usar EXATAMENTE a mesma lógica do TVRankingDisplay
+      // Calcular o MÊS COMPLETO (como mostrado na planilha)
       const today = new Date();
-      const semanaOffset = 0; // Semana atual, como no painel TV
+      const currentMonth = today.getMonth() + 1; // Janeiro = 1
+      const currentYear = today.getFullYear();
       
-      // Calcular período da semana baseado no offset - IGUAL ao TVRankingDisplay
-      // Primeiro, encontrar a terça-feira que encerra a semana ATUAL
-      let tercaAtual = new Date(today);
+      // Calcular início e fim do MÊS INTEIRO (primeira quarta até última terça)
+      const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
+      const lastDayOfMonth = new Date(currentYear, currentMonth, 0);
       
-      if (tercaAtual.getDay() === 2) {
-        // Hoje é terça-feira - a semana atual termina hoje
-      } else {
-        // Encontrar a próxima terça-feira (que encerra a semana atual)
-        const diasAteTerca = (2 - tercaAtual.getDay() + 7) % 7;
-        const diasParaSomar = diasAteTerca === 0 ? 7 : diasAteTerca;
-        tercaAtual.setDate(tercaAtual.getDate() + diasParaSomar);
+      // Encontrar a primeira quarta-feira do mês (início do ciclo)
+      let startOfMonth = new Date(firstDayOfMonth);
+      while (startOfMonth.getDay() !== 3) { // 3 = quarta-feira
+        startOfMonth.setDate(startOfMonth.getDate() - 1);
       }
-
-      // Aplicar o offset de semanas à terça-feira
-      const tercaAlvo = new Date(tercaAtual);
-      tercaAlvo.setDate(tercaAtual.getDate() + (semanaOffset * 7));
+      startOfMonth.setHours(0, 0, 0, 0);
       
-      // A partir da terça-feira alvo, calcular início e fim da semana
-      const endOfWeek = new Date(tercaAlvo);
-      endOfWeek.setHours(23, 59, 59, 999);
-      
-      const startOfWeek = new Date(tercaAlvo);
-      startOfWeek.setDate(tercaAlvo.getDate() - 6); // 6 dias antes da terça = quarta anterior
-      startOfWeek.setHours(0, 0, 0, 0);
+      // Encontrar a última terça-feira do mês (fim do ciclo)
+      let endOfMonth = new Date(lastDayOfMonth);
+      while (endOfMonth.getDay() !== 2) { // 2 = terça-feira
+        endOfMonth.setDate(endOfMonth.getDate() + 1);
+      }
+      endOfMonth.setHours(23, 59, 59, 999);
 
-      console.log(`🔍 SDR METAS STATS - Usando mesma lógica do TVRanking:`, {
-        startOfWeek: startOfWeek.toISOString(),
-        endOfWeek: endOfWeek.toISOString(),
-        periodo: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`
+      console.log(`🔍 SDR METAS STATS - Calculando MÊS COMPLETO:`, {
+        mes: currentMonth,
+        ano: currentYear,
+        startOfMonth: startOfMonth.toISOString(),
+        endOfMonth: endOfMonth.toISOString(),
+        periodo: `${startOfMonth.toLocaleDateString('pt-BR')} - ${endOfMonth.toLocaleDateString('pt-BR')}`
       });
 
-      // Buscar agendamentos da semana para os SDRs (mesma lógica do painel TV)
+      // Buscar agendamentos do MÊS COMPLETO para os SDRs
       const { data: agendamentos, error: agendamentosError } = await supabase
         .from('agendamentos')
         .select(`
@@ -69,8 +65,8 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
           data_agendamento
         `)
         .in('sdr_id', sdrIds)
-        .gte('data_agendamento', startOfWeek.toISOString())
-        .lte('data_agendamento', endOfWeek.toISOString());
+        .gte('data_agendamento', startOfMonth.toISOString())
+        .lte('data_agendamento', endOfMonth.toISOString());
 
       if (agendamentosError) throw agendamentosError;
 
@@ -115,7 +111,12 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
         ).length;
         
         const metaSemanal = nivelConfig?.meta_semanal_inbound || 0;
-        const percentualAtingido = metaSemanal > 0 ? (agendamentosFeitos / metaSemanal) * 100 : 0;
+        
+        // Calcular quantas semanas tem no mês (para meta mensal)
+        const weeksInMonth = Math.ceil((endOfMonth.getTime() - startOfMonth.getTime()) / (7 * 24 * 60 * 60 * 1000));
+        const metaMensal = metaSemanal * weeksInMonth;
+        
+        const percentualAtingido = metaMensal > 0 ? (agendamentosFeitos / metaMensal) * 100 : 0;
 
         const resultado = {
           sdr_id: sdrId,
