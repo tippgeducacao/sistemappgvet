@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ComissionamentoService } from '@/services/comissionamentoService';
+import { supabase } from '@/integrations/supabase/client';
 
 // Regras de comissionamento SDR fixas para performance
 const REGRAS_COMISSIONAMENTO_SDR = [
@@ -53,42 +54,72 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
   const metaMensal = metaSemanal * weeks.length;
   const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
   
-  // NOVA LÓGICA DO ZERO - Baseada no painel TV
-  const reunioesPorSemana = weeks.map((week, weekIndex) => {
-    const startOfWeek = new Date(week.startDate);
-    const endOfWeek = new Date(week.endDate);
-    
-    console.log(`🗓️ NOVA LÓGICA - ${sdr.name} - Semana ${weekIndex + 1}: ${startOfWeek.toLocaleDateString()} a ${endOfWeek.toLocaleDateString()}`);
-    
-    // Buscar agendamentos do SDR que estão dentro desta semana
-    const agendamentosValidosNaSemana = agendamentos?.filter(agendamento => {
-      // 1. Verificar se é do SDR
-      const isDoSDR = agendamento.sdr_id === sdr.id;
-      if (!isDoSDR) return false;
+  // NOVA LÓGICA - Baseada exatamente no SDRMetasSemanais (que está correto)
+  const [reunioesPorSemana, setReunioesPorSemana] = useState<number[]>([]);
+  
+  useEffect(() => {
+    const fetchAgendamentosPorSemana = async () => {
+      console.log(`🔄 ${sdr.name} - Buscando agendamentos por semana...`);
       
-      // 2. Verificar se está dentro da semana
-      const dataAgendamento = new Date(agendamento.data_agendamento);
-      const dentroDaSemana = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
-      if (!dentroDaSemana) return false;
+      const reunioesSemanas = await Promise.all(
+        weeks.map(async (week, weekIndex) => {
+          const startOfWeek = new Date(week.startDate);
+          const endOfWeek = new Date(week.endDate);
+          
+          // Ajustar horários para início e fim do dia
+          const startDateFormatted = new Date(startOfWeek);
+          startDateFormatted.setHours(0, 0, 0, 0);
+          
+          const endDateFormatted = new Date(endOfWeek);
+          endDateFormatted.setHours(23, 59, 59, 999);
+          
+          console.log(`🗓️ ${sdr.name} - Semana ${weekIndex + 1}: ${startOfWeek.toLocaleDateString()} a ${endOfWeek.toLocaleDateString()}`);
+          console.log(`🔍 ${sdr.name} - Query exata:`, {
+            sdr_id: sdr.id,
+            data_inicio: startDateFormatted.toISOString(),
+            data_fim: endDateFormatted.toISOString()
+          });
+          
+          try {
+            // Buscar agendamentos usando EXATAMENTE a mesma query do SDRMetasSemanais
+            const { data: agendamentosSemana, error } = await supabase
+              .from('agendamentos')
+              .select('*')
+              .eq('sdr_id', sdr.id)
+              .gte('data_agendamento', startDateFormatted.toISOString())
+              .lte('data_agendamento', endDateFormatted.toISOString())
+              .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
+
+            if (error) {
+              console.error(`❌ ${sdr.name} - Erro na consulta semana ${weekIndex + 1}:`, error);
+              return 0;
+            }
+
+            const totalNaSemana = agendamentosSemana?.length || 0;
+            
+            console.log(`📊 ${sdr.name} - Semana ${weekIndex + 1}: ${totalNaSemana} reuniões encontradas`);
+            console.log(`📋 ${sdr.name} - Detalhes:`, agendamentosSemana?.map(a => ({
+              id: a.id,
+              data_agendamento: a.data_agendamento,
+              resultado: a.resultado_reuniao
+            })));
+            
+            return totalNaSemana;
+          } catch (error) {
+            console.error(`❌ ${sdr.name} - Erro ao buscar semana ${weekIndex + 1}:`, error);
+            return 0;
+          }
+        })
+      );
       
-      // 3. Verificar se compareceu (não comprou) ou comprou - SEM verificar status
-      const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                         agendamento.resultado_reuniao === 'comprou';
-      
-      if (compareceu) {
-        console.log(`✅ NOVA LÓGICA - ${sdr.name} - CONTADA: resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}, status=${agendamento.status}`);
-      } else {
-        console.log(`🚫 NOVA LÓGICA - ${sdr.name} - REJEITADA: resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}`);
-      }
-      
-      return compareceu;
-    }) || [];
+      console.log(`✅ ${sdr.name} - Resultado final por semana:`, reunioesSemanas);
+      setReunioesPorSemana(reunioesSemanas);
+    };
     
-    const totalNaSemana = agendamentosValidosNaSemana.length;
-    console.log(`📊 NOVA LÓGICA - ${sdr.name} - Semana ${weekIndex + 1}: ${totalNaSemana} reuniões válidas`);
-    
-    return totalNaSemana;
-  });
+    if (sdr.id && weeks.length > 0) {
+      fetchAgendamentosPorSemana();
+    }
+  }, [sdr.id, weeks]);
   
   // Calcular totais
   const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
