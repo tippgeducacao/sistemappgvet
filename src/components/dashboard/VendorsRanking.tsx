@@ -1047,16 +1047,31 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                     </tr>
                   </thead>
                   <tbody>
-                    {vendedores.filter(v => v.user_type === 'sdr').map((sdr, index) => (
-                      <SDRTableRow
-                        key={sdr.id}
-                        sdr={sdr}
-                        index={index}
-                        weeks={getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]))}
-                        agendamentos={agendamentos}
-                        niveis={niveis}
-                      />
-                    ))}
+                    {vendedores.filter(v => v.user_type === 'sdr').map((sdr, index) => {
+                      const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
+                      const startOfMonth = weeks[0]?.startDate ? new Date(weeks[0].startDate) : null;
+                      const endOfMonth = weeks[weeks.length - 1]?.endDate ? new Date(weeks[weeks.length - 1].endDate) : null;
+                      
+                      // Filtrar agendamentos apenas do período atual
+                      const agendamentosFiltrados = agendamentos?.filter(agendamento => {
+                        if (!startOfMonth || !endOfMonth) return false;
+                        const dataAgendamento = new Date(agendamento.data_agendamento);
+                        return dataAgendamento >= startOfMonth && dataAgendamento <= endOfMonth;
+                      });
+                      
+                      console.log(`🔍 ${sdr.name} - Agendamentos filtrados: ${agendamentosFiltrados?.length || 0} de ${agendamentos?.length || 0} total`);
+                      
+                      return (
+                        <SDRTableRow
+                          key={sdr.id}
+                          sdr={sdr}
+                          index={index}
+                          weeks={weeks}
+                          agendamentos={agendamentosFiltrados}
+                          niveis={niveis}
+                        />
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
