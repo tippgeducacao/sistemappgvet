@@ -789,15 +789,25 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           if (agendamento.sdr_id !== sdr.id) return false;
           
           // CRÍTICO: Apenas agendamentos finalizados/realizados
-          if (agendamento.status !== 'realizado') return false;
+          if (agendamento.status !== 'realizado') {
+            console.log(`🚫 ${sdr.name}: Agendamento rejeitado - status: ${agendamento.status}`);
+            return false;
+          }
           
           // Contar apenas reuniões onde houve comparecimento confirmado (mesma lógica do TV)
           const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
                             agendamento.resultado_reuniao === 'comprou';
-          if (!compareceu) return false;
+          if (!compareceu) {
+            console.log(`🚫 ${sdr.name}: Agendamento rejeitado - resultado: ${agendamento.resultado_reuniao}`);
+            return false;
+          }
           
           const dataAgendamento = new Date(agendamento.data_agendamento);
-          return dataAgendamento >= startDate && dataAgendamento <= endDate;
+          const dentroDaSemana = dataAgendamento >= startDate && dataAgendamento <= endDate;
+          
+          console.log(`✅ ${sdr.name} - VÁLIDO: status=${agendamento.status}, resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}`);
+          
+          return dentroDaSemana;
         }) || [];
         
         console.log(`📅 Semana ${week.week} ${sdr.name}: ${reunioesNaSemana.length} Reuniões validadas`);
