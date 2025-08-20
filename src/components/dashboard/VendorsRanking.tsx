@@ -788,24 +788,20 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         const reunioesNaSemana = agendamentos?.filter(agendamento => {
           if (agendamento.sdr_id !== sdr.id) return false;
           
-          // CRÍTICO: Apenas agendamentos finalizados/realizados
-          if (agendamento.status !== 'realizado') {
-            console.log(`🚫 ${sdr.name}: Agendamento rejeitado - status: ${agendamento.status}`);
-            return false;
-          }
-          
-          // Contar apenas reuniões onde houve comparecimento confirmado (mesma lógica do TV)
+          // Contar apenas reuniões onde houve comparecimento confirmado
           const compareceu = agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
                             agendamento.resultado_reuniao === 'comprou';
           if (!compareceu) {
-            console.log(`🚫 ${sdr.name}: Agendamento rejeitado - resultado: ${agendamento.resultado_reuniao}`);
+            console.log(`🚫 ${sdr.name}: Rejeitado - resultado: ${agendamento.resultado_reuniao}`);
             return false;
           }
           
           const dataAgendamento = new Date(agendamento.data_agendamento);
           const dentroDaSemana = dataAgendamento >= startDate && dataAgendamento <= endDate;
           
-          console.log(`✅ ${sdr.name} - VÁLIDO: status=${agendamento.status}, resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}`);
+          if (dentroDaSemana) {
+            console.log(`✅ ${sdr.name} - VÁLIDO: resultado=${agendamento.resultado_reuniao}, data=${dataAgendamento.toLocaleDateString()}`);
+          }
           
           return dentroDaSemana;
         }) || [];
