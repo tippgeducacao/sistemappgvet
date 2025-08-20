@@ -22,6 +22,7 @@ import AgendaGeral from './AgendaGeral';
 import AgendamentoErrorDiagnosis from './AgendamentoErrorDiagnosis';
 import MeusAgendamentosTab from './MeusAgendamentosTab';
 import TodosAgendamentosTab from './TodosAgendamentosTab';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 import { useOverdueAppointments } from '@/hooks/useOverdueAppointments';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,6 +45,8 @@ const AgendamentosPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
+  // User roles
+  const { isSDR, isAdmin, isDiretor } = useUserRoles();
   // Form fields
   const [searchType, setSearchType] = useState<'nome' | 'email' | 'whatsapp'>('nome');
   const [searchTerm, setSearchTerm] = useState('');
@@ -141,29 +144,6 @@ const AgendamentosPage: React.FC = () => {
 
   // Hook para verificar roles do usuário
   const { user } = useAuth();
-  const [isSDR, setIsSDR] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isDiretor, setIsDiretor] = useState(false);
-
-  useEffect(() => {
-    const checkUserRole = async () => {
-      if (user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('user_type')
-          .eq('id', user.id)
-          .single();
-        
-        if (!error && data) {
-          setIsSDR(['sdr'].includes(data.user_type));
-          setIsAdmin(['admin'].includes(data.user_type));
-          setIsDiretor(['diretor'].includes(data.user_type));
-        }
-      }
-    };
-    
-    checkUserRole();
-  }, [user]);
 
   useEffect(() => {
     carregarDados();
@@ -1864,7 +1844,7 @@ const AgendamentosPage: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             {getStatusBadge(agendamento.status)}
-                            {isSDR && (
+                            {isDiretor && (
                               <Button
                                 variant="outline"
                                 size="sm"
