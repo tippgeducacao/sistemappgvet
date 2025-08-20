@@ -149,13 +149,14 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
           
           console.log(`📊 Semana ${numeroSemana}: ${inicioSemana.toLocaleDateString('pt-BR')} - ${fimSemana.toLocaleDateString('pt-BR')}`);
           
-          // Buscar agendamentos desta semana específica
+          // Buscar agendamentos desta semana específica - FILTRAR POR STATUS REALIZADO
           const { data: agendamentosSemana, error: agendamentosError } = await supabase
             .from('agendamentos')
-            .select('sdr_id, resultado_reuniao, data_agendamento')
+            .select('sdr_id, resultado_reuniao, data_agendamento, status')
             .eq('sdr_id', sdrId)
             .gte('data_agendamento', inicioSemana.toISOString())
             .lte('data_agendamento', fimSemana.toISOString())
+            .eq('status', 'realizado')  // CRÍTICO: só reuniões finalizadas
             .in('resultado_reuniao', ['compareceu_nao_comprou', 'comprou']);
 
           if (agendamentosError) {
@@ -169,7 +170,17 @@ export const useSDRMetasEstats = (sdrIds: string[] = []) => {
           totalAgendamentosFeitos += reunioesSemana;
           totalConversoes += conversoesSemana;
           
-          console.log(`   ✅ Semana ${numeroSemana}: ${reunioesSemana} reuniões, ${conversoesSemana} vendas`);
+           console.log(`   ✅ Semana ${numeroSemana}: ${reunioesSemana} reuniões, ${conversoesSemana} vendas`);
+           
+           // Log detalhado das reuniões encontradas (especialmente para Ricael)
+           if (profile?.name?.toLowerCase().includes('ricael') && reunioesSemana > 0) {
+             console.log(`   📋 Detalhes das reuniões do Ricael na semana ${numeroSemana}:`, 
+               agendamentosSemana?.map(a => ({
+                 data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
+                 resultado: a.resultado_reuniao
+               }))
+             );
+           }
         }
         
         const metaSemanal = nivelConfig?.meta_semanal_inbound || 0;
