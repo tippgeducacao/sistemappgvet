@@ -13,6 +13,9 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
   const { grupos, loading } = useGruposSupervisores();
   
+  // Debug: Force component refresh - all supervisorData references removed
+  console.log('SupervisorDashboard loaded - no supervisorData references');
+  
   // Estado para navegação semanal
   const [currentDate, setCurrentDate] = useState(new Date());
   const currentYear = currentDate.getFullYear();
