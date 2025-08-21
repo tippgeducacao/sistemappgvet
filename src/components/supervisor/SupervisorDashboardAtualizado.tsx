@@ -13,9 +13,6 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
   const { grupos, loading } = useGruposSupervisores();
   
-  // Debug: Force component refresh - all supervisorData references removed
-  console.log('SupervisorDashboard loaded - no supervisorData references');
-  
   // Estado para navegação semanal
   const [currentDate, setCurrentDate] = useState(new Date());
   const currentYear = currentDate.getFullYear();
@@ -26,9 +23,9 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   const { getMetaSemanalSDR } = useMetasSemanaisSDR();
   
   // Semanas do mês atual
-  const semanasDoMes = getSemanasDoMes(currentYear, currentMonth);
-  const semanaAtual = getSemanaAtual();
-  const [selectedWeek, setSelectedWeek] = useState(semanaAtual);
+  const semanasDoMes = useMemo(() => getSemanasDoMes(currentYear, currentMonth), [currentYear, currentMonth, getSemanasDoMes]);
+  const semanaAtual = useMemo(() => getSemanaAtual(), [getSemanaAtual]);
+  const [selectedWeek, setSelectedWeek] = useState(() => getSemanaAtual());
 
   // Encontrar o grupo do supervisor logado
   const meuGrupo = useMemo(() => {
@@ -37,8 +34,11 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   }, [user, grupos]);
 
   // Hook para buscar estatísticas de agendamentos dos vendedores na semana selecionada
-  const weekDate = new Date(currentYear, currentMonth - 1, 1);
-  weekDate.setDate(weekDate.getDate() + (selectedWeek - 1) * 7);
+  const weekDate = useMemo(() => {
+    const date = new Date(currentYear, currentMonth - 1, 1);
+    date.setDate(date.getDate() + (selectedWeek - 1) * 7);
+    return date;
+  }, [currentYear, currentMonth, selectedWeek]);
   
   const { statsData, isLoading: statsLoading } = useAgendamentosStatsVendedores(undefined, weekDate);
 
@@ -49,6 +49,39 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
       setSelectedWeek(newWeek);
     }
   };
+
+  // Memoizar cálculos dos cards para evitar re-renders
+  const totalAtividades = useMemo(() => {
+    return statsData.reduce((total, stat) => total + stat.total, 0);
+  }, [statsData]);
+
+  const totalConversoes = useMemo(() => {
+    return statsData.reduce((total, stat) => total + stat.convertidas, 0);
+  }, [statsData]);
+
+  const percentualGeral = useMemo(() => {
+    let totalMeta = 0;
+    let totalRealizado = 0;
+    
+    meuGrupo?.membros?.forEach((membro) => {
+      const userType = membro.usuario?.user_type;
+      let meta = 0;
+      
+      if (userType === 'vendedor') {
+        meta = getMetaSemanalVendedor(membro.usuario_id, currentYear, selectedWeek)?.meta_vendas || 0;
+      } else if (userType?.includes('sdr')) {
+        meta = getMetaSemanalSDR(membro.usuario_id, currentYear, selectedWeek)?.meta_vendas_cursos || 0;
+      }
+      
+      const vendedorStat = statsData.find(stat => stat.vendedor_id === membro.usuario_id);
+      const realizado = vendedorStat?.total || 0;
+      
+      totalMeta += meta;
+      totalRealizado += realizado;
+    });
+
+    return totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
+  }, [meuGrupo, statsData, currentYear, selectedWeek, getMetaSemanalVendedor, getMetaSemanalSDR]);
 
   if (loading || statsLoading) {
     return (
@@ -112,7 +145,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-foreground">
-                {statsData.reduce((total, stat) => total + stat.total, 0)}
+                {totalAtividades}
               </div>
               <p className="text-sm text-muted-foreground">atividades realizadas esta semana</p>
             </CardContent>
@@ -127,40 +160,13 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {(() => {
-                let totalMeta = 0;
-                let totalRealizado = 0;
-                
-                meuGrupo.membros.forEach((membro) => {
-                  const userType = membro.usuario?.user_type;
-                  let meta = 0;
-                  
-                  if (userType === 'vendedor') {
-                    meta = getMetaSemanalVendedor(membro.usuario_id, currentYear, selectedWeek)?.meta_vendas || 0;
-                  } else if (userType?.includes('sdr')) {
-                    const nivel = membro.usuario?.nivel || 'junior';
-                    meta = getMetaSemanalSDR(membro.usuario_id, currentYear, selectedWeek)?.meta_vendas_cursos || 0;
-                  }
-                  
-                  const vendedorStat = statsData.find(stat => stat.vendedor_id === membro.usuario_id);
-                  const realizado = vendedorStat?.total || 0;
-                  
-                  totalMeta += meta;
-                  totalRealizado += realizado;
-                });
-
-                const percentualGeral = totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
-
-                return (
-                  <div className="space-y-3">
-                    <div className="text-3xl font-bold text-foreground">
-                      {percentualGeral.toFixed(1)}%
-                    </div>
-                    <p className="text-sm text-muted-foreground">média do grupo</p>
-                    <Progress value={Math.min(percentualGeral, 100)} className="h-2" />
-                  </div>
-                );
-              })()}
+              <div className="space-y-3">
+                <div className="text-3xl font-bold text-foreground">
+                  {percentualGeral.toFixed(1)}%
+                </div>
+                <p className="text-sm text-muted-foreground">média do grupo</p>
+                <Progress value={Math.min(percentualGeral, 100)} className="h-2" />
+              </div>
             </CardContent>
           </Card>
 
@@ -174,7 +180,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-foreground">
-                {statsData.reduce((total, stat) => total + stat.convertidas, 0)}
+                {totalConversoes}
               </div>
               <p className="text-sm text-muted-foreground">vendas realizadas</p>
             </CardContent>
