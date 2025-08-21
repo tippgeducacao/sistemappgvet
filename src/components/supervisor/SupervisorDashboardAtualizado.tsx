@@ -158,14 +158,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                       </Button>
                     );
                   } else {
-                    return (
-                      <Button 
-                        size="sm" 
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-xs"
-                      >
-                        Precisa melhorar
-                      </Button>
-                    );
+                    return null;
                   }
                 };
                 
@@ -194,7 +187,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Métricas e Ações */}
+                     {/* Métricas e Ações */}
                     <div className="flex items-center gap-6">
                       {/* Meta e Agendamentos */}
                       <div className="text-right">
@@ -207,14 +200,6 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                       {/* Barra de Progresso */}
                       <div className="w-24">
                         <Progress value={Math.min(percentual, 100)} className="h-2" />
-                      </div>
-                      
-                      {/* Comissão */}
-                      <div className="text-right min-w-[80px]">
-                        <div className="text-sm font-semibold text-green-600 dark:text-green-500">
-                          R$ {supervisorData?.valorComissao?.toFixed(2) || '0.00'}
-                        </div>
-                        <div className="text-xs text-muted-foreground">Comissão Supervisor</div>
                       </div>
                       
                       {/* Status */}
