@@ -6,8 +6,7 @@ import { Calendar, Target, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
-import { useMetasSemanaisSDR } from '@/hooks/useMetasSemanaisSDR';
-import { useAgendamentosStatsVendedores } from '@/hooks/useAgendamentosStatsVendedores';
+import { useSupervisorComissionamentoAtual } from '@/hooks/useSupervisorComissionamento';
 
 export const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
@@ -19,8 +18,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   const currentMonth = currentDate.getMonth() + 1;
   
   // Hooks para metas semanais
-  const { getSemanasDoMes, getSemanaAtual, getMetaSemanalVendedor } = useMetasSemanais();
-  const { getMetaSemanalSDR } = useMetasSemanaisSDR();
+  const { getSemanasDoMes, getSemanaAtual } = useMetasSemanais();
   
   // Semanas do mês atual
   const semanasDoMes = useMemo(() => getSemanasDoMes(currentYear, currentMonth), [currentYear, currentMonth, getSemanasDoMes]);
@@ -33,14 +31,8 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
     return grupos.find(grupo => grupo.supervisor_id === user.id);
   }, [user, grupos]);
 
-  // Hook para buscar estatísticas de agendamentos dos vendedores na semana selecionada
-  const weekDate = useMemo(() => {
-    const date = new Date(currentYear, currentMonth - 1, 1);
-    date.setDate(date.getDate() + (selectedWeek - 1) * 7);
-    return date;
-  }, [currentYear, currentMonth, selectedWeek]);
-  
-  const { statsData, isLoading: statsLoading } = useAgendamentosStatsVendedores(undefined, weekDate);
+  // Buscar dados da planilha detalhada do supervisor para a semana selecionada
+  const { data: supervisorData, isLoading: supervisorLoading } = useSupervisorComissionamentoAtual(user?.id || '');
 
   // Funções de navegação semanal
   const navigateWeek = (direction: 'prev' | 'next') => {
@@ -50,40 +42,24 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
     }
   };
 
-  // Memoizar cálculos dos cards para evitar re-renders
+  // Memoizar cálculos dos cards baseados na planilha detalhada
   const totalAtividades = useMemo(() => {
-    return statsData.reduce((total, stat) => total + stat.total, 0);
-  }, [statsData]);
+    if (!supervisorData?.sdrsDetalhes) return 0;
+    return supervisorData.sdrsDetalhes.reduce((total, sdr) => total + (sdr.reunioesRealizadas || 0), 0);
+  }, [supervisorData]);
 
   const totalConversoes = useMemo(() => {
-    return statsData.reduce((total, stat) => total + stat.convertidas, 0);
-  }, [statsData]);
+    if (!supervisorData?.sdrsDetalhes) return 0;
+    // Para conversões, vamos contar o total de membros da equipe por enquanto
+    return meuGrupo?.membros?.length || 0;
+  }, [supervisorData, meuGrupo]);
 
   const percentualGeral = useMemo(() => {
-    let totalMeta = 0;
-    let totalRealizado = 0;
-    
-    meuGrupo?.membros?.forEach((membro) => {
-      const userType = membro.usuario?.user_type;
-      let meta = 0;
-      
-      if (userType === 'vendedor') {
-        meta = getMetaSemanalVendedor(membro.usuario_id, currentYear, selectedWeek)?.meta_vendas || 0;
-      } else if (userType?.includes('sdr')) {
-        meta = getMetaSemanalSDR(membro.usuario_id, currentYear, selectedWeek)?.meta_vendas_cursos || 0;
-      }
-      
-      const vendedorStat = statsData.find(stat => stat.vendedor_id === membro.usuario_id);
-      const realizado = vendedorStat?.total || 0;
-      
-      totalMeta += meta;
-      totalRealizado += realizado;
-    });
+    if (!supervisorData) return 0;
+    return supervisorData.mediaPercentualAtingimento || 0;
+  }, [supervisorData]);
 
-    return totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
-  }, [meuGrupo, statsData, currentYear, selectedWeek, getMetaSemanalVendedor, getMetaSemanalSDR]);
-
-  if (loading || statsLoading) {
+  if (loading || supervisorLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -197,21 +173,12 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {meuGrupo.membros.map((membro) => {
-              const userType = membro.usuario?.user_type;
+              // Buscar dados do membro na planilha detalhada do supervisor
+              const membroDetalhe = supervisorData?.sdrsDetalhes?.find(sdr => sdr.id === membro.usuario_id);
               
-              // Buscar meta semanal baseada no tipo de usuário
-              let meta = 0;
-              if (userType === 'vendedor') {
-                meta = getMetaSemanalVendedor(membro.usuario_id, currentYear, selectedWeek)?.meta_vendas || 0;
-              } else if (userType?.includes('sdr')) {
-                const nivel = membro.usuario?.nivel || 'junior';
-                meta = getMetaSemanalSDR(membro.usuario_id, currentYear, selectedWeek)?.meta_vendas_cursos || 0;
-              }
-
-              // Buscar reuniões realizadas na semana
-              const vendedorStat = statsData.find(stat => stat.vendedor_id === membro.usuario_id);
-              const reunioesRealizadas = vendedorStat?.total || 0;
-              const percentual = meta > 0 ? (reunioesRealizadas / meta) * 100 : 0;
+              const reunioesRealizadas = membroDetalhe?.reunioesRealizadas || 0;
+              const meta = membroDetalhe?.metaSemanal || 0;
+              const percentual = membroDetalhe?.percentualAtingimento || 0;
               
               // Determinar status baseado no percentual
               const getStatusButton = (perc: number) => {
@@ -263,7 +230,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                     </div>
                   </div>
 
-                   {/* Métricas e Ações */}
+                  {/* Métricas e Ações */}
                   <div className="flex items-center gap-6">
                     {/* Meta e Agendamentos */}
                     <div className="text-right">
