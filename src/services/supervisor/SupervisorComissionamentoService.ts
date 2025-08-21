@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ComissionamentoService } from '@/services/comissionamentoService';
+import { getWeekRange } from '@/utils/semanaUtils';
 
 export interface SupervisorComissionamentoData {
   supervisorId: string;
@@ -25,6 +26,170 @@ export interface SDRResumo {
 }
 
 export class SupervisorComissionamentoService {
+  static async calcularComissionamentoSupervisorSemanaAtual(
+    supervisorId: string
+  ): Promise<SupervisorComissionamentoData | null> {
+    try {
+      // Usar getWeekRange para calcular as datas da semana atual (quarta a terça)
+      const { start: inicioSemana, end: fimSemana } = getWeekRange();
+      
+      console.log('📅 Calculando comissionamento supervisor - semana atual:', {
+        inicioSemana: inicioSemana.toLocaleDateString('pt-BR'),
+        fimSemana: fimSemana.toLocaleDateString('pt-BR')
+      });
+
+      // Buscar dados do supervisor
+      const { data: supervisorData, error: supervisorError } = await supabase
+        .from('profiles')
+        .select('name, nivel, user_type, ativo')
+        .eq('id', supervisorId)
+        .eq('user_type', 'supervisor')
+        .eq('ativo', true)
+        .single();
+
+      if (supervisorError || !supervisorData) {
+        console.error('❌ Erro ao buscar dados do supervisor:', supervisorError);
+        return null;
+      }
+
+      // Buscar grupo do supervisor
+      const { data: grupoData, error: grupoError } = await supabase
+        .from('grupos_supervisores')
+        .select('id, nome_grupo')
+        .eq('supervisor_id', supervisorId)
+        .single();
+
+      if (grupoError || !grupoData) {
+        console.error('❌ Erro ao buscar grupo do supervisor:', grupoError);
+        return null;
+      }
+
+      // Buscar SDRs do grupo
+      const { data: membrosData, error: membrosError } = await supabase
+        .from('membros_grupos_supervisores')
+        .select(`
+          usuario_id,
+          usuario:profiles!usuario_id(
+            id,
+            name,
+            nivel,
+            user_type,
+            ativo
+          )
+        `)
+        .eq('grupo_id', grupoData.id);
+
+      if (membrosError || !membrosData) {
+        console.error('❌ Erro ao buscar membros do grupo:', membrosError);
+        return null;
+      }
+
+      // Filtrar apenas SDRs ativos
+      const sdrsAtivos = membrosData.filter(
+        membro => membro.usuario?.user_type === 'sdr' && membro.usuario?.ativo === true
+      );
+
+      if (sdrsAtivos.length === 0) {
+        console.warn('⚠️ Nenhum SDR ativo encontrado no grupo');
+        return null;
+      }
+
+      // Calcular percentual de atingimento para cada SDR na semana atual
+      const sdrsDetalhes: SDRResumo[] = [];
+      let somaPercentuais = 0;
+
+      for (const membro of sdrsAtivos) {
+        const sdrId = membro.usuario_id;
+        const sdrNome = membro.usuario?.name || 'SDR';
+        const sdrNivel = membro.usuario?.nivel || 'junior';
+
+        // Buscar meta do SDR baseada no nível
+        const { data: nivelData } = await supabase
+          .from('niveis_vendedores')
+          .select('meta_semanal_outbound')
+          .eq('nivel', sdrNivel)
+          .eq('tipo_usuario', 'sdr')
+          .single();
+
+        const metaSemanal = nivelData?.meta_semanal_outbound || 0;
+
+        // Buscar reuniões realizadas pelo SDR na semana atual (quarta a terça)
+        const { data: agendamentos } = await supabase
+          .from('agendamentos')
+          .select('id')
+          .eq('sdr_id', sdrId)
+          .gte('data_agendamento', inicioSemana.toISOString())
+          .lte('data_agendamento', fimSemana.toISOString())
+          .in('resultado_reuniao', ['compareceu', 'comprou', 'compareceu_nao_comprou'])
+          .eq('status', 'finalizado');
+
+        const reunioesRealizadas = agendamentos?.length || 0;
+        const percentualAtingimento = metaSemanal > 0 ? (reunioesRealizadas / metaSemanal) * 100 : 0;
+
+        console.log(`📊 SDR ${sdrNome}: ${reunioesRealizadas}/${metaSemanal} = ${percentualAtingimento.toFixed(1)}%`);
+
+        sdrsDetalhes.push({
+          id: sdrId,
+          nome: sdrNome,
+          percentualAtingimento: Math.round(percentualAtingimento * 100) / 100,
+          reunioesRealizadas,
+          metaSemanal
+        });
+
+        somaPercentuais += percentualAtingimento;
+      }
+
+      // Calcular média das porcentagens (Meta Coletiva)
+      const mediaPercentualAtingimento = somaPercentuais / sdrsAtivos.length;
+
+      console.log(`🎯 Meta Coletiva: ${mediaPercentualAtingimento.toFixed(1)}% (média de ${sdrsAtivos.length} SDRs)`);
+
+      // Buscar variável semanal do supervisor
+      const { data: nivelSupervisorData, error: nivelSupervisorError } = await supabase
+        .from('niveis_vendedores')
+        .select('variavel_semanal')
+        .eq('nivel', supervisorData.nivel)
+        .eq('tipo_usuario', 'supervisor')
+        .single();
+
+      if (nivelSupervisorError || !nivelSupervisorData) {
+        console.error('❌ Erro ao buscar dados do nível do supervisor:', nivelSupervisorError);
+        return null;
+      }
+
+      const variabelSemanal = nivelSupervisorData.variavel_semanal;
+
+      // Calcular comissão baseada na média percentual (usando 100 como meta base)
+      const { multiplicador, valor } = await ComissionamentoService.calcularComissao(
+        mediaPercentualAtingimento,
+        100, // Meta base de 100%
+        variabelSemanal,
+        'supervisor'
+      );
+
+      console.log(`💰 Comissão supervisor: R$ ${valor.toFixed(2)} (multiplicador: ${multiplicador})`);
+
+      return {
+        supervisorId,
+        nome: supervisorData.name,
+        grupoId: grupoData.id,
+        nomeGrupo: grupoData.nome_grupo,
+        ano: inicioSemana.getFullYear(),
+        semana: this.getWeekNumber(inicioSemana),
+        totalSDRs: sdrsAtivos.length,
+        mediaPercentualAtingimento: Math.round(mediaPercentualAtingimento * 100) / 100,
+        variabelSemanal,
+        multiplicador,
+        valorComissao: valor,
+        sdrsDetalhes
+      };
+
+    } catch (error) {
+      console.error('❌ Erro ao calcular comissionamento do supervisor:', error);
+      return null;
+    }
+  }
+
   static async calcularComissionamentoSupervisor(
     supervisorId: string,
     ano: number,
@@ -199,5 +364,11 @@ export class SupervisorComissionamentoService {
     fimSemana.setHours(23, 59, 59, 999);
 
     return { inicioSemana, fimSemana };
+  }
+
+  private static getWeekNumber(date: Date): number {
+    const startOfYear = new Date(date.getFullYear(), 0, 1);
+    const daysPassed = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+    return Math.ceil((daysPassed + startOfYear.getDay()) / 7);
   }
 }

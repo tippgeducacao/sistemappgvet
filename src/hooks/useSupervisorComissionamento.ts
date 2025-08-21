@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { SupervisorComissionamentoService } from '@/services/supervisor/SupervisorComissionamentoService';
+import { getWeekRange } from '@/utils/semanaUtils';
 
 export const useSupervisorComissionamento = (supervisorId: string, ano: number, semana: number) => {
   return useQuery({
@@ -12,16 +13,10 @@ export const useSupervisorComissionamento = (supervisorId: string, ano: number, 
 
 export const useSupervisorComissionamentoAtual = (supervisorId: string) => {
   const now = new Date();
-  const currentYear = now.getFullYear();
   
-  // Calcular semana atual baseado na regra quarta a terça
-  const startOfYear = new Date(currentYear, 0, 1);
-  const daysPassed = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
-  const currentWeek = Math.ceil((daysPassed + startOfYear.getDay()) / 7);
-
   return useQuery({
-    queryKey: ['supervisor-comissionamento-atual', supervisorId, currentYear, currentWeek],
-    queryFn: () => SupervisorComissionamentoService.calcularComissionamentoSupervisor(supervisorId, currentYear, currentWeek),
+    queryKey: ['supervisor-comissionamento-atual', supervisorId, now.toDateString()],
+    queryFn: () => SupervisorComissionamentoService.calcularComissionamentoSupervisorSemanaAtual(supervisorId),
     enabled: !!supervisorId,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
