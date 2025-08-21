@@ -8,7 +8,7 @@ export interface MetaSemanalSDR {
   vendedor_id: string;
   ano: number;
   semana: number;
-  meta_vendas_cursos: number; // Mudança: agora representa vendas de cursos
+  meta_vendas_cursos: number; // Para SDRs: representa meta de reuniões semanais (inbound/outbound)
   created_at: string;
   updated_at: string;
   created_by?: string;
@@ -79,7 +79,7 @@ export const useMetasSemanaisSDR = () => {
         vendedor_id: vendedorId,
         ano,
         semana,
-        meta_vendas_cursos: metaPersonalizada.meta_vendas,
+        meta_vendas_cursos: metaPersonalizada.meta_vendas, // Esta é a meta de reuniões na tabela personalizada
         created_at: metaPersonalizada.created_at,
         updated_at: metaPersonalizada.updated_at,
       };
@@ -88,32 +88,43 @@ export const useMetasSemanaisSDR = () => {
       return resultado;
     }
     
-    // SEGUNDO: Se não tem meta personalizada, usar padrão do nível
+    // SEGUNDO: Se não tem meta personalizada, usar padrão do nível (META DE REUNIÕES)
     const nivel = (profile as any)?.nivel || 'junior';
-    console.log('🔍 Buscando meta padrão para SDR nível:', nivel);
+    console.log('🔍 Buscando meta padrão de REUNIÕES para SDR nível:', nivel);
     
     const nivelConfig = niveis.find(n => n.nivel === nivel && n.tipo_usuario === 'sdr');
-    const metaCursos = nivelConfig?.meta_vendas_cursos || 8;
     
-    console.log('📊 Meta padrão de cursos encontrada:', metaCursos, 'para nível:', nivel);
+    // Para SDRs, usar meta de reuniões baseada no tipo
+    let metaReunioes = 0;
+    if (userType?.includes('inbound') || userType === 'sdr') {
+      metaReunioes = nivelConfig?.meta_semanal_inbound || 55; // Meta padrão para inbound
+      console.log('📊 Meta padrão de reuniões INBOUND encontrada:', metaReunioes, 'para nível:', nivel);
+    } else if (userType?.includes('outbound')) {
+      metaReunioes = nivelConfig?.meta_semanal_outbound || 50; // Meta padrão para outbound
+      console.log('📊 Meta padrão de reuniões OUTBOUND encontrada:', metaReunioes, 'para nível:', nivel);
+    } else {
+      // SDR genérico - usar inbound como padrão
+      metaReunioes = nivelConfig?.meta_semanal_inbound || 55;
+      console.log('📊 Meta padrão de reuniões (genérico) encontrada:', metaReunioes, 'para nível:', nivel);
+    }
     
     const resultado = {
       id: `${vendedorId}-${ano}-${semana}`,
       vendedor_id: vendedorId,
       ano,
       semana,
-      meta_vendas_cursos: metaCursos,
+      meta_vendas_cursos: metaReunioes, // Usando este campo para armazenar meta de reuniões
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
     
-    console.log('✅ getMetaSemanalSDR: Meta padrão retornada', resultado);
+    console.log('✅ getMetaSemanalSDR: Meta padrão de REUNIÕES retornada', resultado);
     return resultado;
   };
 
-  // Obter a meta padrão baseada no nível do SDR (agora para vendas de cursos)
+  // Obter a meta padrão baseada no nível do SDR (agora para reuniões)
   const getMetaPadraoSDR = (nivel: string): number => {
-    console.log('🔍 Buscando meta de cursos para nível:', nivel);
+    console.log('🔍 Buscando meta de reuniões para nível:', nivel);
     console.log('📊 Níveis disponíveis:', niveis);
     
     // Primeiro tentar buscar exato (ex: sdr_junior)
@@ -122,7 +133,7 @@ export const useMetasSemanaisSDR = () => {
     // Se não encontrar, tentar com o nível base (sem sdr_)
     if (!nivelConfig && nivel.includes('sdr_')) {
       const nivelBase = nivel.replace('sdr_', '');
-      nivelConfig = niveis.find(n => n.nivel === nivelBase && n.tipo_usuario === 'vendedor');
+      nivelConfig = niveis.find(n => n.nivel === nivelBase && n.tipo_usuario === 'sdr');
       console.log('⚙️ Tentando buscar nível base:', nivelBase, 'resultado:', nivelConfig);
     }
     
@@ -130,14 +141,14 @@ export const useMetasSemanaisSDR = () => {
     
     if (!nivelConfig) {
       console.log('❌ Nível não encontrado:', nivel);
-      return 8; // Meta padrão se não encontrar
+      return 55; // Meta padrão de reuniões se não encontrar
     }
     
-    // Para SDRs, usar meta_vendas_cursos. Para verificar qual campo usar:
-    // - SDR inbound: meta_semanal_inbound (para agendamentos) e meta_vendas_cursos (para vendas)
-    // - SDR outbound: meta_semanal_outbound (para agendamentos) e meta_vendas_cursos (para vendas)
-    const meta = nivelConfig.meta_vendas_cursos || 8;
-    console.log('📈 Meta de vendas de cursos encontrada:', meta);
+    // Para SDRs, usar meta de reuniões (inbound por padrão):
+    // - SDR inbound: meta_semanal_inbound (para agendamentos/reuniões)
+    // - SDR outbound: meta_semanal_outbound (para agendamentos/reuniões)
+    const meta = nivelConfig.meta_semanal_inbound || 55;
+    console.log('📈 Meta de reuniões encontrada:', meta);
     
     return meta;
   };
