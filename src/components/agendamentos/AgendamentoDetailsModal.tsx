@@ -133,7 +133,14 @@ const AgendamentoDetailsModal: React.FC<AgendamentoDetailsModalProps> = ({
                 <>
                   <div className="space-y-1">
                     <span className="text-sm font-medium">Nome:</span>
-                    <p className="text-sm">{agendamento.lead.nome}</p>
+                    <p className="text-sm">
+                      {agendamento.lead.nome}
+                      {agendamento.created_at && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          • criado em {format(new Date(agendamento.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      )}
+                    </p>
                   </div>
 
                   {agendamento.lead.email && (
