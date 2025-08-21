@@ -52,67 +52,67 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header Principal */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard - Time SDR</h1>
-        <p className="text-gray-600 mt-1">Acompanhe o desempenho da sua equipe de SDRs</p>
+      <div className="bg-card border-b border-border px-6 py-4">
+        <h1 className="text-2xl font-bold text-foreground">Dashboard - Time SDR</h1>
+        <p className="text-muted-foreground mt-1">Acompanhe o desempenho da sua equipe de SDRs</p>
       </div>
 
       <div className="px-6 py-6 space-y-6">
         {/* Cards de Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Minhas Reuniões */}
-          <Card className="bg-white shadow-sm">
+          <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-500" />
-                <CardTitle className="text-sm font-medium text-gray-700">Minhas Reuniões</CardTitle>
+                <Calendar className="h-5 w-5 text-primary" />
+                <CardTitle className="text-sm font-medium text-muted-foreground">Minhas Reuniões</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-900">10</div>
-              <p className="text-sm text-gray-500">reuniões realizadas esta semana</p>
+              <div className="text-3xl font-bold text-foreground">10</div>
+              <p className="text-sm text-muted-foreground">reuniões realizadas esta semana</p>
             </CardContent>
           </Card>
 
           {/* Sua Meta */}
-          <Card className="bg-white shadow-sm">
+          <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-purple-500" />
-                <CardTitle className="text-sm font-medium text-gray-700">SUA META</CardTitle>
+                <Target className="h-5 w-5 text-primary" />
+                <CardTitle className="text-sm font-medium text-muted-foreground">SUA META</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="text-3xl font-bold text-gray-900">10/120</div>
-                <p className="text-sm text-gray-500">8.3% atingido</p>
-                <Progress value={8.3} className="h-2 bg-gray-200" />
+                <div className="text-3xl font-bold text-foreground">10/120</div>
+                <p className="text-sm text-muted-foreground">8.3% atingido</p>
+                <Progress value={8.3} className="h-2" />
               </div>
             </CardContent>
           </Card>
 
           {/* Conversões */}
-          <Card className="bg-white shadow-sm">
+          <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-500" />
-                <CardTitle className="text-sm font-medium text-gray-700">CONVERSÕES</CardTitle>
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <CardTitle className="text-sm font-medium text-muted-foreground">CONVERSÕES</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-900">0</div>
-              <p className="text-sm text-gray-500">conversões da equipe</p>
+              <div className="text-3xl font-bold text-foreground">0</div>
+              <p className="text-sm text-muted-foreground">conversões da equipe</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Meta Coletiva */}
-        <Card className="bg-white shadow-sm">
+        <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold text-gray-900">META COLETIVA</CardTitle>
-            <p className="text-sm text-gray-600">
+            <CardTitle className="text-xl font-bold text-foreground">META COLETIVA</CardTitle>
+            <p className="text-sm text-muted-foreground">
               Desempenho individual dos SDRs da sua equipe
             </p>
           </CardHeader>
@@ -165,10 +165,10 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                 };
                 
                 return (
-                  <div key={membro.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div key={membro.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
                     {/* Avatar e Info */}
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg border-2 border-blue-200 relative overflow-hidden">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg border-2 border-primary/20 relative overflow-hidden">
                         {membro.usuario?.photo_url ? (
                           <img 
                             src={membro.usuario.photo_url}
@@ -184,8 +184,8 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                         </span>
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 text-base">{membro.usuario?.name}</h3>
-                        <p className="text-sm text-gray-500">SDR</p>
+                        <h3 className="font-semibold text-foreground text-base">{membro.usuario?.name}</h3>
+                        <p className="text-sm text-muted-foreground">SDR</p>
                       </div>
                     </div>
 
@@ -193,21 +193,21 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                     <div className="flex items-center gap-6">
                       {/* Meta e Agendamentos */}
                       <div className="text-right">
-                        <div className="font-bold text-gray-900">{agendamentos}/{meta}</div>
-                        <div className="text-sm text-gray-500">{percentual.toFixed(1)}%</div>
+                        <div className="font-bold text-foreground">{agendamentos}/{meta}</div>
+                        <div className="text-sm text-muted-foreground">{percentual.toFixed(1)}%</div>
                       </div>
                       
                       {/* Barra de Progresso */}
                       <div className="w-24">
-                        <Progress value={Math.min(percentual, 100)} className="h-2 bg-gray-200" />
+                        <Progress value={Math.min(percentual, 100)} className="h-2" />
                       </div>
                       
                       {/* Comissão */}
                       <div className="text-right min-w-[80px]">
-                        <div className="text-sm font-semibold text-green-600">
+                        <div className="text-sm font-semibold text-green-600 dark:text-green-500">
                           R$ {comissao.toFixed(2)}
                         </div>
-                        <div className="text-xs text-gray-500">Comissão</div>
+                        <div className="text-xs text-muted-foreground">Comissão</div>
                       </div>
                       
                       {/* Status */}
