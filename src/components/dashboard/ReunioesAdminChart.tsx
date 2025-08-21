@@ -82,15 +82,19 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
   console.log('📅 weekStart:', weekStart, 'weekEnd:', weekEnd);
 
   // Preparar dados para o gráfico
-  const chartData = statsData.map(stats => ({
-    sdr: stats.sdr_name.split(' ')[0], // Apenas primeiro nome
-    convertidas: stats.convertidas,
-    compareceram: stats.compareceram,
-    naoCompareceram: stats.naoCompareceram,
-    total: stats.total,
-    taxaConversao: stats.total > 0 ? ((stats.convertidas / stats.total) * 100).toFixed(1) : '0',
-    taxaComparecimento: stats.total > 0 ? (((stats.convertidas + stats.compareceram) / stats.total) * 100).toFixed(1) : '0'
-  }));
+  const chartData = statsData.map(stats => {
+    // Taxa de conversão baseada apenas em reuniões onde houve comparecimento (ignora não comparecidas)
+    const reunioesComComparecimento = stats.convertidas + stats.compareceram;
+    return {
+      sdr: stats.sdr_name.split(' ')[0], // Apenas primeiro nome
+      convertidas: stats.convertidas,
+      compareceram: stats.compareceram,
+      naoCompareceram: stats.naoCompareceram,
+      total: stats.total,
+      taxaConversao: reunioesComComparecimento > 0 ? ((stats.convertidas / reunioesComComparecimento) * 100).toFixed(1) : '0',
+      taxaComparecimento: stats.total > 0 ? (((stats.convertidas + stats.compareceram) / stats.total) * 100).toFixed(1) : '0'
+    };
+  });
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -246,22 +250,26 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
             <div className="space-y-3">
               <h4 className="font-semibold text-sm">Resumo Detalhado:</h4>
               <div className="grid gap-3">
-            {statsData.map((stats) => (
-              <div key={stats.sdr_id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <div className="font-medium">{stats.sdr_name}</div>
-                <div className="flex gap-4 text-sm">
-                  <span className="text-green-600">{stats.convertidas} convertidas</span>
-                  <span className="text-yellow-600">{stats.compareceram} compareceram</span>
-                  <span className="text-red-600">{stats.naoCompareceram} não compareceram</span>
-                  <span className="font-medium">
-                    Conversão: {stats.total > 0 ? ((stats.convertidas / stats.total) * 100).toFixed(1) : 0}%
-                  </span>
-                  <span className="font-medium text-blue-600">
-                    Comparecimento: {stats.total > 0 ? (((stats.convertidas + stats.compareceram) / stats.total) * 100).toFixed(1) : 0}%
-                  </span>
+            {statsData.map((stats) => {
+              // Taxa de conversão baseada apenas em reuniões onde houve comparecimento
+              const reunioesComComparecimento = stats.convertidas + stats.compareceram;
+              return (
+                <div key={stats.sdr_id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="font-medium">{stats.sdr_name}</div>
+                  <div className="flex gap-4 text-sm">
+                    <span className="text-green-600">{stats.convertidas} convertidas</span>
+                    <span className="text-yellow-600">{stats.compareceram} compareceram</span>
+                    <span className="text-red-600">{stats.naoCompareceram} não compareceram</span>
+                    <span className="font-medium">
+                      Conversão: {reunioesComComparecimento > 0 ? ((stats.convertidas / reunioesComComparecimento) * 100).toFixed(1) : 0}%
+                    </span>
+                    <span className="font-medium text-blue-600">
+                      Comparecimento: {stats.total > 0 ? (((stats.convertidas + stats.compareceram) / stats.total) * 100).toFixed(1) : 0}%
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
               </div>
             </div>
           </>
