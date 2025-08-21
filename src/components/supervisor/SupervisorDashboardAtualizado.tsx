@@ -5,8 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar, Target, TrendingUp } from 'lucide-react';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAuthStore } from '@/stores/AuthStore';
-import { useUsuarioMetasEstats } from '@/hooks/useUsuarioMetasEstats';
-import { useSDRComissionamentoTodosSemanal } from '@/hooks/useSDRComissionamento';
+import { useSupervisorComissionamentoAtual } from '@/hooks/useSupervisorComissionamento';
 
 export const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
@@ -18,24 +17,11 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
     return grupos.find(grupo => grupo.supervisor_id === user.id);
   }, [user, grupos]);
 
-  // Extrair IDs dos usuários do grupo (SDRs e Vendedores)
-  const usuarioIds = useMemo(() => {
-    if (!meuGrupo?.membros) return [];
-    return meuGrupo.membros.map(membro => membro.usuario_id);
-  }, [meuGrupo]);
+  // Buscar dados de comissionamento do supervisor que já calcula automaticamente
+  // os percentuais de atingimento baseado na planilha detalhada
+  const { data: supervisorData, isLoading: supervisorLoading } = useSupervisorComissionamentoAtual(user?.id || '');
 
-  // Buscar estatísticas dos usuários
-  const { stats: usuarioStats, loading: statsLoading } = useUsuarioMetasEstats(usuarioIds);
-  
-  // Calcular semana atual
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentWeek = Math.ceil(((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000 + 1) / 7);
-  
-  // Buscar dados de comissionamento
-  const { data: comissionamentoData } = useSDRComissionamentoTodosSemanal(currentYear, currentWeek);
-
-  if (loading) {
+  if (loading || supervisorLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -62,7 +48,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
       <div className="px-6 py-6 space-y-6">
         {/* Cards de Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Minhas Reuniões */}
+          {/* Atividades da Equipe */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
@@ -72,7 +58,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
             </CardHeader>
             <CardContent>
               {(() => {
-                if (!usuarioStats || usuarioStats.length === 0) {
+                if (!supervisorData?.sdrsDetalhes || supervisorData.sdrsDetalhes.length === 0) {
                   return (
                     <>
                       <div className="text-3xl font-bold text-foreground">0</div>
@@ -81,12 +67,12 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                   );
                 }
                 
-                const totalAtividades = usuarioStats.reduce((acc, stat) => acc + (stat.agendamentos_feitos || 0), 0);
+                const totalAtividades = supervisorData.sdrsDetalhes.reduce((acc, sdr) => acc + sdr.reunioesRealizadas, 0);
                 
                 return (
                   <>
                     <div className="text-3xl font-bold text-foreground">{totalAtividades}</div>
-                    <p className="text-sm text-muted-foreground">atividades realizadas este mês</p>
+                    <p className="text-sm text-muted-foreground">atividades realizadas esta semana</p>
                   </>
                 );
               })()}
@@ -102,29 +88,13 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {(() => {
-                // Calcular taxa de atingimento média do grupo
-                if (!usuarioStats || usuarioStats.length === 0) {
-                  return (
-                    <div className="space-y-3">
-                      <div className="text-3xl font-bold text-foreground">0%</div>
-                      <p className="text-sm text-muted-foreground">média do grupo</p>
-                      <Progress value={0} className="h-2" />
-                    </div>
-                  );
-                }
-                
-                const totalPercentual = usuarioStats.reduce((acc, stat) => acc + (stat.percentual_atingido || 0), 0);
-                const mediaPercentual = totalPercentual / usuarioStats.length;
-                
-                return (
-                  <div className="space-y-3">
-                    <div className="text-3xl font-bold text-foreground">{mediaPercentual.toFixed(1)}%</div>
-                    <p className="text-sm text-muted-foreground">média do grupo</p>
-                    <Progress value={Math.min(mediaPercentual, 100)} className="h-2" />
-                  </div>
-                );
-              })()}
+              <div className="space-y-3">
+                <div className="text-3xl font-bold text-foreground">
+                  {supervisorData?.mediaPercentualAtingimento?.toFixed(1) || '0'}%
+                </div>
+                <p className="text-sm text-muted-foreground">média do grupo</p>
+                <Progress value={Math.min(supervisorData?.mediaPercentualAtingimento || 0, 100)} className="h-2" />
+              </div>
             </CardContent>
           </Card>
 
@@ -137,25 +107,10 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {(() => {
-                if (!usuarioStats || usuarioStats.length === 0) {
-                  return (
-                    <>
-                      <div className="text-3xl font-bold text-foreground">0</div>
-                      <p className="text-sm text-muted-foreground">conversões da equipe</p>
-                    </>
-                  );
-                }
-                
-                const totalConversoes = usuarioStats.reduce((acc, stat) => acc + (stat.conversoes || 0), 0);
-                
-                return (
-                  <>
-                    <div className="text-3xl font-bold text-foreground">{totalConversoes}</div>
-                    <p className="text-sm text-muted-foreground">conversões da equipe</p>
-                  </>
-                );
-              })()}
+              <>
+                <div className="text-3xl font-bold text-foreground">{supervisorData?.totalSDRs || 0}</div>
+                <p className="text-sm text-muted-foreground">membros da equipe</p>
+              </>
             </CardContent>
           </Card>
         </div>
@@ -169,21 +124,19 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            {statsLoading ? (
+            {supervisorLoading ? (
               <div className="flex items-center justify-center p-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
               </div>
             ) : (
-              meuGrupo.membros.map((membro) => {
-                // Buscar estatísticas do usuário
-                const usuarioStat = usuarioStats.find(stat => stat.usuario_id === membro.usuario_id);
-                const comissaoData = comissionamentoData?.find(c => c.sdrId === membro.usuario_id);
-                
-                const agendamentos = usuarioStat?.agendamentos_feitos || 0;
-                const meta = usuarioStat?.meta_semanal || 0;
-                const percentual = usuarioStat?.percentual_atingido || 0;
-                const comissao = comissaoData?.valorComissao || 0;
-                const tipoUsuario = usuarioStat?.tipo_usuario || 'sdr';
+              supervisorData?.sdrsDetalhes?.map((sdrDetalhe) => {
+                // Buscar dados do membro no grupo para obter informações do usuário
+                const membro = meuGrupo.membros.find(m => m.usuario_id === sdrDetalhe.id);
+                if (!membro?.usuario) return null;
+
+                const agendamentos = sdrDetalhe.reunioesRealizadas;
+                const meta = sdrDetalhe.metaSemanal;
+                const percentual = sdrDetalhe.percentualAtingimento;
                 
                 // Determinar status baseado no percentual
                 const getStatusButton = (perc: number) => {
@@ -218,7 +171,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                 };
                 
                 return (
-                  <div key={membro.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
+                  <div key={sdrDetalhe.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
                     {/* Avatar e Info */}
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg border-2 border-primary/20 relative overflow-hidden">
@@ -237,8 +190,8 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                         </span>
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground text-base">{membro.usuario?.name}</h3>
-                        <p className="text-sm text-muted-foreground">{tipoUsuario === 'vendedor' ? 'Vendedor' : 'SDR'}</p>
+                        <h3 className="font-semibold text-foreground text-base">{sdrDetalhe.nome}</h3>
+                        <p className="text-sm text-muted-foreground">{membro.usuario.user_type === 'vendedor' ? 'Vendedor' : 'SDR'}</p>
                       </div>
                     </div>
 
@@ -247,7 +200,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                       {/* Meta e Agendamentos */}
                       <div className="text-right">
                         <div className="font-bold text-foreground">
-                          {agendamentos}/{tipoUsuario === 'vendedor' ? (meta * 4) : meta}
+                          {agendamentos}/{meta}
                         </div>
                         <div className="text-sm text-muted-foreground">{percentual.toFixed(1)}%</div>
                       </div>
@@ -260,9 +213,9 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                       {/* Comissão */}
                       <div className="text-right min-w-[80px]">
                         <div className="text-sm font-semibold text-green-600 dark:text-green-500">
-                          R$ {comissao.toFixed(2)}
+                          R$ {supervisorData?.valorComissao?.toFixed(2) || '0.00'}
                         </div>
-                        <div className="text-xs text-muted-foreground">Comissão</div>
+                        <div className="text-xs text-muted-foreground">Comissão Supervisor</div>
                       </div>
                       
                       {/* Status */}
@@ -272,7 +225,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                     </div>
                   </div>
                 );
-              })
+              }) || []
             )}
           </CardContent>
         </Card>
