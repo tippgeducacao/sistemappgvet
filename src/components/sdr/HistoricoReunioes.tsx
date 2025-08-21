@@ -425,7 +425,14 @@ const HistoricoReunioes: React.FC = () => {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{reuniao.lead?.nome}</span>
+                    <span className="font-medium">
+                      {reuniao.lead?.nome}
+                      {reuniao.created_at && (
+                        <span className="text-xs text-muted-foreground ml-2 font-normal">
+                          • criado em {format(new Date(reuniao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      )}
+                    </span>
                   </div>
                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                      <CalendarIcon className="h-4 w-4" />

@@ -170,6 +170,11 @@ const MeusAgendamentosCalendario: React.FC<MeusAgendamentosCalendarioProps> = ({
                     >
                       <div className="truncate font-medium">
                         {agendamento.lead?.nome}
+                        {agendamento.created_at && (
+                          <div className="text-xs text-muted-foreground font-normal">
+                            • {format(new Date(agendamento.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-1 truncate">
                         <Clock className="h-3 w-3 flex-shrink-0" />

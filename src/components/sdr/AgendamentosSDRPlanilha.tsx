@@ -231,6 +231,11 @@ const AgendamentosSDRPlanilha: React.FC<AgendamentosSDRPlanilhaProps> = ({
                   >
                     <TableCell className="font-medium">
                       {agendamento.lead?.nome}
+                      {agendamento.created_at && (
+                        <div className="text-xs text-muted-foreground font-normal mt-1">
+                          • criado em {format(new Date(agendamento.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
