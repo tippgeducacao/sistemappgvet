@@ -1,52 +1,17 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
-import { useAuthStore } from '@/stores/AuthStore';
-import { useSupervisorComissionamentoAtual } from '@/hooks/useSupervisorComissionamento';
 import { Calendar, Target, TrendingUp } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 const SupervisorDashboard: React.FC = () => {
-  const { user } = useAuthStore();
-  const { grupos, loading } = useGruposSupervisores();
-  
   // Estados para filtros
   const [selectedMonth, setSelectedMonth] = useState<string>('8'); // Agosto
   const [selectedYear, setSelectedYear] = useState<string>('2025');
   const [selectedPeriod, setSelectedPeriod] = useState<'Semana' | 'Mês'>('Semana');
-
-  // Encontrar o grupo do supervisor atual
-  const meuGrupo = useMemo(() => {
-    return grupos.find(grupo => grupo.supervisor_id === user?.id);
-  }, [user, grupos]);
-
-  // Buscar dados de comissionamento do supervisor
-  const { data: supervisorComissionamento, isLoading: comissionamentoLoading } = useSupervisorComissionamentoAtual(user?.id || '');
-
-  if (loading || comissionamentoLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-      </div>
-    );
-  }
-
-  if (!meuGrupo || !meuGrupo.membros) {
-    return (
-      <div className="text-center p-8">
-        <p className="text-muted-foreground">Nenhum grupo encontrado</p>
-      </div>
-    );
-  }
-
-  const totalReunioesRealizadas = supervisorComissionamento?.sdrsDetalhes?.reduce((total, sdr) => total + sdr.reunioesRealizadas, 0) || 0;
-  const totalMeta = supervisorComissionamento?.sdrsDetalhes?.reduce((total, sdr) => total + sdr.metaSemanal, 0) || 0;
-  const conversoes = 0; // Será implementado quando tivermos dados de conversão
-  const minhasReunioes = 10; // Placeholder - será implementado sistema B2B do supervisor
 
   const months = [
     { value: '1', label: 'Janeiro' },
@@ -61,6 +26,51 @@ const SupervisorDashboard: React.FC = () => {
     { value: '10', label: 'Outubro' },
     { value: '11', label: 'Novembro' },
     { value: '12', label: 'Dezembro' }
+  ];
+
+  // Dados mockados para teste
+  const minhasReunioes = 10;
+  const totalReunioesRealizadas = 46;
+  const totalMeta = 120;
+  const percentualAtingimento = 8.3;
+  const conversoes = 0;
+
+  const sdrsDetalhes = [
+    { 
+      id: '1', 
+      nome: 'Júlio', 
+      reunioesRealizadas: 18, 
+      metaSemanal: 55, 
+      percentualAtingimento: 32.7
+    },
+    { 
+      id: '2', 
+      nome: 'Regiane', 
+      reunioesRealizadas: 23, 
+      metaSemanal: 55, 
+      percentualAtingimento: 41.8
+    },
+    { 
+      id: '3', 
+      nome: 'Ricael', 
+      reunioesRealizadas: 25, 
+      metaSemanal: 55, 
+      percentualAtingimento: 45.5
+    },
+    { 
+      id: '4', 
+      nome: 'Leticia Carolina', 
+      reunioesRealizadas: 0, 
+      metaSemanal: 55, 
+      percentualAtingimento: 0.0
+    },
+    { 
+      id: '5', 
+      nome: 'Debora', 
+      reunioesRealizadas: 39, 
+      metaSemanal: 55, 
+      percentualAtingimento: 70.9
+    }
   ];
 
   return (
@@ -112,7 +122,6 @@ const SupervisorDashboard: React.FC = () => {
                 variant={selectedPeriod === 'Semana' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedPeriod('Semana')}
-                className="bg-primary text-primary-foreground"
               >
                 Semana
               </Button>
@@ -157,9 +166,9 @@ const SupervisorDashboard: React.FC = () => {
                 </div>
               </div>
               <div className="text-3xl font-bold text-foreground">{totalReunioesRealizadas}/{totalMeta}</div>
-              <p className="text-sm text-muted-foreground">{supervisorComissionamento?.mediaPercentualAtingimento?.toFixed(1) || 0}% atingido</p>
+              <p className="text-sm text-muted-foreground">{percentualAtingimento}% atingido</p>
               <Progress 
-                value={Math.min(supervisorComissionamento?.mediaPercentualAtingimento || 0, 100)} 
+                value={Math.min(percentualAtingimento, 100)} 
                 className="h-2 mt-2"
               />
             </CardContent>
@@ -189,12 +198,12 @@ const SupervisorDashboard: React.FC = () => {
             <p className="text-sm text-muted-foreground">Desempenho individual dos SDRs da sua equipe</p>
           </CardHeader>
           <CardContent className="space-y-4">
-            {supervisorComissionamento?.sdrsDetalhes?.map((sdr) => (
+            {sdrsDetalhes.map((sdr) => (
               <div key={sdr.id} className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-border/50">
                 {/* Avatar e Info */}
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-lg">
-                    <span>{sdr.nome?.charAt(0).toUpperCase() || 'S'}</span>
+                    <span>{sdr.nome.charAt(0).toUpperCase()}</span>
                   </div>
                   <div>
                     <h3 className="font-medium text-base text-foreground">{sdr.nome}</h3>
@@ -233,11 +242,7 @@ const SupervisorDashboard: React.FC = () => {
                   </Button>
                 </div>
               </div>
-            )) || (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>Nenhum SDR encontrado na equipe</p>
-              </div>
-            )}
+            ))}
           </CardContent>
         </Card>
       </div>
