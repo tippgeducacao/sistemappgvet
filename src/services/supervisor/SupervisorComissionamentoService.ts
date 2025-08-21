@@ -84,53 +84,90 @@ export class SupervisorComissionamentoService {
         return null;
       }
 
-      // Filtrar apenas SDRs ativos
-      const sdrsAtivos = membrosData.filter(
-        membro => membro.usuario?.user_type === 'sdr' && membro.usuario?.ativo === true
+      // Filtrar apenas membros ativos (SDRs e Vendedores)
+      const membrosAtivos = membrosData.filter(
+        membro => membro.usuario?.ativo === true && 
+        (membro.usuario?.user_type === 'sdr' || membro.usuario?.user_type === 'vendedor')
       );
 
-      if (sdrsAtivos.length === 0) {
-        console.warn('⚠️ Nenhum SDR ativo encontrado no grupo');
-        return null;
+      if (membrosAtivos.length === 0) {
+        console.warn('⚠️ Nenhum membro ativo encontrado no grupo');
+        return {
+          supervisorId,
+          nome: supervisorData.name,
+          grupoId: grupoData.id,
+          nomeGrupo: grupoData.nome_grupo,
+          ano: new Date().getFullYear(),
+          semana: 0,
+          totalSDRs: 0,
+          mediaPercentualAtingimento: 0,
+          variabelSemanal: 0,
+          multiplicador: 0,
+          valorComissao: 0,
+          sdrsDetalhes: []
+        };
       }
 
-      // Calcular percentual de atingimento para cada SDR na semana atual
+      // Calcular percentual de atingimento para cada membro na semana atual
       const sdrsDetalhes: SDRResumo[] = [];
       let somaPercentuais = 0;
 
-      for (const membro of sdrsAtivos) {
-        const sdrId = membro.usuario_id;
-        const sdrNome = membro.usuario?.name || 'SDR';
-        const sdrNivel = membro.usuario?.nivel || 'junior';
+      for (const membro of membrosAtivos) {
+        const membroId = membro.usuario_id;
+        const membroNome = membro.usuario?.name || 'Membro';
+        const membroNivel = membro.usuario?.nivel || 'junior';
+        const membroTipo = membro.usuario?.user_type;
 
-        // Buscar meta do SDR baseada no nível
+        // Buscar meta baseada no tipo e nível do membro
         const { data: nivelData } = await supabase
           .from('niveis_vendedores')
-          .select('meta_semanal_outbound')
-          .eq('nivel', sdrNivel)
-          .eq('tipo_usuario', 'sdr')
+          .select('meta_semanal_inbound, meta_semanal_outbound, meta_semanal_vendedor')
+          .eq('nivel', membroNivel)
+          .eq('tipo_usuario', membroTipo === 'vendedor' ? 'vendedor' : 'sdr')
           .single();
 
-        const metaSemanal = nivelData?.meta_semanal_outbound || 0;
+        let metaSemanal = 0;
+        if (membroTipo === 'vendedor') {
+          metaSemanal = nivelData?.meta_semanal_vendedor || 0;
+        } else if (membroTipo === 'sdr') {
+          // Para SDRs, usar meta_semanal_inbound (campo correto)
+          metaSemanal = nivelData?.meta_semanal_inbound || 55;
+        }
 
-        // Buscar reuniões realizadas pelo SDR na semana atual (quarta a terça)
-        const { data: agendamentos } = await supabase
-          .from('agendamentos')
-          .select('id')
-          .eq('sdr_id', sdrId)
-          .gte('data_agendamento', inicioSemana.toISOString())
-          .lte('data_agendamento', fimSemana.toISOString())
-          .in('resultado_reuniao', ['compareceu', 'comprou', 'compareceu_nao_comprou'])
-          .eq('status', 'finalizado');
+        // Buscar atividades realizadas baseada no tipo
+        let reunioesRealizadas = 0;
+        
+        if (membroTipo === 'sdr') {
+          // Para SDRs: buscar por sdr_id
+          const { data: agendamentos } = await supabase
+            .from('agendamentos')
+            .select('id')
+            .eq('sdr_id', membroId)
+            .gte('data_agendamento', inicioSemana.toISOString())
+            .lte('data_agendamento', fimSemana.toISOString())
+            .not('resultado_reuniao', 'is', null);
+            
+          reunioesRealizadas = agendamentos?.length || 0;
+        } else if (membroTipo === 'vendedor') {
+          // Para vendedores: buscar por vendedor_id
+          const { data: agendamentos } = await supabase
+            .from('agendamentos')
+            .select('id')
+            .eq('vendedor_id', membroId)
+            .gte('data_agendamento', inicioSemana.toISOString())
+            .lte('data_agendamento', fimSemana.toISOString())
+            .not('resultado_reuniao', 'is', null);
+            
+          reunioesRealizadas = agendamentos?.length || 0;
+        }
 
-        const reunioesRealizadas = agendamentos?.length || 0;
         const percentualAtingimento = metaSemanal > 0 ? (reunioesRealizadas / metaSemanal) * 100 : 0;
 
-        console.log(`📊 SDR ${sdrNome}: ${reunioesRealizadas}/${metaSemanal} = ${percentualAtingimento.toFixed(1)}%`);
+        console.log(`📊 ${membroTipo.toUpperCase()} ${membroNome}: ${reunioesRealizadas}/${metaSemanal} = ${percentualAtingimento.toFixed(1)}%`);
 
         sdrsDetalhes.push({
-          id: sdrId,
-          nome: sdrNome,
+          id: membroId,
+          nome: membroNome,
           percentualAtingimento: Math.round(percentualAtingimento * 100) / 100,
           reunioesRealizadas,
           metaSemanal
@@ -140,9 +177,9 @@ export class SupervisorComissionamentoService {
       }
 
       // Calcular média das porcentagens (Meta Coletiva)
-      const mediaPercentualAtingimento = somaPercentuais / sdrsAtivos.length;
+      const mediaPercentualAtingimento = somaPercentuais / membrosAtivos.length;
 
-      console.log(`🎯 Meta Coletiva: ${mediaPercentualAtingimento.toFixed(1)}% (média de ${sdrsAtivos.length} SDRs)`);
+      console.log(`🎯 Meta Coletiva: ${mediaPercentualAtingimento.toFixed(1)}% (média de ${membrosAtivos.length} membros)`);
 
       // Buscar variável semanal do supervisor
       const { data: nivelSupervisorData, error: nivelSupervisorError } = await supabase
@@ -176,7 +213,7 @@ export class SupervisorComissionamentoService {
         nomeGrupo: grupoData.nome_grupo,
         ano: inicioSemana.getFullYear(),
         semana: this.getWeekNumber(inicioSemana),
-        totalSDRs: sdrsAtivos.length,
+        totalSDRs: membrosAtivos.length,
         mediaPercentualAtingimento: Math.round(mediaPercentualAtingimento * 100) / 100,
         variabelSemanal,
         multiplicador,
@@ -242,54 +279,91 @@ export class SupervisorComissionamentoService {
         return null;
       }
 
-      // Filtrar apenas SDRs ativos
-      const sdrsAtivos = membrosData.filter(
-        membro => membro.usuario?.user_type === 'sdr' && membro.usuario?.ativo === true
+      // Filtrar apenas membros ativos (SDRs e Vendedores)
+      const membrosAtivos = membrosData.filter(
+        membro => membro.usuario?.ativo === true && 
+        (membro.usuario?.user_type === 'sdr' || membro.usuario?.user_type === 'vendedor')
       );
 
-      if (sdrsAtivos.length === 0) {
-        console.warn('⚠️ Nenhum SDR ativo encontrado no grupo');
-        return null;
+      if (membrosAtivos.length === 0) {
+        console.warn('⚠️ Nenhum membro ativo encontrado no grupo');
+        return {
+          supervisorId,
+          nome: supervisorData.name,
+          grupoId: grupoData.id,
+          nomeGrupo: grupoData.nome_grupo,
+          ano,
+          semana,
+          totalSDRs: 0,
+          mediaPercentualAtingimento: 0,
+          variabelSemanal: 0,
+          multiplicador: 0,
+          valorComissao: 0,
+          sdrsDetalhes: []
+        };
       }
 
       // Calcular datas da semana (quarta a terça)
       const { inicioSemana, fimSemana } = this.calcularDatasSemana(ano, semana);
 
-      // Calcular percentual de atingimento para cada SDR
+      // Calcular percentual de atingimento para cada membro
       const sdrsDetalhes: SDRResumo[] = [];
       let somaPercentuais = 0;
 
-      for (const membro of sdrsAtivos) {
-        const sdrId = membro.usuario_id;
-        const sdrNome = membro.usuario?.name || 'SDR';
-        const sdrNivel = membro.usuario?.nivel || 'junior';
+      for (const membro of membrosAtivos) {
+        const membroId = membro.usuario_id;
+        const membroNome = membro.usuario?.name || 'Membro';
+        const membroNivel = membro.usuario?.nivel || 'junior';
+        const membroTipo = membro.usuario?.user_type;
 
-        // Buscar meta do SDR baseada no nível
+        // Buscar meta baseada no tipo e nível do membro
         const { data: nivelData } = await supabase
           .from('niveis_vendedores')
-          .select('meta_semanal_outbound')
-          .eq('nivel', sdrNivel)
-          .eq('tipo_usuario', 'sdr')
+          .select('meta_semanal_inbound, meta_semanal_outbound, meta_semanal_vendedor')
+          .eq('nivel', membroNivel)
+          .eq('tipo_usuario', membroTipo === 'vendedor' ? 'vendedor' : 'sdr')
           .single();
 
-        const metaSemanal = nivelData?.meta_semanal_outbound || 0;
+        let metaSemanal = 0;
+        if (membroTipo === 'vendedor') {
+          metaSemanal = nivelData?.meta_semanal_vendedor || 0;
+        } else if (membroTipo === 'sdr') {
+          // Para SDRs, usar meta_semanal_inbound (campo correto)
+          metaSemanal = nivelData?.meta_semanal_inbound || 55;
+        }
 
-        // Buscar reuniões realizadas pelo SDR na semana
-        const { data: agendamentos } = await supabase
-          .from('agendamentos')
-          .select('id')
-          .eq('sdr_id', sdrId)
-          .gte('data_agendamento', inicioSemana.toISOString())
-          .lte('data_agendamento', fimSemana.toISOString())
-          .in('resultado_reuniao', ['compareceu', 'comprou', 'compareceu_nao_comprou'])
-          .eq('status', 'finalizado');
+        // Buscar atividades realizadas baseada no tipo
+        let reunioesRealizadas = 0;
+        
+        if (membroTipo === 'sdr') {
+          // Para SDRs: buscar por sdr_id
+          const { data: agendamentos } = await supabase
+            .from('agendamentos')
+            .select('id')
+            .eq('sdr_id', membroId)
+            .gte('data_agendamento', inicioSemana.toISOString())
+            .lte('data_agendamento', fimSemana.toISOString())
+            .not('resultado_reuniao', 'is', null);
+            
+          reunioesRealizadas = agendamentos?.length || 0;
+        } else if (membroTipo === 'vendedor') {
+          // Para vendedores: buscar por vendedor_id
+          const { data: agendamentos } = await supabase
+            .from('agendamentos')
+            .select('id')
+            .eq('vendedor_id', membroId)
+            .gte('data_agendamento', inicioSemana.toISOString())
+            .lte('data_agendamento', fimSemana.toISOString())
+            .not('resultado_reuniao', 'is', null);
+            
+          reunioesRealizadas = agendamentos?.length || 0;
+        }
 
-        const reunioesRealizadas = agendamentos?.length || 0;
         const percentualAtingimento = metaSemanal > 0 ? (reunioesRealizadas / metaSemanal) * 100 : 0;
 
         sdrsDetalhes.push({
-          id: sdrId,
-          nome: sdrNome,
+          id: membroId,
+          nome: membroNome,
           percentualAtingimento: Math.round(percentualAtingimento * 100) / 100,
           reunioesRealizadas,
           metaSemanal
@@ -299,7 +373,7 @@ export class SupervisorComissionamentoService {
       }
 
       // Calcular média das porcentagens
-      const mediaPercentualAtingimento = somaPercentuais / sdrsAtivos.length;
+      const mediaPercentualAtingimento = somaPercentuais / membrosAtivos.length;
 
       // Buscar variável semanal do supervisor
       const { data: nivelSupervisorData, error: nivelSupervisorError } = await supabase
@@ -331,7 +405,7 @@ export class SupervisorComissionamentoService {
         nomeGrupo: grupoData.nome_grupo,
         ano,
         semana,
-        totalSDRs: sdrsAtivos.length,
+        totalSDRs: membrosAtivos.length,
         mediaPercentualAtingimento: Math.round(mediaPercentualAtingimento * 100) / 100,
         variabelSemanal,
         multiplicador,
