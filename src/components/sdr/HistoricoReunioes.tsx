@@ -46,7 +46,7 @@ const HistoricoReunioes: React.FC = () => {
   const { profile } = useAuthStore();
 
   // Estado para filtros
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [creationDateRange, setCreationDateRange] = useState<DateRange | undefined>();
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
 
@@ -99,11 +99,13 @@ const HistoricoReunioes: React.FC = () => {
 
   // Filtrar reuniões pelo período e status selecionados
   const reunioesFiltradas = reunioes.filter(reuniao => {
-    // Filtro por período de agendamento
-    if (dateRange?.from || dateRange?.to) {
+    // Filtro por data específica de agendamento
+    if (selectedDate) {
       const dataAgendamento = new Date(reuniao.data_agendamento);
-      if (dateRange.from && dataAgendamento < dateRange.from) return false;
-      if (dateRange.to && dataAgendamento > dateRange.to) return false;
+      dataAgendamento.setHours(0, 0, 0, 0);
+      const dataSelecionada = new Date(selectedDate);
+      dataSelecionada.setHours(0, 0, 0, 0);
+      if (dataAgendamento.getTime() !== dataSelecionada.getTime()) return false;
     }
     
     // Filtro por período de criação
@@ -132,12 +134,12 @@ const HistoricoReunioes: React.FC = () => {
   };
 
   const clearAllFilters = () => {
-    setDateRange(undefined);
+    setSelectedDate(undefined);
     setCreationDateRange(undefined);
     setSelectedStatus([]);
   };
 
-  const hasActiveFilters = dateRange?.from || dateRange?.to || creationDateRange?.from || creationDateRange?.to || selectedStatus.length > 0;
+  const hasActiveFilters = selectedDate || creationDateRange?.from || creationDateRange?.to || selectedStatus.length > 0;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -191,20 +193,13 @@ const HistoricoReunioes: React.FC = () => {
         <CardContent>
           {/* Área de Filtros */}
           <div className="flex flex-wrap gap-3 mb-6">
-            {/* Filtro por período de agendamento */}
+            {/* Filtro por data específica de agendamento */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange?.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
-                        {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
-                      </>
-                    ) : (
-                      format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
-                    )
+                  {selectedDate ? (
+                    format(selectedDate, "dd/MM/yyyy", { locale: ptBR })
                   ) : (
                     "Filtrar por data agendamento"
                   )}
@@ -212,12 +207,10 @@ const HistoricoReunioes: React.FC = () => {
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 z-50" align="start">
                 <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
                   initialFocus
-                  mode="range"
-                  defaultMonth={dateRange?.from}
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={1}
                   locale={ptBR}
                   className="p-3 pointer-events-auto"
                 />
@@ -225,9 +218,9 @@ const HistoricoReunioes: React.FC = () => {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => setDateRange(undefined)}
+                    onClick={() => setSelectedDate(undefined)}
                   >
-                    Limpar Período
+                    Limpar Data
                   </Button>
                 </div>
               </PopoverContent>
@@ -363,20 +356,13 @@ const HistoricoReunioes: React.FC = () => {
       <CardContent>
         {/* Área de Filtros */}
         <div className="flex flex-wrap gap-3 mb-6">
-          {/* Filtro por período de agendamento */}
+          {/* Filtro por data específica de agendamento */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange?.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
-                      {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
-                    </>
-                  ) : (
-                    format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
-                  )
+                {selectedDate ? (
+                  format(selectedDate, "dd/MM/yyyy", { locale: ptBR })
                 ) : (
                   "Filtrar por data agendamento"
                 )}
@@ -384,12 +370,10 @@ const HistoricoReunioes: React.FC = () => {
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-50" align="start">
               <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
                 initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
-                onSelect={setDateRange}
-                numberOfMonths={1}
                 locale={ptBR}
                 className="p-3 pointer-events-auto"
               />
@@ -397,9 +381,9 @@ const HistoricoReunioes: React.FC = () => {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => setDateRange(undefined)}
+                  onClick={() => setSelectedDate(undefined)}
                 >
-                  Limpar Período
+                  Limpar Data
                 </Button>
               </div>
             </PopoverContent>
