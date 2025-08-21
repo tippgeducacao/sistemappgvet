@@ -32,7 +32,7 @@ const [modalOpen, setModalOpen] = useState(false);
   // Filtrar agendamentos do SDR logado - apenas os que ainda estão agendados
   const agendamentosAgendados = agendamentos
     .filter(ag => ag.sdr_id === profile?.id && ['agendado', 'remarcado'].includes(ag.status))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .sort((a, b) => new Date(b.data_agendamento).getTime() - new Date(a.data_agendamento).getTime());
 
   const cancelarAgendamento = async (agendamentoId: string) => {
     try {
@@ -136,15 +136,6 @@ const [modalOpen, setModalOpen] = useState(false);
                       </div>
                     )}
 
-                    {/* Data de criação da reunião */}
-                    {agendamento.created_at && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
-                          Reunião criada em: {format(new Date(agendamento.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </span>
-                      </div>
-                    )}
 
                     {agendamento.observacoes && (
                       <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">

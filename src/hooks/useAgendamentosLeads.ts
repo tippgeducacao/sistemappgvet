@@ -39,7 +39,7 @@ const fetchAgendamentosLeads = async (): Promise<AgendamentoLead[]> => {
       vendedor:profiles!vendedor_id(name),
       sdr:profiles!sdr_id(name)
     `)
-    .order('created_at', { ascending: false });
+    .order('data_agendamento', { ascending: false });
 
   if (error) {
     console.error('❌ Erro ao buscar agendamentos:', error);
