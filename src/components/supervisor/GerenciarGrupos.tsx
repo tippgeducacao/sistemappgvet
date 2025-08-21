@@ -43,11 +43,11 @@ const GerenciarGrupos: React.FC = () => {
       console.log('🚀 Iniciando criação do grupo:', novoGrupo);
       const grupo = await createGrupo(novoGrupo.nome, novoGrupo.descricao, novoGrupo.supervisorId);
       
-      // Adicionar SDRs selecionados como membros
+      // Adicionar usuários selecionados como membros
       if (grupo && novoGrupo.sdrsIniciais.length > 0) {
-        console.log('👥 Adicionando SDRs ao grupo:', novoGrupo.sdrsIniciais);
-        for (const sdrId of novoGrupo.sdrsIniciais) {
-          await addMembroGrupo(grupo.id, sdrId);
+        console.log('👥 Adicionando usuários ao grupo:', novoGrupo.sdrsIniciais);
+        for (const usuarioId of novoGrupo.sdrsIniciais) {
+          await addMembroGrupo(grupo.id, usuarioId);
         }
       }
       
@@ -91,17 +91,17 @@ const GerenciarGrupos: React.FC = () => {
     }
   };
 
-  // SDRs disponíveis para adição inicial ao grupo
-  const sdrsDisponiveis = vendedores.filter(vendedor => 
-    vendedor.user_type === 'sdr' && 
+  // Usuários disponíveis para adição inicial ao grupo (SDRs e Vendedores)
+  const usuariosDisponiveis = vendedores.filter(vendedor => 
+    ['sdr', 'sdr_inbound', 'sdr_outbound', 'vendedor'].includes(vendedor.user_type) && 
     vendedor.ativo &&
     !novoGrupo.sdrsIniciais.includes(vendedor.id)
   );
 
-  // Filtrar SDRs disponíveis (que não estão no grupo selecionado)
+  // Filtrar usuários disponíveis (que não estão no grupo selecionado)
   const vendedoresDisponiveis = vendedores.filter(vendedor => {
     const grupo = grupos.find(g => g.id === selectedGrupo);
-    return vendedor.user_type === 'sdr' && 
+    return ['sdr', 'sdr_inbound', 'sdr_outbound', 'vendedor'].includes(vendedor.user_type) && 
            vendedor.ativo && 
            !grupo?.membros?.some(m => m.usuario_id === vendedor.id);
   });
@@ -164,7 +164,7 @@ const GerenciarGrupos: React.FC = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="sdrsIniciais">SDRs Iniciais (opcional)</Label>
+                <Label htmlFor="usuariosIniciais">Usuários Iniciais (opcional)</Label>
                 <Select onValueChange={(value) => {
                   if (value && !novoGrupo.sdrsIniciais.includes(value)) {
                     setNovoGrupo(prev => ({ 
@@ -174,12 +174,12 @@ const GerenciarGrupos: React.FC = () => {
                   }
                 }}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Adicionar SDR ao grupo" />
+                    <SelectValue placeholder="Adicionar usuário ao grupo" />
                   </SelectTrigger>
                   <SelectContent>
-                    {sdrsDisponiveis.map(sdr => (
-                      <SelectItem key={sdr.id} value={sdr.id}>
-                        {sdr.name} - {sdr.nivel || 'N/A'}
+                    {usuariosDisponiveis.map(usuario => (
+                      <SelectItem key={usuario.id} value={usuario.id}>
+                        {usuario.name} - {usuario.user_type === 'vendedor' ? 'Vendedor' : 'SDR'} ({usuario.nivel || 'N/A'})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -187,16 +187,16 @@ const GerenciarGrupos: React.FC = () => {
                 
                 {novoGrupo.sdrsIniciais.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {novoGrupo.sdrsIniciais.map(sdrId => {
-                      const sdr = vendedores.find(v => v.id === sdrId);
+                    {novoGrupo.sdrsIniciais.map(usuarioId => {
+                      const usuario = vendedores.find(v => v.id === usuarioId);
                       return (
-                        <Badge key={sdrId} variant="secondary" className="flex items-center gap-1">
-                          {sdr?.name}
+                        <Badge key={usuarioId} variant="secondary" className="flex items-center gap-1">
+                          {usuario?.name} ({usuario?.user_type === 'vendedor' ? 'Vendedor' : 'SDR'})
                           <button
                             type="button"
                             onClick={() => setNovoGrupo(prev => ({
                               ...prev,
-                              sdrsIniciais: prev.sdrsIniciais.filter(id => id !== sdrId)
+                              sdrsIniciais: prev.sdrsIniciais.filter(id => id !== usuarioId)
                             }))}
                             className="ml-1 text-xs hover:text-red-500"
                           >
@@ -291,7 +291,7 @@ const GerenciarGrupos: React.FC = () => {
                               <SelectContent>
                                 {vendedoresDisponiveis.map((vendedor) => (
                                   <SelectItem key={vendedor.id} value={vendedor.id}>
-                                    {vendedor.name} - SDR ({vendedor.nivel || 'N/A'})
+                                    {vendedor.name} - {vendedor.user_type === 'vendedor' ? 'Vendedor' : 'SDR'} ({vendedor.nivel || 'N/A'})
                                   </SelectItem>
                                 ))}
                               </SelectContent>

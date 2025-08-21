@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar, Target, TrendingUp } from 'lucide-react';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAuthStore } from '@/stores/AuthStore';
-import { useSDRMetasEstats } from '@/hooks/useSDRMetasEstats';
+import { useUsuarioMetasEstats } from '@/hooks/useUsuarioMetasEstats';
 import { useSDRComissionamentoTodosSemanal } from '@/hooks/useSDRComissionamento';
 
 export const SupervisorDashboardAtualizado: React.FC = () => {
@@ -18,14 +18,14 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
     return grupos.find(grupo => grupo.supervisor_id === user.id);
   }, [user, grupos]);
 
-  // Extrair IDs dos SDRs do grupo
-  const sdrIds = useMemo(() => {
+  // Extrair IDs dos usuários do grupo (SDRs e Vendedores)
+  const usuarioIds = useMemo(() => {
     if (!meuGrupo?.membros) return [];
     return meuGrupo.membros.map(membro => membro.usuario_id);
   }, [meuGrupo]);
 
-  // Buscar estatísticas dos SDRs
-  const { stats: sdrStats, loading: statsLoading } = useSDRMetasEstats(sdrIds);
+  // Buscar estatísticas dos usuários
+  const { stats: usuarioStats, loading: statsLoading } = useUsuarioMetasEstats(usuarioIds);
   
   // Calcular semana atual
   const now = new Date();
@@ -55,8 +55,8 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
     <div className="min-h-screen bg-background">
       {/* Header Principal */}
       <div className="bg-card border-b border-border px-6 py-4">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard - Time SDR</h1>
-        <p className="text-muted-foreground mt-1">Acompanhe o desempenho da sua equipe de SDRs</p>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard - Time de Vendas</h1>
+        <p className="text-muted-foreground mt-1">Acompanhe o desempenho da sua equipe</p>
       </div>
 
       <div className="px-6 py-6 space-y-6">
@@ -67,12 +67,29 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />
-                <CardTitle className="text-sm font-medium text-muted-foreground">Minhas Reuniões</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Atividades da Equipe</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">10</div>
-              <p className="text-sm text-muted-foreground">reuniões realizadas esta semana</p>
+              {(() => {
+                if (!usuarioStats || usuarioStats.length === 0) {
+                  return (
+                    <>
+                      <div className="text-3xl font-bold text-foreground">0</div>
+                      <p className="text-sm text-muted-foreground">atividades realizadas esta semana</p>
+                    </>
+                  );
+                }
+                
+                const totalAtividades = usuarioStats.reduce((acc, stat) => acc + (stat.agendamentos_feitos || 0), 0);
+                
+                return (
+                  <>
+                    <div className="text-3xl font-bold text-foreground">{totalAtividades}</div>
+                    <p className="text-sm text-muted-foreground">atividades realizadas este mês</p>
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
 
@@ -87,7 +104,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
             <CardContent>
               {(() => {
                 // Calcular taxa de atingimento média do grupo
-                if (!sdrStats || sdrStats.length === 0) {
+                if (!usuarioStats || usuarioStats.length === 0) {
                   return (
                     <div className="space-y-3">
                       <div className="text-3xl font-bold text-foreground">0%</div>
@@ -97,8 +114,8 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                   );
                 }
                 
-                const totalPercentual = sdrStats.reduce((acc, stat) => acc + (stat.percentual_atingido || 0), 0);
-                const mediaPercentual = totalPercentual / sdrStats.length;
+                const totalPercentual = usuarioStats.reduce((acc, stat) => acc + (stat.percentual_atingido || 0), 0);
+                const mediaPercentual = totalPercentual / usuarioStats.length;
                 
                 return (
                   <div className="space-y-3">
@@ -120,8 +137,25 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">0</div>
-              <p className="text-sm text-muted-foreground">conversões da equipe</p>
+              {(() => {
+                if (!usuarioStats || usuarioStats.length === 0) {
+                  return (
+                    <>
+                      <div className="text-3xl font-bold text-foreground">0</div>
+                      <p className="text-sm text-muted-foreground">conversões da equipe</p>
+                    </>
+                  );
+                }
+                
+                const totalConversoes = usuarioStats.reduce((acc, stat) => acc + (stat.conversoes || 0), 0);
+                
+                return (
+                  <>
+                    <div className="text-3xl font-bold text-foreground">{totalConversoes}</div>
+                    <p className="text-sm text-muted-foreground">conversões da equipe</p>
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
         </div>
@@ -131,7 +165,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
           <CardHeader className="pb-4">
             <CardTitle className="text-xl font-bold text-foreground">META COLETIVA</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Desempenho individual dos SDRs da sua equipe
+              Desempenho individual dos membros da sua equipe
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -141,14 +175,15 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
               </div>
             ) : (
               meuGrupo.membros.map((membro) => {
-                // Buscar estatísticas do SDR
-                const sdrStat = sdrStats.find(stat => stat.sdr_id === membro.usuario_id);
+                // Buscar estatísticas do usuário
+                const usuarioStat = usuarioStats.find(stat => stat.usuario_id === membro.usuario_id);
                 const comissaoData = comissionamentoData?.find(c => c.sdrId === membro.usuario_id);
                 
-                const agendamentos = sdrStat?.agendamentos_feitos || 0;
-                const meta = sdrStat?.meta_semanal || 0;
-                const percentual = sdrStat?.percentual_atingido || 0;
+                const agendamentos = usuarioStat?.agendamentos_feitos || 0;
+                const meta = usuarioStat?.meta_semanal || 0;
+                const percentual = usuarioStat?.percentual_atingido || 0;
                 const comissao = comissaoData?.valorComissao || 0;
+                const tipoUsuario = usuarioStat?.tipo_usuario || 'sdr';
                 
                 // Determinar status baseado no percentual
                 const getStatusButton = (perc: number) => {
@@ -203,7 +238,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground text-base">{membro.usuario?.name}</h3>
-                        <p className="text-sm text-muted-foreground">SDR</p>
+                        <p className="text-sm text-muted-foreground">{tipoUsuario === 'vendedor' ? 'Vendedor' : 'SDR'}</p>
                       </div>
                     </div>
 
@@ -211,7 +246,9 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                     <div className="flex items-center gap-6">
                       {/* Meta e Agendamentos */}
                       <div className="text-right">
-                        <div className="font-bold text-foreground">{agendamentos}/{meta}</div>
+                        <div className="font-bold text-foreground">
+                          {agendamentos}/{tipoUsuario === 'vendedor' ? (meta * 4) : meta}
+                        </div>
                         <div className="text-sm text-muted-foreground">{percentual.toFixed(1)}%</div>
                       </div>
                       
