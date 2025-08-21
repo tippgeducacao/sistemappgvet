@@ -1,6 +1,90 @@
 
-import type { MenuItem } from '@/types/navigation';
+import type { MenuItem, MenuGroup } from '@/types/navigation';
 
+// Dashboard principal - sem grupo
+export const DIRECTOR_MAIN_ITEMS: MenuItem[] = [
+  {
+    title: 'Dashboard',
+    section: 'dashboard',
+    icon: 'BarChart3'
+  },
+  {
+    title: 'Agendamentos',
+    section: 'agendamentos',
+    icon: 'Calendar'
+  }
+];
+
+// Menus agrupados do diretor
+export const DIRECTOR_GROUPED_MENU: MenuGroup[] = [
+  {
+    title: 'Gestão Acadêmica',
+    items: [
+      {
+        title: 'Gerenciar Cursos',
+        section: 'gerenciar-cursos',
+        icon: 'GraduationCap'
+      },
+      {
+        title: 'Perfis de Usuários',
+        section: 'gerenciar-perfis',
+        icon: 'UserCog'
+      },
+      {
+        title: 'Gerenciar Usuários',
+        section: 'gerenciar-vendedores',
+        icon: 'Users'
+      },
+      {
+        title: 'Grupos Supervisores',
+        section: 'gerenciar-grupos',
+        icon: 'UsersRound'
+      }
+    ]
+  },
+  {
+    title: 'Gestão Comercial',
+    items: [
+      {
+        title: 'Gerenciar Vendas',
+        section: 'gerenciar-vendas',
+        icon: 'FileText'
+      },
+      {
+        title: 'Gestão de Leads',
+        section: 'gestao-leads',
+        icon: 'Target'
+      },
+      {
+        title: 'Indicações',
+        section: 'indicacoes',
+        icon: 'Share'
+      }
+    ]
+  },
+  {
+    title: 'Gestão de Performance',
+    items: [
+      {
+        title: 'Gerenciar Pontuações',
+        section: 'gerenciar-pontuacoes',
+        icon: 'Star'
+      },
+      {
+        title: 'Gerenciar Níveis',
+        section: 'gerenciar-niveis',
+        icon: 'Trophy'
+      },
+      {
+        title: 'Eventos Recorrentes',
+        section: 'eventos-recorrentes',
+        icon: 'CalendarCheck'
+      }
+    ]
+  }
+];
+
+// Menu original do diretor para compatibilidade
 export const DIRECTOR_MENU_ITEMS: MenuItem[] = [
   {
     title: 'Dashboard',

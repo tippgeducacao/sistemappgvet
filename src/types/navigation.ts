@@ -4,3 +4,8 @@ export interface MenuItem {
   section: string;
   icon: string;
 }
+
+export interface MenuGroup {
+  title: string;
+  items: MenuItem[];
+}

@@ -12,6 +12,8 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAppStateStore } from '@/stores/AppStateStore';
 import { 
   DIRECTOR_MENU_ITEMS,
+  DIRECTOR_MAIN_ITEMS,
+  DIRECTOR_GROUPED_MENU,
   ADMIN_MENU_ITEMS, 
   SECRETARY_MENU_ITEMS, 
   VENDOR_MENU_ITEMS,
@@ -20,7 +22,7 @@ import {
   SUPERVISOR_MENU_ITEMS
 } from '@/constants/sidebarMenus';
 import * as Icons from 'lucide-react';
-import type { MenuItem } from '@/types/navigation';
+import type { MenuItem, MenuGroup } from '@/types/navigation';
 
 const SidebarMenuComponent: React.FC = () => {
   const { activeSection, navigateToSection } = useAppStateStore();
@@ -80,6 +82,86 @@ const SidebarMenuComponent: React.FC = () => {
     return IconComponent ? <IconComponent className="h-4 w-4 stroke-[1.5]" /> : null;
   };
 
+  // Renderizar menu agrupado para diretor
+  if (isDiretor) {
+    return (
+      <div className="space-y-4">
+        {/* Menu principal sem grupo */}
+        <SidebarGroup className="px-4 py-2">
+          <SidebarGroupLabel className="text-xs font-semibold text-primary px-0 py-2 mb-2 uppercase tracking-wide">
+            Menu Principal
+          </SidebarGroupLabel>
+          <SidebarMenu className="space-y-1">
+            {DIRECTOR_MAIN_ITEMS.map((item) => (
+              <SidebarMenuItem key={item.section}>
+                <SidebarMenuButton
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSectionChange(item.section);
+                  }}
+                  isActive={activeSection === item.section}
+                  className={`
+                    w-full cursor-pointer rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200
+                    ${activeSection === item.section 
+                      ? 'bg-primary/15 text-primary border-l-4 border-primary shadow-sm font-semibold' 
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`flex-shrink-0 ${activeSection === item.section ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {getIcon(item.icon)}
+                    </div>
+                    <span className="truncate">{item.title}</span>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        {/* Grupos organizados */}
+        {DIRECTOR_GROUPED_MENU.map((group) => (
+          <SidebarGroup key={group.title} className="px-4 py-2">
+            <SidebarGroupLabel className="text-xs font-semibold text-primary px-0 py-2 mb-2 uppercase tracking-wide">
+              {group.title}
+            </SidebarGroupLabel>
+            <SidebarMenu className="space-y-1">
+              {group.items.map((item) => (
+                <SidebarMenuItem key={item.section}>
+                  <SidebarMenuButton
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSectionChange(item.section);
+                    }}
+                    isActive={activeSection === item.section}
+                    className={`
+                      w-full cursor-pointer rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200
+                      ${activeSection === item.section 
+                        ? 'bg-primary/15 text-primary border-l-4 border-primary shadow-sm font-semibold' 
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`flex-shrink-0 ${activeSection === item.section ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {getIcon(item.icon)}
+                      </div>
+                      <span className="truncate">{item.title}</span>
+                    </div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
+      </div>
+    );
+  }
+
+  // Menu padrão para outros usuários
   return (
     <SidebarGroup className="px-4 py-2">
       <SidebarGroupLabel className="text-xs font-semibold text-primary px-0 py-2 mb-2 uppercase tracking-wide">
