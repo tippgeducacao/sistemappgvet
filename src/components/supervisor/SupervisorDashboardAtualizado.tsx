@@ -76,20 +76,38 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Sua Meta */}
+          {/* Taxa de Atingimento */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                <CardTitle className="text-sm font-medium text-muted-foreground">SUA META</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">TAXA DE ATINGIMENTO</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="text-3xl font-bold text-foreground">10/120</div>
-                <p className="text-sm text-muted-foreground">8.3% atingido</p>
-                <Progress value={8.3} className="h-2" />
-              </div>
+              {(() => {
+                // Calcular taxa de atingimento média do grupo
+                if (!sdrStats || sdrStats.length === 0) {
+                  return (
+                    <div className="space-y-3">
+                      <div className="text-3xl font-bold text-foreground">0%</div>
+                      <p className="text-sm text-muted-foreground">média do grupo</p>
+                      <Progress value={0} className="h-2" />
+                    </div>
+                  );
+                }
+                
+                const totalPercentual = sdrStats.reduce((acc, stat) => acc + (stat.percentual_atingido || 0), 0);
+                const mediaPercentual = totalPercentual / sdrStats.length;
+                
+                return (
+                  <div className="space-y-3">
+                    <div className="text-3xl font-bold text-foreground">{mediaPercentual.toFixed(1)}%</div>
+                    <p className="text-sm text-muted-foreground">média do grupo</p>
+                    <Progress value={Math.min(mediaPercentual, 100)} className="h-2" />
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 
