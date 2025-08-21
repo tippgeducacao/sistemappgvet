@@ -108,7 +108,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
             </CardHeader>
             <CardContent>
               <>
-                <div className="text-3xl font-bold text-foreground">{supervisorData?.totalSDRs || 0}</div>
+                <div className="text-3xl font-bold text-foreground">{meuGrupo.membros.length}</div>
                 <p className="text-sm text-muted-foreground">membros da equipe</p>
               </>
             </CardContent>
@@ -129,14 +129,13 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
               </div>
             ) : (
-              supervisorData?.sdrsDetalhes?.map((sdrDetalhe) => {
-                // Buscar dados do membro no grupo para obter informações do usuário
-                const membro = meuGrupo.membros.find(m => m.usuario_id === sdrDetalhe.id);
-                if (!membro?.usuario) return null;
+              meuGrupo.membros.map((membro) => {
+                // Buscar dados do SDR nos detalhes do comissionamento (se disponível)
+                const sdrDetalhe = supervisorData?.sdrsDetalhes?.find(sdr => sdr.id === membro.usuario_id);
 
-                const agendamentos = sdrDetalhe.reunioesRealizadas;
-                const meta = sdrDetalhe.metaSemanal;
-                const percentual = sdrDetalhe.percentualAtingimento;
+                const agendamentos = sdrDetalhe?.reunioesRealizadas || 0;
+                const meta = sdrDetalhe?.metaSemanal || 0;
+                const percentual = sdrDetalhe?.percentualAtingimento || 0;
                 
                 // Determinar status baseado no percentual
                 const getStatusButton = (perc: number) => {
@@ -171,7 +170,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                 };
                 
                 return (
-                  <div key={sdrDetalhe.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
+                  <div key={membro.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
                     {/* Avatar e Info */}
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg border-2 border-primary/20 relative overflow-hidden">
@@ -190,8 +189,8 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                         </span>
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground text-base">{sdrDetalhe.nome}</h3>
-                        <p className="text-sm text-muted-foreground">{membro.usuario.user_type === 'vendedor' ? 'Vendedor' : 'SDR'}</p>
+                        <h3 className="font-semibold text-foreground text-base">{membro.usuario?.name}</h3>
+                        <p className="text-sm text-muted-foreground">{membro.usuario?.user_type === 'vendedor' ? 'Vendedor' : 'SDR'}</p>
                       </div>
                     </div>
 
@@ -225,7 +224,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                     </div>
                   </div>
                 );
-              }) || []
+              })
             )}
           </CardContent>
         </Card>
