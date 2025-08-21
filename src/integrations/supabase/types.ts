@@ -1164,6 +1164,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_user_type_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_student_safe_data: {
         Args: { student_id: string }
         Returns: {
@@ -1189,6 +1193,22 @@ export type Database = {
       }
       is_diretor: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      is_management_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_sdr_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_supervisor_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_vendedor_user: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       list_bucket_files: {
