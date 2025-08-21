@@ -47,6 +47,7 @@ const HistoricoReunioes: React.FC = () => {
 
   // Estado para filtros
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [creationDateRange, setCreationDateRange] = useState<DateRange | undefined>();
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
 
   // Opções de status de resultado
@@ -77,7 +78,7 @@ const HistoricoReunioes: React.FC = () => {
           )
         `)
         .eq('sdr_id', profile.id)
-        .order('data_agendamento', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Erro ao buscar histórico de reuniões:', error);
@@ -98,11 +99,18 @@ const HistoricoReunioes: React.FC = () => {
 
   // Filtrar reuniões pelo período e status selecionados
   const reunioesFiltradas = reunioes.filter(reuniao => {
-    // Filtro por período
+    // Filtro por período de agendamento
     if (dateRange?.from || dateRange?.to) {
       const dataAgendamento = new Date(reuniao.data_agendamento);
       if (dateRange.from && dataAgendamento < dateRange.from) return false;
       if (dateRange.to && dataAgendamento > dateRange.to) return false;
+    }
+    
+    // Filtro por período de criação
+    if (creationDateRange?.from || creationDateRange?.to) {
+      const dataCriacao = new Date(reuniao.created_at);
+      if (creationDateRange.from && dataCriacao < creationDateRange.from) return false;
+      if (creationDateRange.to && dataCriacao > creationDateRange.to) return false;
     }
     
     // Filtro por status de resultado 
@@ -125,10 +133,11 @@ const HistoricoReunioes: React.FC = () => {
 
   const clearAllFilters = () => {
     setDateRange(undefined);
+    setCreationDateRange(undefined);
     setSelectedStatus([]);
   };
 
-  const hasActiveFilters = dateRange?.from || dateRange?.to || selectedStatus.length > 0;
+  const hasActiveFilters = dateRange?.from || dateRange?.to || creationDateRange?.from || creationDateRange?.to || selectedStatus.length > 0;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -182,7 +191,7 @@ const HistoricoReunioes: React.FC = () => {
         <CardContent>
           {/* Área de Filtros */}
           <div className="flex flex-wrap gap-3 mb-6">
-            {/* Filtro por período */}
+            {/* Filtro por período de agendamento */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto">
@@ -197,7 +206,7 @@ const HistoricoReunioes: React.FC = () => {
                       format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
                     )
                   ) : (
-                    "Filtrar por período"
+                    "Filtrar por data agendamento"
                   )}
                 </Button>
               </PopoverTrigger>
@@ -217,6 +226,48 @@ const HistoricoReunioes: React.FC = () => {
                     variant="outline"
                     className="w-full"
                     onClick={() => setDateRange(undefined)}
+                  >
+                    Limpar Período
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Filtro por data de criação */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {creationDateRange?.from ? (
+                    creationDateRange.to ? (
+                      <>
+                        {format(creationDateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
+                        {format(creationDateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+                      </>
+                    ) : (
+                      format(creationDateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                    )
+                  ) : (
+                    "Filtrar por data criação"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 z-50" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={creationDateRange?.from}
+                  selected={creationDateRange}
+                  onSelect={setCreationDateRange}
+                  numberOfMonths={1}
+                  locale={ptBR}
+                  className="p-3 pointer-events-auto"
+                />
+                <div className="p-3 border-t">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setCreationDateRange(undefined)}
                   >
                     Limpar Período
                   </Button>
@@ -312,7 +363,7 @@ const HistoricoReunioes: React.FC = () => {
       <CardContent>
         {/* Área de Filtros */}
         <div className="flex flex-wrap gap-3 mb-6">
-          {/* Filtro por período */}
+          {/* Filtro por período de agendamento */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -327,7 +378,7 @@ const HistoricoReunioes: React.FC = () => {
                     format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
                   )
                 ) : (
-                  "Filtrar por período"
+                  "Filtrar por data agendamento"
                 )}
               </Button>
             </PopoverTrigger>
@@ -347,6 +398,48 @@ const HistoricoReunioes: React.FC = () => {
                   variant="outline"
                   className="w-full"
                   onClick={() => setDateRange(undefined)}
+                >
+                  Limpar Período
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Filtro por data de criação */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {creationDateRange?.from ? (
+                  creationDateRange.to ? (
+                    <>
+                      {format(creationDateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
+                      {format(creationDateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+                    </>
+                  ) : (
+                    format(creationDateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                  )
+                ) : (
+                  "Filtrar por data criação"
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-50" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={creationDateRange?.from}
+                selected={creationDateRange}
+                onSelect={setCreationDateRange}
+                numberOfMonths={1}
+                locale={ptBR}
+                className="p-3 pointer-events-auto"
+              />
+              <div className="p-3 border-t">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setCreationDateRange(undefined)}
                 >
                   Limpar Período
                 </Button>
