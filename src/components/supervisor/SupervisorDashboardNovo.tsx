@@ -83,50 +83,6 @@ const SupervisorDashboard: React.FC = () => {
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Filtros */}
-        <div className="bg-card rounded-lg border border-border p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">Filtrar por período:</span>
-              
-              <Select value="8" disabled>
-                <SelectTrigger className="w-32 bg-background">
-                  <SelectValue placeholder="Agosto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="8">Agosto</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value="2025" disabled>
-                <SelectTrigger className="w-24 bg-background">
-                  <SelectValue placeholder="2025" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="2025">2025</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant={selectedPeriod === 'Semana' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedPeriod('Semana')}
-                className="bg-primary text-primary-foreground"
-              >
-                Semana
-              </Button>
-              <Button
-                variant={selectedPeriod === 'Mês' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedPeriod('Mês')}
-              >
-                Mês
-              </Button>
-            </div>
-          </div>
-        </div>
 
         {/* Cards de Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
