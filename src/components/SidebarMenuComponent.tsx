@@ -81,8 +81,8 @@ const SidebarMenuComponent: React.FC = () => {
   };
 
   return (
-    <SidebarGroup className="px-3 py-2">
-      <SidebarGroupLabel className="text-xs font-semibold text-ppgvet-teal dark:text-ppgvet-teal/80 px-0 py-2 mb-2">
+    <SidebarGroup className="px-4 py-2">
+      <SidebarGroupLabel className="text-xs font-semibold text-primary px-0 py-2 mb-2 uppercase tracking-wide">
         Menu Principal
       </SidebarGroupLabel>
       <SidebarMenu className="space-y-1">
@@ -98,15 +98,15 @@ const SidebarMenuComponent: React.FC = () => {
               }}
               isActive={activeSection === item.section}
               className={`
-                w-full cursor-pointer rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-in-out
+                w-full cursor-pointer rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200
                 ${activeSection === item.section 
-                  ? 'bg-gradient-to-r from-ppgvet-teal/15 to-ppgvet-magenta/10 text-ppgvet-teal dark:text-ppgvet-teal border-l-3 border-ppgvet-teal shadow-sm' 
-                  : 'text-muted-foreground hover:bg-ppgvet-gray-50 dark:hover:bg-ppgvet-gray-100 hover:text-foreground'
+                  ? 'bg-primary/15 text-primary border-l-4 border-primary shadow-sm font-semibold' 
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 }
               `}
             >
               <div className="flex items-center gap-3">
-                <div className={`flex-shrink-0 ${activeSection === item.section ? 'text-ppgvet-teal' : 'text-muted-foreground'}`}>
+                <div className={`flex-shrink-0 ${activeSection === item.section ? 'text-primary' : 'text-muted-foreground'}`}>
                   {getIcon(item.icon)}
                 </div>
                 <span className="truncate">{item.title}</span>

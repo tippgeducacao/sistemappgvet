@@ -5,7 +5,7 @@ import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
 
 const MainContent: React.FC = () => {
   return (
-    <main className="flex-1 p-4">
+    <main className="flex-1 space-y-6">
       <PendingVendasAlert />
       <RouteRenderer />
     </main>

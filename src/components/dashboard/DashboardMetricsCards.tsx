@@ -152,52 +152,52 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
 
   // Layout para vendedores com cards de pontuação separados
   if (isVendedor) {
-    return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="aspect-[2/1] flex flex-col justify-between">
+    return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="border-0 shadow-md bg-gradient-to-br from-card via-card to-primary/5 hover:shadow-lg transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Minhas Vendas</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Minhas Vendas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-ppgvet-teal">{stats.totalVendas}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-primary">{stats.totalVendas}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {selectedMonth && selectedYear ? `No período ${selectedMonth}/${selectedYear}` : 'Total geral'}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="aspect-[2/1] flex flex-col justify-between">
+        <Card className="border-0 shadow-md bg-gradient-to-br from-card via-card to-yellow-500/5 hover:shadow-lg transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pontos Aguardando</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Pontos Aguardando</CardTitle>
+            <Clock className="h-5 w-5 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.pontosAguardandoValidacao.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-500">{stats.pontosAguardandoValidacao.toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               Aguardando validação da secretaria
             </p>
           </CardContent>
         </Card>
 
-        <Card className="aspect-[2/1] flex flex-col justify-between">
+        <Card className="border-0 shadow-md bg-gradient-to-br from-card via-card to-green-500/5 hover:shadow-lg transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pontos Validados</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Pontos Validados</CardTitle>
+            <CheckCircle className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.pontosValidados.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-green-600 dark:text-green-500">{stats.pontosValidados.toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               Pontos já confirmados
             </p>
           </CardContent>
         </Card>
 
-        <Card className="aspect-[2/1] flex flex-col justify-between">
+        <Card className="border-0 shadow-md bg-gradient-to-br from-card via-card to-blue-500/5 hover:shadow-lg transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Taxa de Conversão</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.taxaConversao.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-500">{stats.taxaConversao.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {stats.aprovadas} de {stats.totalVendas} convertidas
             </p>
           </CardContent>
@@ -206,67 +206,67 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
   }
 
   // Layout para admin/secretaria - cards retangulares em 4 colunas
-  return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card className="aspect-[2/1] flex flex-col justify-between">
+  return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card className="border-0 shadow-md bg-gradient-to-br from-card via-card to-primary/5 hover:shadow-lg transition-all duration-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total de Vendas Recebidas</CardTitle>
+          <CardTitle className="text-sm font-semibold text-muted-foreground">Total de Vendas Recebidas</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-ppgvet-teal">{stats.totalVendas}</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="text-3xl font-bold text-primary">{stats.totalVendas}</div>
+          <p className="text-xs text-muted-foreground mt-1">
             {selectedMonth && selectedYear ? `No período ${selectedMonth}/${selectedYear}` : 'Total geral'}
           </p>
         </CardContent>
       </Card>
 
-      <Card className="aspect-[2/1] flex flex-col justify-between">
+      <Card className="border-0 shadow-md bg-gradient-to-br from-card via-card to-secondary/5 hover:shadow-lg transition-all duration-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Pontuação Acumulada</CardTitle>
+          <CardTitle className="text-sm font-semibold text-muted-foreground">Pontuação Acumulada</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-ppgvet-magenta">{stats.totalPontuacao.toFixed(1)}</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="text-3xl font-bold text-secondary-foreground">{stats.totalPontuacao.toFixed(1)}</div>
+          <p className="text-xs text-muted-foreground mt-1">
             Pontos acumulados
           </p>
         </CardContent>
       </Card>
 
-      <Card className="aspect-[2/1] flex flex-col justify-between">
+      <Card className="border-0 shadow-md bg-gradient-to-br from-card via-card to-green-500/5 hover:shadow-lg transition-all duration-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Vendas Aprovadas</CardTitle>
+          <CardTitle className="text-sm font-semibold text-muted-foreground">Vendas Aprovadas</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-green-600">{stats.aprovadas}</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="text-3xl font-bold text-green-600 dark:text-green-500">{stats.aprovadas}</div>
+          <p className="text-xs text-muted-foreground mt-1">
             Matrículas confirmadas
           </p>
         </CardContent>
       </Card>
 
-      {melhorVendedor && <Card className="aspect-[2/1] bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-300 shadow-lg flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-            <CardTitle className="text-xs font-medium flex items-center gap-1 text-yellow-800">
-              <Trophy className="h-3 w-3 text-yellow-600" />
+      {melhorVendedor && <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/50 dark:via-yellow-950/50 dark:to-orange-950/50 hover:shadow-xl transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs font-semibold flex items-center gap-1 text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+              <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-500" />
               Melhor Vendedor
             </CardTitle>
-            <Badge className="bg-yellow-500 text-white text-xs px-1 py-0.5">🏆 #1</Badge>
+            <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs px-2 py-1 shadow-sm">🏆 #1</Badge>
           </CardHeader>
-          <CardContent className="pt-0 flex items-center gap-2">
-            <Avatar className="h-8 w-8 border-2 border-yellow-400 shadow-md flex-shrink-0">
+          <CardContent className="pt-2 flex items-center gap-3">
+            <Avatar className="h-10 w-10 ring-2 ring-amber-400 shadow-md flex-shrink-0">
               <AvatarImage src={melhorVendedor.photo_url} alt={melhorVendedor.nome} className="object-cover" />
-              <AvatarFallback className="text-xs bg-yellow-100 text-yellow-800 font-bold">
+              <AvatarFallback className="text-sm bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-900 dark:to-yellow-900 text-amber-800 dark:text-amber-200 font-bold">
                 {melhorVendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-xs text-ppgvet-teal leading-tight truncate">
+              <p className="font-bold text-sm text-foreground leading-tight truncate">
                 {melhorVendedor.nome}
               </p>
-              <p className="text-xs font-semibold text-yellow-700">
+              <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
                 {melhorVendedor.vendas} {melhorVendedor.vendas === 1 ? 'venda aprovada' : 'vendas aprovadas'}
               </p>
-              <p className="text-xs text-yellow-600 font-medium">
+              <p className="text-xs text-amber-600 dark:text-amber-500 font-medium">
                 {DataFormattingService.formatPoints(melhorVendedor.pontuacao)} pts
               </p>
             </div>

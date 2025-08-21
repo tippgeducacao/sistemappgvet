@@ -17,16 +17,18 @@ const Index = () => {
   return (
     <UserGuard user={user || currentUser} loading={loading}>
       <SidebarProvider>
-        <div className="min-h-screen w-full bg-ppgvet-gray-50 flex">
+        <div className="min-h-screen w-full bg-background flex">
           <AppSidebar />
           
           <div className="flex-1 flex flex-col">
-            <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4 bg-background">
-              <SidebarTrigger className="-ml-1" />
+            <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border/60 px-6 bg-card/60 backdrop-blur-sm shadow-sm">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="hover:bg-primary/10 hover:text-primary rounded-md transition-colors" />
+              </div>
               <ThemeToggle />
             </header>
 
-            <main className="flex-1 p-6">
+            <main className="flex-1 p-6 bg-muted/30">
               <MainContent />
             </main>
           </div>

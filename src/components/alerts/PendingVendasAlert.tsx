@@ -22,12 +22,12 @@ const PendingVendasAlert: React.FC = () => {
   return (
     <Alert
       variant="default"
-      className="relative border border-primary/40 bg-primary/10 dark:bg-primary/15 shadow-sm"
+      className="border-l-4 border-l-primary bg-primary/5 border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200"
     >
-      <AlertTriangle className="h-4 w-4 text-primary animate-pulse" />
+      <AlertTriangle className="h-4 w-4 text-primary" />
       <AlertTitle className="text-foreground font-semibold">Atenção Secretaria</AlertTitle>
-      <AlertDescription className="text-foreground">
-        Há {vendasPendentes} {vendasPendentes === 1 ? 'venda aguardando' : 'vendas aguardando'} análise e aprovação
+      <AlertDescription className="text-foreground/80">
+        Há <span className="font-semibold text-primary">{vendasPendentes}</span> {vendasPendentes === 1 ? 'venda aguardando' : 'vendas aguardando'} análise e aprovação
       </AlertDescription>
     </Alert>
   );

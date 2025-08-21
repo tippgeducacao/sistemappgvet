@@ -27,7 +27,7 @@ const AppSidebar: React.FC = () => {
   const userType = getUserType();
   
   return (
-    <Sidebar className="touch-none overscroll-none h-full w-56 overflow-hidden border-r border-border/40 bg-gradient-to-b from-ppgvet-gray-50 to-card dark:from-ppgvet-gray-100 dark:to-card shadow-lg flex flex-col">
+    <Sidebar className="h-full w-56 overflow-hidden border-r bg-card shadow-lg flex flex-col">
       <SidebarHeaderComponent userType={userType} />
       <div className="flex-1">
         <SidebarMenuComponent />

@@ -42,11 +42,11 @@ const SidebarHeaderComponent: React.FC<SidebarHeaderComponentProps> = ({ userTyp
   };
 
   return (
-    <SidebarHeader className="border-b border-ppgvet-teal/20 p-3 bg-gradient-to-r from-ppgvet-teal/5 to-ppgvet-magenta/5 dark:from-ppgvet-teal/10 dark:to-ppgvet-magenta/10">
+    <SidebarHeader className="border-b p-4 bg-muted/50">
       <div className="flex flex-col space-y-3">
         {/* Logo e título */}
         <div className="flex items-center space-x-3">
-          <div className="flex-shrink-0 p-1 rounded-lg bg-ppgvet-teal/10 dark:bg-ppgvet-teal/20">
+          <div className="flex-shrink-0 p-2 rounded-lg bg-primary/10">
             <img 
               src="/lovable-uploads/e2b888ac-54b9-453e-abda-ee6ef6e7fbb5.png" 
               alt="PPGVET Logo" 
@@ -54,10 +54,10 @@ const SidebarHeaderComponent: React.FC<SidebarHeaderComponentProps> = ({ userTyp
             />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-bold text-ppgvet-teal dark:text-ppgvet-teal truncate">
+            <h2 className="text-lg font-bold text-primary truncate">
               {getHeaderTitle()}
             </h2>
-            <p className="text-xs text-muted-foreground truncate font-medium">
+            <p className="text-sm text-muted-foreground truncate">
               {getHeaderSubtitle()}
             </p>
           </div>

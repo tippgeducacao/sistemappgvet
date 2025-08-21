@@ -85,22 +85,22 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
 
   return (
     <>
-      <SidebarFooter className="border-t border-ppgvet-teal/20 p-3 bg-gradient-to-r from-ppgvet-teal/5 to-ppgvet-magenta/5 dark:from-ppgvet-teal/10 dark:to-ppgvet-magenta/10">
+      <SidebarFooter className="border-t p-4 bg-muted/50">
         <div className="space-y-3">
-          <div className="flex items-center space-x-3 p-2.5 rounded-lg bg-card/60 backdrop-blur-sm border border-ppgvet-teal/20 shadow-sm">
+          <div className="flex items-center space-x-3 p-3 rounded-lg bg-card border shadow-sm">
             <div className="flex-shrink-0">
-              <Avatar className="h-7 w-7 ring-2 ring-ppgvet-teal/20">
+              <Avatar className="h-8 w-8 ring-2 ring-primary/20">
                 <AvatarImage src={getProfileImage() || undefined} alt={userName} />
-                <AvatarFallback className="bg-ppgvet-teal/10 text-ppgvet-teal text-xs font-bold">
+                <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                   {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
+              <p className="text-sm font-semibold text-foreground truncate">
                 {userName}
               </p>
-              <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-ppgvet-teal/10 text-ppgvet-teal border-ppgvet-teal/30 dark:bg-ppgvet-teal/20 dark:text-ppgvet-teal`}>
+              <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                 {getUserTypeLabel()}
               </div>
             </div>
@@ -110,9 +110,9 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
             variant="outline" 
             size="sm" 
             onClick={() => setIsProfileOpen(true)}
-            className="w-full justify-start gap-2 rounded-lg border-ppgvet-teal/30 hover:bg-ppgvet-teal/10 hover:text-ppgvet-teal hover:border-ppgvet-teal/50 transition-all duration-200"
+            className="w-full justify-start gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
           >
-            <User className="h-4 w-4 stroke-[1.5]" />
+            <User className="h-4 w-4" />
             Ver Perfil
           </Button>
           
@@ -120,9 +120,9 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
             variant="outline" 
             size="sm" 
             onClick={signOut}
-            className="w-full justify-start gap-2 rounded-lg border-ppgvet-teal/30 hover:bg-ppgvet-teal/10 hover:text-ppgvet-teal hover:border-ppgvet-teal/50 transition-all duration-200"
+            className="w-full justify-start gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
           >
-            <LogOut className="h-4 w-4 stroke-[1.5]" />
+            <LogOut className="h-4 w-4" />
             Sair
           </Button>
         </div>
