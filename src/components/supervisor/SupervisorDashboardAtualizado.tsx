@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Target, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAuthStore } from '@/stores/AuthStore';
@@ -13,14 +14,44 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
   const { grupos, loading } = useGruposSupervisores();
   
+  // Estado para seleção de mês/ano
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  
   // Estado para navegação semanal
   const [currentDate, setCurrentDate] = useState(new Date());
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = selectedYear;
+  const currentMonth = selectedMonth;
   
   // Hooks para metas semanais
   const { getSemanasDoMes, getSemanaAtual } = useMetasSemanais();
   
+  // Gerar opções de anos (últimos 3 anos + próximos 2)
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 3; i <= currentYear + 2; i++) {
+      years.push(i);
+    }
+    return years;
+  }, []);
+
+  // Gerar opções de meses
+  const monthOptions = [
+    { value: 1, label: 'Janeiro' },
+    { value: 2, label: 'Fevereiro' },
+    { value: 3, label: 'Março' },
+    { value: 4, label: 'Abril' },
+    { value: 5, label: 'Maio' },
+    { value: 6, label: 'Junho' },
+    { value: 7, label: 'Julho' },
+    { value: 8, label: 'Agosto' },
+    { value: 9, label: 'Setembro' },
+    { value: 10, label: 'Outubro' },
+    { value: 11, label: 'Novembro' },
+    { value: 12, label: 'Dezembro' }
+  ];
+
   // Função para calcular datas das semanas que TERMINAM no mês (quarta a terça)
   const getWeekDates = (year: number, month: number, week: number) => {
     // Encontrar todas as terças-feiras que estão no mês
@@ -133,10 +164,43 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
       </div>
 
       <div className="px-6 py-6 space-y-6">
+        {/* Seletor de Período */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold text-foreground">META COLETIVA</h2>
+            <div className="flex items-center gap-2">
+              <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map((month) => (
+                    <SelectItem key={month.value} value={month.value.toString()}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
         {/* Navegação Semanal */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-foreground">Semana {selectedWeek}</h2>
+            <h3 className="text-lg font-semibold text-foreground">Semana {selectedWeek}</h3>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -215,9 +279,11 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
         {/* Meta Coletiva */}
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold text-foreground">META COLETIVA - {currentMonth}/{currentYear}</CardTitle>
+            <CardTitle className="text-xl font-bold text-foreground">
+              Desempenho semanal dos membros da sua equipe - {selectedMonth}/{selectedYear}
+            </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Desempenho semanal dos membros da sua equipe
+              Acompanhe o desempenho de cada membro por semana
             </p>
           </CardHeader>
           <CardContent>
