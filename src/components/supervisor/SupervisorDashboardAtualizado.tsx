@@ -6,7 +6,8 @@ import { Calendar, Target, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
-import { useSupervisorComissionamentoAtual } from '@/hooks/useSupervisorComissionamento';
+import { useSupervisorComissionamentoAtual, useSupervisorComissionamento } from '@/hooks/useSupervisorComissionamento';
+import { WeeklyDataProvider } from './WeeklyDataProvider';
 
 export const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
@@ -241,19 +242,22 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                         </td>
                         
                         {/* Colunas das Semanas */}
-                        {semanasDoMes.map((semana) => {
-                          // Para agora, vamos mostrar dados simulados já que não temos dados históricos por semana
-                          const reunioesSemana = semana === selectedWeek ? totalReunioes : Math.floor(Math.random() * metaSemanal);
-                          const percentualSemana = metaSemanal > 0 ? (reunioesSemana / metaSemanal) * 100 : 0;
-                          
-                          return (
-                            <td key={semana} className="py-4 px-4 text-center border-l border-border">
-                              <div className="text-sm text-foreground">
-                                {reunioesSemana}/{metaSemanal} ({percentualSemana.toFixed(1)}%)
-                              </div>
-                            </td>
-                          );
-                        })}
+                        {semanasDoMes.map((semana) => (
+                          <td key={semana} className="py-4 px-4 text-center border-l border-border">
+                            <WeeklyDataProvider
+                              supervisorId={user?.id || ''}
+                              year={currentYear}
+                              week={semana}
+                              memberId={membro.usuario_id}
+                            >
+                              {({ reunioesRealizadas, metaSemanal, percentual }) => (
+                                <div className="text-sm text-foreground">
+                                  {reunioesRealizadas}/{metaSemanal} ({percentual.toFixed(1)}%)
+                                </div>
+                              )}
+                            </WeeklyDataProvider>
+                          </td>
+                        ))}
                         
                         {/* Total */}
                         <td className="py-4 px-4 text-center border-l border-border">
