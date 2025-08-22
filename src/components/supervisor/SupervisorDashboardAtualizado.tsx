@@ -112,8 +112,13 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
     return grupos.find(grupo => grupo.supervisor_id === user.id);
   }, [user, grupos]);
 
-  // Buscar dados da planilha detalhada do supervisor para a semana selecionada
-  const { data: supervisorData, isLoading: supervisorLoading } = useSupervisorComissionamentoAtual(user?.id || '');
+  // Buscar dados da planilha detalhada do supervisor para o mês e semana selecionados
+  const { data: supervisorData, isLoading: supervisorLoading } = useSupervisorComissionamento(
+    user?.id || '', 
+    selectedYear, 
+    selectedMonth, 
+    selectedWeek
+  );
 
   // Funções de navegação semanal
   const navigateWeek = (direction: 'prev' | 'next') => {

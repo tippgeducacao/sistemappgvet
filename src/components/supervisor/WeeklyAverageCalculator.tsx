@@ -26,9 +26,15 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
   week,
   members
 }) => {
-  console.log('🚀 WeeklyAverageCalculator iniciado:', { supervisorId, year, week, membersCount: members.length });
+  console.log('🚀 WeeklyAverageCalculator iniciado:', { 
+    supervisorId, 
+    year, 
+    week, 
+    membersCount: members.length,
+    members: members.map(m => ({ id: m.id, usuario_id: m.usuario_id, user_type: m.usuario?.user_type }))
+  });
   
-  const { data: supervisorData, isLoading, error } = useSupervisorComissionamento(supervisorId, year, week);
+  const { data: supervisorData, isLoading, error } = useSupervisorComissionamento(supervisorId, year, month, week);
 
   // Buscar regras de comissionamento (usar as mesmas dos vendedores)
   const { data: regrasComissionamento, error: regrasError } = useQuery({

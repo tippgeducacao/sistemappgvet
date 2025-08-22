@@ -21,7 +21,7 @@ export const WeeklyDataProvider: React.FC<WeeklyDataProviderProps> = ({
   children
 }) => {
   // Usar o hook que busca dados da planilha detalhada para a semana específica
-  const { data: weekData } = useSupervisorComissionamento(supervisorId, year, week);
+  const { data: weekData } = useSupervisorComissionamento(supervisorId, year, month, week);
   
   const memberData = useMemo(() => {
     if (!weekData?.sdrsDetalhes) {

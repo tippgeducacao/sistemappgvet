@@ -2,11 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { SupervisorComissionamentoService } from '@/services/supervisor/SupervisorComissionamentoService';
 import { getWeekRange } from '@/utils/semanaUtils';
 
-export const useSupervisorComissionamento = (supervisorId: string, ano: number, semana: number) => {
+export const useSupervisorComissionamento = (supervisorId: string, ano: number, mes: number, semana: number) => {
   return useQuery({
-    queryKey: ['supervisor-comissionamento', supervisorId, ano, semana],
-    queryFn: () => SupervisorComissionamentoService.calcularComissionamentoSupervisor(supervisorId, ano, semana),
-    enabled: !!supervisorId && !!ano && !!semana,
+    queryKey: ['supervisor-comissionamento', supervisorId, ano, mes, semana],
+    queryFn: () => SupervisorComissionamentoService.calcularComissionamentoSupervisor(supervisorId, ano, mes, semana),
+    enabled: !!supervisorId && !!ano && !!mes && !!semana,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 };

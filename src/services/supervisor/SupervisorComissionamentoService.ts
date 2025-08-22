@@ -253,15 +253,14 @@ export class SupervisorComissionamentoService {
   static async calcularComissionamentoSupervisor(
     supervisorId: string,
     ano: number,
+    mes: number,
     semana: number
   ): Promise<SupervisorComissionamentoData | null> {
     try {
-      console.log(`🔍 CALCULANDO COMISSIONAMENTO: Supervisor ${supervisorId}, Ano ${ano}, Semana ${semana}`);
+      console.log(`🔍 CALCULANDO COMISSIONAMENTO: Supervisor ${supervisorId}, Ano ${ano}, Mês ${mes}, Semana ${semana}`);
       
-      // IMPORTANTE: Calcular as datas da semana específica baseada no mês atual
-      // A semana é contada dentro do mês, não do ano
-      const mesAtual = new Date().getMonth() + 1;
-      const { inicioSemana, fimSemana } = this.calcularDatasSemanaDoMes(ano, mesAtual, semana);
+      // IMPORTANTE: Usar o mês passado como parâmetro para o cálculo das semanas
+      const { inicioSemana, fimSemana } = this.calcularDatasSemanaDoMes(ano, mes, semana);
       
       console.log(`📅 Período calculado: ${inicioSemana.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}`);
 
