@@ -21,6 +21,7 @@ export const WeeklyDataProvider: React.FC<WeeklyDataProviderProps> = ({
   children
 }) => {
   console.log('🔍 WeeklyDataProvider:', { supervisorId, year, month, week, memberId, memberType });
+  console.log('🆔 Procurando membro com ID:', memberId);
   
   // Usar o hook que busca dados da planilha detalhada para a semana específica
   const { data: weekData, isLoading, error } = useSupervisorComissionamento(supervisorId, year, month, week);
@@ -29,6 +30,7 @@ export const WeeklyDataProvider: React.FC<WeeklyDataProviderProps> = ({
     memberId,
     hasWeekData: !!weekData,
     sdrsDetalhesCount: weekData?.sdrsDetalhes?.length || 0,
+    sdrsDetalhesIds: weekData?.sdrsDetalhes?.map(sdr => ({ id: sdr.id.substring(0, 8), nome: sdr.nome })),
     isLoading,
     error
   });

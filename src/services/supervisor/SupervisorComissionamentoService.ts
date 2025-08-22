@@ -102,10 +102,13 @@ export class SupervisorComissionamentoService {
         ativo: m.usuario?.ativo
       })));
 
-      // Filtrar apenas membros ativos (SDRs e Vendedores)
+      // Filtrar apenas membros ativos (SDRs e Vendedores) - incluindo todos os tipos de SDR
       const membrosAtivos = membrosData.filter(
         membro => membro.usuario?.ativo === true && 
-        (membro.usuario?.user_type === 'sdr' || membro.usuario?.user_type === 'vendedor')
+        (membro.usuario?.user_type === 'sdr' || 
+         membro.usuario?.user_type === 'sdr_inbound' || 
+         membro.usuario?.user_type === 'sdr_outbound' || 
+         membro.usuario?.user_type === 'vendedor')
       );
 
       console.log('👥 Membros ativos encontrados:', membrosAtivos.length);
@@ -154,8 +157,12 @@ export class SupervisorComissionamentoService {
         let metaSemanal = 0;
         if (membroTipo === 'vendedor') {
           metaSemanal = nivelData?.meta_semanal_vendedor || 0;
+        } else if (membroTipo === 'sdr_inbound') {
+          metaSemanal = nivelData?.meta_semanal_inbound || 55;
+        } else if (membroTipo === 'sdr_outbound') {
+          metaSemanal = nivelData?.meta_semanal_outbound || 55;
         } else if (membroTipo === 'sdr') {
-          // Para SDRs, usar meta_semanal_inbound (campo correto)
+          // Para SDRs genéricos, usar meta_semanal_inbound como padrão
           metaSemanal = nivelData?.meta_semanal_inbound || 55;
         }
 
@@ -164,7 +171,7 @@ export class SupervisorComissionamentoService {
         // Buscar atividades realizadas baseada no tipo
         let reunioesRealizadas = 0;
         
-        if (membroTipo === 'sdr') {
+        if (membroTipo === 'sdr' || membroTipo === 'sdr_inbound' || membroTipo === 'sdr_outbound') {
           // Para SDRs: buscar agendamentos com resultados específicos (mesmo que planilha detalhada)
           console.log(`🔍 SDR ${membroNome} - Buscando agendamentos entre:`, {
             inicio: inicioSemana.toISOString(),
@@ -189,13 +196,14 @@ export class SupervisorComissionamentoService {
             })));
           }
           
-          // Filtrar apenas agendamentos com resultados específicos
+          // Filtrar apenas agendamentos com resultados específicos (mesma lógica da planilha detalhada)
           const agendamentosComResultado = agendamentos?.filter(a => 
-            ['presente', 'compareceu', 'realizada'].includes(a.resultado_reuniao)
+            a.status === 'finalizado' && 
+            ['compareceu', 'comprou', 'compareceu_nao_comprou'].includes(a.resultado_reuniao)
           ) || [];
           
           reunioesRealizadas = agendamentosComResultado.length;
-          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: presente, compareceu, realizada)`);
+          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: status=finalizado + resultado=compareceu/comprou/compareceu_nao_comprou)`);
           
           if (agendamentosError) console.log('❌ Erro agendamentos SDR:', agendamentosError);
           
@@ -382,10 +390,13 @@ export class SupervisorComissionamentoService {
 
       console.log(`✅ ${membrosData.length} membros encontrados no grupo`);
 
-      // Filtrar apenas membros ativos (SDRs e Vendedores)
+      // Filtrar apenas membros ativos (SDRs e Vendedores) - incluindo todos os tipos de SDR
       const membrosAtivos = membrosData.filter(
         membro => membro.usuario?.ativo === true && 
-        (membro.usuario?.user_type === 'sdr' || membro.usuario?.user_type === 'vendedor')
+        (membro.usuario?.user_type === 'sdr' || 
+         membro.usuario?.user_type === 'sdr_inbound' || 
+         membro.usuario?.user_type === 'sdr_outbound' || 
+         membro.usuario?.user_type === 'vendedor')
       );
 
       console.log(`✅ ${membrosAtivos.length} membros ativos`);
@@ -431,8 +442,12 @@ export class SupervisorComissionamentoService {
         let metaSemanal = 0;
         if (membroTipo === 'vendedor') {
           metaSemanal = nivelData?.meta_semanal_vendedor || 0;
+        } else if (membroTipo === 'sdr_inbound') {
+          metaSemanal = nivelData?.meta_semanal_inbound || 55;
+        } else if (membroTipo === 'sdr_outbound') {
+          metaSemanal = nivelData?.meta_semanal_outbound || 55;
         } else if (membroTipo === 'sdr') {
-          // Para SDRs, usar meta_semanal_inbound (campo correto)
+          // Para SDRs genéricos, usar meta_semanal_inbound como padrão
           metaSemanal = nivelData?.meta_semanal_inbound || 55;
         }
 
@@ -441,7 +456,7 @@ export class SupervisorComissionamentoService {
         // Buscar atividades realizadas baseada no tipo
         let reunioesRealizadas = 0;
         
-        if (membroTipo === 'sdr') {
+        if (membroTipo === 'sdr' || membroTipo === 'sdr_inbound' || membroTipo === 'sdr_outbound') {
           // Para SDRs: buscar agendamentos com resultados específicos (mesmo que planilha detalhada)
           console.log(`🔍 SDR ${membroNome} - Buscando agendamentos entre:`, {
             inicio: inicioSemana.toISOString(),
@@ -466,13 +481,14 @@ export class SupervisorComissionamentoService {
             })));
           }
           
-          // Filtrar apenas agendamentos com resultados específicos
+          // Filtrar apenas agendamentos com resultados específicos (mesma lógica da planilha detalhada)
           const agendamentosComResultado = agendamentos?.filter(a => 
-            ['presente', 'compareceu', 'realizada'].includes(a.resultado_reuniao)
+            a.status === 'finalizado' && 
+            ['compareceu', 'comprou', 'compareceu_nao_comprou'].includes(a.resultado_reuniao)
           ) || [];
           
           reunioesRealizadas = agendamentosComResultado.length;
-          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: presente, compareceu, realizada)`);
+          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: status=finalizado + resultado=compareceu/comprou/compareceu_nao_comprou)`);
           
           if (agendamentosComResultado.length > 0) {
             console.log('Agendamentos com resultado válido:', agendamentosComResultado.map(a => ({
