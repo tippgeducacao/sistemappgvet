@@ -38,17 +38,34 @@ export const WeeklyDataProvider: React.FC<WeeklyDataProviderProps> = ({
   const memberData = useMemo(() => {
     if (!weekData?.sdrsDetalhes) {
       console.log('⚠️ Sem sdrsDetalhes para membro:', memberId);
+      console.log('📊 WeekData completo:', weekData);
       return { reunioesRealizadas: 0, metaSemanal: 0, percentual: 0 };
     }
     
+    console.log('🔍🔍 PROCURANDO MEMBRO:', { 
+      memberId: memberId.substring(0, 8), 
+      totalSDRs: weekData.sdrsDetalhes.length,
+      sdrsIds: weekData.sdrsDetalhes.map(s => s.id.substring(0, 8))
+    });
+    
     const member = weekData.sdrsDetalhes.find(sdr => sdr.id === memberId);
     console.log('👤 Membro encontrado:', { 
-      memberId, 
+      memberId: memberId.substring(0, 8), 
       found: !!member, 
-      memberData: member 
+      memberData: member ? {
+        nome: member.nome,
+        reunioes: member.reunioesRealizadas,
+        meta: member.metaSemanal,
+        percentual: member.percentualAtingimento
+      } : null
     });
     
     if (!member) {
+      console.log('❌ MEMBRO NÃO ENCONTRADO:', memberId.substring(0, 8));
+      console.log('📋 SDRs disponíveis:', weekData.sdrsDetalhes.map(s => ({
+        id: s.id.substring(0, 8),
+        nome: s.nome
+      })));
       return { reunioesRealizadas: 0, metaSemanal: 0, percentual: 0 };
     }
     
@@ -58,7 +75,11 @@ export const WeeklyDataProvider: React.FC<WeeklyDataProviderProps> = ({
       percentual: member.percentualAtingimento || 0
     };
     
-    console.log('📈 Resultado final para membro:', { memberId, result });
+    console.log('📈 Resultado final para membro:', { 
+      memberId: memberId.substring(0, 8), 
+      nome: member.nome,
+      result 
+    });
     
     return result;
   }, [weekData, memberId]);
