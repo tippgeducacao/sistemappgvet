@@ -21,19 +21,19 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   // Hooks para metas semanais
   const { getSemanasDoMes, getSemanaAtual } = useMetasSemanais();
   
-  // Função para calcular datas da semana (quarta a terça)
-  const getWeekDates = (year: number, week: number) => {
-    // Encontrar a primeira quarta-feira do ano
-    const startOfYear = new Date(year, 0, 1);
-    let firstWednesday = new Date(startOfYear);
+  // Função para calcular datas das semanas do mês atual (quarta a terça)
+  const getWeekDates = (year: number, month: number, week: number) => {
+    // Primeira quarta-feira do mês
+    const firstDayOfMonth = new Date(year, month - 1, 1);
+    let firstWednesday = new Date(firstDayOfMonth);
     
-    // Ajustar para primeira quarta-feira
+    // Encontrar a primeira quarta-feira do mês (ou da semana anterior se necessário)
     while (firstWednesday.getDay() !== 3) { // 3 = quarta-feira
       firstWednesday.setDate(firstWednesday.getDate() + 1);
     }
     
-    // Se a primeira quarta-feira é depois do dia 4, usar a anterior
-    if (firstWednesday.getDate() > 4) {
+    // Se a primeira quarta-feira é muito tarde no mês, usar a anterior
+    if (firstWednesday.getDate() > 7) {
       firstWednesday.setDate(firstWednesday.getDate() - 7);
     }
     
@@ -211,7 +211,7 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Nível</th>
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Meta Semanal</th>
                     {semanasDoMes.map((semana) => {
-                      const { start, end } = getWeekDates(currentYear, semana);
+                      const { start, end } = getWeekDates(currentYear, currentMonth, semana);
                       const startFormatted = start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                       const endFormatted = end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                       
