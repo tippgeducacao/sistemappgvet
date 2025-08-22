@@ -367,8 +367,10 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                             <WeeklyDataProvider
                               supervisorId={user?.id || ''}
                               year={currentYear}
+                              month={currentMonth}
                               week={semana}
                               memberId={membro.usuario_id}
+                              memberType={membro.usuario?.user_type as 'sdr' | 'vendedor'}
                             >
                               {({ reunioesRealizadas, metaSemanal, percentual }) => (
                                 <div className="text-sm text-foreground">
