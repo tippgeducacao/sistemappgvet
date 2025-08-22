@@ -21,33 +21,51 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   // Hooks para metas semanais
   const { getSemanasDoMes, getSemanaAtual } = useMetasSemanais();
   
-  // Função para calcular datas das semanas do mês atual (quarta a terça)
+  // Função para calcular datas das semanas que TERMINAM no mês (quarta a terça)
   const getWeekDates = (year: number, month: number, week: number) => {
-    // Primeira quarta-feira do mês
+    // Encontrar todas as terças-feiras que estão no mês
     const firstDayOfMonth = new Date(year, month - 1, 1);
-    let firstWednesday = new Date(firstDayOfMonth);
+    const lastDayOfMonth = new Date(year, month, 0);
     
-    // Encontrar a primeira quarta-feira do mês (ou da semana anterior se necessário)
-    while (firstWednesday.getDay() !== 3) { // 3 = quarta-feira
-      firstWednesday.setDate(firstWednesday.getDate() + 1);
+    const tuesdays = [];
+    let currentDate = new Date(firstDayOfMonth);
+    
+    // Encontrar primeira terça-feira do mês ou anterior que termine no mês
+    while (currentDate.getDay() !== 2) { // 2 = terça-feira
+      currentDate.setDate(currentDate.getDate() + 1);
     }
     
-    // Se a primeira quarta-feira é muito tarde no mês, usar a anterior
-    if (firstWednesday.getDate() > 7) {
-      firstWednesday.setDate(firstWednesday.getDate() - 7);
+    // Se a primeira terça é muito tarde, verificar se há uma anterior que termine no mês
+    if (currentDate.getDate() > 7) {
+      const previousTuesday = new Date(currentDate);
+      previousTuesday.setDate(currentDate.getDate() - 7);
+      if (previousTuesday.getMonth() === month - 1) {
+        tuesdays.push(new Date(previousTuesday));
+      }
     }
     
-    // Calcular início da semana específica
-    const startWeek = new Date(firstWednesday);
-    startWeek.setDate(firstWednesday.getDate() + (week - 1) * 7);
+    // Adicionar todas as terças-feiras do mês
+    while (currentDate.getMonth() === month - 1) {
+      tuesdays.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 7);
+    }
     
-    // Fim da semana (terça-feira)
-    const endWeek = new Date(startWeek);
-    endWeek.setDate(startWeek.getDate() + 6);
+    // Pegar a terça-feira da semana solicitada
+    if (week <= tuesdays.length) {
+      const endWeek = tuesdays[week - 1];
+      const startWeek = new Date(endWeek);
+      startWeek.setDate(endWeek.getDate() - 6); // Voltar 6 dias para quarta-feira
+      
+      return {
+        start: startWeek,
+        end: endWeek
+      };
+    }
     
+    // Fallback se a semana não existir
     return {
-      start: startWeek,
-      end: endWeek
+      start: new Date(),
+      end: new Date()
     };
   };
 
