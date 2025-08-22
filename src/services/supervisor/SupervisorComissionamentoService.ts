@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { getWeekRange } from '@/utils/semanaUtils';
+import { getDataEfetivaVenda, isVendaInWeek } from '@/utils/vendaDateUtils';
 
 export interface SupervisorComissionamentoData {
   supervisorId: string;
@@ -157,45 +158,61 @@ export class SupervisorComissionamentoService {
         let reunioesRealizadas = 0;
         
         if (membroTipo === 'sdr') {
-          // Para SDRs: buscar por sdr_id
-          // Criar datas no formato correto sem problemas de timezone
-          const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')} 00:00:00`;
-          const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')} 23:59:59`;
-          
+          // Para SDRs: buscar agendamentos com resultados específicos (mesmo que planilha detalhada)
           const { data: agendamentos, error: agendamentosError } = await supabase
             .from('agendamentos')
             .select('id, data_agendamento, resultado_reuniao')
             .eq('sdr_id', membroId)
-            .gte('data_agendamento', inicioSemanaStr)
-            .lte('data_agendamento', fimSemanaStr)
-            .not('resultado_reuniao', 'is', null);
+            .gte('data_agendamento', inicioSemana.toISOString())
+            .lte('data_agendamento', fimSemana.toISOString())
+            .in('resultado_reuniao', ['presente', 'compareceu', 'realizada']);
             
-          console.log(`📅 SDR ${membroNome}: ${agendamentos?.length || 0} reuniões encontradas (${inicioSemanaStr} até ${fimSemanaStr})`);
+          reunioesRealizadas = agendamentos?.length || 0;
+          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: presente, compareceu, realizada)`);
           if (agendamentosError) console.log('❌ Erro agendamentos SDR:', agendamentosError);
           if (agendamentos && agendamentos.length > 0) {
-            console.log('Primeiros agendamentos:', agendamentos.slice(0, 3));
+            console.log('Agendamentos encontrados:', agendamentos.slice(0, 3));
           }
-          reunioesRealizadas = agendamentos?.length || 0;
         } else if (membroTipo === 'vendedor') {
-          // Para vendedores: somar pontuação das vendas matriculadas
-          // Criar datas no formato correto sem problemas de timezone
-          const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
-          const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
-          
+          // Para vendedores: usar data efetiva das vendas (mesmo que planilha detalhada)
           const { data: vendas, error: vendasError } = await supabase
             .from('form_entries')
-            .select('pontuacao_validada, data_aprovacao')
+            .select(`
+              id,
+              pontuacao_validada,
+              enviado_em,
+              data_assinatura_contrato,
+              data_aprovacao
+            `)
             .eq('vendedor_id', membroId)
-            .eq('status', 'matriculado')
-            .gte('data_aprovacao', inicioSemanaStr)
-            .lte('data_aprovacao', fimSemanaStr);
+            .eq('status', 'matriculado');
+
+          if (vendasError) {
+            console.log('❌ Erro vendas:', vendasError);
+            reunioesRealizadas = 0;
+          } else {
+            // Buscar respostas do formulário para calcular data efetiva
+            const { data: respostasFormulario } = await supabase
+              .from('respostas_formulario')
+              .select('form_entry_id, campo_nome, valor_informado')
+              .in('form_entry_id', vendas?.map(v => v.id) || []);
+
+            // Filtrar vendas que estão na semana usando data efetiva
+            const vendasNaSemana = vendas?.filter(venda => 
+              isVendaInWeek(venda, inicioSemana, fimSemana, respostasFormulario)
+            ) || [];
+
+            reunioesRealizadas = vendasNaSemana.reduce((total, venda) => 
+              total + (venda.pontuacao_validada || 0), 0);
             
-          reunioesRealizadas = vendas?.reduce((total, venda) => 
-            total + (venda.pontuacao_validada || 0), 0) || 0;
-          console.log(`💰 Vendedor ${membroNome}: ${reunioesRealizadas} pontos de vendas (${inicioSemanaStr} até ${fimSemanaStr})`);
-          if (vendasError) console.log('❌ Erro vendas:', vendasError);
-          if (vendas && vendas.length > 0) {
-            console.log('Primeiras vendas:', vendas.slice(0, 3));
+            console.log(`💰 Vendedor ${membroNome}: ${reunioesRealizadas} pontos (${vendasNaSemana.length} vendas na semana usando data efetiva)`);
+            if (vendasNaSemana.length > 0) {
+              console.log('Vendas na semana:', vendasNaSemana.map(v => ({
+                id: v.id.substring(0, 8),
+                pontos: v.pontuacao_validada,
+                data_efetiva: getDataEfetivaVenda(v, respostasFormulario).toLocaleDateString('pt-BR')
+              })));
+            }
           }
         }
 
@@ -391,43 +408,59 @@ export class SupervisorComissionamentoService {
         let reunioesRealizadas = 0;
         
         if (membroTipo === 'sdr') {
-          // Para SDRs: buscar por sdr_id
-          // Criar datas no formato correto sem problemas de timezone
-          const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')} 00:00:00`;
-          const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')} 23:59:59`;
-          
+          // Para SDRs: buscar agendamentos com resultados específicos (mesmo que planilha detalhada)
           const { data: agendamentos } = await supabase
             .from('agendamentos')
             .select('id, data_agendamento, resultado_reuniao')
             .eq('sdr_id', membroId)
-            .gte('data_agendamento', inicioSemanaStr)
-            .lte('data_agendamento', fimSemanaStr)
-            .not('resultado_reuniao', 'is', null);
+            .gte('data_agendamento', inicioSemana.toISOString())
+            .lte('data_agendamento', fimSemana.toISOString())
+            .in('resultado_reuniao', ['presente', 'compareceu', 'realizada']);
             
           reunioesRealizadas = agendamentos?.length || 0;
-          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões encontradas (${inicioSemanaStr} até ${fimSemanaStr})`);
+          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: presente, compareceu, realizada)`);
           if (agendamentos && agendamentos.length > 0) {
-            console.log('Primeiros agendamentos:', agendamentos.slice(0, 3));
+            console.log('Agendamentos encontrados:', agendamentos.slice(0, 3));
           }
         } else if (membroTipo === 'vendedor') {
-          // Para vendedores: somar pontuação das vendas matriculadas
-          // Criar datas no formato correto sem problemas de timezone
-          const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
-          const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
-          
+          // Para vendedores: usar data efetiva das vendas (mesmo que planilha detalhada)
           const { data: vendas } = await supabase
             .from('form_entries')
-            .select('pontuacao_validada, data_aprovacao')
+            .select(`
+              id,
+              pontuacao_validada,
+              enviado_em,
+              data_assinatura_contrato,
+              data_aprovacao
+            `)
             .eq('vendedor_id', membroId)
-            .eq('status', 'matriculado')
-            .gte('data_aprovacao', inicioSemanaStr)
-            .lte('data_aprovacao', fimSemanaStr);
+            .eq('status', 'matriculado');
+
+          if (vendas) {
+            // Buscar respostas do formulário para calcular data efetiva
+            const { data: respostasFormulario } = await supabase
+              .from('respostas_formulario')
+              .select('form_entry_id, campo_nome, valor_informado')
+              .in('form_entry_id', vendas.map(v => v.id));
+
+            // Filtrar vendas que estão na semana usando data efetiva
+            const vendasNaSemana = vendas.filter(venda => 
+              isVendaInWeek(venda, inicioSemana, fimSemana, respostasFormulario)
+            );
+
+            reunioesRealizadas = vendasNaSemana.reduce((total, venda) => 
+              total + (venda.pontuacao_validada || 0), 0);
             
-          reunioesRealizadas = vendas?.reduce((total, venda) => 
-            total + (venda.pontuacao_validada || 0), 0) || 0;
-          console.log(`💰 Vendedor ${membroNome}: ${reunioesRealizadas} pontos de vendas (${inicioSemanaStr} até ${fimSemanaStr})`);
-          if (vendas && vendas.length > 0) {
-            console.log('Primeiras vendas:', vendas.slice(0, 3));
+            console.log(`💰 Vendedor ${membroNome}: ${reunioesRealizadas} pontos (${vendasNaSemana.length} vendas na semana usando data efetiva)`);
+            if (vendasNaSemana.length > 0) {
+              console.log('Vendas na semana:', vendasNaSemana.map(v => ({
+                id: v.id.substring(0, 8),
+                pontos: v.pontuacao_validada,
+                data_efetiva: getDataEfetivaVenda(v, respostasFormulario).toLocaleDateString('pt-BR')
+              })));
+            }
+          } else {
+            reunioesRealizadas = 0;
           }
         }
 
