@@ -196,10 +196,9 @@ export class SupervisorComissionamentoService {
             })));
           }
           
-          // Filtrar apenas agendamentos com resultados específicos (mesma lógica da planilha detalhada)
+          // Filtrar apenas agendamentos com resultados específicos (EXATAMENTE como na planilha detalhada)
           const agendamentosComResultado = agendamentos?.filter(a => 
-            a.status === 'finalizado' && 
-            ['compareceu', 'comprou', 'compareceu_nao_comprou'].includes(a.resultado_reuniao)
+            ['comprou', 'compareceu_nao_comprou'].includes(a.resultado_reuniao)
           ) || [];
           
           reunioesRealizadas = agendamentosComResultado.length;
@@ -469,7 +468,7 @@ export class SupervisorComissionamentoService {
             .select('id, data_agendamento, resultado_reuniao, status')
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
-            .lte('data_agendamento', fimSemana.toISOString());
+            .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
             
           console.log(`📊 SDR ${membroNome} - Todos agendamentos encontrados:`, agendamentos?.length || 0);
           if (agendamentos && agendamentos.length > 0) {
@@ -481,10 +480,9 @@ export class SupervisorComissionamentoService {
             })));
           }
           
-          // Filtrar apenas agendamentos com resultados específicos (mesma lógica da planilha detalhada)
+          // Filtrar apenas agendamentos com resultados específicos (EXATAMENTE como na planilha detalhada)
           const agendamentosComResultado = agendamentos?.filter(a => 
-            a.status === 'finalizado' && 
-            ['compareceu', 'comprou', 'compareceu_nao_comprou'].includes(a.resultado_reuniao)
+            ['comprou', 'compareceu_nao_comprou'].includes(a.resultado_reuniao)
           ) || [];
           
           reunioesRealizadas = agendamentosComResultado.length;
