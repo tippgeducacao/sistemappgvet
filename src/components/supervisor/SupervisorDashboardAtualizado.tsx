@@ -21,6 +21,36 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   // Hooks para metas semanais
   const { getSemanasDoMes, getSemanaAtual } = useMetasSemanais();
   
+  // Função para calcular datas da semana (quarta a terça)
+  const getWeekDates = (year: number, week: number) => {
+    // Encontrar a primeira quarta-feira do ano
+    const startOfYear = new Date(year, 0, 1);
+    let firstWednesday = new Date(startOfYear);
+    
+    // Ajustar para primeira quarta-feira
+    while (firstWednesday.getDay() !== 3) { // 3 = quarta-feira
+      firstWednesday.setDate(firstWednesday.getDate() + 1);
+    }
+    
+    // Se a primeira quarta-feira é depois do dia 4, usar a anterior
+    if (firstWednesday.getDate() > 4) {
+      firstWednesday.setDate(firstWednesday.getDate() - 7);
+    }
+    
+    // Calcular início da semana específica
+    const startWeek = new Date(firstWednesday);
+    startWeek.setDate(firstWednesday.getDate() + (week - 1) * 7);
+    
+    // Fim da semana (terça-feira)
+    const endWeek = new Date(startWeek);
+    endWeek.setDate(startWeek.getDate() + 6);
+    
+    return {
+      start: startWeek,
+      end: endWeek
+    };
+  };
+
   // Semanas do mês atual
   const semanasDoMes = useMemo(() => getSemanasDoMes(currentYear, currentMonth), [currentYear, currentMonth, getSemanasDoMes]);
   const semanaAtual = useMemo(() => getSemanaAtual(), [getSemanaAtual]);
@@ -180,14 +210,22 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Membro</th>
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Nível</th>
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Meta Semanal</th>
-                    {semanasDoMes.map((semana) => (
-                      <th key={semana} className="text-center py-3 px-4 font-semibold text-foreground border-l border-border">
-                        <div className="space-y-1">
-                          <div>Semana {semana}</div>
-                          <div className="text-xs text-muted-foreground font-normal">(data)</div>
-                        </div>
-                      </th>
-                    ))}
+                    {semanasDoMes.map((semana) => {
+                      const { start, end } = getWeekDates(currentYear, semana);
+                      const startFormatted = start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                      const endFormatted = end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                      
+                      return (
+                        <th key={semana} className="text-center py-3 px-4 font-semibold text-foreground border-l border-border">
+                          <div className="space-y-1">
+                            <div>Semana {semana}</div>
+                            <div className="text-xs text-muted-foreground font-normal">
+                              {startFormatted} - {endFormatted}
+                            </div>
+                          </div>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
