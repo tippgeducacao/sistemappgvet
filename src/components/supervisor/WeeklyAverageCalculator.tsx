@@ -52,14 +52,34 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
   }
 
   // Calcular média dos percentuais dos membros
+  console.log('🔍 WeeklyAverageCalculator Debug:', {
+    supervisorId,
+    year,
+    week,
+    membersCount: members.length,
+    sdrsDetalhesCount: supervisorData.sdrsDetalhes?.length || 0,
+    supervisorData: supervisorData
+  });
+
   const percentuais = members.map(membro => {
     const membroDetalhe = supervisorData.sdrsDetalhes.find(sdr => sdr.id === membro.usuario_id);
+    console.log('👤 Membro Debug:', {
+      membroId: membro.usuario_id,
+      membroDetalhe: membroDetalhe,
+      percentual: membroDetalhe?.percentualAtingimento || 0
+    });
     return membroDetalhe?.percentualAtingimento || 0;
   });
 
   const mediaPercentual = percentuais.length > 0 
     ? percentuais.reduce((sum, p) => sum + p, 0) / percentuais.length 
     : 0;
+
+  console.log('📊 Cálculo final:', {
+    percentuais,
+    mediaPercentual,
+    regrasComissionamento
+  });
 
   // Calcular comissão do supervisor baseado na média
   let comissaoSupervisor = 0;
