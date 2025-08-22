@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Target, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Target, TrendingUp, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
@@ -299,13 +299,25 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                       const startFormatted = start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                       const endFormatted = end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                       
+                      // Verificar se é a semana atual
+                      const today = new Date();
+                      const isCurrentWeek = today >= start && today <= end;
+                      
                       return (
-                        <th key={semana} className="text-center py-3 px-4 font-semibold text-foreground border-l border-border">
+                        <th key={semana} className={`text-center py-3 px-4 font-semibold border-l border-border ${isCurrentWeek ? 'bg-primary/10 text-primary' : 'text-foreground'}`}>
                           <div className="space-y-1">
-                            <div>Semana {semana}</div>
+                            <div className="flex items-center justify-center gap-1">
+                              Semana {semana}
+                              {isCurrentWeek && <Clock className="h-3 w-3" />}
+                            </div>
                             <div className="text-xs text-muted-foreground font-normal">
                               {startFormatted} - {endFormatted}
                             </div>
+                            {isCurrentWeek && (
+                              <div className="text-xs font-semibold text-primary">
+                                ATUAL
+                              </div>
+                            )}
                           </div>
                         </th>
                       );
@@ -362,31 +374,37 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                         </td>
                         
                         {/* Colunas das Semanas */}
-                        {semanasDoMes.map((semana) => (
-                          <td key={semana} className="py-4 px-4 text-center border-l border-border">
-                            <WeeklyDataProvider
-                              supervisorId={user?.id || ''}
-                              year={currentYear}
-                              month={currentMonth}
-                              week={semana}
-                              memberId={membro.usuario_id}
-                              memberType={membro.usuario?.user_type as 'sdr' | 'vendedor'}
-                            >
-                              {({ reunioesRealizadas, metaSemanal, percentual }) => {
-                                // Para vendedores, mostrar apenas 1 casa decimal se for decimal
-                                const atingimentoFormatted = membro.usuario?.user_type === 'vendedor' 
-                                  ? (reunioesRealizadas % 1 === 0 ? reunioesRealizadas.toString() : reunioesRealizadas.toFixed(1))
-                                  : reunioesRealizadas.toString();
-                                
-                                return (
-                                  <div className="text-sm text-foreground">
-                                    {atingimentoFormatted}/{metaSemanal} ({percentual.toFixed(1)}%)
-                                  </div>
-                                );
-                              }}
-                            </WeeklyDataProvider>
-                          </td>
-                        ))}
+                        {semanasDoMes.map((semana) => {
+                          const { start, end } = getWeekDates(currentYear, currentMonth, semana);
+                          const today = new Date();
+                          const isCurrentWeek = today >= start && today <= end;
+                          
+                          return (
+                            <td key={semana} className={`py-4 px-4 text-center border-l border-border ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
+                              <WeeklyDataProvider
+                                supervisorId={user?.id || ''}
+                                year={currentYear}
+                                month={currentMonth}
+                                week={semana}
+                                memberId={membro.usuario_id}
+                                memberType={membro.usuario?.user_type as 'sdr' | 'vendedor'}
+                              >
+                                {({ reunioesRealizadas, metaSemanal, percentual }) => {
+                                  // Para vendedores, mostrar apenas 1 casa decimal se for decimal
+                                  const atingimentoFormatted = membro.usuario?.user_type === 'vendedor' 
+                                    ? (reunioesRealizadas % 1 === 0 ? reunioesRealizadas.toString() : reunioesRealizadas.toFixed(1))
+                                    : reunioesRealizadas.toString();
+                                  
+                                  return (
+                                    <div className={`text-sm ${isCurrentWeek ? 'font-semibold text-primary' : 'text-foreground'}`}>
+                                      {atingimentoFormatted}/{metaSemanal} ({percentual.toFixed(1)}%)
+                                    </div>
+                                  );
+                                }}
+                              </WeeklyDataProvider>
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })}
