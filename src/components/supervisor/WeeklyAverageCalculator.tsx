@@ -26,10 +26,12 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
   week,
   members
 }) => {
-  const { data: supervisorData, isLoading } = useSupervisorComissionamento(supervisorId, year, week);
+  console.log('🚀 WeeklyAverageCalculator iniciado:', { supervisorId, year, week, membersCount: members.length });
+  
+  const { data: supervisorData, isLoading, error } = useSupervisorComissionamento(supervisorId, year, week);
 
   // Buscar regras de comissionamento para supervisores
-  const { data: regrasComissionamento } = useQuery({
+  const { data: regrasComissionamento, error: regrasError } = useQuery({
     queryKey: ['regras-comissionamento', 'supervisor'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -38,16 +40,40 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
         .eq('tipo_usuario', 'supervisor')
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao buscar regras:', error);
+        throw error;
+      }
+      console.log('✅ Regras carregadas:', data);
       return data;
     }
+  });
+
+  console.log('📊 Status dos dados:', {
+    isLoading,
+    error,
+    regrasError,
+    hasSupervisorData: !!supervisorData,
+    hasRegras: !!regrasComissionamento,
+    supervisorDataStructure: supervisorData ? Object.keys(supervisorData) : null
   });
 
   if (isLoading) {
     return <span className="text-muted-foreground">...</span>;
   }
 
-  if (!supervisorData?.sdrsDetalhes || !regrasComissionamento) {
+  if (error) {
+    console.error('❌ Erro no hook useSupervisorComissionamento:', error);
+    return <span>Erro - R$ 0</span>;
+  }
+
+  if (regrasError) {
+    console.error('❌ Erro nas regras de comissionamento:', regrasError);
+    return <span>0.0% - Erro regras</span>;
+  }
+
+  if (!supervisorData || !regrasComissionamento) {
+    console.warn('⚠️ Dados não disponíveis:', { supervisorData: !!supervisorData, regrasComissionamento: !!regrasComissionamento });
     return <span>0.0% - R$ 0</span>;
   }
 
