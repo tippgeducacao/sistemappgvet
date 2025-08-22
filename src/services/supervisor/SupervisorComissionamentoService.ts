@@ -377,32 +377,40 @@ export class SupervisorComissionamentoService {
         
         if (membroTipo === 'sdr') {
           // Para SDRs: buscar por sdr_id
+          // Criar datas no formato correto sem problemas de timezone
+          const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')} 00:00:00`;
+          const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')} 23:59:59`;
+          
           const { data: agendamentos } = await supabase
             .from('agendamentos')
             .select('id, data_agendamento, resultado_reuniao')
             .eq('sdr_id', membroId)
-            .gte('data_agendamento', inicioSemana.toISOString())
-            .lte('data_agendamento', fimSemana.toISOString())
+            .gte('data_agendamento', inicioSemanaStr)
+            .lte('data_agendamento', fimSemanaStr)
             .not('resultado_reuniao', 'is', null);
             
           reunioesRealizadas = agendamentos?.length || 0;
-          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões encontradas`);
+          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões encontradas (${inicioSemanaStr} até ${fimSemanaStr})`);
           if (agendamentos && agendamentos.length > 0) {
             console.log('Primeiros agendamentos:', agendamentos.slice(0, 3));
           }
         } else if (membroTipo === 'vendedor') {
           // Para vendedores: somar pontuação das vendas matriculadas
+          // Criar datas no formato correto sem problemas de timezone
+          const inicioSemanaStr = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth() + 1).padStart(2, '0')}-${String(inicioSemana.getDate()).padStart(2, '0')}`;
+          const fimSemanaStr = `${fimSemana.getFullYear()}-${String(fimSemana.getMonth() + 1).padStart(2, '0')}-${String(fimSemana.getDate()).padStart(2, '0')}`;
+          
           const { data: vendas } = await supabase
             .from('form_entries')
             .select('pontuacao_validada, data_aprovacao')
             .eq('vendedor_id', membroId)
             .eq('status', 'matriculado')
-            .gte('data_aprovacao', inicioSemana.toISOString())
-            .lte('data_aprovacao', fimSemana.toISOString());
+            .gte('data_aprovacao', inicioSemanaStr)
+            .lte('data_aprovacao', fimSemanaStr);
             
           reunioesRealizadas = vendas?.reduce((total, venda) => 
             total + (venda.pontuacao_validada || 0), 0) || 0;
-          console.log(`💰 Vendedor ${membroNome}: ${reunioesRealizadas} pontos de vendas`);
+          console.log(`💰 Vendedor ${membroNome}: ${reunioesRealizadas} pontos de vendas (${inicioSemanaStr} até ${fimSemanaStr})`);
           if (vendas && vendas.length > 0) {
             console.log('Primeiras vendas:', vendas.slice(0, 3));
           }
