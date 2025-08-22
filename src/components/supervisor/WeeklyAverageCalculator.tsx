@@ -131,16 +131,13 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
   });
   
   if (regraAplicavel && mediaPercentual > 0) {
-    const percentualNormalizado = mediaPercentual / 100;
-    
     // Buscar o fixo mensal do supervisor (assumindo valor base para cálculo)
     // Por enquanto vou usar um valor fixo, mas idealmente deveria vir do perfil do supervisor
     const valorBase = 1000; // Este valor deveria vir do perfil/nível do supervisor
-    comissaoSupervisor = valorBase * percentualNormalizado * regraAplicavel.multiplicador;
+    comissaoSupervisor = valorBase * regraAplicavel.multiplicador;
     
     console.log('💰 Cálculo da comissão:', {
       valorBase,
-      percentualNormalizado,
       multiplicador: regraAplicavel.multiplicador,
       comissaoFinal: comissaoSupervisor
     });
@@ -152,7 +149,7 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
       <div className="text-xs text-muted-foreground">
         {regraAplicavel ? (
           <span>
-            1000 x {(mediaPercentual / 100).toFixed(2)} x {regraAplicavel.multiplicador} = R$ {comissaoSupervisor.toFixed(0)}
+            1000 x {regraAplicavel.multiplicador} = R$ {comissaoSupervisor.toFixed(0)}
           </span>
         ) : (
           <span>R$ 0</span>
