@@ -248,19 +248,8 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                           
                           return (
                             <td key={semana} className="py-4 px-4 text-center border-l border-border">
-                              <div className="space-y-1">
-                                <div className="text-sm">
-                                  <span className="text-muted-foreground">{reunioesSemana}pts</span>
-                                  <span className="text-xs text-muted-foreground"> ({percentualSemana.toFixed(1)}%)</span>
-                                </div>
-                                <div className="text-xs">
-                                  <span className={`${percentualSemana > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                                    {percentualSemana > 0 ? `x ${(percentualSemana / 100).toFixed(1)}` : 'x 0.0'}
-                                  </span>
-                                </div>
-                                <div className="text-xs font-semibold text-green-600">
-                                  {percentualSemana > 0 ? `R$ ${(450 * (percentualSemana / 100)).toFixed(0)}` : 'R$ 0'}
-                                </div>
+                              <div className="text-sm text-foreground">
+                                {reunioesSemana}/{metaSemanal} ({percentualSemana.toFixed(1)}%)
                               </div>
                             </td>
                           );
