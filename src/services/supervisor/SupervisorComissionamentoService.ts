@@ -45,7 +45,7 @@ export class SupervisorComissionamentoService {
         .eq('id', supervisorId)
         .eq('user_type', 'supervisor')
         .eq('ativo', true)
-        .single();
+        .maybeSingle();
 
       if (supervisorError || !supervisorData) {
         console.error('❌ Erro ao buscar dados do supervisor:', supervisorError);
@@ -57,7 +57,7 @@ export class SupervisorComissionamentoService {
         .from('grupos_supervisores')
         .select('id, nome_grupo')
         .eq('supervisor_id', supervisorId)
-        .single();
+        .maybeSingle();
 
       if (grupoError || !grupoData) {
         console.error('❌ Erro ao buscar grupo do supervisor:', grupoError);
@@ -124,7 +124,7 @@ export class SupervisorComissionamentoService {
           .select('meta_semanal_inbound, meta_semanal_outbound, meta_semanal_vendedor')
           .eq('nivel', membroNivel)
           .eq('tipo_usuario', membroTipo === 'vendedor' ? 'vendedor' : 'sdr')
-          .single();
+          .maybeSingle();
 
         let metaSemanal = 0;
         if (membroTipo === 'vendedor') {
@@ -187,7 +187,7 @@ export class SupervisorComissionamentoService {
         .select('variavel_semanal')
         .eq('nivel', supervisorData.nivel)
         .eq('tipo_usuario', 'supervisor')
-        .single();
+        .maybeSingle();
 
       if (nivelSupervisorError || !nivelSupervisorData) {
         console.error('❌ Erro ao buscar dados do nível do supervisor:', nivelSupervisorError);
@@ -240,7 +240,7 @@ export class SupervisorComissionamentoService {
         .eq('id', supervisorId)
         .eq('user_type', 'supervisor')
         .eq('ativo', true)
-        .single();
+        .maybeSingle();
 
       if (supervisorError || !supervisorData) {
         console.error('❌ Erro ao buscar dados do supervisor:', supervisorError);
@@ -252,7 +252,7 @@ export class SupervisorComissionamentoService {
         .from('grupos_supervisores')
         .select('id, nome_grupo')
         .eq('supervisor_id', supervisorId)
-        .single();
+        .maybeSingle();
 
       if (grupoError || !grupoData) {
         console.error('❌ Erro ao buscar grupo do supervisor:', grupoError);
@@ -322,7 +322,7 @@ export class SupervisorComissionamentoService {
           .select('meta_semanal_inbound, meta_semanal_outbound, meta_semanal_vendedor')
           .eq('nivel', membroNivel)
           .eq('tipo_usuario', membroTipo === 'vendedor' ? 'vendedor' : 'sdr')
-          .single();
+          .maybeSingle();
 
         let metaSemanal = 0;
         if (membroTipo === 'vendedor') {
@@ -381,7 +381,7 @@ export class SupervisorComissionamentoService {
         .select('variavel_semanal')
         .eq('nivel', supervisorData.nivel)
         .eq('tipo_usuario', 'supervisor')
-        .single();
+        .maybeSingle();
 
       if (nivelSupervisorError || !nivelSupervisorData) {
         console.error('❌ Erro ao buscar dados do nível do supervisor:', nivelSupervisorError);

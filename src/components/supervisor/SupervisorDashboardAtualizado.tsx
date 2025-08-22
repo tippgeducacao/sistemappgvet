@@ -188,8 +188,6 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                         </div>
                       </th>
                     ))}
-                    <th className="text-center py-3 px-4 font-semibold text-foreground border-l border-border">Total</th>
-                    <th className="text-center py-3 px-4 font-semibold text-foreground">Atingimento %</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -258,23 +256,6 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                             </WeeklyDataProvider>
                           </td>
                         ))}
-                        
-                        {/* Total */}
-                        <td className="py-4 px-4 text-center border-l border-border">
-                          <div className="space-y-1">
-                            <div className="font-semibold text-foreground">{totalReunioes}</div>
-                          </div>
-                        </td>
-                        
-                        {/* Atingimento % */}
-                        <td className="py-4 px-4 text-center">
-                          <div className="space-y-1">
-                            <div className="font-semibold text-foreground">{percentualTotal.toFixed(1)}%</div>
-                            <div className="text-xs font-semibold text-green-600">
-                              R$ {(450 * (percentualTotal / 100)).toFixed(0)}
-                            </div>
-                          </div>
-                        </td>
                       </tr>
                     );
                   })}
