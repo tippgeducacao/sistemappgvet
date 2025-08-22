@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useSupervisorComissionamentoAtual, useSupervisorComissionamento } from '@/hooks/useSupervisorComissionamento';
 import { WeeklyDataProvider } from './WeeklyDataProvider';
+import { WeeklyAverageCalculator } from './WeeklyAverageCalculator';
 
 export const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
@@ -419,33 +420,15 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                       const today = new Date();
                       const isCurrentWeek = today >= start && today <= end;
                       
-                      // Calcular média dos percentuais de todos os membros para esta semana
-                      const percentuais: number[] = [];
-                      
                       return (
                         <td key={semana} className={`py-3 px-4 text-center border-l border-border font-semibold ${isCurrentWeek ? 'bg-primary/10 text-primary' : 'text-foreground'}`}>
-                          {meuGrupo.membros.map((membro) => (
-                            <WeeklyDataProvider
-                              key={membro.id}
-                              supervisorId={user?.id || ''}
-                              year={currentYear}
-                              month={currentMonth}
-                              week={semana}
-                              memberId={membro.usuario_id}
-                              memberType={membro.usuario?.user_type as 'sdr' | 'vendedor'}
-                            >
-                              {({ percentual }) => {
-                                percentuais.push(percentual);
-                                return null;
-                              }}
-                            </WeeklyDataProvider>
-                          ))}
-                          {(() => {
-                            const mediaPercentual = percentuais.length > 0 
-                              ? percentuais.reduce((sum, p) => sum + p, 0) / percentuais.length 
-                              : 0;
-                            return `${mediaPercentual.toFixed(1)}%`;
-                          })()}
+                          <WeeklyAverageCalculator
+                            supervisorId={user?.id || ''}
+                            year={currentYear}
+                            month={currentMonth}
+                            week={semana}
+                            members={meuGrupo.membros}
+                          />
                         </td>
                       );
                     })}
