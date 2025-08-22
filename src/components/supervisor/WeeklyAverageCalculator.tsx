@@ -30,14 +30,14 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
   
   const { data: supervisorData, isLoading, error } = useSupervisorComissionamento(supervisorId, year, week);
 
-  // Buscar regras de comissionamento para supervisores
+  // Buscar regras de comissionamento (usar as mesmas dos vendedores)
   const { data: regrasComissionamento, error: regrasError } = useQuery({
-    queryKey: ['regras-comissionamento', 'supervisor'],
+    queryKey: ['regras-comissionamento', 'vendedor'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('regras_comissionamento')
         .select('*')
-        .eq('tipo_usuario', 'supervisor')
+        .eq('tipo_usuario', 'vendedor')
         .order('percentual_minimo', { ascending: true });
       
       if (error) {
