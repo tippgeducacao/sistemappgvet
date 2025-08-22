@@ -10,6 +10,7 @@ import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useSupervisorComissionamentoAtual, useSupervisorComissionamento } from '@/hooks/useSupervisorComissionamento';
 import { WeeklyDataProvider } from './WeeklyDataProvider';
 import { WeeklyAverageCalculator } from './WeeklyAverageCalculator';
+import { ClearCacheButton } from '@/components/debug/ClearCacheButton';
 
 export const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
@@ -174,8 +175,13 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
     <div className="min-h-screen bg-background">
       {/* Header Principal */}
       <div className="bg-card border-b border-border px-6 py-4">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard - Time de Vendas</h1>
-        <p className="text-muted-foreground mt-1">Acompanhe o desempenho da sua equipe</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Dashboard - Time de Vendas</h1>
+            <p className="text-muted-foreground mt-1">Acompanhe o desempenho da sua equipe</p>
+          </div>
+          <ClearCacheButton />
+        </div>
       </div>
 
       <div className="px-6 py-6 space-y-6">

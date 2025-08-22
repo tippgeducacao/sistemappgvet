@@ -20,24 +20,45 @@ export const WeeklyDataProvider: React.FC<WeeklyDataProviderProps> = ({
   memberType,
   children
 }) => {
+  console.log('🔍 WeeklyDataProvider:', { supervisorId, year, month, week, memberId, memberType });
+  
   // Usar o hook que busca dados da planilha detalhada para a semana específica
-  const { data: weekData } = useSupervisorComissionamento(supervisorId, year, month, week);
+  const { data: weekData, isLoading, error } = useSupervisorComissionamento(supervisorId, year, month, week);
+  
+  console.log('📊 WeeklyDataProvider data:', {
+    memberId,
+    hasWeekData: !!weekData,
+    sdrsDetalhesCount: weekData?.sdrsDetalhes?.length || 0,
+    isLoading,
+    error
+  });
   
   const memberData = useMemo(() => {
     if (!weekData?.sdrsDetalhes) {
+      console.log('⚠️ Sem sdrsDetalhes para membro:', memberId);
       return { reunioesRealizadas: 0, metaSemanal: 0, percentual: 0 };
     }
     
     const member = weekData.sdrsDetalhes.find(sdr => sdr.id === memberId);
+    console.log('👤 Membro encontrado:', { 
+      memberId, 
+      found: !!member, 
+      memberData: member 
+    });
+    
     if (!member) {
       return { reunioesRealizadas: 0, metaSemanal: 0, percentual: 0 };
     }
     
-    return {
+    const result = {
       reunioesRealizadas: member.reunioesRealizadas || 0,
       metaSemanal: member.metaSemanal || 0,
       percentual: member.percentualAtingimento || 0
     };
+    
+    console.log('📈 Resultado final para membro:', { memberId, result });
+    
+    return result;
   }, [weekData, memberId]);
   
   return <>{children(memberData)}</>;
