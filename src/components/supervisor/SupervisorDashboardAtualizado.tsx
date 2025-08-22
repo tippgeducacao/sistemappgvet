@@ -10,6 +10,9 @@ import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useSupervisorComissionamentoAtual, useSupervisorComissionamento } from '@/hooks/useSupervisorComissionamento';
 import { WeeklyDataProvider } from './WeeklyDataProvider';
 import { WeeklyAverageCalculator } from './WeeklyAverageCalculator';
+import UserProfileModal from '@/components/UserProfileModal';
+import VendedorProfileModal from '@/components/dashboard/VendedorProfileModal';
+import SDRProfileModal from '@/components/dashboard/SDRProfileModal';
 
 
 export const SupervisorDashboardAtualizado: React.FC = () => {
@@ -24,6 +27,15 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const currentYear = selectedYear;
   const currentMonth = selectedMonth;
+  
+  // Estado para modais de perfil
+  const [selectedUserProfile, setSelectedUserProfile] = useState<{
+    id: string;
+    name: string;
+    photo_url?: string;
+    user_type: string;
+    nivel?: string;
+  } | null>(null);
   
   // Hooks para metas semanais
   const { getSemanasDoMes, getSemanaAtual } = useMetasSemanais();
@@ -357,7 +369,16 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                         {/* Membro */}
                         <td className="py-4 px-2">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold border-2 border-primary/20 relative overflow-hidden">
+                            <div 
+                              className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold border-2 border-primary/20 relative overflow-hidden cursor-pointer hover:border-primary/40 transition-colors"
+                              onClick={() => setSelectedUserProfile({
+                                id: membro.usuario_id,
+                                name: membro.usuario?.name || '',
+                                photo_url: membro.usuario?.photo_url,
+                                user_type: membro.usuario?.user_type || '',
+                                nivel: membro.usuario?.nivel
+                              })}
+                            >
                               {membro.usuario?.photo_url ? (
                                 <img 
                                   src={membro.usuario.photo_url}
@@ -373,7 +394,16 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                               </span>
                             </div>
                             <div>
-                              <div className="font-semibold text-foreground text-sm">
+                              <div 
+                                className="font-semibold text-foreground text-sm cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => setSelectedUserProfile({
+                                  id: membro.usuario_id,
+                                  name: membro.usuario?.name || '',
+                                  photo_url: membro.usuario?.photo_url,
+                                  user_type: membro.usuario?.user_type || '',
+                                  nivel: membro.usuario?.nivel
+                                })}
+                              >
                                 {membro.usuario?.name}
                               </div>
                               <div className="text-xs text-muted-foreground">
@@ -458,6 +488,52 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Modais de Perfil */}
+      {selectedUserProfile && selectedUserProfile.user_type === 'vendedor' && (
+        <VendedorProfileModal
+          isOpen={!!selectedUserProfile}
+          onClose={() => setSelectedUserProfile(null)}
+          vendedor={{
+            id: selectedUserProfile.id,
+            nome: selectedUserProfile.name,
+            photo_url: selectedUserProfile.photo_url,
+            nivel: selectedUserProfile.nivel,
+            user_type: selectedUserProfile.user_type
+          }}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+        />
+      )}
+      
+      {selectedUserProfile && selectedUserProfile.user_type === 'sdr' && (
+        <SDRProfileModal
+          isOpen={!!selectedUserProfile}
+          onClose={() => setSelectedUserProfile(null)}
+          sdr={{
+            id: selectedUserProfile.id,
+            nome: selectedUserProfile.name,
+            photo_url: selectedUserProfile.photo_url,
+            tipo: 'outbound' as 'inbound' | 'outbound',
+            nivel: selectedUserProfile.nivel || 'junior',
+            metaReunioesSemanal: 55
+          }}
+        />
+      )}
+      
+      {selectedUserProfile && !['vendedor', 'sdr'].includes(selectedUserProfile.user_type) && (
+        <UserProfileModal
+          isOpen={!!selectedUserProfile}
+          onClose={() => setSelectedUserProfile(null)}
+          user={{
+            id: selectedUserProfile.id,
+            name: selectedUserProfile.name,
+            photo_url: selectedUserProfile.photo_url,
+            user_type: selectedUserProfile.user_type,
+            nivel: selectedUserProfile.nivel
+          }}
+        />
+      )}
     </div>
   );
 };
