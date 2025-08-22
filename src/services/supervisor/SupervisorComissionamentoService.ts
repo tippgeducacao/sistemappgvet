@@ -322,6 +322,7 @@ export class SupervisorComissionamentoService {
     semana: number
   ): Promise<SupervisorComissionamentoData | null> {
     try {
+      console.log('🚀🚀🚀 INICIANDO CÁLCULO SUPERVISOR COMISSIONAMENTO 🚀🚀🚀');
       console.log(`🔍 CALCULANDO COMISSIONAMENTO: Supervisor ${supervisorId}, Ano ${ano}, Mês ${mes}, Semana ${semana}`);
       
       // IMPORTANTE: Usar o mês passado como parâmetro para o cálculo das semanas
