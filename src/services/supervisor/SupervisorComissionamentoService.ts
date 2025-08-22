@@ -34,6 +34,7 @@ export class SupervisorComissionamentoService {
       const { start: inicioSemana, end: fimSemana } = getWeekRange();
       
       console.log('📅 Calculando comissionamento supervisor - semana atual:', {
+        supervisorId,
         inicioSemana: inicioSemana.toLocaleDateString('pt-BR'),
         fimSemana: fimSemana.toLocaleDateString('pt-BR')
       });
@@ -49,8 +50,11 @@ export class SupervisorComissionamentoService {
 
       if (supervisorError || !supervisorData) {
         console.error('❌ Erro ao buscar dados do supervisor:', supervisorError);
+        console.log('🔍 Supervisor ID:', supervisorId);
         return null;
       }
+      
+      console.log('✅ Dados do supervisor encontrados:', supervisorData);
 
       // Buscar grupo do supervisor
       const { data: grupoData, error: grupoError } = await supabase
@@ -61,8 +65,11 @@ export class SupervisorComissionamentoService {
 
       if (grupoError || !grupoData) {
         console.error('❌ Erro ao buscar grupo do supervisor:', grupoError);
+        console.log('🔍 Supervisor ID para busca de grupo:', supervisorId);
         return null;
       }
+      
+      console.log('✅ Grupo do supervisor encontrado:', grupoData);
 
       // Buscar SDRs do grupo
       const { data: membrosData, error: membrosError } = await supabase
@@ -81,8 +88,11 @@ export class SupervisorComissionamentoService {
 
       if (membrosError || !membrosData) {
         console.error('❌ Erro ao buscar membros do grupo:', membrosError);
+        console.log('🔍 Grupo ID para busca de membros:', grupoData.id);
         return null;
       }
+      
+      console.log('✅ Membros encontrados:', membrosData.length, 'membros');
 
       // Filtrar apenas membros ativos (SDRs e Vendedores)
       const membrosAtivos = membrosData.filter(
@@ -90,8 +100,11 @@ export class SupervisorComissionamentoService {
         (membro.usuario?.user_type === 'sdr' || membro.usuario?.user_type === 'vendedor')
       );
 
+      console.log('👥 Membros ativos encontrados:', membrosAtivos.length);
+      
       if (membrosAtivos.length === 0) {
         console.warn('⚠️ Nenhum membro ativo encontrado no grupo');
+        console.log('🔍 Membros brutos:', membrosData);
         return {
           supervisorId,
           nome: supervisorData.name,
@@ -118,6 +131,8 @@ export class SupervisorComissionamentoService {
         const membroNivel = membro.usuario?.nivel || 'junior';
         const membroTipo = membro.usuario?.user_type;
 
+        console.log(`🔍 Processando membro: ${membroNome} (${membroTipo}) - Nível: ${membroNivel}`);
+        
         // Buscar meta baseada no tipo e nível do membro
         const { data: nivelData } = await supabase
           .from('niveis_vendedores')
@@ -125,6 +140,8 @@ export class SupervisorComissionamentoService {
           .eq('nivel', membroNivel)
           .eq('tipo_usuario', membroTipo === 'vendedor' ? 'vendedor' : 'sdr')
           .maybeSingle();
+
+        console.log(`📊 Nível data para ${membroNome}:`, nivelData);
 
         let metaSemanal = 0;
         if (membroTipo === 'vendedor') {
@@ -134,12 +151,14 @@ export class SupervisorComissionamentoService {
           metaSemanal = nivelData?.meta_semanal_inbound || 55;
         }
 
+        console.log(`🎯 Meta semanal para ${membroNome}: ${metaSemanal}`);
+        
         // Buscar atividades realizadas baseada no tipo
         let reunioesRealizadas = 0;
         
         if (membroTipo === 'sdr') {
           // Para SDRs: buscar por sdr_id
-          const { data: agendamentos } = await supabase
+            const { data: agendamentos, error: agendamentosError } = await supabase
             .from('agendamentos')
             .select('id')
             .eq('sdr_id', membroId)
@@ -147,10 +166,12 @@ export class SupervisorComissionamentoService {
             .lte('data_agendamento', fimSemana.toISOString())
             .not('resultado_reuniao', 'is', null);
             
+          console.log(`📅 Agendamentos SDR ${membroNome}:`, agendamentos?.length || 0, 'encontrados');
+          if (agendamentosError) console.log('❌ Erro agendamentos SDR:', agendamentosError);
           reunioesRealizadas = agendamentos?.length || 0;
         } else if (membroTipo === 'vendedor') {
           // Para vendedores: buscar por vendedor_id
-          const { data: agendamentos } = await supabase
+          const { data: agendamentos, error: agendamentosError } = await supabase
             .from('agendamentos')
             .select('id')
             .eq('vendedor_id', membroId)
@@ -158,6 +179,8 @@ export class SupervisorComissionamentoService {
             .lte('data_agendamento', fimSemana.toISOString())
             .not('resultado_reuniao', 'is', null);
             
+          console.log(`📅 Agendamentos Vendedor ${membroNome}:`, agendamentos?.length || 0, 'encontrados');
+          if (agendamentosError) console.log('❌ Erro agendamentos Vendedor:', agendamentosError);
           reunioesRealizadas = agendamentos?.length || 0;
         }
 
