@@ -256,6 +256,15 @@ export class SupervisorComissionamentoService {
     semana: number
   ): Promise<SupervisorComissionamentoData | null> {
     try {
+      console.log(`🔍 CALCULANDO COMISSIONAMENTO: Supervisor ${supervisorId}, Ano ${ano}, Semana ${semana}`);
+      
+      // IMPORTANTE: Calcular as datas da semana específica baseada no mês atual
+      // A semana é contada dentro do mês, não do ano
+      const mesAtual = new Date().getMonth() + 1;
+      const { inicioSemana, fimSemana } = this.calcularDatasSemanaDoMes(ano, mesAtual, semana);
+      
+      console.log(`📅 Período calculado: ${inicioSemana.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}`);
+
       // Buscar dados do supervisor
       const { data: supervisorData, error: supervisorError } = await supabase
         .from('profiles')
@@ -270,6 +279,8 @@ export class SupervisorComissionamentoService {
         return null;
       }
 
+      console.log('✅ Supervisor encontrado:', supervisorData.name);
+
       // Buscar grupo do supervisor
       const { data: grupoData, error: grupoError } = await supabase
         .from('grupos_supervisores')
@@ -281,6 +292,8 @@ export class SupervisorComissionamentoService {
         console.error('❌ Erro ao buscar grupo do supervisor:', grupoError);
         return null;
       }
+
+      console.log('✅ Grupo encontrado:', grupoData.nome_grupo);
 
       // Buscar SDRs do grupo
       const { data: membrosData, error: membrosError } = await supabase
@@ -302,11 +315,15 @@ export class SupervisorComissionamentoService {
         return null;
       }
 
+      console.log(`✅ ${membrosData.length} membros encontrados no grupo`);
+
       // Filtrar apenas membros ativos (SDRs e Vendedores)
       const membrosAtivos = membrosData.filter(
         membro => membro.usuario?.ativo === true && 
         (membro.usuario?.user_type === 'sdr' || membro.usuario?.user_type === 'vendedor')
       );
+
+      console.log(`✅ ${membrosAtivos.length} membros ativos`);
 
       if (membrosAtivos.length === 0) {
         console.warn('⚠️ Nenhum membro ativo encontrado no grupo');
@@ -326,9 +343,6 @@ export class SupervisorComissionamentoService {
         };
       }
 
-      // Calcular datas da semana (quarta a terça)
-      const { inicioSemana, fimSemana } = this.calcularDatasSemana(ano, semana);
-
       // Calcular percentual de atingimento para cada membro
       const sdrsDetalhes: SDRResumo[] = [];
       let somaPercentuais = 0;
@@ -338,6 +352,8 @@ export class SupervisorComissionamentoService {
         const membroNome = membro.usuario?.name || 'Membro';
         const membroNivel = membro.usuario?.nivel || 'junior';
         const membroTipo = membro.usuario?.user_type;
+
+        console.log(`🔍 Processando: ${membroNome} (${membroTipo}) - Nível: ${membroNivel}`);
 
         // Buscar meta baseada no tipo e nível do membro
         const { data: nivelData } = await supabase
@@ -355,6 +371,8 @@ export class SupervisorComissionamentoService {
           metaSemanal = nivelData?.meta_semanal_inbound || 55;
         }
 
+        console.log(`🎯 Meta semanal: ${metaSemanal}`);
+
         // Buscar atividades realizadas baseada no tipo
         let reunioesRealizadas = 0;
         
@@ -362,27 +380,38 @@ export class SupervisorComissionamentoService {
           // Para SDRs: buscar por sdr_id
           const { data: agendamentos } = await supabase
             .from('agendamentos')
-            .select('id')
+            .select('id, data_agendamento, resultado_reuniao')
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
             .lte('data_agendamento', fimSemana.toISOString())
             .not('resultado_reuniao', 'is', null);
             
           reunioesRealizadas = agendamentos?.length || 0;
+          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões encontradas`);
+          if (agendamentos && agendamentos.length > 0) {
+            console.log('Primeiros agendamentos:', agendamentos.slice(0, 3));
+          }
         } else if (membroTipo === 'vendedor') {
-          // Para vendedores: buscar por vendedor_id
-          const { data: agendamentos } = await supabase
-            .from('agendamentos')
-            .select('id')
+          // Para vendedores: somar pontuação das vendas matriculadas
+          const { data: vendas } = await supabase
+            .from('form_entries')
+            .select('pontuacao_validada, data_aprovacao')
             .eq('vendedor_id', membroId)
-            .gte('data_agendamento', inicioSemana.toISOString())
-            .lte('data_agendamento', fimSemana.toISOString())
-            .not('resultado_reuniao', 'is', null);
+            .eq('status', 'matriculado')
+            .gte('data_aprovacao', inicioSemana.toISOString())
+            .lte('data_aprovacao', fimSemana.toISOString());
             
-          reunioesRealizadas = agendamentos?.length || 0;
+          reunioesRealizadas = vendas?.reduce((total, venda) => 
+            total + (venda.pontuacao_validada || 0), 0) || 0;
+          console.log(`💰 Vendedor ${membroNome}: ${reunioesRealizadas} pontos de vendas`);
+          if (vendas && vendas.length > 0) {
+            console.log('Primeiras vendas:', vendas.slice(0, 3));
+          }
         }
 
         const percentualAtingimento = metaSemanal > 0 ? (reunioesRealizadas / metaSemanal) * 100 : 0;
+
+        console.log(`📊 ${membroTipo.toUpperCase()} ${membroNome}: ${reunioesRealizadas}/${metaSemanal} = ${percentualAtingimento.toFixed(1)}%`);
 
         sdrsDetalhes.push({
           id: membroId,
@@ -397,6 +426,8 @@ export class SupervisorComissionamentoService {
 
       // Calcular média das porcentagens
       const mediaPercentualAtingimento = somaPercentuais / membrosAtivos.length;
+
+      console.log(`🎯 Resultado final: ${sdrsDetalhes.length} membros processados, média: ${mediaPercentualAtingimento.toFixed(1)}%`);
 
       // Buscar variável semanal do supervisor
       const { data: nivelSupervisorData, error: nivelSupervisorError } = await supabase
@@ -440,6 +471,47 @@ export class SupervisorComissionamentoService {
       console.error('❌ Erro ao calcular comissionamento do supervisor:', error);
       return null;
     }
+  }
+
+  private static calcularDatasSemanaDoMes(ano: number, mes: number, semana: number) {
+    // Encontrar todas as terças-feiras do mês (fim das semanas)
+    const firstDayOfMonth = new Date(ano, mes - 1, 1);
+    const tuesdays = [];
+    let currentDate = new Date(firstDayOfMonth);
+    
+    // Encontrar primeira terça-feira
+    while (currentDate.getDay() !== 2) { // 2 = terça-feira
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Se a primeira terça-feira é muito tarde, verificar se há uma anterior que termine no mês
+    if (currentDate.getDate() > 7) {
+      const previousTuesday = new Date(currentDate);
+      previousTuesday.setDate(currentDate.getDate() - 7);
+      if (previousTuesday.getMonth() === mes - 1) {
+        tuesdays.push(new Date(previousTuesday));
+      }
+    }
+    
+    // Adicionar todas as terças-feiras do mês
+    while (currentDate.getMonth() === mes - 1) {
+      tuesdays.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 7);
+    }
+    
+    // Pegar a terça-feira da semana solicitada
+    if (semana <= tuesdays.length) {
+      const fimSemana = tuesdays[semana - 1];
+      const inicioSemana = new Date(fimSemana);
+      inicioSemana.setDate(fimSemana.getDate() - 6); // Voltar 6 dias para quarta-feira
+      fimSemana.setHours(23, 59, 59, 999);
+      
+      return { inicioSemana, fimSemana };
+    }
+    
+    // Fallback
+    const now = new Date();
+    return { inicioSemana: now, fimSemana: now };
   }
 
   private static calcularDatasSemana(ano: number, semana: number) {

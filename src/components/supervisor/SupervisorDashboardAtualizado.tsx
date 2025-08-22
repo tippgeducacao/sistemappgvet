@@ -372,11 +372,18 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                               memberId={membro.usuario_id}
                               memberType={membro.usuario?.user_type as 'sdr' | 'vendedor'}
                             >
-                              {({ reunioesRealizadas, metaSemanal, percentual }) => (
-                                <div className="text-sm text-foreground">
-                                  {reunioesRealizadas}/{metaSemanal} ({percentual.toFixed(1)}%)
-                                </div>
-                              )}
+                              {({ reunioesRealizadas, metaSemanal, percentual }) => {
+                                // Para vendedores, mostrar apenas 1 casa decimal se for decimal
+                                const atingimentoFormatted = membro.usuario?.user_type === 'vendedor' 
+                                  ? (reunioesRealizadas % 1 === 0 ? reunioesRealizadas.toString() : reunioesRealizadas.toFixed(1))
+                                  : reunioesRealizadas.toString();
+                                
+                                return (
+                                  <div className="text-sm text-foreground">
+                                    {atingimentoFormatted}/{metaSemanal} ({percentual.toFixed(1)}%)
+                                  </div>
+                                );
+                              }}
                             </WeeklyDataProvider>
                           </td>
                         ))}
