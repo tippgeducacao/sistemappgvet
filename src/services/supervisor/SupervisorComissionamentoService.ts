@@ -184,7 +184,8 @@ export class SupervisorComissionamentoService {
             .select('id, data_agendamento, resultado_reuniao, status')
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
-            .lte('data_agendamento', fimSemana.toISOString());
+            .lte('data_agendamento', fimSemana.toISOString())
+            .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
             
           console.log(`📊 SDR ${membroNome} - Todos agendamentos encontrados:`, agendamentos?.length || 0);
           if (agendamentos && agendamentos.length > 0) {
@@ -468,6 +469,7 @@ export class SupervisorComissionamentoService {
             .select('id, data_agendamento, resultado_reuniao, status')
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
+            .lte('data_agendamento', fimSemana.toISOString())
             .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
             
           console.log(`📊 SDR ${membroNome} - Todos agendamentos encontrados:`, agendamentos?.length || 0);
