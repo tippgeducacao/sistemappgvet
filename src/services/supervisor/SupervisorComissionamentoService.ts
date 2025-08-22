@@ -94,6 +94,13 @@ export class SupervisorComissionamentoService {
       }
       
       console.log('✅ Membros encontrados:', membrosData.length, 'membros');
+      console.log('🔍 Detalhes de todos os membros:', membrosData.map(m => ({
+        id: m.usuario_id,
+        nome: m.usuario?.name,
+        tipo: m.usuario?.user_type,
+        nivel: m.usuario?.nivel,
+        ativo: m.usuario?.ativo
+      })));
 
       // Filtrar apenas membros ativos (SDRs e Vendedores)
       const membrosAtivos = membrosData.filter(
