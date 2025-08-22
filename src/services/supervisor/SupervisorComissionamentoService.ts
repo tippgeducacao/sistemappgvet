@@ -159,19 +159,45 @@ export class SupervisorComissionamentoService {
         
         if (membroTipo === 'sdr') {
           // Para SDRs: buscar agendamentos com resultados específicos (mesmo que planilha detalhada)
+          console.log(`🔍 SDR ${membroNome} - Buscando agendamentos entre:`, {
+            inicio: inicioSemana.toISOString(),
+            fim: fimSemana.toISOString(),
+            sdr_id: membroId
+          });
+          
           const { data: agendamentos, error: agendamentosError } = await supabase
             .from('agendamentos')
-            .select('id, data_agendamento, resultado_reuniao')
+            .select('id, data_agendamento, resultado_reuniao, status')
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
-            .lte('data_agendamento', fimSemana.toISOString())
-            .in('resultado_reuniao', ['presente', 'compareceu', 'realizada']);
+            .lte('data_agendamento', fimSemana.toISOString());
             
-          reunioesRealizadas = agendamentos?.length || 0;
-          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: presente, compareceu, realizada)`);
-          if (agendamentosError) console.log('❌ Erro agendamentos SDR:', agendamentosError);
+          console.log(`📊 SDR ${membroNome} - Todos agendamentos encontrados:`, agendamentos?.length || 0);
           if (agendamentos && agendamentos.length > 0) {
-            console.log('Agendamentos encontrados:', agendamentos.slice(0, 3));
+            console.log('Detalhes dos agendamentos:', agendamentos.map(a => ({
+              id: a.id.substring(0, 8),
+              data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
+              resultado: a.resultado_reuniao,
+              status: a.status
+            })));
+          }
+          
+          // Filtrar apenas agendamentos com resultados específicos
+          const agendamentosComResultado = agendamentos?.filter(a => 
+            ['presente', 'compareceu', 'realizada'].includes(a.resultado_reuniao)
+          ) || [];
+          
+          reunioesRealizadas = agendamentosComResultado.length;
+          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: presente, compareceu, realizada)`);
+          
+          if (agendamentosError) console.log('❌ Erro agendamentos SDR:', agendamentosError);
+          
+          if (agendamentosComResultado.length > 0) {
+            console.log('Agendamentos com resultado válido:', agendamentosComResultado.map(a => ({
+              id: a.id.substring(0, 8),
+              data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
+              resultado: a.resultado_reuniao
+            })));
           }
         } else if (membroTipo === 'vendedor') {
           // Para vendedores: usar data efetiva das vendas (mesmo que planilha detalhada)
@@ -409,18 +435,43 @@ export class SupervisorComissionamentoService {
         
         if (membroTipo === 'sdr') {
           // Para SDRs: buscar agendamentos com resultados específicos (mesmo que planilha detalhada)
+          console.log(`🔍 SDR ${membroNome} - Buscando agendamentos entre:`, {
+            inicio: inicioSemana.toISOString(),
+            fim: fimSemana.toISOString(),
+            sdr_id: membroId
+          });
+          
           const { data: agendamentos } = await supabase
             .from('agendamentos')
-            .select('id, data_agendamento, resultado_reuniao')
+            .select('id, data_agendamento, resultado_reuniao, status')
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
-            .lte('data_agendamento', fimSemana.toISOString())
-            .in('resultado_reuniao', ['presente', 'compareceu', 'realizada']);
+            .lte('data_agendamento', fimSemana.toISOString());
             
-          reunioesRealizadas = agendamentos?.length || 0;
-          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: presente, compareceu, realizada)`);
+          console.log(`📊 SDR ${membroNome} - Todos agendamentos encontrados:`, agendamentos?.length || 0);
           if (agendamentos && agendamentos.length > 0) {
-            console.log('Agendamentos encontrados:', agendamentos.slice(0, 3));
+            console.log('Detalhes dos agendamentos:', agendamentos.map(a => ({
+              id: a.id.substring(0, 8),
+              data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
+              resultado: a.resultado_reuniao,
+              status: a.status
+            })));
+          }
+          
+          // Filtrar apenas agendamentos com resultados específicos
+          const agendamentosComResultado = agendamentos?.filter(a => 
+            ['presente', 'compareceu', 'realizada'].includes(a.resultado_reuniao)
+          ) || [];
+          
+          reunioesRealizadas = agendamentosComResultado.length;
+          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: presente, compareceu, realizada)`);
+          
+          if (agendamentosComResultado.length > 0) {
+            console.log('Agendamentos com resultado válido:', agendamentosComResultado.map(a => ({
+              id: a.id.substring(0, 8),
+              data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
+              resultado: a.resultado_reuniao
+            })));
           }
         } else if (membroTipo === 'vendedor') {
           // Para vendedores: usar data efetiva das vendas (mesmo que planilha detalhada)
