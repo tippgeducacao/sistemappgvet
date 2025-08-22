@@ -150,7 +150,13 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
     <div className="text-center">
       <div className="font-semibold">{mediaPercentual.toFixed(1)}%</div>
       <div className="text-xs text-muted-foreground">
-        R$ {comissaoSupervisor.toFixed(0)}
+        {regraAplicavel ? (
+          <span>
+            1000 x {(mediaPercentual / 100).toFixed(2)} x {regraAplicavel.multiplicador} = R$ {comissaoSupervisor.toFixed(0)}
+          </span>
+        ) : (
+          <span>R$ 0</span>
+        )}
       </div>
     </div>
   );
