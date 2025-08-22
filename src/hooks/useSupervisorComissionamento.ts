@@ -7,7 +7,8 @@ export const useSupervisorComissionamento = (supervisorId: string, ano: number, 
     queryKey: ['supervisor-comissionamento', supervisorId, ano, mes, semana],
     queryFn: () => SupervisorComissionamentoService.calcularComissionamentoSupervisor(supervisorId, ano, mes, semana),
     enabled: !!supervisorId && !!ano && !!mes && !!semana,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 0, // Forçar sempre buscar dados frescos
+    refetchOnMount: true,
   });
 };
 

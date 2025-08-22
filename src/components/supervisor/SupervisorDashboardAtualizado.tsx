@@ -120,6 +120,15 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
     selectedWeek
   );
 
+  // Log para debug
+  console.log('🔍 Dashboard params:', {
+    supervisorId: user?.id,
+    selectedYear,
+    selectedMonth,
+    selectedWeek,
+    supervisorData
+  });
+
   // Funções de navegação semanal
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newWeek = direction === 'prev' ? selectedWeek - 1 : selectedWeek + 1;
