@@ -38,7 +38,7 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
         .from('regras_comissionamento')
         .select('*')
         .eq('tipo_usuario', 'supervisor')
-        .single();
+        .order('percentual_minimo', { ascending: true });
       
       if (error) {
         console.error('❌ Erro ao buscar regras:', error);
@@ -72,8 +72,17 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
     return <span>0.0% - Erro regras</span>;
   }
 
-  if (!supervisorData || !regrasComissionamento) {
-    console.warn('⚠️ Dados não disponíveis:', { supervisorData: !!supervisorData, regrasComissionamento: !!regrasComissionamento });
+  if (!supervisorData || !regrasComissionamento || regrasComissionamento.length === 0) {
+    console.warn('⚠️ Dados não disponíveis:', { 
+      supervisorData: !!supervisorData, 
+      regrasComissionamento: regrasComissionamento?.length || 0 
+    });
+    return <span>0.0% - R$ 0</span>;
+  }
+
+  // Verificar se temos detalhes dos SDRs
+  if (!supervisorData.sdrsDetalhes || supervisorData.sdrsDetalhes.length === 0) {
+    console.warn('⚠️ Sem detalhes dos SDRs');
     return <span>0.0% - R$ 0</span>;
   }
 
@@ -109,13 +118,32 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
 
   // Calcular comissão do supervisor baseado na média
   let comissaoSupervisor = 0;
-  if (mediaPercentual >= regrasComissionamento.percentual_minimo) {
-    const percentualNormalizado = Math.min(mediaPercentual, regrasComissionamento.percentual_maximo) / 100;
+  
+  // Encontrar a regra de comissionamento apropriada
+  const regraAplicavel = regrasComissionamento.find(regra => 
+    mediaPercentual >= regra.percentual_minimo && mediaPercentual <= regra.percentual_maximo
+  );
+  
+  console.log('🎯 Regra aplicável:', {
+    mediaPercentual,
+    regraAplicavel,
+    todasRegras: regrasComissionamento
+  });
+  
+  if (regraAplicavel && mediaPercentual > 0) {
+    const percentualNormalizado = mediaPercentual / 100;
     
     // Buscar o fixo mensal do supervisor (assumindo valor base para cálculo)
     // Por enquanto vou usar um valor fixo, mas idealmente deveria vir do perfil do supervisor
     const valorBase = 1000; // Este valor deveria vir do perfil/nível do supervisor
-    comissaoSupervisor = valorBase * percentualNormalizado * regrasComissionamento.multiplicador;
+    comissaoSupervisor = valorBase * percentualNormalizado * regraAplicavel.multiplicador;
+    
+    console.log('💰 Cálculo da comissão:', {
+      valorBase,
+      percentualNormalizado,
+      multiplicador: regraAplicavel.multiplicador,
+      comissaoFinal: comissaoSupervisor
+    });
   }
 
   return (
