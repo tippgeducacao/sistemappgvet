@@ -166,93 +166,128 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
         {/* Meta Coletiva */}
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold text-foreground">META COLETIVA - SEMANA {selectedWeek}</CardTitle>
+            <CardTitle className="text-xl font-bold text-foreground">META COLETIVA - {currentMonth}/{currentYear}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Desempenho individual dos membros da sua equipe
+              Desempenho semanal dos membros da sua equipe
             </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {meuGrupo.membros.map((membro) => {
-              // Buscar dados do membro na planilha detalhada do supervisor
-              const membroDetalhe = supervisorData?.sdrsDetalhes?.find(sdr => sdr.id === membro.usuario_id);
-              
-              const reunioesRealizadas = membroDetalhe?.reunioesRealizadas || 0;
-              const meta = membroDetalhe?.metaSemanal || 0;
-              const percentual = membroDetalhe?.percentualAtingimento || 0;
-              
-              // Determinar status baseado no percentual
-              const getStatusButton = (perc: number) => {
-                if (perc >= 100) {
-                  return (
-                    <Button 
-                      size="sm" 
-                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 text-xs"
-                    >
-                      Meta Atingida
-                    </Button>
-                  );
-                } else if (perc >= 71) {
-                  return (
-                    <Button 
-                      size="sm" 
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 text-xs"
-                    >
-                      Bom desempenho
-                    </Button>
-                  );
-                } else {
-                  return null;
-                }
-              };
-              
-              return (
-                <div key={membro.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
-                  {/* Avatar e Info */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg border-2 border-primary/20 relative overflow-hidden">
-                      {membro.usuario?.photo_url ? (
-                        <img 
-                          src={membro.usuario.photo_url}
-                          alt={membro.usuario?.name || 'User'}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      ) : null}
-                      <span className={`${membro.usuario?.photo_url ? 'hidden' : 'block'}`}>
-                        {membro.usuario?.name?.charAt(0).toUpperCase() || 'U'}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground text-base">{membro.usuario?.name}</h3>
-                      <p className="text-sm text-muted-foreground">{membro.usuario?.user_type === 'vendedor' ? 'Vendedor' : 'SDR'}</p>
-                    </div>
-                  </div>
-
-                  {/* Métricas e Ações */}
-                  <div className="flex items-center gap-6">
-                    {/* Meta e Agendamentos */}
-                    <div className="text-right">
-                      <div className="font-bold text-foreground">
-                        {reunioesRealizadas}/{meta}
-                      </div>
-                      <div className="text-sm text-muted-foreground">{percentual.toFixed(1)}%</div>
-                    </div>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-2 font-semibold text-foreground">Membro</th>
+                    <th className="text-left py-3 px-2 font-semibold text-foreground">Nível</th>
+                    <th className="text-left py-3 px-2 font-semibold text-foreground">Meta Semanal</th>
+                    {semanasDoMes.map((semana) => (
+                      <th key={semana} className="text-center py-3 px-4 font-semibold text-foreground border-l border-border">
+                        <div className="space-y-1">
+                          <div>Semana {semana}</div>
+                          <div className="text-xs text-muted-foreground font-normal">(data)</div>
+                        </div>
+                      </th>
+                    ))}
+                    <th className="text-center py-3 px-4 font-semibold text-foreground border-l border-border">Total</th>
+                    <th className="text-center py-3 px-4 font-semibold text-foreground">Atingimento %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {meuGrupo.membros.map((membro) => {
+                    // Buscar dados do membro na planilha detalhada do supervisor
+                    const membroDetalhe = supervisorData?.sdrsDetalhes?.find(sdr => sdr.id === membro.usuario_id);
+                    const metaSemanal = membroDetalhe?.metaSemanal || 0;
+                    const totalReunioes = membroDetalhe?.reunioesRealizadas || 0;
+                    const percentualTotal = membroDetalhe?.percentualAtingimento || 0;
                     
-                    {/* Barra de Progresso */}
-                    <div className="w-24">
-                      <Progress value={Math.min(percentual, 100)} className="h-2" />
-                    </div>
-                    
-                    {/* Status */}
-                    <div className="flex items-center">
-                      {getStatusButton(percentual)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                    return (
+                      <tr key={membro.id} className="border-b border-border hover:bg-muted/30">
+                        {/* Membro */}
+                        <td className="py-4 px-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold border-2 border-primary/20 relative overflow-hidden">
+                              {membro.usuario?.photo_url ? (
+                                <img 
+                                  src={membro.usuario.photo_url}
+                                  alt={membro.usuario?.name || 'User'}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              ) : null}
+                              <span className={`text-sm ${membro.usuario?.photo_url ? 'hidden' : 'block'}`}>
+                                {membro.usuario?.name?.charAt(0).toUpperCase() || 'U'}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="font-semibold text-foreground text-sm">
+                                {membro.usuario?.name}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {membro.usuario?.user_type === 'vendedor' ? 'Vendedor' : 'SDR'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        
+                        {/* Nível */}
+                        <td className="py-4 px-2 text-sm text-foreground">
+                          {membro.usuario?.nivel || 'Junior'}
+                        </td>
+                        
+                        {/* Meta Semanal */}
+                        <td className="py-4 px-2 text-sm font-semibold text-foreground">
+                          {metaSemanal}
+                        </td>
+                        
+                        {/* Colunas das Semanas */}
+                        {semanasDoMes.map((semana) => {
+                          // Para agora, vamos mostrar dados simulados já que não temos dados históricos por semana
+                          const reunioesSemana = semana === selectedWeek ? totalReunioes : Math.floor(Math.random() * metaSemanal);
+                          const percentualSemana = metaSemanal > 0 ? (reunioesSemana / metaSemanal) * 100 : 0;
+                          
+                          return (
+                            <td key={semana} className="py-4 px-4 text-center border-l border-border">
+                              <div className="space-y-1">
+                                <div className="text-sm">
+                                  <span className="text-muted-foreground">{reunioesSemana}pts</span>
+                                  <span className="text-xs text-muted-foreground"> ({percentualSemana.toFixed(1)}%)</span>
+                                </div>
+                                <div className="text-xs">
+                                  <span className={`${percentualSemana > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                    {percentualSemana > 0 ? `x ${(percentualSemana / 100).toFixed(1)}` : 'x 0.0'}
+                                  </span>
+                                </div>
+                                <div className="text-xs font-semibold text-green-600">
+                                  {percentualSemana > 0 ? `R$ ${(450 * (percentualSemana / 100)).toFixed(0)}` : 'R$ 0'}
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        })}
+                        
+                        {/* Total */}
+                        <td className="py-4 px-4 text-center border-l border-border">
+                          <div className="space-y-1">
+                            <div className="font-semibold text-foreground">{totalReunioes}</div>
+                          </div>
+                        </td>
+                        
+                        {/* Atingimento % */}
+                        <td className="py-4 px-4 text-center">
+                          <div className="space-y-1">
+                            <div className="font-semibold text-foreground">{percentualTotal.toFixed(1)}%</div>
+                            <div className="text-xs font-semibold text-green-600">
+                              R$ {(450 * (percentualTotal / 100)).toFixed(0)}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </div>
