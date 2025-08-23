@@ -93,7 +93,10 @@ const GerenciarPerfis: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         {/* Avatar */}
-                        <Avatar className="h-12 w-12">
+                        <Avatar 
+                          className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleViewProfile(user)}
+                        >
                           <AvatarImage 
                             src={user.photo_url} 
                             alt={user.name}
@@ -106,7 +109,12 @@ const GerenciarPerfis: React.FC = () => {
                         {/* Informações do usuário */}
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium">{user.name}</h3>
+                            <h3 
+                              className="font-medium cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => handleViewProfile(user)}
+                            >
+                              {user.name}
+                            </h3>
                             <Badge 
                               className={getUserTypeColor(user.user_type)}
                             >
