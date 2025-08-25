@@ -796,7 +796,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         weeklySales: vendasSDRSemana.length, // Vendas de cursos apenas
         weeklyTarget: metaVendasCursos, // Meta de vendas de cursos
         avatar: vendedor.photo_url || '',
-        points: vendasSDRSemana.length, // Para ordenação
+        points: pontosSemanaTotais, // Pontos DA SEMANA ATUAL para ordenação
         isSDR: true,
         monthlyTotal: vendasSDRMes.length,
         nivel: vendedor.nivel,
@@ -993,7 +993,7 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         weeklySales: pontosSemana, // Pontos da semana, não número de vendas
         weeklyTarget: metaSemanal, // Meta semanal em pontos
         avatar: vendedor.photo_url || '',
-        points: pontosSemana, // Pontos para ordenação
+        points: pontosSemana, // Pontos DA SEMANA ATUAL para ordenação (não mês)
         isSDR: false,
         monthlyTotal: pontosMes, // Pontos do mês, não número de vendas
         nivel: vendedor.nivel,
@@ -1003,9 +1003,14 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     }
   });
 
-  // Separar vendedores e SDRs
-  const vendedoresOnly = vendedoresData.filter(v => !v.isSDR).sort((a, b) => b.points - a.points);
-  const sdrsOnly = vendedoresData.filter(v => v.isSDR).sort((a, b) => b.weeklySales - a.weeklySales);
+  // Separar vendedores e SDRs - ORDENAR POR PONTOS DA SEMANA ATUAL
+  const vendedoresOnly = vendedoresData
+    .filter(v => !v.isSDR)
+    .sort((a, b) => b.points - a.points); // points já são os pontos da semana atual
+  
+  const sdrsOnly = vendedoresData
+    .filter(v => v.isSDR)
+    .sort((a, b) => b.points - a.points); // ordenar SDRs também por pontos totais da semana
 
   console.log('📊 TVRankingDisplay - Dados separados:', {
     vendedores: vendedoresOnly.length,
