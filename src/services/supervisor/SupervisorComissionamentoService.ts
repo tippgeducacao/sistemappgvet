@@ -97,25 +97,24 @@ export class SupervisorComissionamentoService {
 
       console.log('👥 DEBUG: Membros brutos encontrados:', membrosData?.length || 0);
 
-      // Filtrar membros válidos para o período APÓS buscar os dados
+      // Para semana atual: mostrar membros que estavam ativos durante a semana
       const membrosValidosParaPeriodo = membrosData?.filter(membro => {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        // REGRA CORRETA: Membro deve ter sido criado ANTES DO INÍCIO do período
-        // (não apenas antes do fim - isso permitia que membros novos aparecessem em períodos antigos)
-        const criadoAntesDoPeriodo = criadoEm <= inicioSemana;
+        // Membro estava ativo se foi criado ANTES OU DURANTE a semana
+        const foiCriadoAteOFimDaSemana = criadoEm <= fimSemana;
         
-        // Se tem data de saída, deve ter saído DEPOIS do fim do período
-        const naoSaiuDuranteOPeriodo = !saídaEm || saídaEm > fimSemana;
+        // E não saiu ANTES da semana terminar
+        const naoSaiuAntesDaSemana = !saídaEm || saídaEm > inicioSemana;
         
-        const valido = criadoAntesDoPeriodo && naoSaiuDuranteOPeriodo;
+        const valido = foiCriadoAteOFimDaSemana && naoSaiuAntesDaSemana;
         
         console.log(`📊 DEBUG: Membro ${membro.usuario?.name}:`, {
           criadoEm: criadoEm.toLocaleDateString('pt-BR'),
           saídaEm: saídaEm?.toLocaleDateString('pt-BR') || 'Ativo',
-          criadoAntesDoPeriodo,
-          naoSaiuDuranteOPeriodo,
+          foiCriadoAteOFimDaSemana,
+          naoSaiuAntesDaSemana,
           valido
         });
         
@@ -414,23 +413,23 @@ export class SupervisorComissionamentoService {
         return null;
       }
 
-      // FILTRO SIMPLIFICADO: Membro estava ativo na semana se:
-      // 1. Foi criado ANTES ou DURANTE a semana (created_at <= fim da semana)
-      // 2. E NÃO SAIU ou saiu DEPOIS da semana (left_at é null OU left_at > fim da semana)
+      // FILTRO CORRETO: Membro estava ativo na semana se:
+      // 1. Foi criado ANTES OU DURANTE a semana (created_at <= fim da semana)
+      // 2. E não saiu DURANTE a semana (left_at é null OU left_at > início da semana)
       const membrosValidosParaPeriodo = membrosData.filter(membro => {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        const criadoAteOFimDaSemana = criadoEm <= fimSemana;
-        const naoSaiuOuSaiuDepoiDaSemana = !saídaEm || saídaEm > fimSemana;
+        const foiCriadoAteOFimDaSemana = criadoEm <= fimSemana;
+        const naoSaiuAntesDaSemana = !saídaEm || saídaEm > inicioSemana;
         
-        const estaValido = criadoAteOFimDaSemana && naoSaiuOuSaiuDepoiDaSemana;
+        const estaValido = foiCriadoAteOFimDaSemana && naoSaiuAntesDaSemana;
         
         console.log(`🔍 FILTRO - ${membro.usuario?.name}:`, {
           criado: criadoEm.toLocaleDateString('pt-BR'),
           saiu: saídaEm?.toLocaleDateString('pt-BR') || 'nunca',
-          criadoAteOFim: criadoAteOFimDaSemana,
-          naoSaiuAntes: naoSaiuOuSaiuDepoiDaSemana,
+          criadoAteOFim: foiCriadoAteOFimDaSemana,
+          naoSaiuAntes: naoSaiuAntesDaSemana,
           resultado: estaValido ? '✅ INCLUIR' : '❌ EXCLUIR'
         });
         
