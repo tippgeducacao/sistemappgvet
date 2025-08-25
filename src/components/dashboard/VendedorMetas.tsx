@@ -439,7 +439,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   {/* Multiplicador */}
                   <div className="flex items-center">
                     <Badge variant={comissaoData.multiplicador > 0 ? "default" : "secondary"} className="text-[10px] h-4 px-1">
-                      {comissaoData.multiplicador}x
+                      {progressoSemanal === 100 ? '1.0' : comissaoData.multiplicador.toFixed(1)}x
                     </Badge>
                   </div>
                   
