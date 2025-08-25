@@ -649,37 +649,46 @@ export class SupervisorComissionamentoService {
   private static calcularDatasSemanaDoMes(ano: number, mes: number, numeroSemana: number): { inicioSemana: Date; fimSemana: Date } {
     console.log(`📅 CALCULANDO SEMANA ${numeroSemana} de ${mes}/${ano}`);
     
-    // Encontrar a primeira terça-feira que termina no mês
-    const primeiroDiaDoMes = new Date(ano, mes - 1, 1);
-    console.log(`📅 Primeiro dia do mês: ${primeiroDiaDoMes.toLocaleDateString('pt-BR')} (dia da semana: ${primeiroDiaDoMes.getDay()})`);
+    // Encontrar todas as terças-feiras do mês
+    const tercasFeiras: Date[] = [];
+    const ultimoDiaDoMes = new Date(ano, mes, 0).getDate();
     
-    // Encontrar a primeira terça-feira do mês (dia 2 = terça)
-    let primeiraTerca = new Date(primeiroDiaDoMes);
-    while (primeiraTerca.getDay() !== 2) {
-      primeiraTerca.setDate(primeiraTerca.getDate() + 1);
+    for (let dia = 1; dia <= ultimoDiaDoMes; dia++) {
+      const data = new Date(ano, mes - 1, dia);
+      if (data.getDay() === 2) { // Terça-feira
+        tercasFeiras.push(new Date(data));
+      }
     }
     
-    console.log(`🗓️ Primeira terça do mês: ${primeiraTerca.toLocaleDateString('pt-BR')} (dia ${primeiraTerca.getDate()})`);
-    
-    // Se a primeira terça é muito tarde (depois do dia 7), pode haver uma semana anterior
-    if (primeiraTerca.getDate() > 7) {
-      primeiraTerca.setDate(primeiraTerca.getDate() - 7);
-      console.log(`⬅️ Usando terça anterior: ${primeiraTerca.toLocaleDateString('pt-BR')}`);
+    // Verificar se há terças de semanas que terminam no mês (do mês anterior)
+    const primeiraTercaDoMes = tercasFeiras[0];
+    if (primeiraTercaDoMes && primeiraTercaDoMes.getDate() > 7) {
+      // Adicionar a terça da semana anterior que termina neste mês
+      const tercaAnterior = new Date(primeiraTercaDoMes);
+      tercaAnterior.setDate(tercaAnterior.getDate() - 7);
+      tercasFeiras.unshift(tercaAnterior);
     }
     
-    // Calcular a terça da semana desejada
-    const tercaDaSemanaDesejada = new Date(primeiraTerca);
-    tercaDaSemanaDesejada.setDate(primeiraTerca.getDate() + (numeroSemana - 1) * 7);
+    console.log(`🗓️ Terças-feiras encontradas para ${mes}/${ano}:`, tercasFeiras.map(t => t.toLocaleDateString('pt-BR')));
     
-    console.log(`🎯 Terça da semana ${numeroSemana}: ${tercaDaSemanaDesejada.toLocaleDateString('pt-BR')}`);
+    // Verificar se a semana existe
+    if (numeroSemana < 1 || numeroSemana > tercasFeiras.length) {
+      console.error(`❌ Semana ${numeroSemana} não existe no mês ${mes}/${ano}. Temos ${tercasFeiras.length} semanas.`);
+      return { 
+        inicioSemana: new Date(ano, mes - 1, 1), 
+        fimSemana: new Date(ano, mes - 1, 1) 
+      };
+    }
+    
+    const tercaDaSemana = tercasFeiras[numeroSemana - 1];
     
     // O início da semana é na quarta-feira ANTERIOR à terça (6 dias antes)
-    const inicioSemana = new Date(tercaDaSemanaDesejada);
-    inicioSemana.setDate(tercaDaSemanaDesejada.getDate() - 6);
+    const inicioSemana = new Date(tercaDaSemana);
+    inicioSemana.setDate(tercaDaSemana.getDate() - 6);
     inicioSemana.setHours(0, 0, 0, 0);
     
     // O fim da semana é na terça-feira
-    const fimSemana = new Date(tercaDaSemanaDesejada);
+    const fimSemana = new Date(tercaDaSemana);
     fimSemana.setHours(23, 59, 59, 999);
     
     console.log(`📊 SEMANA ${numeroSemana} FINAL: ${inicioSemana.toLocaleDateString('pt-BR')} (quarta) até ${fimSemana.toLocaleDateString('pt-BR')} (terça)`);

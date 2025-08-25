@@ -6,7 +6,7 @@ export const useSupervisorComissionamento = (supervisorId: string, ano: number, 
   console.log(`🔍 Hook useSupervisorComissionamento chamado para:`, { supervisorId, ano, mes, semana });
   
   return useQuery({
-    queryKey: ['supervisor-comissionamento', supervisorId, ano, mes, semana], // Remove Date.now()
+    queryKey: ['supervisor-comissionamento', supervisorId, ano, mes, semana, Date.now()], // Força refresh
     queryFn: () => {
       console.log(`📞 Chamando SupervisorComissionamentoService.calcularComissionamentoSupervisor:`, { supervisorId, ano, mes, semana });
       return SupervisorComissionamentoService.calcularComissionamentoSupervisor(supervisorId, ano, mes, semana);
