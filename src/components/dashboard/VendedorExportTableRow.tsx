@@ -19,8 +19,11 @@ const getMultiplicador = async (percentual: number, ano: number, mes?: number): 
     return await HistoricoMensalService.buscarMultiplicador(percentual, 'vendedor', ano, mes);
   } catch (error) {
     // Fallback para regras padrão em caso de erro
+    // CORREÇÃO: Para percentuais exatos (como 100%), usar lógica correta
     const regra = REGRAS_COMISSIONAMENTO_FALLBACK.find(r => 
-      percentual >= r.percentual_minimo && percentual <= r.percentual_maximo
+      percentual >= r.percentual_minimo && 
+      (percentual < r.percentual_maximo || 
+       (percentual === r.percentual_minimo && r.percentual_minimo >= 100))
     );
     return regra?.multiplicador || 0;
   }

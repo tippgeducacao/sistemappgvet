@@ -57,18 +57,22 @@ export class ComissionamentoService {
         pontosObtidos,
         metaSemanal,
         percentual,
+        percentualExato: percentual,
         regras: regras.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
       });
     }
     
+    // CORREÇÃO: Para percentuais exatos (como 100%), usar >= para o mínimo
     const regraAplicavel = regras.find(regra => 
       percentual >= regra.percentual_minimo && 
-      percentual <= regra.percentual_maximo
+      (percentual < regra.percentual_maximo || 
+       (percentual === regra.percentual_minimo && regra.percentual_minimo >= 100))
     );
 
     if (pontosObtidos === 7.0 && Math.round(percentual) === 100) {
       console.log('🎯 REGRA PARA 7.0 pontos:', {
         percentual,
+        percentualExato: percentual,
         regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
       });
     }

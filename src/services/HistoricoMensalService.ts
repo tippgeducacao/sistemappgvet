@@ -255,19 +255,24 @@ export class HistoricoMensalService {
     if (Math.round(percentual) === 100) {
       console.log('🎯 HISTÓRICO - Buscando multiplicador para 100%:', {
         percentual,
+        percentualExato: percentual,
         tipoUsuario,
         regras: regras.filter(r => r.tipo_usuario === tipoUsuario).map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
       });
     }
     
+    // CORREÇÃO: Para percentuais exatos (como 100%), usar lógica correta
     const regraAplicavel = regras.find(regra => 
       regra.tipo_usuario === tipoUsuario &&
       percentual >= regra.percentual_minimo && 
-      percentual <= regra.percentual_maximo
+      (percentual < regra.percentual_maximo || 
+       (percentual === regra.percentual_minimo && regra.percentual_minimo >= 100))
     );
 
     if (Math.round(percentual) === 100) {
       console.log('🎯 HISTÓRICO - Regra encontrada para 100%:', {
+        percentual,
+        percentualExato: percentual,
         regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
       });
     }
