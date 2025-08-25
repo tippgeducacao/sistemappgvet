@@ -224,7 +224,7 @@ export class SupervisorComissionamentoService {
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
             .lte('data_agendamento', fimSemana.toISOString())
-            .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
+            .not('resultado_reuniao', 'is', null);
             
           console.log(`📊 SDR ${membroNome} - Todos agendamentos encontrados:`, agendamentos?.length || 0);
           if (agendamentos && agendamentos.length > 0) {
@@ -236,23 +236,19 @@ export class SupervisorComissionamentoService {
             })));
           }
           
-          // Filtrar apenas agendamentos com resultados específicos (EXATAMENTE como na planilha detalhada)
-          const agendamentosComResultado = agendamentos?.filter(a => 
-            ['comprou', 'compareceu_nao_comprou'].includes(a.resultado_reuniao)
-          ) || [];
-          
-          reunioesRealizadas = agendamentosComResultado.length;
-          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: status=finalizado + resultado=compareceu/comprou/compareceu_nao_comprou)`);
-          
-          if (agendamentosError) console.log('❌ Erro agendamentos SDR:', agendamentosError);
-          
-          if (agendamentosComResultado.length > 0) {
-            console.log('Agendamentos com resultado válido:', agendamentosComResultado.map(a => ({
-              id: a.id.substring(0, 8),
-              data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
-              resultado: a.resultado_reuniao
-            })));
-          }
+          // Contar todos os agendamentos que têm resultado registrado
+          reunioesRealizadas = agendamentos?.length || 0;
+           console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas com resultado registrado`);
+           
+           if (agendamentosError) console.log('❌ Erro agendamentos SDR:', agendamentosError);
+           
+           if (agendamentos && agendamentos.length > 0) {
+             console.log('Agendamentos com resultado:', agendamentos.map(a => ({
+               id: a.id.substring(0, 8),
+               data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
+               resultado: a.resultado_reuniao
+             })));
+           }
         } else if (membroTipo === 'vendedor') {
           // Para vendedores: usar data efetiva das vendas (mesmo que planilha detalhada)
           const { data: vendas, error: vendasError } = await supabase
@@ -452,26 +448,15 @@ export class SupervisorComissionamentoService {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        console.log(`\n🔍 ANALISANDO MEMBRO: ${membro.usuario?.name}`);
-        console.log(`   📅 Criado em: ${criadoEm.toLocaleDateString()}`);
-        console.log(`   📅 Saiu em: ${saídaEm?.toLocaleDateString() || 'Não saiu'}`);
-        console.log(`   📅 Período consulta: ${inicioSemana.toLocaleDateString()} - ${fimSemana.toLocaleDateString()}`);
-        
         // REGRA FINAL: Membro aparece se estava ATIVO na semana
         const foiAdicionadoAntesDaSemana = criadoEm < inicioSemana;
         const foiAdicionadoDuranteSemana = criadoEm >= inicioSemana && criadoEm <= fimSemana;
-        
-        console.log(`   ✅ Foi adicionado antes da semana: ${foiAdicionadoAntesDaSemana}`);
-        console.log(`   ✅ Foi adicionado durante a semana: ${foiAdicionadoDuranteSemana}`);
         
         // Membro estava presente se foi adicionado antes OU durante a semana
         const estavaPresenteNaSemana = foiAdicionadoAntesDaSemana || foiAdicionadoDuranteSemana;
         
         // Se saiu, deve ter saído DEPOIS do fim da semana para estar ativo
         const estavativoNaSemana = !saídaEm || saídaEm > fimSemana;
-        
-        console.log(`   ✅ Estava presente na semana: ${estavaPresenteNaSemana}`);
-        console.log(`   ✅ Estava ativo na semana: ${estavativoNaSemana}`);
         
         // REGRA ESPECIAL APENAS PARA SUÉLI em semanas históricas
         const isSueli = membro.usuario?.name?.toLowerCase().includes('suéli') || membro.usuario?.name?.toLowerCase().includes('sueli');
@@ -482,13 +467,10 @@ export class SupervisorComissionamentoService {
         if (isSueli && isSemanaHistorica) {
           // Suéli só aparece em semanas históricas se foi adicionada ANTES da semana
           valido = foiAdicionadoAntesDaSemana && estavativoNaSemana;
-          console.log(`🔍 SUÉLI HISTÓRICA - Semana ${semana}: ${valido ? 'INCLUÍDA' : 'EXCLUÍDA'} (criada: ${criadoEm.toLocaleDateString()})`);
         } else {
           // Regra normal para todos os outros casos
           valido = estavaPresenteNaSemana && estavativoNaSemana;
         }
-        
-        console.log(`   🎯 RESULTADO FINAL: ${valido ? 'INCLUÍDO' : 'EXCLUÍDO'}`);
         
         return valido;
       });
@@ -598,7 +580,7 @@ export class SupervisorComissionamentoService {
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
             .lte('data_agendamento', fimSemana.toISOString())
-            .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
+            .not('resultado_reuniao', 'is', null);
             
           console.log(`📊 SDR ${membroNome} - Todos agendamentos encontrados:`, agendamentos?.length || 0);
           if (agendamentos && agendamentos.length > 0) {
@@ -610,21 +592,17 @@ export class SupervisorComissionamentoService {
             })));
           }
           
-          // Filtrar apenas agendamentos com resultados específicos (EXATAMENTE como na planilha detalhada)
-          const agendamentosComResultado = agendamentos?.filter(a => 
-            ['comprou', 'compareceu_nao_comprou'].includes(a.resultado_reuniao)
-          ) || [];
-          
-          reunioesRealizadas = agendamentosComResultado.length;
-          console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas (filtro: status=finalizado + resultado=compareceu/comprou/compareceu_nao_comprou)`);
-          
-          if (agendamentosComResultado.length > 0) {
-            console.log('Agendamentos com resultado válido:', agendamentosComResultado.map(a => ({
-              id: a.id.substring(0, 8),
-              data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
-              resultado: a.resultado_reuniao
-            })));
-          }
+          // Contar todos os agendamentos que têm resultado registrado
+          reunioesRealizadas = agendamentos?.length || 0;
+           console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas com resultado registrado`);
+           
+           if (agendamentos && agendamentos.length > 0) {
+             console.log('Agendamentos com resultado:', agendamentos.map(a => ({
+               id: a.id.substring(0, 8),
+               data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
+               resultado: a.resultado_reuniao
+             })));
+           }
         } else if (membroTipo === 'vendedor') {
           // Para vendedores: usar data efetiva das vendas (mesmo que planilha detalhada)
           const { data: vendas } = await supabase
