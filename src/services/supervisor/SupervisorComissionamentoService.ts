@@ -637,38 +637,54 @@ export class SupervisorComissionamentoService {
   }
 
   private static calcularDatasSemanaDoMes(ano: number, mes: number, semana: number) {
-    console.log(`🗓️ Calculando datas para semana ${semana} de ${mes}/${ano}`);
+    console.log(`🗓️ [DEBUG] Calculando datas para semana ${semana} de ${mes}/${ano}`);
     
-    // Encontrar a primeira terça-feira do mês (fim da primeira semana)
-    const firstDayOfMonth = new Date(ano, mes - 1, 1);
-    let currentDate = new Date(firstDayOfMonth);
+    // Usar a mesma lógica do semanaUtils.ts para garantir consistência
     
-    // Encontrar primeira terça-feira do mês
-    while (currentDate.getDay() !== 2) { // 2 = terça-feira
-      currentDate.setDate(currentDate.getDate() + 1);
+    // Primeiro, encontrar o primeiro dia do mês
+    const primeiroDiaMes = new Date(ano, mes - 1, 1);
+    console.log(`📅 Primeiro dia do mês: ${primeiroDiaMes.toLocaleDateString('pt-BR')}`);
+    
+    // Encontrar a primeira quarta-feira do mês ou anterior que inicia uma semana no mês
+    let primeiraQuarta = new Date(primeiroDiaMes);
+    
+    // Se o primeiro dia não é quarta (3), encontrar a primeira quarta
+    if (primeiraQuarta.getDay() !== 3) {
+      const diasAteQuarta = (3 - primeiraQuarta.getDay() + 7) % 7;
+      if (diasAteQuarta === 0) {
+        // Já é quarta
+      } else if (primeiraQuarta.getDay() > 3) {
+        // Se passou da quarta (quinta, sexta, sábado), ir para próxima quarta
+        primeiraQuarta.setDate(primeiraQuarta.getDate() + diasAteQuarta);
+      } else {
+        // Se ainda não chegou na quarta (domingo, segunda, terça), ir para esta quarta
+        primeiraQuarta.setDate(primeiraQuarta.getDate() + diasAteQuarta);
+      }
     }
     
-    // Se a primeira terça-feira é muito tarde no mês (depois do dia 7),
+    // Se a primeira quarta é muito tarde no mês (após dia 7), 
     // pode haver uma semana anterior que termina no mês
-    let firstTuesday = new Date(currentDate);
-    if (currentDate.getDate() > 7) {
-      firstTuesday.setDate(currentDate.getDate() - 7);
+    if (primeiraQuarta.getDate() > 7) {
+      primeiraQuarta.setDate(primeiraQuarta.getDate() - 7);
     }
     
-    // Calcular a terça-feira da semana solicitada
-    const targetTuesday = new Date(firstTuesday);
-    targetTuesday.setDate(firstTuesday.getDate() + (semana - 1) * 7);
+    console.log(`📅 Primeira quarta-feira base: ${primeiraQuarta.toLocaleDateString('pt-BR')}`);
     
-    // Calcular quarta-feira (início da semana)
-    const inicioSemana = new Date(targetTuesday);
-    inicioSemana.setDate(targetTuesday.getDate() - 6);
+    // Calcular a quarta-feira da semana solicitada
+    const quartaDaSemana = new Date(primeiraQuarta);
+    quartaDaSemana.setDate(primeiraQuarta.getDate() + (semana - 1) * 7);
+    
+    // Início da semana é a quarta-feira
+    const inicioSemana = new Date(quartaDaSemana);
     inicioSemana.setHours(0, 0, 0, 0);
     
-    // Fim da semana é terça-feira
-    const fimSemana = new Date(targetTuesday);
+    // Fim da semana é terça-feira (6 dias depois)
+    const fimSemana = new Date(quartaDaSemana);
+    fimSemana.setDate(quartaDaSemana.getDate() + 6);
     fimSemana.setHours(23, 59, 59, 999);
     
-    console.log(`📅 Semana ${semana}: ${inicioSemana.toLocaleDateString('pt-BR')} até ${fimSemana.toLocaleDateString('pt-BR')}`);
+    console.log(`📅 [RESULTADO] Semana ${semana}: ${inicioSemana.toLocaleDateString('pt-BR')} até ${fimSemana.toLocaleDateString('pt-BR')}`);
+    console.log(`📅 [RESULTADO] ISO: ${inicioSemana.toISOString()} até ${fimSemana.toISOString()}`);
     
     return { inicioSemana, fimSemana };
   }
