@@ -414,29 +414,27 @@ export class SupervisorComissionamentoService {
         return null;
       }
 
-      // AGORA aplicar o filtro em JavaScript para o período específico
+      // FILTRO SIMPLIFICADO: Membro estava ativo na semana se:
+      // 1. Foi criado ANTES ou DURANTE a semana (created_at <= fim da semana)
+      // 2. E NÃO SAIU ou saiu DEPOIS da semana (left_at é null OU left_at > fim da semana)
       const membrosValidosParaPeriodo = membrosData.filter(membro => {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        console.log(`🔍 Verificando membro ${membro.usuario?.name}:`, {
-          criadoEm: criadoEm.toLocaleDateString('pt-BR'),
-          saídaEm: saídaEm?.toLocaleDateString('pt-BR') || 'ainda ativo',
-          inicioSemana: inicioSemana.toLocaleDateString('pt-BR'),
-          fimSemana: fimSemana.toLocaleDateString('pt-BR')
+        const criadoAteOFimDaSemana = criadoEm <= fimSemana;
+        const naoSaiuOuSaiuDepoiDaSemana = !saídaEm || saídaEm > fimSemana;
+        
+        const estaValido = criadoAteOFimDaSemana && naoSaiuOuSaiuDepoiDaSemana;
+        
+        console.log(`🔍 FILTRO - ${membro.usuario?.name}:`, {
+          criado: criadoEm.toLocaleDateString('pt-BR'),
+          saiu: saídaEm?.toLocaleDateString('pt-BR') || 'nunca',
+          criadoAteOFim: criadoAteOFimDaSemana,
+          naoSaiuAntes: naoSaiuOuSaiuDepoiDaSemana,
+          resultado: estaValido ? '✅ INCLUIR' : '❌ EXCLUIR'
         });
         
-        // Estava ativo durante o período se:
-        // 1. Foi criado ANTES ou DURANTE o período (criado <= fim da semana)
-        // 2. E não saiu OU saiu APÓS o início do período (left_at === null || left_at >= início da semana)
-        const foiCriadoAntesOuDurante = criadoEm <= fimSemana;
-        const naoSaiuOuSaiuDepois = !saídaEm || saídaEm >= inicioSemana;
-        
-        const estaValidoParaPeriodo = foiCriadoAntesOuDurante && naoSaiuOuSaiuDepois;
-        
-        console.log(`   Resultado: ${estaValidoParaPeriodo ? '✅ VÁLIDO' : '❌ INVÁLIDO'} - criado antes/durante: ${foiCriadoAntesOuDurante}, não saiu ou saiu depois: ${naoSaiuOuSaiuDepois}`);
-        
-        return estaValidoParaPeriodo;
+        return estaValido;
       });
       
       console.log(`🚨 PERÍODO CALCULADO: ${inicioSemana.toLocaleDateString('pt-BR')} até ${fimSemana.toLocaleDateString('pt-BR')}`);
@@ -649,55 +647,43 @@ export class SupervisorComissionamentoService {
     }
   }
 
-  private static calcularDatasSemanaDoMes(ano: number, mes: number, semana: number) {
-    console.log(`🗓️ [DEBUG] Calculando datas para semana ${semana} de ${mes}/${ano}`);
+  private static calcularDatasSemanaDoMes(ano: number, mes: number, numeroSemana: number): { inicioSemana: Date; fimSemana: Date } {
+    console.log(`📅 CALCULANDO SEMANA ${numeroSemana} de ${mes}/${ano}`);
     
-    // Usar a mesma lógica do semanaUtils.ts para garantir consistência
+    // Encontrar a primeira terça-feira que termina no mês
+    const primeiroDiaDoMes = new Date(ano, mes - 1, 1);
+    console.log(`📅 Primeiro dia do mês: ${primeiroDiaDoMes.toLocaleDateString('pt-BR')} (dia da semana: ${primeiroDiaDoMes.getDay()})`);
     
-    // Primeiro, encontrar o primeiro dia do mês
-    const primeiroDiaMes = new Date(ano, mes - 1, 1);
-    console.log(`📅 Primeiro dia do mês: ${primeiroDiaMes.toLocaleDateString('pt-BR')}`);
-    
-    // Encontrar a primeira quarta-feira do mês ou anterior que inicia uma semana no mês
-    let primeiraQuarta = new Date(primeiroDiaMes);
-    
-    // Se o primeiro dia não é quarta (3), encontrar a primeira quarta
-    if (primeiraQuarta.getDay() !== 3) {
-      const diasAteQuarta = (3 - primeiraQuarta.getDay() + 7) % 7;
-      if (diasAteQuarta === 0) {
-        // Já é quarta
-      } else if (primeiraQuarta.getDay() > 3) {
-        // Se passou da quarta (quinta, sexta, sábado), ir para próxima quarta
-        primeiraQuarta.setDate(primeiraQuarta.getDate() + diasAteQuarta);
-      } else {
-        // Se ainda não chegou na quarta (domingo, segunda, terça), ir para esta quarta
-        primeiraQuarta.setDate(primeiraQuarta.getDate() + diasAteQuarta);
-      }
+    // Encontrar a primeira terça-feira do mês (dia 2 = terça)
+    let primeiraTerca = new Date(primeiroDiaDoMes);
+    while (primeiraTerca.getDay() !== 2) {
+      primeiraTerca.setDate(primeiraTerca.getDate() + 1);
     }
     
-    // Se a primeira quarta é muito tarde no mês (após dia 7), 
-    // pode haver uma semana anterior que termina no mês
-    if (primeiraQuarta.getDate() > 7) {
-      primeiraQuarta.setDate(primeiraQuarta.getDate() - 7);
+    console.log(`🗓️ Primeira terça do mês: ${primeiraTerca.toLocaleDateString('pt-BR')} (dia ${primeiraTerca.getDate()})`);
+    
+    // Se a primeira terça é muito tarde (depois do dia 7), pode haver uma semana anterior
+    if (primeiraTerca.getDate() > 7) {
+      primeiraTerca.setDate(primeiraTerca.getDate() - 7);
+      console.log(`⬅️ Usando terça anterior: ${primeiraTerca.toLocaleDateString('pt-BR')}`);
     }
     
-    console.log(`📅 Primeira quarta-feira base: ${primeiraQuarta.toLocaleDateString('pt-BR')}`);
+    // Calcular a terça da semana desejada
+    const tercaDaSemanaDesejada = new Date(primeiraTerca);
+    tercaDaSemanaDesejada.setDate(primeiraTerca.getDate() + (numeroSemana - 1) * 7);
     
-    // Calcular a quarta-feira da semana solicitada
-    const quartaDaSemana = new Date(primeiraQuarta);
-    quartaDaSemana.setDate(primeiraQuarta.getDate() + (semana - 1) * 7);
+    console.log(`🎯 Terça da semana ${numeroSemana}: ${tercaDaSemanaDesejada.toLocaleDateString('pt-BR')}`);
     
-    // Início da semana é a quarta-feira
-    const inicioSemana = new Date(quartaDaSemana);
+    // O início da semana é na quarta-feira ANTERIOR à terça (6 dias antes)
+    const inicioSemana = new Date(tercaDaSemanaDesejada);
+    inicioSemana.setDate(tercaDaSemanaDesejada.getDate() - 6);
     inicioSemana.setHours(0, 0, 0, 0);
     
-    // Fim da semana é terça-feira (6 dias depois)
-    const fimSemana = new Date(quartaDaSemana);
-    fimSemana.setDate(quartaDaSemana.getDate() + 6);
+    // O fim da semana é na terça-feira
+    const fimSemana = new Date(tercaDaSemanaDesejada);
     fimSemana.setHours(23, 59, 59, 999);
     
-    console.log(`📅 [RESULTADO] Semana ${semana}: ${inicioSemana.toLocaleDateString('pt-BR')} até ${fimSemana.toLocaleDateString('pt-BR')}`);
-    console.log(`📅 [RESULTADO] ISO: ${inicioSemana.toISOString()} até ${fimSemana.toISOString()}`);
+    console.log(`📊 SEMANA ${numeroSemana} FINAL: ${inicioSemana.toLocaleDateString('pt-BR')} (quarta) até ${fimSemana.toLocaleDateString('pt-BR')} (terça)`);
     
     return { inicioSemana, fimSemana };
   }
