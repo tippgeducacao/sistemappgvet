@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Target, TrendingUp, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Target, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
@@ -151,17 +151,6 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
   };
 
   // Memoizar cálculos dos cards baseados na planilha detalhada
-  const totalAtividades = useMemo(() => {
-    if (!supervisorData?.sdrsDetalhes) return 0;
-    return supervisorData.sdrsDetalhes.reduce((total, sdr) => total + (sdr.reunioesRealizadas || 0), 0);
-  }, [supervisorData]);
-
-  const totalConversoes = useMemo(() => {
-    if (!supervisorData?.sdrsDetalhes) return 0;
-    // Para conversões, vamos contar o total de membros da equipe por enquanto
-    return meuGrupo?.membros?.length || 0;
-  }, [supervisorData, meuGrupo]);
-
   const percentualGeral = useMemo(() => {
     if (!supervisorData) return 0;
     return supervisorData.mediaPercentualAtingimento || 0;
@@ -255,29 +244,13 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
         </div>
 
         {/* Cards de Métricas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Atividades da Equipe */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <CardTitle className="text-sm font-medium text-muted-foreground">Atividades da Equipe</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                {totalAtividades}
-              </div>
-              <p className="text-sm text-muted-foreground">atividades realizadas esta semana</p>
-            </CardContent>
-          </Card>
-
-          {/* Taxa de Atingimento */}
-          <Card>
+        <div className="flex justify-center">
+          {/* Taxa de Atingimento da Semana */}
+          <Card className="w-full max-w-md">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                <CardTitle className="text-sm font-medium text-muted-foreground">TAXA DE ATINGIMENTO</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">TAXA DE ATINGIMENTO DA SEMANA</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
@@ -288,22 +261,6 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
                 <p className="text-sm text-muted-foreground">média do grupo</p>
                 <Progress value={Math.min(percentualGeral, 100)} className="h-2" />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Conversões */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <CardTitle className="text-sm font-medium text-muted-foreground">CONVERSÕES</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                {totalConversoes}
-              </div>
-              <p className="text-sm text-muted-foreground">vendas realizadas</p>
             </CardContent>
           </Card>
         </div>
