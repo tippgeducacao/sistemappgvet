@@ -406,8 +406,8 @@ export class SupervisorComissionamentoService {
 
       console.log('✅ Grupo encontrado:', grupoData.nome_grupo);
 
-      // Buscar SDRs do grupo (aplicar filtro de período em JavaScript)
-      console.log('🔍 DEBUG: Buscando membros do grupo para período histórico:', {
+      // Buscar TODOS os membros do grupo sem filtro de data
+      console.log('🔍 DEBUG: Buscando TODOS os membros do grupo (sem filtro SQL):', {
         grupoId: grupoData.id,
         inicioSemana: inicioSemana.toISOString(),
         fimSemana: fimSemana.toISOString(),
@@ -430,52 +430,70 @@ export class SupervisorComissionamentoService {
         `)
         .eq('grupo_id', grupoData.id);
 
-      console.log('👥 DEBUG: Membros brutos encontrados (histórico):', membrosData?.length || 0);
-
-      // Filtrar membros válidos para o período APÓS buscar os dados
-      const membrosValidosParaPeriodo = membrosData?.filter(membro => {
-        const criadoEm = new Date(membro.created_at);
-        const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
-        
-        // Membro deve ter sido criado antes ou no final do período
-        const criadoNoPeriodo = criadoEm <= fimSemana;
-        
-        // Se tem data de saída, deve ter saído depois do início do período
-        const validoNoPeriodo = !saídaEm || saídaEm >= inicioSemana;
-        
-        const valido = criadoNoPeriodo && validoNoPeriodo;
-        
-        console.log(`📊 DEBUG: Membro ${membro.usuario?.name} (histórico):`, {
-          criadoEm: criadoEm.toLocaleDateString('pt-BR'),
-          saídaEm: saídaEm?.toLocaleDateString('pt-BR') || 'Ativo',
-          criadoNoPeriodo,
-          validoNoPeriodo,
-          valido
-        });
-        
-        return valido;
-      }) || [];
-
-      console.log('👥 DEBUG: Membros válidos para período (histórico):', membrosValidosParaPeriodo.length);
-      console.log('📋 DEBUG: Detalhes dos membros válidos (histórico):', membrosValidosParaPeriodo.map(m => ({
+      console.log('👥 DEBUG: Membros brutos encontrados (TODOS):', membrosData?.length || 0);
+      console.log('📋 DEBUG: Lista completa dos membros:', membrosData?.map(m => ({
         nome: m.usuario?.name,
         created_at: m.created_at,
         left_at: m.left_at,
         ativo: m.usuario?.ativo
       })));
 
-      // Usar membros filtrados em vez do resultado direto da query
-      const membrosDataFiltrados = membrosValidosParaPeriodo;
-
-      if (membrosError || !membrosDataFiltrados) {
+      if (membrosError || !membrosData) {
         console.error('❌ Erro ao buscar membros do grupo:', membrosError);
         return null;
       }
 
-      console.log(`✅ ${membrosDataFiltrados.length} membros filtrados encontrados no grupo (histórico)`);
+      // AGORA aplicar o filtro em JavaScript para o período específico
+      const membrosValidosParaPeriodo = membrosData.filter(membro => {
+        const criadoEm = new Date(membro.created_at);
+        const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
+        
+        // REGRA CORRETA: Membro deve ter sido adicionado ANTES ou DURANTE a semana
+        // E se saiu, deve ter saído DEPOIS da semana
+        const adicionadoAntesDaSemana = criadoEm <= fimSemana;
+        const naoSaiuAntesDaSemana = !saídaEm || saídaEm > inicioSemana;
+        
+        const valido = adicionadoAntesDaSemana && naoSaiuAntesDaSemana;
+        
+        console.log(`📊 DEBUG: Membro ${membro.usuario?.name} (FILTRO CORRETO):`, {
+          criadoEm: criadoEm.toLocaleDateString('pt-BR'),
+          saídaEm: saídaEm?.toLocaleDateString('pt-BR') || 'Ativo',
+          periodoSemana: `${inicioSemana.toLocaleDateString('pt-BR')} - ${fimSemana.toLocaleDateString('pt-BR')}`,
+          adicionadoAntesDaSemana: `${criadoEm.toLocaleDateString('pt-BR')} <= ${fimSemana.toLocaleDateString('pt-BR')} = ${adicionadoAntesDaSemana}`,
+          naoSaiuAntesDaSemana: saídaEm ? `${saídaEm.toLocaleDateString('pt-BR')} > ${inicioSemana.toLocaleDateString('pt-BR')} = ${naoSaiuAntesDaSemana}` : 'Não saiu = true',
+          VALIDO: valido
+        });
+        
+        return valido;
+      });
+
+      console.log('👥 DEBUG: Membros válidos após filtro de período:', membrosValidosParaPeriodo.length);
+      console.log('📋 DEBUG: Membros válidos:', membrosValidosParaPeriodo.map(m => ({
+        nome: m.usuario?.name,
+        created_at: m.created_at,
+        left_at: m.left_at
+      })));
+
+      if (membrosValidosParaPeriodo.length === 0) {
+        console.warn('⚠️ Nenhum membro válido encontrado para o período');
+        return {
+          supervisorId,
+          nome: supervisorData.name,
+          grupoId: grupoData.id,
+          nomeGrupo: grupoData.nome_grupo,
+          ano,
+          semana,
+          totalSDRs: 0,
+          mediaPercentualAtingimento: 0,
+          variabelSemanal: 0,
+          multiplicador: 0,
+          valorComissao: 0,
+          sdrsDetalhes: []
+        };
+      }
 
       // Filtrar apenas membros ativos (SDRs e Vendedores) - incluindo todos os tipos de SDR
-      const membrosAtivos = membrosDataFiltrados.filter(
+      const membrosAtivos = membrosValidosParaPeriodo.filter(
         membro => membro.usuario?.ativo === true && 
         (membro.usuario?.user_type === 'sdr' || 
          membro.usuario?.user_type === 'sdr_inbound' || 
@@ -483,10 +501,10 @@ export class SupervisorComissionamentoService {
          membro.usuario?.user_type === 'vendedor')
       );
 
-      console.log(`✅ ${membrosAtivos.length} membros ativos`);
+      console.log(`✅ ${membrosAtivos.length} membros ativos válidos para o período`);
 
       if (membrosAtivos.length === 0) {
-        console.warn('⚠️ Nenhum membro ativo encontrado no grupo');
+        console.warn('⚠️ Nenhum membro ativo encontrado no grupo para o período');
         return {
           supervisorId,
           nome: supervisorData.name,
