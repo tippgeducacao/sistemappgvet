@@ -53,7 +53,7 @@ export class ComissionamentoService {
     
     const regraAplicavel = regras.find(regra => 
       percentual >= regra.percentual_minimo && 
-      (percentual <= regra.percentual_maximo || regra.percentual_maximo === 999)
+      percentual <= regra.percentual_maximo
     );
 
     const multiplicador = regraAplicavel?.multiplicador || 0;
