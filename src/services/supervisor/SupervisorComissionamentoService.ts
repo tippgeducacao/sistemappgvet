@@ -211,45 +211,18 @@ export class SupervisorComissionamentoService {
         let reunioesRealizadas = 0;
         
         if (membroTipo === 'sdr' || membroTipo === 'sdr_inbound' || membroTipo === 'sdr_outbound') {
-          // Para SDRs: buscar agendamentos com resultados específicos (mesmo que planilha detalhada)
-          console.log(`🔍 SDR ${membroNome} - Buscando agendamentos entre:`, {
-            inicio: inicioSemana.toISOString(),
-            fim: fimSemana.toISOString(),
-            sdr_id: membroId
-          });
-          
+          // Para SDRs: buscar agendamentos igual à planilha detalhada
           const { data: agendamentos, error: agendamentosError } = await supabase
             .from('agendamentos')
             .select('id, data_agendamento, resultado_reuniao, status')
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
-            .lte('data_agendamento', fimSemana.toISOString())
-            .in('resultado_reuniao', ['compareceu', 'comprou', 'compareceu_nao_comprou'])
-            .eq('status', 'finalizado');
+            .lte('data_agendamento', fimSemana.toISOString());
             
-          console.log(`📊 SDR ${membroNome} - Todos agendamentos encontrados:`, agendamentos?.length || 0);
-          if (agendamentos && agendamentos.length > 0) {
-            console.log('Detalhes dos agendamentos:', agendamentos.map(a => ({
-              id: a.id.substring(0, 8),
-              data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
-              resultado: a.resultado_reuniao,
-              status: a.status
-            })));
-          }
-          
-          // Contar todos os agendamentos que têm resultado registrado
+          // Contar TODOS os agendamentos, não apenas com resultado específico
           reunioesRealizadas = agendamentos?.length || 0;
-           console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas com resultado registrado`);
            
            if (agendamentosError) console.log('❌ Erro agendamentos SDR:', agendamentosError);
-           
-           if (agendamentos && agendamentos.length > 0) {
-             console.log('Agendamentos com resultado:', agendamentos.map(a => ({
-               id: a.id.substring(0, 8),
-               data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
-               resultado: a.resultado_reuniao
-             })));
-           }
         } else if (membroTipo === 'vendedor') {
           // Para vendedores: usar data efetiva das vendas (mesmo que planilha detalhada)
           const { data: vendas, error: vendasError } = await supabase
@@ -553,31 +526,10 @@ export class SupervisorComissionamentoService {
             .select('id, data_agendamento, resultado_reuniao, status')
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
-            .lte('data_agendamento', fimSemana.toISOString())
-            .in('resultado_reuniao', ['compareceu', 'comprou', 'compareceu_nao_comprou'])
-            .eq('status', 'finalizado');
+            .lte('data_agendamento', fimSemana.toISOString());
             
-          console.log(`📊 SDR ${membroNome} - Todos agendamentos encontrados:`, agendamentos?.length || 0);
-          if (agendamentos && agendamentos.length > 0) {
-            console.log('Detalhes dos agendamentos:', agendamentos.map(a => ({
-              id: a.id.substring(0, 8),
-              data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
-              resultado: a.resultado_reuniao,
-              status: a.status
-            })));
-          }
-          
-          // Contar todos os agendamentos que têm resultado registrado
+          // Contar TODOS os agendamentos, não apenas com resultado específico
           reunioesRealizadas = agendamentos?.length || 0;
-           console.log(`📅 SDR ${membroNome}: ${reunioesRealizadas} reuniões realizadas com resultado registrado`);
-           
-           if (agendamentos && agendamentos.length > 0) {
-             console.log('Agendamentos com resultado:', agendamentos.map(a => ({
-               id: a.id.substring(0, 8),
-               data: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
-               resultado: a.resultado_reuniao
-             })));
-           }
         } else if (membroTipo === 'vendedor') {
           // Para vendedores: usar data efetiva das vendas (mesmo que planilha detalhada)
           const { data: vendas } = await supabase
