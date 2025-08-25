@@ -73,6 +73,12 @@ export class SupervisorComissionamentoService {
       console.log('✅ Grupo do supervisor encontrado:', grupoData);
 
       // Buscar SDRs do grupo (filtrar por período de validade)
+      console.log('🔍 DEBUG: Buscando membros do grupo para período:', {
+        grupoId: grupoData.id,
+        inicioSemana: inicioSemana.toISOString(),
+        fimSemana: fimSemana.toISOString()
+      });
+
       const { data: membrosData, error: membrosError } = await supabase
         .from('membros_grupos_supervisores')
         .select(`
@@ -90,6 +96,14 @@ export class SupervisorComissionamentoService {
         .eq('grupo_id', grupoData.id)
         .lte('created_at', fimSemana.toISOString())
         .or(`left_at.is.null,left_at.gte.${inicioSemana.toISOString()}`);
+
+      console.log('👥 DEBUG: Membros encontrados:', membrosData?.length || 0);
+      console.log('📋 DEBUG: Detalhes dos membros:', membrosData?.map(m => ({
+        nome: m.usuario?.name,
+        created_at: m.created_at,
+        left_at: m.left_at,
+        ativo: m.usuario?.ativo
+      })));
 
       if (membrosError || !membrosData) {
         console.error('❌ Erro ao buscar membros do grupo:', membrosError);
@@ -373,6 +387,13 @@ export class SupervisorComissionamentoService {
       console.log('✅ Grupo encontrado:', grupoData.nome_grupo);
 
       // Buscar SDRs do grupo (filtrar por período de validade)
+      console.log('🔍 DEBUG: Buscando membros do grupo para período histórico:', {
+        grupoId: grupoData.id,
+        inicioSemana: inicioSemana.toISOString(),
+        fimSemana: fimSemana.toISOString(),
+        ano, mes, semana
+      });
+
       const { data: membrosData, error: membrosError } = await supabase
         .from('membros_grupos_supervisores')
         .select(`
@@ -390,6 +411,14 @@ export class SupervisorComissionamentoService {
         .eq('grupo_id', grupoData.id)
         .lte('created_at', fimSemana.toISOString())
         .or(`left_at.is.null,left_at.gte.${inicioSemana.toISOString()}`);
+
+      console.log('👥 DEBUG: Membros encontrados (histórico):', membrosData?.length || 0);
+      console.log('📋 DEBUG: Detalhes dos membros (histórico):', membrosData?.map(m => ({
+        nome: m.usuario?.name,
+        created_at: m.created_at,
+        left_at: m.left_at,
+        ativo: m.usuario?.ativo
+      })));
 
       if (membrosError || !membrosData) {
         console.error('❌ Erro ao buscar membros do grupo:', membrosError);
