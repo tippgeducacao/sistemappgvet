@@ -51,31 +51,39 @@ export class ComissionamentoService {
     const percentual = (pontosObtidos / metaSemanal) * 100;
     const regras = await this.fetchRegras(tipoUsuario);
     
-    // Log específico para debug do problema
-    if (pontosObtidos === 7.0 && Math.round(percentual) === 100) {
-      console.log('🎯 CASO ESPECÍFICO 7.0 pontos:', {
-        pontosObtidos,
-        metaSemanal,
-        percentual,
-        percentualExato: percentual,
-        regras: regras.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
-      });
-    }
+    console.log('🔢 DEBUG COMISSIONAMENTO:', {
+      pontosObtidos,
+      metaSemanal, 
+      percentual,
+      percentualArredondado: Math.round(percentual),
+      regras: regras.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
+    });
     
-    // CORREÇÃO: Para percentuais exatos (como 100%), usar >= para o mínimo
-    const regraAplicavel = regras.find(regra => 
-      percentual >= regra.percentual_minimo && 
-      (percentual < regra.percentual_maximo || 
-       (percentual === regra.percentual_minimo && regra.percentual_minimo >= 100))
-    );
-
-    if (pontosObtidos === 7.0 && Math.round(percentual) === 100) {
-      console.log('🎯 REGRA PARA 7.0 pontos:', {
-        percentual,
-        percentualExato: percentual,
-        regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
-      });
+    // LÓGICA CORRIGIDA: encontrar a regra correta
+    let regraAplicavel = null;
+    
+    for (const regra of regras) {
+      // Para 100% exato, deve usar a regra 100-119
+      if (percentual === 100 && regra.percentual_minimo === 100) {
+        regraAplicavel = regra;
+        break;
+      }
+      // Para outros percentuais, usar >= minimo e < maximo
+      else if (percentual >= regra.percentual_minimo && percentual < regra.percentual_maximo) {
+        regraAplicavel = regra;
+        break;
+      }
+      // Para percentuais >= 999 (ou seja, muito altos)
+      else if (regra.percentual_maximo >= 999 && percentual >= regra.percentual_minimo) {
+        regraAplicavel = regra;
+        break;
+      }
     }
+
+    console.log('✅ REGRA SELECIONADA:', {
+      percentual,
+      regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
+    });
 
     const multiplicador = regraAplicavel?.multiplicador || 0;
     const valor = variabelSemanal * multiplicador;

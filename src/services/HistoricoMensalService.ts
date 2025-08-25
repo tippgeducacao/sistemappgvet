@@ -251,31 +251,38 @@ export class HistoricoMensalService {
   ): Promise<number> {
     const regras = await this.buscarRegrasComissionamento(ano, mes);
     
-    // Log específico para debug
-    if (Math.round(percentual) === 100) {
-      console.log('🎯 HISTÓRICO - Buscando multiplicador para 100%:', {
-        percentual,
-        percentualExato: percentual,
-        tipoUsuario,
-        regras: regras.filter(r => r.tipo_usuario === tipoUsuario).map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
-      });
-    }
+    console.log('🔍 HISTÓRICO MULTIPLICADOR:', {
+      percentual,
+      tipoUsuario,
+      regras: regras.filter(r => r.tipo_usuario === tipoUsuario).map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
+    });
     
-    // CORREÇÃO: Para percentuais exatos (como 100%), usar lógica correta
-    const regraAplicavel = regras.find(regra => 
-      regra.tipo_usuario === tipoUsuario &&
-      percentual >= regra.percentual_minimo && 
-      (percentual < regra.percentual_maximo || 
-       (percentual === regra.percentual_minimo && regra.percentual_minimo >= 100))
-    );
-
-    if (Math.round(percentual) === 100) {
-      console.log('🎯 HISTÓRICO - Regra encontrada para 100%:', {
-        percentual,
-        percentualExato: percentual,
-        regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
-      });
+    // LÓGICA CORRIGIDA: encontrar a regra correta
+    let regraAplicavel = null;
+    const regrasUsuario = regras.filter(r => r.tipo_usuario === tipoUsuario);
+    
+    for (const regra of regrasUsuario) {
+      // Para 100% exato, deve usar a regra 100-119
+      if (percentual === 100 && regra.percentual_minimo === 100) {
+        regraAplicavel = regra;
+        break;
+      }
+      // Para outros percentuais, usar >= minimo e < maximo
+      else if (percentual >= regra.percentual_minimo && percentual < regra.percentual_maximo) {
+        regraAplicavel = regra;
+        break;
+      }
+      // Para percentuais >= 999 (ou seja, muito altos)
+      else if (regra.percentual_maximo >= 999 && percentual >= regra.percentual_minimo) {
+        regraAplicavel = regra;
+        break;
+      }
     }
+
+    console.log('✅ HISTÓRICO REGRA SELECIONADA:', {
+      percentual,
+      regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
+    });
 
     return regraAplicavel?.multiplicador || 0;
   }

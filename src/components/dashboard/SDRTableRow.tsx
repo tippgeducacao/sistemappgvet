@@ -16,12 +16,30 @@ const REGRAS_COMISSIONAMENTO_SDR = [
 ];
 
 const getMultiplicadorSDR = (percentual: number): number => {
-  // CORREÇÃO: Para percentuais exatos (como 100%), usar lógica correta
-  const regra = REGRAS_COMISSIONAMENTO_SDR.find(r => 
-    percentual >= r.percentual_minimo && 
-    (percentual < r.percentual_maximo || 
-     (percentual === r.percentual_minimo && r.percentual_minimo >= 100))
-  );
+  console.log('📋 SDR MULTIPLICADOR:', { percentual });
+  
+  // LÓGICA CORRIGIDA: encontrar a regra correta  
+  let regra = null;
+  
+  for (const r of REGRAS_COMISSIONAMENTO_SDR) {
+    // Para 100% exato, deve usar a regra 100-119
+    if (percentual === 100 && r.percentual_minimo === 100) {
+      regra = r;
+      break;
+    }
+    // Para outros percentuais, usar >= minimo e < maximo
+    else if (percentual >= r.percentual_minimo && percentual < r.percentual_maximo) {
+      regra = r;
+      break;
+    }
+    // Para percentuais >= 999 (muito altos)
+    else if (r.percentual_maximo >= 999 && percentual >= r.percentual_minimo) {
+      regra = r;
+      break;
+    }
+  }
+  
+  console.log('✅ SDR REGRA:', { percentual, regra: regra ? `${regra.percentual_minimo}-${regra.percentual_maximo}: ${regra.multiplicador}x` : 'NENHUMA' });
   return regra?.multiplicador || 0;
 };
 
