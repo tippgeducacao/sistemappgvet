@@ -209,19 +209,30 @@ export const useLeadsFilterData = () => {
 
       console.log('🔍 [LEADS FILTER] Processando', data?.length, 'leads...');
       
+      // TESTE DIRETO da função extractPageSlug
+      const testUrls = [
+        'https://ppgvet.com.br/aula-gratuita-clinica-25ago',
+        'https://www.ppgvet.com.br/aula-gratuita-clinica-25ago'
+      ];
+      console.log('🧪 [TESTE EXTRACT]:');
+      testUrls.forEach(url => {
+        const slug = extractPageSlug(url);
+        console.log(`  ${url} → ${slug}`);
+      });
+      
       // Extrair páginas únicas  
       const paginasCaptura = [...new Set(
         (data || []).map(item => {
           const slug = extractPageSlug(item.pagina_nome);
           if (item.pagina_nome?.includes('aula-gratuita-clinica-25ago')) {
-            console.log('🎯 [ENCONTRADA AULA]:', item.pagina_nome, '→ slug:', slug);
+            console.log('🎯 [URL ORIGINAL]:', item.pagina_nome);
+            console.log('🎯 [SLUG EXTRAIDO]:', slug);
           }
           return slug;
         }).filter(Boolean)
       )];
       
       console.log('📋 [TOTAL PAGINAS]:', paginasCaptura.length);
-      console.log('📝 [PRIMEIRAS 10]:', paginasCaptura.slice(0, 10));
       console.log('🎯 [TEM AULA?]:', paginasCaptura.includes('aula-gratuita-clinica-25ago'));
 
       // Extrair fontes únicas
