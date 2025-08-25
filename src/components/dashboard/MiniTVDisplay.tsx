@@ -193,7 +193,7 @@ const MiniTVDisplay: React.FC<MiniTVDisplayProps> = ({
                         className="w-8 h-8 rounded-full border-2 border-white/50 mb-1"
                       />
                       <div className="text-xs font-bold">{person.name}</div>
-                      <div className="text-xs text-blue-200">{person.points} pts</div>
+                      <div className="text-xs text-blue-200">{person.weeklySales} pts</div>
                     </div>
                     <div className={`${heights[index]} ${colors[index]} w-12 rounded-t-lg flex items-end justify-center pb-1`}>
                       <span className="text-xs font-bold text-gray-800">{positions[index]}</span>
