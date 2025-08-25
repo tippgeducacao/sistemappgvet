@@ -125,7 +125,7 @@ const LeadDetailsDialog: React.FC<LeadDetailsDialogProps> = ({
             )}
           </DialogTitle>
           <DialogDescription>
-            Lead capturado em {DataFormattingService.formatDateTime(lead.data_captura)}
+            Lead capturado em {DataFormattingService.formatDateTime(lead.created_at)}
           </DialogDescription>
         </DialogHeader>
 

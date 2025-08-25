@@ -66,7 +66,15 @@ export class DataFormattingService {
 
   static formatDateTime(dateString: string): string {
     try {
+      if (!dateString) return 'Data inválida';
+      
       const date = new Date(dateString);
+      
+      // Verificar se a data é válida
+      if (isNaN(date.getTime())) {
+        return 'Data inválida';
+      }
+      
       return date.toLocaleString('pt-BR', {
         day: '2-digit',
         month: '2-digit',

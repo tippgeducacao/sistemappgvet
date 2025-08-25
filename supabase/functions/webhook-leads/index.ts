@@ -136,6 +136,20 @@ serve(async (req) => {
       );
     }
 
+    // HELPERS PARA LIMPEZA DE PLACEHOLDERS
+    const isPlaceholder = (value: string | null | undefined): boolean => {
+      if (!value || typeof value !== 'string') return false;
+      // Detectar placeholders como {utm_source}, {fbclid}, etc.
+      return /^\{[^}]+\}$/.test(value.trim());
+    };
+
+    const clean = (value: string | null | undefined, fallback: string | null = null): string | null => {
+      if (!value || typeof value !== 'string') return fallback;
+      const trimmed = value.trim();
+      if (isPlaceholder(trimmed) || trimmed === '') return fallback;
+      return trimmed;
+    };
+
     // MAPEAMENTO APRIMORADO DOS DADOS DO LEAD
     console.log('🗂️ Iniciando mapeamento aprimorado dos dados...');
     
@@ -156,9 +170,11 @@ serve(async (req) => {
                 body.phoneNumber || body.phone_number || body['Telefone'] || 
                 body['WhatsApp'] || body['Seu_WhatsApp'] || null,
       
-      // Fonte de referência
-      fonte_referencia: body.utm_source || body.source || body.origem || body.referrer || 
-                       body.fonte || body.campaign_source || body.Referral_Source || 
+      // Fonte de referência - PRIORIDADE: Referral_Source -> utm_source limpo -> outros
+      fonte_referencia: clean(body.Referral_Source) || 
+                       clean(body.utm_source, 'GreatPages') || 
+                       body.source || body.origem || body.referrer || 
+                       body.fonte || body.campaign_source || 
                        'GreatPages',
       
       // Dispositivo
@@ -176,12 +192,12 @@ serve(async (req) => {
       pagina_nome: body.page_name || body.pagina_nome || body.page_title || 
                    body.form_name || body.formName || body.URL || null,
       
-      // UTM Parameters
-      utm_source: body.utm_source || 'GreatPages',
-      utm_medium: body.utm_medium || 'form',
-      utm_campaign: body.utm_campaign || body.campaign || null,
-      utm_content: body.utm_content || null,
-      utm_term: body.utm_term || null,
+      // UTM Parameters - com limpeza de placeholders
+      utm_source: clean(body.utm_source, 'GreatPages'),
+      utm_medium: clean(body.utm_medium, 'form'),
+      utm_campaign: clean(body.utm_campaign),
+      utm_content: clean(body.utm_content),
+      utm_term: clean(body.utm_term),
       
       // Informações técnicas
       ip_address: body.IP_do_usuario || body.ip || body.ip_address || body.client_ip || 
@@ -191,6 +207,20 @@ serve(async (req) => {
       
       // Status padrão
       status: 'novo'
+    }
+
+    // Log placeholders limpos
+    const placeholdersLimpos = [];
+    if (isPlaceholder(body.utm_source)) placeholdersLimpos.push(`utm_source: ${body.utm_source} -> ${leadData.utm_source}`);
+    if (isPlaceholder(body.utm_medium)) placeholdersLimpos.push(`utm_medium: ${body.utm_medium} -> ${leadData.utm_medium}`);
+    if (isPlaceholder(body.utm_campaign)) placeholdersLimpos.push(`utm_campaign: ${body.utm_campaign} -> ${leadData.utm_campaign}`);
+    if (isPlaceholder(body.utm_content)) placeholdersLimpos.push(`utm_content: ${body.utm_content} -> ${leadData.utm_content}`);
+    if (isPlaceholder(body.utm_term)) placeholdersLimpos.push(`utm_term: ${body.utm_term} -> ${leadData.utm_term}`);
+    if (isPlaceholder(body.fbclid)) placeholdersLimpos.push(`fbclid: ${body.fbclid} -> limpo`);
+    if (isPlaceholder(body.gclid)) placeholdersLimpos.push(`gclid: ${body.gclid} -> limpo`);
+    
+    if (placeholdersLimpos.length > 0) {
+      console.log('🧹 Placeholders limpos:', placeholdersLimpos);
     }
 
     // Adicionar campos personalizados extras às observações
@@ -211,12 +241,12 @@ serve(async (req) => {
       camposExtras.push(`Data Conversão: ${body.Data_da_conversao}`);
     }
     
-    // IDs de tracking
-    if (body.fbclid && body.fbclid !== '{fbclid}') {
+    // IDs de tracking - com limpeza de placeholders
+    if (body.fbclid && !isPlaceholder(body.fbclid)) {
       camposExtras.push(`Facebook Click ID: ${body.fbclid}`);
     }
     
-    if (body.gclid && body.gclid !== '{gclid}') {
+    if (body.gclid && !isPlaceholder(body.gclid)) {
       camposExtras.push(`Google Click ID: ${body.gclid}`);
     }
     
