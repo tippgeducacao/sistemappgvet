@@ -445,6 +445,9 @@ export class SupervisorComissionamentoService {
       }
 
       // AGORA aplicar o filtro em JavaScript para o período específico
+      console.log(`🚨 INICIANDO FILTRO PARA: Ano ${ano}, Semana ${semana}`);
+      console.log(`🚨 PERÍODO: ${inicioSemana.toISOString()} até ${fimSemana.toISOString()}`);
+      
       const membrosValidosParaPeriodo = membrosData.filter(membro => {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
@@ -468,16 +471,17 @@ export class SupervisorComissionamentoService {
         
         const valido = deveAparecerNaSemana && estavativoNaSemana;
         
-        // Log apenas para casos especiais de debug
-        const isSueli = membro.usuario?.name?.toLowerCase().includes('suéli') || membro.usuario?.name?.toLowerCase().includes('sueli');
-        if (isSueli) {
-          console.log(`🔍 SUÉLI DEBUG - ${membro.usuario?.name}: ${valido ? 'INCLUÍDO' : 'EXCLUÍDO'}`);
-          console.log(`   📅 Criado: ${criadoEm.toISOString()}`);
-          console.log(`   📅 Período: ${inicioSemana.toISOString()} - ${fimSemana.toISOString()}`);
-          console.log(`   🕐 Semana histórica?: ${isSemanaHistorica}`);
-          console.log(`   ✅ Foi adicionado antes?: ${foiAdicionadoAntesDaSemana}`);
-          console.log(`   ✅ Deve aparecer?: ${deveAparecerNaSemana}`);
-        }
+        // Log TODOS os membros para debug
+        console.log(`👤 MEMBRO: ${membro.usuario?.name || 'NOME_INDEFINIDO'}`);
+        console.log(`   📅 Criado em: ${criadoEm.toISOString()}`);
+        console.log(`   📅 Saiu em: ${saídaEm?.toISOString() || 'AINDA_ATIVO'}`);
+        console.log(`   🕐 É semana histórica?: ${isSemanaHistorica}`);
+        console.log(`   ✅ Foi adicionado antes da semana?: ${foiAdicionadoAntesDaSemana}`);
+        console.log(`   ✅ Foi adicionado durante a semana?: ${foiAdicionadoDuranteSemana}`);
+        console.log(`   ✅ Deve aparecer na semana?: ${deveAparecerNaSemana}`);
+        console.log(`   ✅ Estava ativo na semana?: ${estavativoNaSemana}`);
+        console.log(`   🎯 RESULTADO FINAL: ${valido ? '✅ INCLUÍDO' : '❌ EXCLUÍDO'}`);
+        console.log(`   ==========================================`);
         
         return valido;
       });
