@@ -99,7 +99,7 @@ const MiniTVDisplay: React.FC<MiniTVDisplayProps> = ({
         nivel: vendedor.nivel
       };
     }).sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
+      if (b.weeklyPoints !== a.weeklyPoints) return b.weeklyPoints - a.weeklyPoints;
       if (b.weeklySales !== a.weeklySales) return b.weeklySales - a.weeklySales;
       return a.name.localeCompare(b.name);
     });
