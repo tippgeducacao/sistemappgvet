@@ -208,9 +208,24 @@ export const useLeadsFilterData = () => {
 
       // Extrair páginas únicas usando utility robusta
       const { extractPageSlug } = await import('@/utils/leadUtils');
+      console.log('🔍 DEBUG: Processando páginas de captura...');
+      console.log('📊 Total de leads para processar:', data?.length || 0);
+      
       const paginasCaptura = [...new Set(
-        (data || []).map(item => extractPageSlug(item.pagina_nome)).filter(Boolean)
+        (data || []).map(item => {
+          const slug = extractPageSlug(item.pagina_nome);
+          if (item.pagina_nome?.includes('aula-gratuita-clinica-25ago')) {
+            console.log('🎯 ENCONTRADO lead com aula-gratuita-clinica-25ago:', {
+              pagina_nome: item.pagina_nome,
+              slug_extraido: slug
+            });
+          }
+          return slug;
+        }).filter(Boolean)
       )];
+      
+      console.log('📋 Páginas de captura extraídas:', paginasCaptura);
+      console.log('🔍 Procurando por aula-gratuita-clinica-25ago:', paginasCaptura.includes('aula-gratuita-clinica-25ago'));
 
       // Extrair fontes únicas
       const fontes = [...new Set(
