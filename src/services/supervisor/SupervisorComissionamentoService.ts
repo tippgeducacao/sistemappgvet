@@ -449,6 +449,11 @@ export class SupervisorComissionamentoService {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
+        console.log(`🔍 FILTRO DETALHADO - Membro: ${membro.usuario?.name}`);
+        console.log(`   📅 Criado em: ${criadoEm.toISOString()}`);
+        console.log(`   📅 Período buscado: ${inicioSemana.toISOString()} até ${fimSemana.toISOString()}`);
+        console.log(`   📅 Saiu em: ${saídaEm?.toISOString() || 'Nunca saiu'}`);
+        
         // REGRA CORRETA: Membro deve ter sido adicionado ANTES DO INÍCIO da semana
         // (não apenas antes do fim - isso permitia que membros novos aparecessem em períodos antigos)
         const adicionadoAntesDoPeriodo = criadoEm <= inicioSemana;
@@ -458,14 +463,10 @@ export class SupervisorComissionamentoService {
         
         const valido = adicionadoAntesDoPeriodo && naoSaiuDuranteOPeriodo;
         
-        console.log(`📊 DEBUG: Membro ${membro.usuario?.name} (FILTRO HISTÓRICO CORRETO):`, {
-          criadoEm: criadoEm.toLocaleDateString('pt-BR'),
-          saídaEm: saídaEm?.toLocaleDateString('pt-BR') || 'Ativo',
-          periodoSemana: `${inicioSemana.toLocaleDateString('pt-BR')} - ${fimSemana.toLocaleDateString('pt-BR')}`,
-          adicionadoAntesDoPeriodo: `${criadoEm.toLocaleDateString('pt-BR')} <= ${inicioSemana.toLocaleDateString('pt-BR')} = ${adicionadoAntesDoPeriodo}`,
-          naoSaiuDuranteOPeriodo: saídaEm ? `${saídaEm.toLocaleDateString('pt-BR')} > ${fimSemana.toLocaleDateString('pt-BR')} = ${naoSaiuDuranteOPeriodo}` : 'Não saiu = true',
-          VALIDO: valido
-        });
+        console.log(`   ✅ Adicionado antes do período? ${criadoEm.toISOString()} <= ${inicioSemana.toISOString()} = ${adicionadoAntesDoPeriodo}`);
+        console.log(`   ✅ Não saiu durante período? ${saídaEm ? `${saídaEm.toISOString()} > ${fimSemana.toISOString()}` : 'Nunca saiu'} = ${naoSaiuDuranteOPeriodo}`);
+        console.log(`   🎯 RESULTADO FINAL: ${valido}`);
+        console.log(`   ================================`);
         
         return valido;
       });
