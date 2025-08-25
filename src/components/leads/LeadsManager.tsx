@@ -33,6 +33,7 @@ import LeadDetailsDialog from './LeadDetailsDialog';
 import LeadsDashboard from './LeadsDashboard';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import type { Lead, LeadFilters } from '@/hooks/useLeads';
+import { extractPageSlug } from '@/utils/leadUtils';
 
 const LeadsManager: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
@@ -133,8 +134,7 @@ const LeadsManager: React.FC = () => {
     return match ? match[1].trim() : null;
   };
 
-  // Usar utility robusta para extrair slug da página
-  const { extractPageSlug } = require('@/utils/leadUtils');
+  // Usar utility robusta para extrair slug da página (importada no topo do arquivo)
 
   // Função para formatar o número do WhatsApp e criar o link
   const formatWhatsAppLink = (whatsapp: string) => {
