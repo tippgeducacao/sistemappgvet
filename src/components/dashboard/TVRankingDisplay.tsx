@@ -69,7 +69,7 @@ const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
               className="w-12 h-12 rounded-full mx-auto mb-1"
             />
             <div className="text-sm font-medium text-foreground">{person?.name}</div>
-            <div className="text-xs text-muted-foreground">{person?.points} pts</div>
+            <div className="text-xs text-muted-foreground">{person?.weeklySales?.toFixed(1) || '0.0'} pts</div>
           </div>
           <div
             className={`${colors[index]} rounded-t-lg flex items-end justify-center text-white font-bold text-xs relative`}
