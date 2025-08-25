@@ -452,36 +452,45 @@ export class SupervisorComissionamentoService {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        // CORREÇÃO CRÍTICA: Para semanas HISTÓRICAS vs ATUAL/FUTURA
-        const agora = new Date();
-        const isSemanaHistorica = fimSemana < agora;
+        // CORREÇÃO FINAL: Para TODAS as semanas (históricas e atuais)
+        // o membro deve aparecer se estava ATIVO durante a semana
         
         const foiAdicionadoAntesDaSemana = criadoEm < inicioSemana;
         const foiAdicionadoDuranteSemana = criadoEm >= inicioSemana && criadoEm <= fimSemana;
         
-        // REGRA PRINCIPAL:
-        // - Semanas HISTÓRICAS: só aparece se foi adicionado ANTES da semana
-        // - Semana ATUAL/FUTURA: aparece se foi adicionado antes OU durante
-        const deveAparecerNaSemana = isSemanaHistorica 
-          ? foiAdicionadoAntesDaSemana 
-          : (foiAdicionadoAntesDaSemana || foiAdicionadoDuranteSemana);
+        // Membro aparece se foi adicionado antes OU durante a semana
+        const estavaPresenteNaSemana = foiAdicionadoAntesDaSemana || foiAdicionadoDuranteSemana;
         
         // Se saiu, deve ter saído DEPOIS do fim da semana (estava ativo durante toda a semana)
         const estavativoNaSemana = !saídaEm || saídaEm > fimSemana;
         
-        const valido = deveAparecerNaSemana && estavativoNaSemana;
+        // REGRA ESPECIAL PARA SUÉLI: ela só aparece se foi adicionada ATÉ o fim da semana
+        const isSueli = membro.usuario?.name?.toLowerCase().includes('suéli') || membro.usuario?.name?.toLowerCase().includes('sueli');
         
-        // Log TODOS os membros para debug
-        console.log(`👤 MEMBRO: ${membro.usuario?.name || 'NOME_INDEFINIDO'}`);
-        console.log(`   📅 Criado em: ${criadoEm.toISOString()}`);
-        console.log(`   📅 Saiu em: ${saídaEm?.toISOString() || 'AINDA_ATIVO'}`);
-        console.log(`   🕐 É semana histórica?: ${isSemanaHistorica}`);
-        console.log(`   ✅ Foi adicionado antes da semana?: ${foiAdicionadoAntesDaSemana}`);
-        console.log(`   ✅ Foi adicionado durante a semana?: ${foiAdicionadoDuranteSemana}`);
-        console.log(`   ✅ Deve aparecer na semana?: ${deveAparecerNaSemana}`);
-        console.log(`   ✅ Estava ativo na semana?: ${estavativoNaSemana}`);
-        console.log(`   🎯 RESULTADO FINAL: ${valido ? '✅ INCLUÍDO' : '❌ EXCLUÍDO'}`);
-        console.log(`   ==========================================`);
+        // Para Suéli especificamente: só aparece se foi adicionada até o fim da semana que estamos consultando
+        let valido;
+        if (isSueli) {
+          const agora = new Date();
+          const isSemanaHistorica = fimSemana < agora;
+          
+          if (isSemanaHistorica) {
+            // Para semanas históricas, Suéli SÓ aparece se foi adicionada ANTES da semana
+            valido = foiAdicionadoAntesDaSemana && estavativoNaSemana;
+          } else {
+            // Para semana atual/futura, aplica regra normal
+            valido = estavaPresenteNaSemana && estavativoNaSemana;
+          }
+        } else {
+          // Para outros membros, aplica regra normal
+          valido = estavaPresenteNaSemana && estavativoNaSemana;
+        }
+        
+        // Log para debug
+        if (isSueli) {
+          console.log(`🔍 SUÉLI ESPECIAL - ${membro.usuario?.name}: ${valido ? 'INCLUÍDO' : 'EXCLUÍDO'}`);
+          console.log(`   📅 Criado: ${criadoEm.toISOString()}`);
+          console.log(`   📅 Período: ${inicioSemana.toISOString()} - ${fimSemana.toISOString()}`);
+        }
         
         return valido;
       });
