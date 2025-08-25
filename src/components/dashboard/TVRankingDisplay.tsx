@@ -774,9 +774,11 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       const taxaConversaoSemanal = agendamentosComparecidos.length > 0 ? 
         (agendamentosConvertidos.length / agendamentosComparecidos.length) * 100 : 0;
       
-      // Total de pontos = vendas diretas + reuniões realizadas
-      const pontosSemanaTotais = vendasSDRSemana.length + agendamentosSDRSemana.length;
-      const pontosMesTotais = vendasSDRMes.length + agendamentosSDRMes.length;
+      // Total de pontos = pontuação real das vendas + reuniões realizadas
+      const pontosVendasSemanais = vendasSDRSemana.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+      const pontosSemanaTotais = pontosVendasSemanais + agendamentosSDRSemana.length;
+      const pontosVendasMensais = vendasSDRMes.reduce((sum, venda) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+      const pontosMesTotais = pontosVendasMensais + agendamentosSDRMes.length;
 
       console.log(`🎯 SDR ${vendedor.name}:`, {
         sdrId: vendedor.id,
