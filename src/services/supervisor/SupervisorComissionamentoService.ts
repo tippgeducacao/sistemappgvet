@@ -452,15 +452,26 @@ export class SupervisorComissionamentoService {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
+        console.log(`\n🔍 ANALISANDO MEMBRO: ${membro.usuario?.name}`);
+        console.log(`   📅 Criado em: ${criadoEm.toLocaleDateString()}`);
+        console.log(`   📅 Saiu em: ${saídaEm?.toLocaleDateString() || 'Não saiu'}`);
+        console.log(`   📅 Período consulta: ${inicioSemana.toLocaleDateString()} - ${fimSemana.toLocaleDateString()}`);
+        
         // REGRA FINAL: Membro aparece se estava ATIVO na semana
         const foiAdicionadoAntesDaSemana = criadoEm < inicioSemana;
         const foiAdicionadoDuranteSemana = criadoEm >= inicioSemana && criadoEm <= fimSemana;
+        
+        console.log(`   ✅ Foi adicionado antes da semana: ${foiAdicionadoAntesDaSemana}`);
+        console.log(`   ✅ Foi adicionado durante a semana: ${foiAdicionadoDuranteSemana}`);
         
         // Membro estava presente se foi adicionado antes OU durante a semana
         const estavaPresenteNaSemana = foiAdicionadoAntesDaSemana || foiAdicionadoDuranteSemana;
         
         // Se saiu, deve ter saído DEPOIS do fim da semana para estar ativo
         const estavativoNaSemana = !saídaEm || saídaEm > fimSemana;
+        
+        console.log(`   ✅ Estava presente na semana: ${estavaPresenteNaSemana}`);
+        console.log(`   ✅ Estava ativo na semana: ${estavativoNaSemana}`);
         
         // REGRA ESPECIAL APENAS PARA SUÉLI em semanas históricas
         const isSueli = membro.usuario?.name?.toLowerCase().includes('suéli') || membro.usuario?.name?.toLowerCase().includes('sueli');
@@ -476,6 +487,8 @@ export class SupervisorComissionamentoService {
           // Regra normal para todos os outros casos
           valido = estavaPresenteNaSemana && estavativoNaSemana;
         }
+        
+        console.log(`   🎯 RESULTADO FINAL: ${valido ? 'INCLUÍDO' : 'EXCLUÍDO'}`);
         
         return valido;
       });
