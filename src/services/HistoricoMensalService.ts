@@ -251,11 +251,26 @@ export class HistoricoMensalService {
   ): Promise<number> {
     const regras = await this.buscarRegrasComissionamento(ano, mes);
     
+    // Log específico para debug
+    if (Math.round(percentual) === 100) {
+      console.log('🎯 HISTÓRICO - Buscando multiplicador para 100%:', {
+        percentual,
+        tipoUsuario,
+        regras: regras.filter(r => r.tipo_usuario === tipoUsuario).map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
+      });
+    }
+    
     const regraAplicavel = regras.find(regra => 
       regra.tipo_usuario === tipoUsuario &&
       percentual >= regra.percentual_minimo && 
-      (percentual <= regra.percentual_maximo || regra.percentual_maximo === 999)
+      percentual <= regra.percentual_maximo
     );
+
+    if (Math.round(percentual) === 100) {
+      console.log('🎯 HISTÓRICO - Regra encontrada para 100%:', {
+        regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
+      });
+    }
 
     return regraAplicavel?.multiplicador || 0;
   }
