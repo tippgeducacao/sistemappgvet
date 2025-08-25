@@ -10,8 +10,8 @@ import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
-import { isVendaInPeriod } from '@/utils/semanaUtils';
-import { getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
+import { getWeekRange } from '@/utils/semanaUtils';
+import { getDataEfetivaVenda } from '@/utils/vendaDateUtils';
 
 interface VendedorData {
   id: string;
@@ -74,13 +74,13 @@ const MiniTVDisplay: React.FC<MiniTVDisplayProps> = ({
         return vendaDate.getMonth() + 1 === selectedMonth && vendaDate.getFullYear() === selectedYear;
       });
 
-      // Vendas da semana atual - usar data efetiva para evitar bugs de timezone
-      const { mes: mesAtual, ano: anoAtual } = getMesAnoSemanaAtual();
+      // Vendas da semana atual - usar range da semana (quarta a terça)
+      const { start: inicioSemana, end: fimSemana } = getWeekRange();
       const vendasSemana = vendas.filter(v => {
         if (v.vendedor_id !== vendedor.id || v.status !== 'matriculado') return false;
         
-        const vendaPeriod = getVendaEffectivePeriod(v);
-        return vendaPeriod.mes === mesAtual && vendaPeriod.ano === anoAtual;
+        const dataEfetiva = getDataEfetivaVenda(v);
+        return dataEfetiva >= inicioSemana && dataEfetiva <= fimSemana;
       });
 
       const nivel = niveis.find(n => n.nivel === vendedor.nivel && n.tipo_usuario === 'vendedor');
