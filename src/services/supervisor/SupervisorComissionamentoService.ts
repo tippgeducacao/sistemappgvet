@@ -445,40 +445,29 @@ export class SupervisorComissionamentoService {
       }
 
       // AGORA aplicar o filtro em JavaScript para o período específico
-      console.log(`🚨🚨🚨 INICIANDO FILTRO PARA PERÍODO: ${inicioSemana.toISOString()} até ${fimSemana.toISOString()}`);
-      console.log(`🚨🚨🚨 ANO: ${ano}, MÊS: ${mes}, SEMANA: ${semana}`);
-      
       const membrosValidosParaPeriodo = membrosData.filter(membro => {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        // Log especial para Suéli
-        const isSueli = membro.usuario?.name?.toLowerCase().includes('suéli') || membro.usuario?.name?.toLowerCase().includes('sueli');
-        
-        console.log(`🔍 MEMBRO: ${membro.usuario?.name} | SUÉLI? ${isSueli}`);
-        console.log(`   📅 Criado em: ${criadoEm.toISOString()}`);
-        console.log(`   📅 Período: ${inicioSemana.toISOString()} até ${fimSemana.toISOString()}`);
-        
-        // CORREÇÃO CRÍTICA: Para períodos HISTÓRICOS, o membro SÓ deve aparecer 
-        // se foi adicionado ANTES do INÍCIO da semana
+        // CORREÇÃO: O membro deve aparecer se estava ativo durante a semana
         const foiAdicionadoAntesDaSemana = criadoEm < inicioSemana;
         const foiAdicionadoDuranteSemana = criadoEm >= inicioSemana && criadoEm <= fimSemana;
         
-        // Para semanas passadas: só aparece se foi adicionado ANTES da semana
-        // Para semana atual/futura: aparece se foi adicionado antes OU durante
+        // O membro aparece se foi adicionado antes ou durante a semana
         const deveAparecerNaSemana = foiAdicionadoAntesDaSemana || foiAdicionadoDuranteSemana;
         
-        // Se saiu, deve ter saído DEPOIS do início da semana (estava ativo durante a semana)
-        const estavativoNaSemana = !saídaEm || saídaEm > inicioSemana;
+        // Se saiu, deve ter saído DEPOIS do fim da semana (estava ativo durante toda a semana)
+        const estavativoNaSemana = !saídaEm || saídaEm > fimSemana;
         
         const valido = deveAparecerNaSemana && estavativoNaSemana;
         
-        console.log(`   ✅ Foi adicionado antes? ${foiAdicionadoAntesDaSemana}`);
-        console.log(`   ✅ Foi adicionado durante? ${foiAdicionadoDuranteSemana}`);
-        console.log(`   ✅ Deve aparecer? ${deveAparecerNaSemana}`);
-        console.log(`   ✅ Estava ativo? ${estavativoNaSemana}`);
-        console.log(`   🎯 RESULTADO: ${valido}`);
-        console.log(`   ==========================================`);
+        // Log apenas para casos especiais de debug
+        const isSueli = membro.usuario?.name?.toLowerCase().includes('suéli') || membro.usuario?.name?.toLowerCase().includes('sueli');
+        if (isSueli || !valido) {
+          console.log(`🔍 FILTRO - ${membro.usuario?.name}: ${valido ? 'INCLUÍDO' : 'EXCLUÍDO'}`);
+          console.log(`   📅 Criado: ${criadoEm.toISOString()}, Saiu: ${saídaEm?.toISOString() || 'N/A'}`);
+          console.log(`   📅 Período: ${inicioSemana.toISOString()} - ${fimSemana.toISOString()}`);
+        }
         
         return valido;
       });
