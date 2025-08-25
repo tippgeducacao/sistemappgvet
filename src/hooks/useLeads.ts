@@ -136,9 +136,9 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
       }
 
       if (filters.paginaFilter && filters.paginaFilter !== 'todos') {
+        const { extractPageSlug } = await import('@/utils/leadUtils');
         allFilteredLeads = allFilteredLeads.filter(lead => {
-          const match = lead.pagina_nome?.match(/\.com\.br\/([^?&#]+)/);
-          const pagina = match ? match[1].trim() : null;
+          const pagina = extractPageSlug(lead.pagina_nome);
           return pagina === filters.paginaFilter;
         });
       }
@@ -189,6 +189,7 @@ export const useLeadsCount = () => {
 export const useLeadsFilterData = () => {
   return useQuery({
     queryKey: ['leads-filter-data'],
+    staleTime: 0, // Always refetch to get latest pages
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads')
@@ -205,12 +206,10 @@ export const useLeadsFilterData = () => {
         }).filter(Boolean)
       )];
 
-      // Extrair páginas únicas
+      // Extrair páginas únicas usando utility robusta
+      const { extractPageSlug } = await import('@/utils/leadUtils');
       const paginasCaptura = [...new Set(
-        (data || []).map(item => {
-          const match = item.pagina_nome?.match(/\.com\.br\/([^?&#]+)/);
-          return match ? match[1].trim() : null;
-        }).filter(Boolean)
+        (data || []).map(item => extractPageSlug(item.pagina_nome)).filter(Boolean)
       )];
 
       // Extrair fontes únicas

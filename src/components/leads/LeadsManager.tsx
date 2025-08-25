@@ -133,24 +133,8 @@ const LeadsManager: React.FC = () => {
     return match ? match[1].trim() : null;
   };
 
-  // Extrair subdomínio da página de captura
-  const extractPaginaSubdominio = (pagina_nome?: string) => {
-    if (!pagina_nome) return null;
-    
-    // Procurar por .com.br/ e extrair o que vem depois
-    const match = pagina_nome.match(/\.com\.br\/([^?&#]+)/);
-    if (match) {
-      return match[1].trim();
-    }
-    
-    // Fallback: se não encontrar .com.br/, tentar extrair de outros padrões
-    const urlMatch = pagina_nome.match(/\/([^/?&#]+)\/?$/);
-    if (urlMatch) {
-      return urlMatch[1].trim();
-    }
-    
-    return null;
-  };
+  // Usar utility robusta para extrair slug da página
+  const { extractPageSlug } = require('@/utils/leadUtils');
 
   // Função para formatar o número do WhatsApp e criar o link
   const formatWhatsAppLink = (whatsapp: string) => {
@@ -175,7 +159,7 @@ const LeadsManager: React.FC = () => {
       const profissao = extractProfissao(lead.observacoes);
       const matchesProfissao = profissaoFilter === 'todos' || profissao === profissaoFilter;
       
-      const paginaSubdominio = extractPaginaSubdominio(lead.pagina_nome);
+      const paginaSubdominio = extractPageSlug(lead.pagina_nome);
       const matchesPagina = paginaFilter === 'todos' || paginaSubdominio === paginaFilter;
       
       const matchesFonte = fonteFilter === 'todos' || lead.utm_source === fonteFilter;
