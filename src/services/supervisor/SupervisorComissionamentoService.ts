@@ -72,7 +72,7 @@ export class SupervisorComissionamentoService {
       
       console.log('✅ Grupo do supervisor encontrado:', grupoData);
 
-      // Buscar SDRs do grupo (filtrar por período de validade)
+      // Buscar SDRs do grupo (aplicar filtro de período apenas para novos membros)
       console.log('🔍 DEBUG: Buscando membros do grupo para período:', {
         grupoId: grupoData.id,
         inicioSemana: inicioSemana.toISOString(),
@@ -93,35 +93,55 @@ export class SupervisorComissionamentoService {
             ativo
           )
         `)
-        .eq('grupo_id', grupoData.id)
-        .lte('created_at', fimSemana.toISOString())
-        .or(`left_at.is.null,left_at.gte.${inicioSemana.toISOString()}`);
+        .eq('grupo_id', grupoData.id);
 
-      console.log('👥 DEBUG: Membros encontrados:', membrosData?.length || 0);
-      console.log('📋 DEBUG: Detalhes dos membros:', membrosData?.map(m => ({
+      console.log('👥 DEBUG: Membros brutos encontrados:', membrosData?.length || 0);
+
+      // Filtrar membros válidos para o período APÓS buscar os dados
+      const membrosValidosParaPeriodo = membrosData?.filter(membro => {
+        const criadoEm = new Date(membro.created_at);
+        const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
+        
+        // Membro deve ter sido criado antes ou no final do período
+        const criadoNoPeriodo = criadoEm <= fimSemana;
+        
+        // Se tem data de saída, deve ter saído depois do início do período
+        const validoNoPeriodo = !saídaEm || saídaEm >= inicioSemana;
+        
+        const valido = criadoNoPeriodo && validoNoPeriodo;
+        
+        console.log(`📊 DEBUG: Membro ${membro.usuario?.name}:`, {
+          criadoEm: criadoEm.toLocaleDateString('pt-BR'),
+          saídaEm: saídaEm?.toLocaleDateString('pt-BR') || 'Ativo',
+          criadoNoPeriodo,
+          validoNoPeriodo,
+          valido
+        });
+        
+        return valido;
+      }) || [];
+
+      console.log('👥 DEBUG: Membros válidos para período:', membrosValidosParaPeriodo.length);
+      console.log('📋 DEBUG: Detalhes dos membros válidos:', membrosValidosParaPeriodo.map(m => ({
         nome: m.usuario?.name,
         created_at: m.created_at,
         left_at: m.left_at,
         ativo: m.usuario?.ativo
       })));
 
-      if (membrosError || !membrosData) {
+      // Usar membros filtrados em vez do resultado direto da query
+      const membrosDataFiltrados = membrosValidosParaPeriodo;
+
+      if (membrosError || !membrosDataFiltrados) {
         console.error('❌ Erro ao buscar membros do grupo:', membrosError);
         console.log('🔍 Grupo ID para busca de membros:', grupoData.id);
         return null;
       }
       
-      console.log('✅ Membros encontrados:', membrosData.length, 'membros');
-      console.log('🔍 Detalhes de todos os membros:', membrosData.map(m => ({
-        id: m.usuario_id,
-        nome: m.usuario?.name,
-        tipo: m.usuario?.user_type,
-        nivel: m.usuario?.nivel,
-        ativo: m.usuario?.ativo
-      })));
+      console.log('✅ Membros filtrados encontrados:', membrosDataFiltrados.length, 'membros');
 
       // Filtrar apenas membros ativos (SDRs e Vendedores) - incluindo todos os tipos de SDR
-      const membrosAtivos = membrosData.filter(
+      const membrosAtivos = membrosDataFiltrados.filter(
         membro => membro.usuario?.ativo === true && 
         (membro.usuario?.user_type === 'sdr' || 
          membro.usuario?.user_type === 'sdr_inbound' || 
@@ -386,7 +406,7 @@ export class SupervisorComissionamentoService {
 
       console.log('✅ Grupo encontrado:', grupoData.nome_grupo);
 
-      // Buscar SDRs do grupo (filtrar por período de validade)
+      // Buscar SDRs do grupo (aplicar filtro de período em JavaScript)
       console.log('🔍 DEBUG: Buscando membros do grupo para período histórico:', {
         grupoId: grupoData.id,
         inicioSemana: inicioSemana.toISOString(),
@@ -408,27 +428,54 @@ export class SupervisorComissionamentoService {
             ativo
           )
         `)
-        .eq('grupo_id', grupoData.id)
-        .lte('created_at', fimSemana.toISOString())
-        .or(`left_at.is.null,left_at.gte.${inicioSemana.toISOString()}`);
+        .eq('grupo_id', grupoData.id);
 
-      console.log('👥 DEBUG: Membros encontrados (histórico):', membrosData?.length || 0);
-      console.log('📋 DEBUG: Detalhes dos membros (histórico):', membrosData?.map(m => ({
+      console.log('👥 DEBUG: Membros brutos encontrados (histórico):', membrosData?.length || 0);
+
+      // Filtrar membros válidos para o período APÓS buscar os dados
+      const membrosValidosParaPeriodo = membrosData?.filter(membro => {
+        const criadoEm = new Date(membro.created_at);
+        const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
+        
+        // Membro deve ter sido criado antes ou no final do período
+        const criadoNoPeriodo = criadoEm <= fimSemana;
+        
+        // Se tem data de saída, deve ter saído depois do início do período
+        const validoNoPeriodo = !saídaEm || saídaEm >= inicioSemana;
+        
+        const valido = criadoNoPeriodo && validoNoPeriodo;
+        
+        console.log(`📊 DEBUG: Membro ${membro.usuario?.name} (histórico):`, {
+          criadoEm: criadoEm.toLocaleDateString('pt-BR'),
+          saídaEm: saídaEm?.toLocaleDateString('pt-BR') || 'Ativo',
+          criadoNoPeriodo,
+          validoNoPeriodo,
+          valido
+        });
+        
+        return valido;
+      }) || [];
+
+      console.log('👥 DEBUG: Membros válidos para período (histórico):', membrosValidosParaPeriodo.length);
+      console.log('📋 DEBUG: Detalhes dos membros válidos (histórico):', membrosValidosParaPeriodo.map(m => ({
         nome: m.usuario?.name,
         created_at: m.created_at,
         left_at: m.left_at,
         ativo: m.usuario?.ativo
       })));
 
-      if (membrosError || !membrosData) {
+      // Usar membros filtrados em vez do resultado direto da query
+      const membrosDataFiltrados = membrosValidosParaPeriodo;
+
+      if (membrosError || !membrosDataFiltrados) {
         console.error('❌ Erro ao buscar membros do grupo:', membrosError);
         return null;
       }
 
-      console.log(`✅ ${membrosData.length} membros encontrados no grupo`);
+      console.log(`✅ ${membrosDataFiltrados.length} membros filtrados encontrados no grupo (histórico)`);
 
       // Filtrar apenas membros ativos (SDRs e Vendedores) - incluindo todos os tipos de SDR
-      const membrosAtivos = membrosData.filter(
+      const membrosAtivos = membrosDataFiltrados.filter(
         membro => membro.usuario?.ativo === true && 
         (membro.usuario?.user_type === 'sdr' || 
          membro.usuario?.user_type === 'sdr_inbound' || 
