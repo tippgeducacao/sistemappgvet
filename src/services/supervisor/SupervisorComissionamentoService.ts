@@ -449,12 +449,19 @@ export class SupervisorComissionamentoService {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        // CORREÇÃO: O membro deve aparecer se estava ativo durante a semana
+        // CORREÇÃO CRÍTICA: Para semanas HISTÓRICAS vs ATUAL/FUTURA
+        const agora = new Date();
+        const isSemanaHistorica = fimSemana < agora;
+        
         const foiAdicionadoAntesDaSemana = criadoEm < inicioSemana;
         const foiAdicionadoDuranteSemana = criadoEm >= inicioSemana && criadoEm <= fimSemana;
         
-        // O membro aparece se foi adicionado antes ou durante a semana
-        const deveAparecerNaSemana = foiAdicionadoAntesDaSemana || foiAdicionadoDuranteSemana;
+        // REGRA PRINCIPAL:
+        // - Semanas HISTÓRICAS: só aparece se foi adicionado ANTES da semana
+        // - Semana ATUAL/FUTURA: aparece se foi adicionado antes OU durante
+        const deveAparecerNaSemana = isSemanaHistorica 
+          ? foiAdicionadoAntesDaSemana 
+          : (foiAdicionadoAntesDaSemana || foiAdicionadoDuranteSemana);
         
         // Se saiu, deve ter saído DEPOIS do fim da semana (estava ativo durante toda a semana)
         const estavativoNaSemana = !saídaEm || saídaEm > fimSemana;
@@ -463,10 +470,13 @@ export class SupervisorComissionamentoService {
         
         // Log apenas para casos especiais de debug
         const isSueli = membro.usuario?.name?.toLowerCase().includes('suéli') || membro.usuario?.name?.toLowerCase().includes('sueli');
-        if (isSueli || !valido) {
-          console.log(`🔍 FILTRO - ${membro.usuario?.name}: ${valido ? 'INCLUÍDO' : 'EXCLUÍDO'}`);
-          console.log(`   📅 Criado: ${criadoEm.toISOString()}, Saiu: ${saídaEm?.toISOString() || 'N/A'}`);
+        if (isSueli) {
+          console.log(`🔍 SUÉLI DEBUG - ${membro.usuario?.name}: ${valido ? 'INCLUÍDO' : 'EXCLUÍDO'}`);
+          console.log(`   📅 Criado: ${criadoEm.toISOString()}`);
           console.log(`   📅 Período: ${inicioSemana.toISOString()} - ${fimSemana.toISOString()}`);
+          console.log(`   🕐 Semana histórica?: ${isSemanaHistorica}`);
+          console.log(`   ✅ Foi adicionado antes?: ${foiAdicionadoAntesDaSemana}`);
+          console.log(`   ✅ Deve aparecer?: ${deveAparecerNaSemana}`);
         }
         
         return valido;
