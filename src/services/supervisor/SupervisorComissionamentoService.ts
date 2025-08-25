@@ -72,11 +72,13 @@ export class SupervisorComissionamentoService {
       
       console.log('✅ Grupo do supervisor encontrado:', grupoData);
 
-      // Buscar SDRs do grupo
+      // Buscar SDRs do grupo (filtrar por período de validade)
       const { data: membrosData, error: membrosError } = await supabase
         .from('membros_grupos_supervisores')
         .select(`
           usuario_id,
+          created_at,
+          left_at,
           usuario:profiles!usuario_id(
             id,
             name,
@@ -85,7 +87,9 @@ export class SupervisorComissionamentoService {
             ativo
           )
         `)
-        .eq('grupo_id', grupoData.id);
+        .eq('grupo_id', grupoData.id)
+        .lte('created_at', fimSemana.toISOString())
+        .or(`left_at.is.null,left_at.gte.${inicioSemana.toISOString()}`);
 
       if (membrosError || !membrosData) {
         console.error('❌ Erro ao buscar membros do grupo:', membrosError);
@@ -368,11 +372,13 @@ export class SupervisorComissionamentoService {
 
       console.log('✅ Grupo encontrado:', grupoData.nome_grupo);
 
-      // Buscar SDRs do grupo
+      // Buscar SDRs do grupo (filtrar por período de validade)
       const { data: membrosData, error: membrosError } = await supabase
         .from('membros_grupos_supervisores')
         .select(`
           usuario_id,
+          created_at,
+          left_at,
           usuario:profiles!usuario_id(
             id,
             name,
@@ -381,7 +387,9 @@ export class SupervisorComissionamentoService {
             ativo
           )
         `)
-        .eq('grupo_id', grupoData.id);
+        .eq('grupo_id', grupoData.id)
+        .lte('created_at', fimSemana.toISOString())
+        .or(`left_at.is.null,left_at.gte.${inicioSemana.toISOString()}`);
 
       if (membrosError || !membrosData) {
         console.error('❌ Erro ao buscar membros do grupo:', membrosError);

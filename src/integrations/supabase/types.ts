@@ -473,6 +473,7 @@ export type Database = {
           fechado_por: string | null
           id: string
           mes: number
+          snapshot_membros: Json
           snapshot_metas: Json
           snapshot_niveis: Json
           snapshot_regras_comissionamento: Json
@@ -486,6 +487,7 @@ export type Database = {
           fechado_por?: string | null
           id?: string
           mes: number
+          snapshot_membros?: Json
           snapshot_metas?: Json
           snapshot_niveis?: Json
           snapshot_regras_comissionamento?: Json
@@ -499,6 +501,7 @@ export type Database = {
           fechado_por?: string | null
           id?: string
           mes?: number
+          snapshot_membros?: Json
           snapshot_metas?: Json
           snapshot_niveis?: Json
           snapshot_regras_comissionamento?: Json
@@ -714,6 +717,7 @@ export type Database = {
           created_by: string | null
           grupo_id: string
           id: string
+          left_at: string | null
           usuario_id: string
         }
         Insert: {
@@ -721,6 +725,7 @@ export type Database = {
           created_by?: string | null
           grupo_id: string
           id?: string
+          left_at?: string | null
           usuario_id: string
         }
         Update: {
@@ -728,6 +733,7 @@ export type Database = {
           created_by?: string | null
           grupo_id?: string
           id?: string
+          left_at?: string | null
           usuario_id?: string
         }
         Relationships: [
