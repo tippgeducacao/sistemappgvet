@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { HistoricoMensalService } from '@/services/HistoricoMensalService';
 
-// Regras de comissionamento fixas para performance quando não há histórico
+// Regras de comissionamento atualizadas conforme banco
 const REGRAS_COMISSIONAMENTO_FALLBACK = [
   { percentual_minimo: 0, percentual_maximo: 50, multiplicador: 0.0 },
   { percentual_minimo: 51, percentual_maximo: 70, multiplicador: 0.0 },

@@ -51,32 +51,30 @@ export class ComissionamentoService {
     const percentual = (pontosObtidos / metaSemanal) * 100;
     const regras = await this.fetchRegras(tipoUsuario);
     
-    console.log('🔢 COMISSIONAMENTO DEBUG:', {
-      pontosObtidos,
-      metaSemanal,
-      percentual,
-      tipoUsuario,
-      regras: regras.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
-    });
+    // Log específico para debug do problema
+    if (pontosObtidos === 7.0 && Math.round(percentual) === 100) {
+      console.log('🎯 CASO ESPECÍFICO 7.0 pontos:', {
+        pontosObtidos,
+        metaSemanal,
+        percentual,
+        regras: regras.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
+      });
+    }
     
     const regraAplicavel = regras.find(regra => 
       percentual >= regra.percentual_minimo && 
       percentual <= regra.percentual_maximo
     );
 
-    console.log('✅ REGRA APLICÁVEL:', {
-      percentual,
-      regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
-    });
+    if (pontosObtidos === 7.0 && Math.round(percentual) === 100) {
+      console.log('🎯 REGRA PARA 7.0 pontos:', {
+        percentual,
+        regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
+      });
+    }
 
     const multiplicador = regraAplicavel?.multiplicador || 0;
     const valor = variabelSemanal * multiplicador;
-
-    console.log('💰 RESULTADO FINAL:', {
-      multiplicador,
-      variabelSemanal,
-      valor
-    });
 
     return {
       valor,

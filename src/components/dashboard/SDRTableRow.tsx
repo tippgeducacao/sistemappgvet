@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { supabase } from '@/integrations/supabase/client';
 
-// Regras de comissionamento SDR fixas para performance
+// Regras de comissionamento SDR atualizadas conforme banco
 const REGRAS_COMISSIONAMENTO_SDR = [
   { percentual_minimo: 0, percentual_maximo: 50, multiplicador: 0.0 },
   { percentual_minimo: 51, percentual_maximo: 70, multiplicador: 0.0 },
