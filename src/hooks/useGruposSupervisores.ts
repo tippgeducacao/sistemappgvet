@@ -18,6 +18,7 @@ export interface MembroGrupo {
   grupo_id: string;
   usuario_id: string;
   created_at: string;
+  left_at?: string;
   created_by?: string;
   usuario?: {
     id: string;
@@ -92,7 +93,8 @@ export const useGruposSupervisores = () => {
                 photo_url
               )
             `)
-            .eq('grupo_id', grupo.id);
+            .eq('grupo_id', grupo.id)
+            .is('left_at', null); // Apenas membros ativos (sem data de saída)
 
           if (membrosError) {
             console.error('❌ Erro ao buscar membros do grupo:', grupo.id, membrosError);
@@ -213,7 +215,7 @@ export const useGruposSupervisores = () => {
     try {
       const { error } = await (supabase as any)
         .from('membros_grupos_supervisores')
-        .delete()
+        .update({ left_at: new Date().toISOString() })
         .eq('grupo_id', grupoId)
         .eq('usuario_id', usuarioId);
 
@@ -222,13 +224,13 @@ export const useGruposSupervisores = () => {
       await fetchGrupos();
       toast({
         title: "Sucesso",
-        description: "Membro removido do grupo!",
+        description: "Membro marcado como saído do grupo!",
       });
     } catch (error) {
-      console.error('Erro ao remover membro:', error);
+      console.error('Erro ao marcar saída do membro:', error);
       toast({
         title: "Erro",
-        description: "Erro ao remover membro do grupo",
+        description: "Erro ao marcar saída do membro do grupo",
         variant: "destructive",
       });
       throw error;

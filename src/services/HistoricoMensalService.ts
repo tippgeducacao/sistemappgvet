@@ -10,6 +10,7 @@ export interface HistoricoMensal {
   snapshot_metas: any;
   snapshot_regras_comissionamento: any;
   snapshot_niveis: any;
+  snapshot_membros: any;
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +29,16 @@ export interface RegraComissionamentoSnapshot {
   percentual_minimo: number;
   percentual_maximo: number;
   multiplicador: number;
+}
+
+export interface MembrosGrupoSnapshot {
+  usuario_id: string;
+  nome: string;
+  user_type: string;
+  nivel: string;
+  ativo: boolean;
+  created_at: string;
+  left_at?: string;
 }
 
 export interface NivelSnapshot {
@@ -263,5 +274,121 @@ export class HistoricoMensalService {
     return niveis.find(n => 
       n.nivel === nivel && n.tipo_usuario === tipoUsuario
     ) || null;
+  }
+
+  /**
+   * Buscar membros de grupos - usa histórico se mês fechado
+   */
+  static async buscarMembrosGrupos(ano: number, mes?: number): Promise<Record<string, MembrosGrupoSnapshot[]>> {
+    if (!mes) {
+      // Usar dados atuais
+      const { data, error } = await supabase
+        .from('membros_grupos_supervisores')
+        .select(`
+          grupo_id,
+          usuario_id,
+          created_at,
+          left_at,
+          usuario:profiles!usuario_id(
+            name,
+            user_type,
+            nivel,
+            ativo
+          )
+        `);
+
+      if (error) throw error;
+      
+      // Organizar por grupo_id
+      const membrosPorGrupo: Record<string, MembrosGrupoSnapshot[]> = {};
+      data?.forEach(membro => {
+        const grupoId = membro.grupo_id;
+        if (!membrosPorGrupo[grupoId]) {
+          membrosPorGrupo[grupoId] = [];
+        }
+        membrosPorGrupo[grupoId].push({
+          usuario_id: membro.usuario_id,
+          nome: membro.usuario?.name || '',
+          user_type: membro.usuario?.user_type || '',
+          nivel: membro.usuario?.nivel || '',
+          ativo: membro.usuario?.ativo || false,
+          created_at: membro.created_at,
+          left_at: membro.left_at
+        });
+      });
+      
+      return membrosPorGrupo;
+    }
+
+    const isFechado = await this.isMesFechado(ano, mes);
+    
+    if (isFechado) {
+      const historico = await this.buscarHistoricoMes(ano, mes);
+      return historico?.snapshot_membros || {};
+    } else {
+      // Usar dados atuais (mesmo código de acima)
+      const { data, error } = await supabase
+        .from('membros_grupos_supervisores')
+        .select(`
+          grupo_id,
+          usuario_id,
+          created_at,
+          left_at,
+          usuario:profiles!usuario_id(
+            name,
+            user_type,
+            nivel,
+            ativo
+          )
+        `);
+
+      if (error) throw error;
+      
+      const membrosPorGrupo: Record<string, MembrosGrupoSnapshot[]> = {};
+      data?.forEach(membro => {
+        const grupoId = membro.grupo_id;
+        if (!membrosPorGrupo[grupoId]) {
+          membrosPorGrupo[grupoId] = [];
+        }
+        membrosPorGrupo[grupoId].push({
+          usuario_id: membro.usuario_id,
+          nome: membro.usuario?.name || '',
+          user_type: membro.usuario?.user_type || '',
+          nivel: membro.usuario?.nivel || '',
+          ativo: membro.usuario?.ativo || false,
+          created_at: membro.created_at,
+          left_at: membro.left_at
+        });
+      });
+      
+      return membrosPorGrupo;
+    }
+  }
+
+  /**
+   * Buscar membros válidos para um período específico
+   */
+  static async buscarMembrosValidosParaPeriodo(
+    grupoId: string,
+    dataInicio: Date,
+    dataFim: Date,
+    ano: number,
+    mes?: number
+  ): Promise<MembrosGrupoSnapshot[]> {
+    const membrosPorGrupo = await this.buscarMembrosGrupos(ano, mes);
+    const membrosDoGrupo = membrosPorGrupo[grupoId] || [];
+    
+    return membrosDoGrupo.filter(membro => {
+      const criadoEm = new Date(membro.created_at);
+      const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
+      
+      // Membro deve ter sido criado antes ou durante o período
+      const criadoNoPeriodo = criadoEm <= dataFim;
+      
+      // Se tem data de saída, deve ter saído depois do início do período
+      const validoNoPeriodo = !saídaEm || saídaEm >= dataInicio;
+      
+      return criadoNoPeriodo && validoNoPeriodo;
+    });
   }
 }
