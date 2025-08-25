@@ -1505,6 +1505,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         }}
       >
         <div className="max-w-full mx-auto overflow-hidden">
+          {/* PÓDIO DO TOP 3 */}
+          {topThreeVendedores.length >= 3 && (
+            <div className="mb-8">
+              <Podium topThree={topThreeVendedores} />
+            </div>
+          )}
+          
           {/* SEÇÃO DOS VENDEDORES */}
           <div className="mb-8">
             {/* Grid de 5 colunas para vendedores */}
