@@ -637,44 +637,40 @@ export class SupervisorComissionamentoService {
   }
 
   private static calcularDatasSemanaDoMes(ano: number, mes: number, semana: number) {
-    // Encontrar todas as terças-feiras do mês (fim das semanas)
+    console.log(`🗓️ Calculando datas para semana ${semana} de ${mes}/${ano}`);
+    
+    // Encontrar a primeira terça-feira do mês (fim da primeira semana)
     const firstDayOfMonth = new Date(ano, mes - 1, 1);
-    const tuesdays = [];
     let currentDate = new Date(firstDayOfMonth);
     
-    // Encontrar primeira terça-feira
+    // Encontrar primeira terça-feira do mês
     while (currentDate.getDay() !== 2) { // 2 = terça-feira
       currentDate.setDate(currentDate.getDate() + 1);
     }
     
-    // Se a primeira terça-feira é muito tarde, verificar se há uma anterior que termine no mês
+    // Se a primeira terça-feira é muito tarde no mês (depois do dia 7),
+    // pode haver uma semana anterior que termina no mês
+    let firstTuesday = new Date(currentDate);
     if (currentDate.getDate() > 7) {
-      const previousTuesday = new Date(currentDate);
-      previousTuesday.setDate(currentDate.getDate() - 7);
-      if (previousTuesday.getMonth() === mes - 1) {
-        tuesdays.push(new Date(previousTuesday));
-      }
+      firstTuesday.setDate(currentDate.getDate() - 7);
     }
     
-    // Adicionar todas as terças-feiras do mês
-    while (currentDate.getMonth() === mes - 1) {
-      tuesdays.push(new Date(currentDate));
-      currentDate.setDate(currentDate.getDate() + 7);
-    }
+    // Calcular a terça-feira da semana solicitada
+    const targetTuesday = new Date(firstTuesday);
+    targetTuesday.setDate(firstTuesday.getDate() + (semana - 1) * 7);
     
-    // Pegar a terça-feira da semana solicitada
-    if (semana <= tuesdays.length) {
-      const fimSemana = tuesdays[semana - 1];
-      const inicioSemana = new Date(fimSemana);
-      inicioSemana.setDate(fimSemana.getDate() - 6); // Voltar 6 dias para quarta-feira
-      fimSemana.setHours(23, 59, 59, 999);
-      
-      return { inicioSemana, fimSemana };
-    }
+    // Calcular quarta-feira (início da semana)
+    const inicioSemana = new Date(targetTuesday);
+    inicioSemana.setDate(targetTuesday.getDate() - 6);
+    inicioSemana.setHours(0, 0, 0, 0);
     
-    // Fallback
-    const now = new Date();
-    return { inicioSemana: now, fimSemana: now };
+    // Fim da semana é terça-feira
+    const fimSemana = new Date(targetTuesday);
+    fimSemana.setHours(23, 59, 59, 999);
+    
+    console.log(`📅 Semana ${semana}: ${inicioSemana.toLocaleDateString('pt-BR')} até ${fimSemana.toLocaleDateString('pt-BR')}`);
+    
+    return { inicioSemana, fimSemana };
   }
 
   private static calcularDatasSemana(ano: number, semana: number) {
