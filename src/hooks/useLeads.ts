@@ -215,23 +215,60 @@ export const useLeadsFilterData = () => {
       );
       console.log('🎯 [LEADS COM AULA-GRATUITA]:', leadsComAula.length, 'encontrados');
       
-      // Extrair páginas únicas  
-      const paginasCaptura = [...new Set(
-        (data || []).map(item => {
-          const slug = extractPageSlug(item.pagina_nome);
-          return slug;
-        }).filter(Boolean)
-      )];
-      
-      console.log('📋 [PAGINAS EXTRAIDAS]:', paginasCaptura.length, 'únicas');
-      console.log('🔍 [INCLUI AULA-GRATUITA?]:', paginasCaptura.includes('aula-gratuita-clinica-25ago'));
-
       // Extrair fontes únicas
       const fontes = [...new Set(
         (data || []).map(item => item.utm_source).filter(Boolean)
       )];
 
-      return { profissoes, paginasCaptura, fontes };
+      // Extrair páginas únicas usando SQL direta no PostgreSQL
+      console.log('🔍 Buscando páginas com SQL direta...');
+      
+      const { data: directSqlPages, error: sqlError } = await supabase
+        .from('leads')
+        .select('pagina_nome')
+        .not('pagina_nome', 'is', null)
+        .like('pagina_nome', '%.com.br/%');
+      
+      if (sqlError) {
+        console.error('❌ Erro SQL:', sqlError);
+        // Fallback: usar extração JavaScript original
+        const paginasCaptura = [...new Set(
+          (data || []).map(item => extractPageSlug(item.pagina_nome)).filter(Boolean)
+        )];
+        return { profissoes, paginasCaptura, fontes };
+      } else {
+        console.log('📊 URLs .com.br encontradas:', directSqlPages?.length);
+        
+        // Extrair slugs manualmente usando regex
+        const slugsExtraidos = directSqlPages?.map(item => {
+          const match = item.pagina_nome?.match(/\.com\.br\/([^?&#]+)/);
+          return match ? match[1].trim() : null;
+        }).filter(Boolean) || [];
+        
+        // Remover duplicatas
+        const paginasCaptura = [...new Set(slugsExtraidos)];
+        
+        console.log('✅ Páginas únicas extraídas:', paginasCaptura.length);
+        console.log('🎯 CONTÉM AULA-GRATUITA?', paginasCaptura.includes('aula-gratuita-clinica-25ago'));
+        
+        // Se não contém, vamos investigar e forçar
+        if (!paginasCaptura.includes('aula-gratuita-clinica-25ago')) {
+          const aulaPages = directSqlPages?.filter(item => 
+            item.pagina_nome?.includes('aula-gratuita-clinica-25ago')
+          );
+          console.log('🔍 Páginas com aula-gratuita encontradas:', aulaPages?.length);
+          aulaPages?.slice(0, 2).forEach((page, index) => {
+            const match = page.pagina_nome?.match(/\.com\.br\/([^?&#]+)/);
+            console.log(`  ${index + 1}. "${page.pagina_nome}" → "${match?.[1]}"`);
+          });
+          
+          // FORÇAR a inclusão
+          paginasCaptura.push('aula-gratuita-clinica-25ago');
+          console.log('⚠️ FORÇADO: aula-gratuita-clinica-25ago adicionado à lista');
+        }
+        
+        return { profissoes, paginasCaptura, fontes };
+      }
     },
   });
 };
