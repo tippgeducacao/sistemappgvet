@@ -448,31 +448,12 @@ export class SupervisorComissionamentoService {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        // REGRA FINAL: Membro aparece se estava ATIVO na semana
-        const foiAdicionadoAntesDaSemana = criadoEm < inicioSemana;
-        const foiAdicionadoDuranteSemana = criadoEm >= inicioSemana && criadoEm <= fimSemana;
-        
-        // Membro estava presente se foi adicionado antes OU durante a semana
-        const estavaPresenteNaSemana = foiAdicionadoAntesDaSemana || foiAdicionadoDuranteSemana;
-        
-        // Se saiu, deve ter saído DEPOIS do fim da semana para estar ativo
+        // REGRA SIMPLES: Membro aparece se estava ativo durante a semana
+        // Foi adicionado antes do fim da semana E (não saiu OU saiu depois do fim da semana)
+        const foiAdicionadoAteFimSemana = criadoEm <= fimSemana;
         const estavativoNaSemana = !saídaEm || saídaEm > fimSemana;
         
-        // REGRA ESPECIAL APENAS PARA SUÉLI em semanas históricas
-        const isSueli = membro.usuario?.name?.toLowerCase().includes('suéli') || membro.usuario?.name?.toLowerCase().includes('sueli');
-        const agora = new Date();
-        const isSemanaHistorica = fimSemana < agora;
-        
-        let valido;
-        if (isSueli && isSemanaHistorica) {
-          // Suéli só aparece em semanas históricas se foi adicionada ANTES da semana
-          valido = foiAdicionadoAntesDaSemana && estavativoNaSemana;
-        } else {
-          // Regra normal para todos os outros casos
-          valido = estavaPresenteNaSemana && estavativoNaSemana;
-        }
-        
-        return valido;
+        return foiAdicionadoAteFimSemana && estavativoNaSemana;
       });
 
       console.log('👥 DEBUG: Membros válidos após filtro de período:', membrosValidosParaPeriodo.length);
