@@ -445,7 +445,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   
                   {/* Comissão */}
                   <div className="flex items-center font-medium text-green-600">
-                    R$ {comissaoData.valor.toFixed(0)}
+                    R$ {progressoSemanal === 100 ? (variavelSemanal * 1.0).toFixed(0) : comissaoData.valor.toFixed(0)}
                   </div>
                   
                   {/* Status */}
