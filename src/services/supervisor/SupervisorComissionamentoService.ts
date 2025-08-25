@@ -419,11 +419,24 @@ export class SupervisorComissionamentoService {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        // Estava ativo se foi criado antes do fim da semana E (não saiu OU saiu depois do início da semana)
-        const foiCriadoAntes = criadoEm <= fimSemana;
+        console.log(`🔍 Verificando membro ${membro.usuario?.name}:`, {
+          criadoEm: criadoEm.toLocaleDateString('pt-BR'),
+          saídaEm: saídaEm?.toLocaleDateString('pt-BR') || 'ainda ativo',
+          inicioSemana: inicioSemana.toLocaleDateString('pt-BR'),
+          fimSemana: fimSemana.toLocaleDateString('pt-BR')
+        });
+        
+        // Estava ativo durante o período se:
+        // 1. Foi criado ANTES ou DURANTE o período (criado <= fim da semana)
+        // 2. E não saiu OU saiu APÓS o início do período (left_at === null || left_at >= início da semana)
+        const foiCriadoAntesOuDurante = criadoEm <= fimSemana;
         const naoSaiuOuSaiuDepois = !saídaEm || saídaEm >= inicioSemana;
         
-        return foiCriadoAntes && naoSaiuOuSaiuDepois;
+        const estaValidoParaPeriodo = foiCriadoAntesOuDurante && naoSaiuOuSaiuDepois;
+        
+        console.log(`   Resultado: ${estaValidoParaPeriodo ? '✅ VÁLIDO' : '❌ INVÁLIDO'} - criado antes/durante: ${foiCriadoAntesOuDurante}, não saiu ou saiu depois: ${naoSaiuOuSaiuDepois}`);
+        
+        return estaValidoParaPeriodo;
       });
       
       console.log(`🚨 PERÍODO CALCULADO: ${inicioSemana.toLocaleDateString('pt-BR')} até ${fimSemana.toLocaleDateString('pt-BR')}`);
