@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { extractPageSlug } from '@/utils/leadUtils';
 
 export interface Lead {
   id: string;
@@ -188,9 +189,8 @@ export const useLeadsCount = () => {
 // Hook para obter dados únicos para filtros
 export const useLeadsFilterData = () => {
   return useQuery({
-    queryKey: ['leads-filter-data', Date.now()], // Force refresh with timestamp
+    queryKey: ['leads-filter-data'], // Remove timestamp to fix caching
     staleTime: 0, // Always refetch to get latest pages
-    gcTime: 0, // Don't cache the results (gcTime é o novo nome para cacheTime)
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads')
@@ -207,23 +207,22 @@ export const useLeadsFilterData = () => {
         }).filter(Boolean)
       )];
 
-      // Extrair páginas únicas usando utility robusta
-      const { extractPageSlug } = await import('@/utils/leadUtils');
-      console.log('🔍 [LEADS FILTER] Total de leads para processar:', data?.length);
+      console.log('🔍 [LEADS FILTER] Processando', data?.length, 'leads...');
       
+      // Extrair páginas únicas  
       const paginasCaptura = [...new Set(
         (data || []).map(item => {
           const slug = extractPageSlug(item.pagina_nome);
-          if (item.pagina_nome?.includes('aula-gratuita')) {
-            console.log('🎯 [AULA ENCONTRADA]:', item.pagina_nome, '→', slug);
+          if (item.pagina_nome?.includes('aula-gratuita-clinica-25ago')) {
+            console.log('🎯 [ENCONTRADA AULA]:', item.pagina_nome, '→ slug:', slug);
           }
           return slug;
         }).filter(Boolean)
       )];
       
-      console.log('📋 [PAGINAS EXTRAIDAS]:', paginasCaptura.length, 'páginas únicas');
-      console.log('🔍 [BUSCA AULA]:', paginasCaptura.includes('aula-gratuita-clinica-25ago') ? 'ENCONTRADA!' : 'NÃO ENCONTRADA');
-      console.log('📝 [TODAS AS PAGINAS]:', paginasCaptura);
+      console.log('📋 [TOTAL PAGINAS]:', paginasCaptura.length);
+      console.log('📝 [PRIMEIRAS 10]:', paginasCaptura.slice(0, 10));
+      console.log('🎯 [TEM AULA?]:', paginasCaptura.includes('aula-gratuita-clinica-25ago'));
 
       // Extrair fontes únicas
       const fontes = [...new Set(
