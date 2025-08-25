@@ -568,9 +568,68 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                    })()}
                 </div>
                 <div>-</div>
-                <div className="font-bold text-green-600">
-                  R$ {Object.values(comissoesPorSemana).reduce((total, comissao) => total + comissao.valor, 0).toFixed(0)}
-                </div>
+                 <div className="font-bold text-green-600">
+                   R$ {(() => {
+                     // Calcular comissão total corrigida
+                     let totalComissao = 0;
+                     
+                     // Buscar valor da variável semanal do nível do vendedor
+                     const vendedorInfo = vendedores.find(v => v.id === profile.id);
+                     const vendedorNivel = vendedorInfo?.nivel || 'junior';
+                     const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
+                     const variavelSemanal = nivelConfig?.variavel_semanal || 0;
+                     
+                     semanasDoMes.forEach(numeroSemana => {
+                       const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
+                       const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
+                       
+                       const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
+                         if (venda.vendedor_id !== profile.id) return false;
+                         if (venda.status !== 'matriculado') return false;
+                         
+                         let dataVenda: Date;
+                         if (venda.data_assinatura_contrato) {
+                           dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
+                         } else {
+                           const dataMatricula = getDataMatriculaFromRespostas(respostas);
+                           if (dataMatricula) {
+                             dataVenda = dataMatricula;
+                           } else {
+                             dataVenda = new Date(venda.enviado_em);
+                           }
+                         }
+                         
+                         const vendaPeriod = getVendaPeriod(dataVenda);
+                         const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
+                         
+                         dataVenda.setHours(0, 0, 0, 0);
+                         const startSemanaUTC = new Date(startSemana);
+                         startSemanaUTC.setHours(0, 0, 0, 0);
+                         const endSemanaUTC = new Date(endSemana);
+                         endSemanaUTC.setHours(23, 59, 59, 999);
+                         const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+                         
+                         return periodoCorreto && isInRange;
+                       }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+                       
+                       const metaBaseadaNivel = getMetaBaseadaNivel(numeroSemana);
+                       const progressoSemanal = metaBaseadaNivel > 0 ? (pontosDaSemana / metaBaseadaNivel) * 100 : 0;
+                       
+                       // Se for exatamente 100%, usar multiplicador 1.0
+                       if (progressoSemanal === 100) {
+                         totalComissao += variavelSemanal * 1.0;
+                       } else {
+                         const chaveComissao = `${selectedYear}-${selectedMonth}-${numeroSemana}`;
+                         const comissaoData = comissoesPorSemana[chaveComissao];
+                         if (comissaoData) {
+                           totalComissao += comissaoData.valor;
+                         }
+                       }
+                     });
+                     
+                     return totalComissao.toFixed(0);
+                   })()}
+                 </div>
                 <div className="flex justify-center">
                   {Object.values(comissoesPorSemana).some(c => c.valor > 0) && (
                     <DollarSign className="h-3 w-3 text-green-600" />
