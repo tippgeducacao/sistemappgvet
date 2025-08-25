@@ -442,27 +442,19 @@ export class SupervisorComissionamentoService {
       }
 
       // AGORA aplicar o filtro em JavaScript para o período específico
-      console.log(`🚨 INICIANDO FILTRO PARA: Ano ${ano}, Semana ${semana}`);
-      console.log(`🚨 PERÍODO: ${inicioSemana.toISOString()} até ${fimSemana.toISOString()}`);
-      
       const membrosValidosParaPeriodo = membrosData.filter(membro => {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        // REGRA SIMPLES: Membro aparece se estava ativo durante a semana
-        // Foi adicionado antes do fim da semana E (não saiu OU saiu depois do fim da semana)
-        const foiAdicionadoAteFimSemana = criadoEm <= fimSemana;
-        const estavativoNaSemana = !saídaEm || saídaEm > fimSemana;
+        // Estava ativo se foi criado antes do fim da semana E (não saiu OU saiu depois do início da semana)
+        const foiCriadoAntes = criadoEm <= fimSemana;
+        const naoSaiuOuSaiuDepois = !saídaEm || saídaEm >= inicioSemana;
         
-        return foiAdicionadoAteFimSemana && estavativoNaSemana;
+        return foiCriadoAntes && naoSaiuOuSaiuDepois;
       });
-
-      console.log('👥 DEBUG: Membros válidos após filtro de período:', membrosValidosParaPeriodo.length);
-      console.log('📋 DEBUG: Membros válidos:', membrosValidosParaPeriodo.map(m => ({
-        nome: m.usuario?.name,
-        created_at: m.created_at,
-        left_at: m.left_at
-      })));
+      
+      console.log(`🚨 PERÍODO CALCULADO: ${inicioSemana.toLocaleDateString('pt-BR')} até ${fimSemana.toLocaleDateString('pt-BR')}`);
+      console.log('👥 Membros válidos após filtro:', membrosValidosParaPeriodo.length);
 
       if (membrosValidosParaPeriodo.length === 0) {
         console.warn('⚠️ Nenhum membro válido encontrado para o período');
