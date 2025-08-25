@@ -44,7 +44,26 @@ const MiniRankingDisplay: React.FC<MiniRankingDisplayProps> = ({
   
   const loading = vendasLoading || vendedoresLoading;
   
-  // Calcular ranking
+  // Calcular período da semana atual (quarta a terça)
+  const getCurrentWeekPeriod = () => {
+    const today = new Date();
+    let startOfWeek = new Date(today);
+    let endOfWeek = new Date(today);
+    
+    // Encontrar a quarta-feira que iniciou a semana atual
+    const dayOfWeek = today.getDay(); // 0 = domingo, 1 = segunda, ..., 6 = sábado
+    const daysFromWednesday = (dayOfWeek + 4) % 7; // Ajustar para quarta = 0
+    startOfWeek.setDate(today.getDate() - daysFromWednesday);
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    // Encontrar a terça-feira que encerra a semana atual
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    return { startOfWeek, endOfWeek };
+  };
+
+  // Calcular ranking apenas da semana atual
   const ranking = useMemo(() => {
     if (loading || !vendas || !vendedores) return [];
     
@@ -54,22 +73,32 @@ const MiniRankingDisplay: React.FC<MiniRankingDisplayProps> = ({
       v.name !== 'Vendedor teste'
     );
     
+    const { startOfWeek, endOfWeek } = getCurrentWeekPeriod();
+    
     return vendedoresAtivos.map(vendedor => {
       const vendasVendedor = vendas.filter(v => {
         if (v.vendedor_id !== vendedor.id || v.status !== 'matriculado') return false;
-        if (!selectedMonth || !selectedYear) return true;
         
-        const vendaPeriod = getVendaEffectivePeriod(v);
-        return vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
+        // Se tem filtro mensal específico, usar ele
+        if (selectedMonth && selectedYear) {
+          const vendaPeriod = getVendaEffectivePeriod(v);
+          return vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
+        }
+        
+        // Caso contrário, filtrar apenas pela semana atual
+        const vendaDate = new Date(v.data_aprovacao || v.atualizado_em);
+        return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
       });
       
-      // Usar pontos simples por enquanto - 1 ponto por venda matriculada
-      const pontosPorVenda = 1;
+      // Calcular pontuação real baseada nas regras
+      const pontuacao = vendasVendedor.reduce((total, venda) => {
+        return total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0);
+      }, 0);
       
       return {
         id: vendedor.id,
         nome: vendedor.name,
-        pontuacao: vendasVendedor.length * pontosPorVenda,
+        pontuacao: pontuacao,
         vendas: vendasVendedor.length,
         photo_url: vendedor.photo_url,
         nivel: vendedor.nivel,
