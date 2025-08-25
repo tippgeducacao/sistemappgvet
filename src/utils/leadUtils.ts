@@ -25,3 +25,9 @@ export const extractPageSlug = (pageName?: string): string | null => {
   
   return null;
 };
+
+// Teste direto para debug - executado quando o arquivo é carregado
+console.log('🧪 TESTE DIRETO extractPageSlug:');
+console.log('Test 1:', extractPageSlug('https://www.ppgvet.com.br/aula-gratuita-clinica-25ago'));
+console.log('Test 2:', extractPageSlug('https://ppgvet.com.br/aula-gratuita-clinica-25ago'));
+console.log('Test 3:', extractPageSlug('https://www.ppgvet.com.br/sanidade-avicola'));

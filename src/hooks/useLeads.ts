@@ -207,33 +207,24 @@ export const useLeadsFilterData = () => {
         }).filter(Boolean)
       )];
 
-      console.log('🔍 [LEADS FILTER] Processando', data?.length, 'leads...');
+      console.log('🔍 [LEADS FILTER] Processando', data?.length, 'leads para extrair páginas...');
       
-      // TESTE DIRETO da função extractPageSlug
-      const testUrls = [
-        'https://ppgvet.com.br/aula-gratuita-clinica-25ago',
-        'https://www.ppgvet.com.br/aula-gratuita-clinica-25ago'
-      ];
-      console.log('🧪 [TESTE EXTRACT]:');
-      testUrls.forEach(url => {
-        const slug = extractPageSlug(url);
-        console.log(`  ${url} → ${slug}`);
-      });
+      // Verificar se temos dados de aula-gratuita especificamente
+      const leadsComAula = (data || []).filter(item => 
+        item.pagina_nome?.includes('aula-gratuita-clinica-25ago')
+      );
+      console.log('🎯 [LEADS COM AULA-GRATUITA]:', leadsComAula.length, 'encontrados');
       
       // Extrair páginas únicas  
       const paginasCaptura = [...new Set(
         (data || []).map(item => {
           const slug = extractPageSlug(item.pagina_nome);
-          if (item.pagina_nome?.includes('aula-gratuita-clinica-25ago')) {
-            console.log('🎯 [URL ORIGINAL]:', item.pagina_nome);
-            console.log('🎯 [SLUG EXTRAIDO]:', slug);
-          }
           return slug;
         }).filter(Boolean)
       )];
       
-      console.log('📋 [TOTAL PAGINAS]:', paginasCaptura.length);
-      console.log('🎯 [TEM AULA?]:', paginasCaptura.includes('aula-gratuita-clinica-25ago'));
+      console.log('📋 [PAGINAS EXTRAIDAS]:', paginasCaptura.length, 'únicas');
+      console.log('🔍 [INCLUI AULA-GRATUITA?]:', paginasCaptura.includes('aula-gratuita-clinica-25ago'));
 
       // Extrair fontes únicas
       const fontes = [...new Set(
