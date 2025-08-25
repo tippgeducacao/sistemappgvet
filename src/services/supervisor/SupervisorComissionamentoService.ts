@@ -454,17 +454,21 @@ export class SupervisorComissionamentoService {
         console.log(`   📅 Período buscado: ${inicioSemana.toISOString()} até ${fimSemana.toISOString()}`);
         console.log(`   📅 Saiu em: ${saídaEm?.toISOString() || 'Nunca saiu'}`);
         
-        // REGRA CORRETA: Membro deve ter sido adicionado ANTES DO INÍCIO da semana
-        // (não apenas antes do fim - isso permitia que membros novos aparecessem em períodos antigos)
-        const adicionadoAntesDoPeriodo = criadoEm <= inicioSemana;
+        // CORREÇÃO CRÍTICA: Membro só deve aparecer se foi adicionado DURANTE OU ANTES da semana
+        // E se ainda estava ativo durante a semana
+        const foiAdicionadoAntesDaSemana = criadoEm < inicioSemana;
+        const foiAdicionadoDuranteSemana = criadoEm >= inicioSemana && criadoEm <= fimSemana;
+        const deveAparecerNaSemana = foiAdicionadoAntesDaSemana || foiAdicionadoDuranteSemana;
         
-        // Se saiu, deve ter saído DEPOIS do fim da semana
-        const naoSaiuDuranteOPeriodo = !saídaEm || saídaEm > fimSemana;
+        // Se saiu, deve ter saído DEPOIS do início da semana (estava ativo durante a semana)
+        const estavativoNaSemana = !saídaEm || saídaEm > inicioSemana;
         
-        const valido = adicionadoAntesDoPeriodo && naoSaiuDuranteOPeriodo;
+        const valido = deveAparecerNaSemana && estavativoNaSemana;
         
-        console.log(`   ✅ Adicionado antes do período? ${criadoEm.toISOString()} <= ${inicioSemana.toISOString()} = ${adicionadoAntesDoPeriodo}`);
-        console.log(`   ✅ Não saiu durante período? ${saídaEm ? `${saídaEm.toISOString()} > ${fimSemana.toISOString()}` : 'Nunca saiu'} = ${naoSaiuDuranteOPeriodo}`);
+        console.log(`   ✅ Foi adicionado antes da semana? ${criadoEm.toISOString()} < ${inicioSemana.toISOString()} = ${foiAdicionadoAntesDaSemana}`);
+        console.log(`   ✅ Foi adicionado durante a semana? ${criadoEm.toISOString()} >= ${inicioSemana.toISOString()} && <= ${fimSemana.toISOString()} = ${foiAdicionadoDuranteSemana}`);
+        console.log(`   ✅ Deve aparecer na semana? ${deveAparecerNaSemana}`);
+        console.log(`   ✅ Estava ativo na semana? ${estavativoNaSemana}`);
         console.log(`   🎯 RESULTADO FINAL: ${valido}`);
         console.log(`   ================================`);
         
