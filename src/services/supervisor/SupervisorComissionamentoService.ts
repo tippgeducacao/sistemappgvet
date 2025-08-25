@@ -102,19 +102,20 @@ export class SupervisorComissionamentoService {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        // Membro deve ter sido criado antes ou no final do período
-        const criadoNoPeriodo = criadoEm <= fimSemana;
+        // REGRA CORRETA: Membro deve ter sido criado ANTES DO INÍCIO do período
+        // (não apenas antes do fim - isso permitia que membros novos aparecessem em períodos antigos)
+        const criadoAntesDoPeriodo = criadoEm <= inicioSemana;
         
-        // Se tem data de saída, deve ter saído depois do início do período
-        const validoNoPeriodo = !saídaEm || saídaEm >= inicioSemana;
+        // Se tem data de saída, deve ter saído DEPOIS do fim do período
+        const naoSaiuDuranteOPeriodo = !saídaEm || saídaEm > fimSemana;
         
-        const valido = criadoNoPeriodo && validoNoPeriodo;
+        const valido = criadoAntesDoPeriodo && naoSaiuDuranteOPeriodo;
         
         console.log(`📊 DEBUG: Membro ${membro.usuario?.name}:`, {
           criadoEm: criadoEm.toLocaleDateString('pt-BR'),
           saídaEm: saídaEm?.toLocaleDateString('pt-BR') || 'Ativo',
-          criadoNoPeriodo,
-          validoNoPeriodo,
+          criadoAntesDoPeriodo,
+          naoSaiuDuranteOPeriodo,
           valido
         });
         
@@ -448,19 +449,21 @@ export class SupervisorComissionamentoService {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         
-        // REGRA CORRETA: Membro deve ter sido adicionado ANTES ou DURANTE a semana
-        // E se saiu, deve ter saído DEPOIS da semana
-        const adicionadoAntesDaSemana = criadoEm <= fimSemana;
-        const naoSaiuAntesDaSemana = !saídaEm || saídaEm > inicioSemana;
+        // REGRA CORRETA: Membro deve ter sido adicionado ANTES DO INÍCIO da semana
+        // (não apenas antes do fim - isso permitia que membros novos aparecessem em períodos antigos)
+        const adicionadoAntesDoPeriodo = criadoEm <= inicioSemana;
         
-        const valido = adicionadoAntesDaSemana && naoSaiuAntesDaSemana;
+        // Se saiu, deve ter saído DEPOIS do fim da semana
+        const naoSaiuDuranteOPeriodo = !saídaEm || saídaEm > fimSemana;
         
-        console.log(`📊 DEBUG: Membro ${membro.usuario?.name} (FILTRO CORRETO):`, {
+        const valido = adicionadoAntesDoPeriodo && naoSaiuDuranteOPeriodo;
+        
+        console.log(`📊 DEBUG: Membro ${membro.usuario?.name} (FILTRO HISTÓRICO CORRETO):`, {
           criadoEm: criadoEm.toLocaleDateString('pt-BR'),
           saídaEm: saídaEm?.toLocaleDateString('pt-BR') || 'Ativo',
           periodoSemana: `${inicioSemana.toLocaleDateString('pt-BR')} - ${fimSemana.toLocaleDateString('pt-BR')}`,
-          adicionadoAntesDaSemana: `${criadoEm.toLocaleDateString('pt-BR')} <= ${fimSemana.toLocaleDateString('pt-BR')} = ${adicionadoAntesDaSemana}`,
-          naoSaiuAntesDaSemana: saídaEm ? `${saídaEm.toLocaleDateString('pt-BR')} > ${inicioSemana.toLocaleDateString('pt-BR')} = ${naoSaiuAntesDaSemana}` : 'Não saiu = true',
+          adicionadoAntesDoPeriodo: `${criadoEm.toLocaleDateString('pt-BR')} <= ${inicioSemana.toLocaleDateString('pt-BR')} = ${adicionadoAntesDoPeriodo}`,
+          naoSaiuDuranteOPeriodo: saídaEm ? `${saídaEm.toLocaleDateString('pt-BR')} > ${fimSemana.toLocaleDateString('pt-BR')} = ${naoSaiuDuranteOPeriodo}` : 'Não saiu = true',
           VALIDO: valido
         });
         
