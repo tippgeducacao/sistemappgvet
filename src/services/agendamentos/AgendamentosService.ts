@@ -269,22 +269,30 @@ export class AgendamentosService {
       }
       console.log('✅ Sem conflitos com eventos especiais');
 
-      // Verificar conflitos de agenda
-      console.log('⚔️ Verificando conflitos de agenda...');
-      const temConflito = await this.verificarConflitosAgenda(dados.vendedor_id, dados.data_agendamento, dados.data_fim_agendamento);
-      console.log('⚔️ Resultado verificação conflitos:', temConflito);
+      // Verificar conflitos de agenda - CRÍTICO para evitar agendamentos duplicados
+      console.log('⚔️ VERIFICANDO CONFLITOS DE AGENDA - VENDEDOR ID:', dados.vendedor_id);
+      console.log('⚔️ Data/Hora Início:', dados.data_agendamento);
+      console.log('⚔️ Data/Hora Fim:', dados.data_fim_agendamento);
+      
+      const temConflito = await this.verificarConflitosAgenda(
+        dados.vendedor_id, 
+        dados.data_agendamento, 
+        dados.data_fim_agendamento
+      );
+      
+      console.log('⚔️ RESULTADO CRÍTICO - Conflito detectado:', temConflito);
       
       if (temConflito) {
-        console.error('❌ Conflito de agenda detectado');
+        console.error('❌ BLOQUEANDO: Conflito de agenda detectado para vendedor:', dados.vendedor_id);
         throw new Error('Você já possui agendamento neste horário');
       }
-      console.log('✅ Sem conflitos de agenda');
+      console.log('✅ SEM CONFLITOS - Prosseguindo com agendamento');
 
       console.log('💾 Inserindo agendamento no banco de dados...');
       console.log('💾 Dados para inserção (vendedor como SDR):', {
         lead_id: dados.lead_id,
         vendedor_id: dados.vendedor_id,
-        sdr_id: user.id, // Vendedor é também o SDR que está agendando
+        sdr_id: dados.vendedor_id, // Vendedor é também o SDR que está agendando (mesmo ID)
         pos_graduacao_interesse: dados.pos_graduacao_interesse,
         data_agendamento: dados.data_agendamento,
         data_fim_agendamento: dados.data_fim_agendamento,
@@ -451,9 +459,15 @@ export class AgendamentosService {
       // Buscar agendamentos do vendedor no mesmo dia (usando formato sem timezone)
       const dataConsulta = dataAgendamento.split('T')[0]; // YYYY-MM-DD
       
+      console.log('🔍 QUERY CONFLITOS - Parâmetros:', {
+        vendedorId,
+        dataConsulta,
+        statusBuscados: ['agendado', 'atrasado', 'finalizado', 'finalizado_venda']
+      });
+      
       const { data, error } = await supabase
         .from('agendamentos')
-        .select('id, data_agendamento, data_fim_agendamento, status')
+        .select('id, data_agendamento, data_fim_agendamento, status, observacoes')
         .eq('vendedor_id', vendedorId)
         .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda'])
         .gte('data_agendamento', `${dataConsulta}T00:00:00`)
@@ -464,49 +478,67 @@ export class AgendamentosService {
         throw error;
       }
       
-      console.log('📋 Agendamentos encontrados para verificação:', data?.length || 0);
+      console.log('📋 TOTAL AGENDAMENTOS ENCONTRADOS:', data?.length || 0);
+      console.log('📋 DETALHES DOS AGENDAMENTOS:', JSON.stringify(data, null, 2));
+      
+      // Se não há agendamentos, não há conflitos
+      if (!data || data.length === 0) {
+        console.log('✅ NENHUM AGENDAMENTO EXISTENTE - SEM CONFLITOS');
+        return false;
+      }
       
       // Verificar sobreposição de horários usando lógica rigorosa
-        for (const agendamento of data || []) {
-          if (ignoreAgendamentoId && agendamento.id === ignoreAgendamentoId) {
-            continue;
-          }
-          const agendamentoInicio = new Date(agendamento.data_agendamento);
-          const agendamentoFim = agendamento.data_fim_agendamento 
-            ? new Date(agendamento.data_fim_agendamento)
-            : new Date(agendamentoInicio.getTime() + 45 * 60 * 1000);
-          
-        console.log('🔍 Verificando conflito com agendamento:', {
+      for (const agendamento of data || []) {
+        if (ignoreAgendamentoId && agendamento.id === ignoreAgendamentoId) {
+          console.log('⏭️ IGNORANDO agendamento (ID especificado):', agendamento.id);
+          continue;
+        }
+        
+        const agendamentoInicio = new Date(agendamento.data_agendamento);
+        const agendamentoFim = agendamento.data_fim_agendamento 
+          ? new Date(agendamento.data_fim_agendamento)
+          : new Date(agendamentoInicio.getTime() + 45 * 60 * 1000);
+        
+        console.log('🔍 COMPARANDO HORÁRIOS:');
+        console.log('  📅 AGENDAMENTO EXISTENTE:', {
           id: agendamento.id,
           status: agendamento.status,
-          existente: {
-            inicio: agendamentoInicio.toLocaleString('pt-BR'),
-            fim: agendamentoFim.toLocaleString('pt-BR')
-          },
-          novo: {
-            inicio: dataInicio.toLocaleString('pt-BR'),
-            fim: dataFim.toLocaleString('pt-BR')
-          }
+          inicio_iso: agendamentoInicio.toISOString(),
+          fim_iso: agendamentoFim.toISOString(),
+          inicio_local: agendamentoInicio.toLocaleString('pt-BR'),
+          fim_local: agendamentoFim.toLocaleString('pt-BR')
+        });
+        console.log('  📅 NOVO AGENDAMENTO:', {
+          inicio_iso: dataInicio.toISOString(),
+          fim_iso: dataFim.toISOString(),
+          inicio_local: dataInicio.toLocaleString('pt-BR'),
+          fim_local: dataFim.toLocaleString('pt-BR')
         });
         
         // Lógica rigorosa de sobreposição: 
         // Há conflito se o início do novo é antes do fim do existente E o fim do novo é depois do início do existente
-        const temSobreposicao = dataInicio < agendamentoFim && dataFim > agendamentoInicio;
+        const condicao1 = dataInicio < agendamentoFim;
+        const condicao2 = dataFim > agendamentoInicio;
+        const temSobreposicao = condicao1 && condicao2;
+        
+        console.log('🔍 ANÁLISE DE SOBREPOSIÇÃO:', {
+          'novo_inicio < existente_fim': condicao1,
+          'novo_fim > existente_inicio': condicao2,
+          'TEM_SOBREPOSICAO': temSobreposicao
+        });
         
         if (temSobreposicao) {
-          console.log('⚠️ CONFLITO DETECTADO!', {
-            agendamentoExistente: {
-              id: agendamento.id,
-              inicio: agendamentoInicio.toLocaleString('pt-BR'),
-              fim: agendamentoFim.toLocaleString('pt-BR')
-            },
-            novoAgendamento: {
-              inicio: dataInicio.toLocaleString('pt-BR'),
-              fim: dataFim.toLocaleString('pt-BR')
-            }
+          console.log('🚨🚨🚨 CONFLITO CRÍTICO DETECTADO! 🚨🚨🚨');
+          console.log('📅 AGENDAMENTO CONFLITANTE:', {
+            id: agendamento.id,
+            status: agendamento.status,
+            horario_existente: `${agendamentoInicio.toLocaleString('pt-BR')} até ${agendamentoFim.toLocaleString('pt-BR')}`,
+            horario_novo: `${dataInicio.toLocaleString('pt-BR')} até ${dataFim.toLocaleString('pt-BR')}`
           });
           return true;
         }
+        
+        console.log('✅ SEM CONFLITO com agendamento ID:', agendamento.id);
       }
       
       console.log('✅ Nenhum conflito detectado');

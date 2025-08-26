@@ -232,6 +232,14 @@ export const MarcarReuniaoVendedor: React.FC<MarcarReuniaoVendedorProps> = ({
         vendedorId: user.id
       });
 
+      console.log('🚀 INICIANDO AGENDAMENTO - DADOS COMPLETOS:', {
+        vendedorId: user.id,
+        dataHoraAgendamento,
+        dataHoraFim,
+        leadId: selectedLead || 'Lead não selecionado',
+        posGraduacaoNome: selectedPosGraduacao || 'Pós não selecionada'
+      });
+
       // Vendedores podem agendar fora do horário de trabalho - apenas verificar eventos especiais
       const temConflitosEventos = await AgendamentosService.verificarConflitosEventosEspeciais(
         dataHoraAgendamento,
@@ -239,21 +247,30 @@ export const MarcarReuniaoVendedor: React.FC<MarcarReuniaoVendedorProps> = ({
       );
 
       if (temConflitosEventos) {
+        console.error('❌ CONFLITO COM EVENTO ESPECIAL');
         toast.error('Este horário conflita com um evento especial');
         return;
       }
 
-      // Verificar conflitos de agenda
+      console.log('✅ SEM CONFLITOS COM EVENTOS ESPECIAIS');
+
+      // VERIFICAÇÃO CRÍTICA: Checar conflitos ANTES de enviar para o serviço
+      console.log('🔍 VERIFICAÇÃO PRÉVIA DE CONFLITOS - VENDEDOR:', user.id);
       const temConflito = await AgendamentosService.verificarConflitosAgenda(
         user.id,
         dataHoraAgendamento,
         dataHoraFim
       );
 
+      console.log('🔍 RESULTADO VERIFICAÇÃO PRÉVIA DE CONFLITOS:', temConflito);
+
       if (temConflito) {
-        toast.error('Você já tem um agendamento neste horário');
+        console.error('❌ CONFLITO DETECTADO NA VERIFICAÇÃO PRÉVIA - BLOQUEANDO!');
+        toast.error('Você já possui um agendamento neste horário');
         return;
       }
+
+      console.log('✅ VERIFICAÇÃO PRÉVIA OK - Prosseguindo para criação...');
 
       // Criar agendamento usando o serviço
       await AgendamentosService.criarAgendamentoVendedor({
