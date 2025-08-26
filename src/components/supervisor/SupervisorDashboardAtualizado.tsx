@@ -121,8 +121,21 @@ const SupervisorDashboardAtualizado: React.FC = () => {
 
   // Encontrar o grupo do supervisor logado
   const meuGrupo = useMemo(() => {
-    if (!user || !grupos) return null;
-    return grupos.find(grupo => grupo.supervisor_id === user.id);
+    console.log('🔍 DEBUG meuGrupo:', { 
+      userId: user?.id, 
+      gruposCount: grupos?.length,
+      grupos: grupos?.map(g => ({ id: g.id, supervisor_id: g.supervisor_id, nome: g.nome_grupo }))
+    });
+    
+    if (!user || !grupos) {
+      console.log('⚠️ User ou grupos não disponíveis:', { user: !!user, grupos: !!grupos });
+      return null;
+    }
+    
+    const grupo = grupos.find(grupo => grupo.supervisor_id === user.id);
+    console.log('🎯 Grupo encontrado:', grupo ? { id: grupo.id, nome: grupo.nome_grupo, membros: grupo.membros?.length } : 'Nenhum grupo');
+    
+    return grupo;
   }, [user, grupos]);
 
   // Buscar dados da planilha detalhada do supervisor para o mês e semana selecionados
@@ -157,17 +170,48 @@ const SupervisorDashboardAtualizado: React.FC = () => {
   }, [supervisorData]);
 
   if (loading || supervisorLoading) {
+    console.log('⏳ Estado de carregamento:', { loading, supervisorLoading });
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <span className="ml-2">Carregando dashboard...</span>
       </div>
     );
   }
 
-  if (!meuGrupo || !meuGrupo.membros) {
+  if (!user) {
+    console.log('❌ Usuário não encontrado');
     return (
       <div className="text-center p-8">
-        <p className="text-muted-foreground">Nenhum grupo encontrado</p>
+        <p className="text-muted-foreground">Usuário não encontrado</p>
+      </div>
+    );
+  }
+
+  if (!grupos || grupos.length === 0) {
+    console.log('❌ Nenhum grupo disponível');
+    return (
+      <div className="text-center p-8">
+        <p className="text-muted-foreground">Nenhum grupo disponível no sistema</p>
+      </div>
+    );
+  }
+
+  if (!meuGrupo) {
+    console.log('❌ Supervisor não tem grupo atribuído');
+    return (
+      <div className="text-center p-8">
+        <p className="text-muted-foreground">Você não está associado a nenhum grupo</p>
+        <p className="text-sm text-muted-foreground mt-2">Entre em contato com o administrador</p>
+      </div>
+    );
+  }
+
+  if (!meuGrupo.membros || meuGrupo.membros.length === 0) {
+    console.log('❌ Grupo sem membros');
+    return (
+      <div className="text-center p-8">
+        <p className="text-muted-foreground">Seu grupo ainda não tem membros cadastrados</p>
       </div>
     );
   }
