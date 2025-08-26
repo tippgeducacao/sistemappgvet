@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -13,6 +13,7 @@ import { WeeklyAverageCalculator } from './WeeklyAverageCalculator';
 import UserProfileModal from '@/components/UserProfileModal';
 import VendedorProfileModal from '@/components/dashboard/VendedorProfileModal';
 import SDRProfileModal from '@/components/dashboard/SDRProfileModal';
+import { getWeekRange, getMesAnoSemanaAtual } from '@/utils/semanaUtils';
 
 
 const SupervisorDashboardAtualizado: React.FC = () => {
@@ -116,8 +117,20 @@ const SupervisorDashboardAtualizado: React.FC = () => {
 
   // Semanas do mês atual
   const semanasDoMes = useMemo(() => getSemanasDoMes(currentYear, currentMonth), [currentYear, currentMonth, getSemanasDoMes]);
-  const semanaAtual = useMemo(() => getSemanaAtual(), [getSemanaAtual]);
-  const [selectedWeek, setSelectedWeek] = useState(() => getSemanaAtual());
+  const semanaAtual = useMemo(() => {
+    const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
+    if (currentAno === currentYear && currentMes === currentMonth) {
+      return getSemanaAtual();
+    }
+    return 1; // Padrão para meses diferentes
+  }, [getSemanaAtual, currentYear, currentMonth]);
+  
+  const [selectedWeek, setSelectedWeek] = useState(semanaAtual);
+  
+  // Atualizar selectedWeek quando o mês/ano muda
+  useEffect(() => {
+    setSelectedWeek(semanaAtual);
+  }, [semanaAtual]);
 
   // Encontrar o grupo do supervisor logado
   const meuGrupo = useMemo(() => {
@@ -138,8 +151,17 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     return grupo;
   }, [user, grupos]);
 
-  // Buscar dados da planilha detalhada do supervisor para o mês e semana selecionados
-  const { data: supervisorData, isLoading: supervisorLoading } = useSupervisorComissionamento(
+  // Buscar dados para todas as semanas do mês
+  const semanaQueries = semanasDoMes.map(semana => ({
+    semana,
+    data: useSupervisorComissionamento(user?.id || '', selectedYear, selectedMonth, semana)
+  }));
+  
+  // Coletar status de loading de todos os queries
+  const supervisorLoading = semanaQueries.some(query => query.data.isLoading);
+  
+  // Buscar dados da semana selecionada para o card de resumo
+  const { data: supervisorData } = useSupervisorComissionamento(
     user?.id || '', 
     selectedYear, 
     selectedMonth, 
@@ -327,34 +349,39 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Membro</th>
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Nível</th>
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Meta Semanal</th>
-                    {semanasDoMes.map((semana) => {
-                      const { start, end } = getWeekDates(currentYear, currentMonth, semana);
-                      const startFormatted = start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                      const endFormatted = end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                      
-                      // Verificar se é a semana atual
-                      const today = new Date();
-                      const isCurrentWeek = today >= start && today <= end;
-                      
-                      return (
-                        <th key={semana} className={`text-center py-3 px-4 font-semibold border-l border-border ${isCurrentWeek ? 'bg-primary/10 text-primary' : 'text-foreground'}`}>
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-center gap-1">
-                              Semana {semana}
-                              {isCurrentWeek && <Clock className="h-3 w-3" />}
-                            </div>
-                            <div className="text-xs text-muted-foreground font-normal">
-                              {startFormatted} - {endFormatted}
-                            </div>
-                            {isCurrentWeek && (
-                              <div className="text-xs font-semibold text-primary">
-                                ATUAL
-                              </div>
-                            )}
-                          </div>
-                        </th>
-                      );
-                    })}
+                     {semanasDoMes.map((semana) => {
+                       const { start, end } = getWeekDates(currentYear, currentMonth, semana);
+                       const startFormatted = start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                       const endFormatted = end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                       
+                       // Verificar se é a semana atual usando a lógica correta
+                       const today = new Date();
+                       const { start: currentWeekStart, end: currentWeekEnd } = getWeekRange(today);
+                       const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
+                       
+                       // É semana atual se as datas se sobrepõem E estamos no mesmo mês/ano
+                       const isCurrentWeek = (currentAno === currentYear && currentMes === currentMonth) &&
+                         (start <= currentWeekEnd && end >= currentWeekStart);
+                       
+                       return (
+                         <th key={semana} className={`text-center py-3 px-4 font-semibold border-l border-border ${isCurrentWeek ? 'bg-primary/10 text-primary' : 'text-foreground'}`}>
+                           <div className="space-y-1">
+                             <div className="flex items-center justify-center gap-1">
+                               Semana {semana}
+                               {isCurrentWeek && <Clock className="h-3 w-3" />}
+                             </div>
+                             <div className="text-xs text-muted-foreground font-normal">
+                               {startFormatted} - {endFormatted}
+                             </div>
+                             {isCurrentWeek && (
+                               <div className="text-xs font-semibold text-primary">
+                                 ATUAL
+                               </div>
+                             )}
+                           </div>
+                         </th>
+                       );
+                     })}
                   </tr>
                 </thead>
                 <tbody>
@@ -424,38 +451,41 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                           {metaSemanal}
                         </td>
                         
-                        {/* Colunas das Semanas */}
-                        {semanasDoMes.map((semana) => {
-                          const { start, end } = getWeekDates(currentYear, currentMonth, semana);
-                          const today = new Date();
-                          const isCurrentWeek = today >= start && today <= end;
-                          
-                          return (
-                            <td key={semana} className={`py-4 px-4 text-center border-l border-border ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
-                              <WeeklyDataProvider
-                                supervisorId={user?.id || ''}
-                                year={currentYear}
-                                month={currentMonth}
-                                week={semana}
-                                memberId={membro.usuario_id}
-                                memberType={membro.usuario?.user_type as 'sdr' | 'vendedor'}
-                              >
-                                {({ reunioesRealizadas, metaSemanal, percentual }) => {
-                                  // Para vendedores, mostrar apenas 1 casa decimal se for decimal
-                                  const atingimentoFormatted = membro.usuario?.user_type === 'vendedor' 
-                                    ? (reunioesRealizadas % 1 === 0 ? reunioesRealizadas.toString() : reunioesRealizadas.toFixed(1))
-                                    : reunioesRealizadas.toString();
-                                  
-                                  return (
-                                    <div className={`text-sm ${isCurrentWeek ? 'font-semibold text-primary' : 'text-foreground'}`}>
-                                      {atingimentoFormatted}/{metaSemanal} ({percentual.toFixed(1)}%)
-                                    </div>
-                                  );
-                                }}
-                              </WeeklyDataProvider>
-                            </td>
-                          );
-                        })}
+                         {/* Colunas das Semanas */}
+                         {semanasDoMes.map((semana) => {
+                           const { start, end } = getWeekDates(currentYear, currentMonth, semana);
+                           const today = new Date();
+                           const { start: currentWeekStart, end: currentWeekEnd } = getWeekRange(today);
+                           const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
+                           
+                           // É semana atual se as datas se sobrepõem E estamos no mesmo mês/ano
+                           const isCurrentWeek = (currentAno === currentYear && currentMes === currentMonth) &&
+                             (start <= currentWeekEnd && end >= currentWeekStart);
+                           
+                           // Buscar dados específicos desta semana
+                           const semanaQuery = semanaQueries.find(sq => sq.semana === semana);
+                           const semanaData = semanaQuery?.data.data;
+                           const membroDetalhe = semanaData?.sdrsDetalhes?.find(sdr => sdr.id === membro.usuario_id);
+                           
+                           return (
+                             <td key={semana} className={`py-4 px-4 text-center border-l border-border ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
+                               <div className={`text-sm ${isCurrentWeek ? 'font-semibold text-primary' : 'text-foreground'}`}>
+                                 {membroDetalhe ? (
+                                   <>
+                                     {membro.usuario?.user_type === 'vendedor' 
+                                       ? (membroDetalhe.reunioesRealizadas % 1 === 0 
+                                           ? membroDetalhe.reunioesRealizadas.toString() 
+                                           : membroDetalhe.reunioesRealizadas.toFixed(1))
+                                       : membroDetalhe.reunioesRealizadas.toString()
+                                     }/{membroDetalhe.metaSemanal} ({membroDetalhe.percentualAtingimento.toFixed(1)}%)
+                                   </>
+                                 ) : (
+                                   '0/0 (0.0%)'
+                                 )}
+                               </div>
+                             </td>
+                           );
+                         })}
                       </tr>
                     );
                   })}
@@ -465,23 +495,29 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                     <td colSpan={3} className="py-3 px-2 font-semibold text-foreground">
                       Taxa de Atingimento Média
                     </td>
-                    {semanasDoMes.map((semana) => {
-                      const { start, end } = getWeekDates(currentYear, currentMonth, semana);
-                      const today = new Date();
-                      const isCurrentWeek = today >= start && today <= end;
-                      
-                      return (
-                        <td key={semana} className={`py-3 px-4 text-center border-l border-border font-semibold ${isCurrentWeek ? 'bg-primary/10 text-primary' : 'text-foreground'}`}>
-                          <WeeklyAverageCalculator
-                            supervisorId={user?.id || ''}
-                            year={currentYear}
-                            month={currentMonth}
-                            week={semana}
-                            members={meuGrupo.membros}
-                          />
-                        </td>
-                      );
-                    })}
+                     {semanasDoMes.map((semana) => {
+                       const { start, end } = getWeekDates(currentYear, currentMonth, semana);
+                       const today = new Date();
+                       const { start: currentWeekStart, end: currentWeekEnd } = getWeekRange(today);
+                       const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
+                       
+                       // É semana atual se as datas se sobrepõem E estamos no mesmo mês/ano
+                       const isCurrentWeek = (currentAno === currentYear && currentMes === currentMonth) &&
+                         (start <= currentWeekEnd && end >= currentWeekStart);
+                       
+                       // Buscar dados específicos desta semana
+                       const semanaQuery = semanaQueries.find(sq => sq.semana === semana);
+                       const semanaData = semanaQuery?.data.data;
+                       
+                       // Calcular média dos percentuais desta semana
+                       const percentualMedia = semanaData?.mediaPercentualAtingimento || 0;
+                       
+                       return (
+                         <td key={semana} className={`py-3 px-4 text-center border-l border-border font-semibold ${isCurrentWeek ? 'bg-primary/10 text-primary' : 'text-foreground'}`}>
+                           {percentualMedia.toFixed(1)}%
+                         </td>
+                       );
+                     })}
                   </tr>
                 </tfoot>
               </table>
