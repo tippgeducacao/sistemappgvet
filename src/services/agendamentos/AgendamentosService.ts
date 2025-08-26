@@ -437,32 +437,34 @@ export class AgendamentosService {
 
   static async verificarConflitosAgenda(vendedorId: string, dataAgendamento: string, dataFimAgendamento?: string, ignoreAgendamentoId?: string): Promise<boolean> {
     try {
-      console.log('🔍 VERIFICANDO CONFLITOS DE AGENDA:', {
+      console.log('🔍 INICIANDO VERIFICAÇÃO DE CONFLITOS');
+      console.log('📋 Parâmetros recebidos:', {
         vendedorId,
         dataAgendamento,
-        dataFimAgendamento
+        dataFimAgendamento,
+        ignoreAgendamentoId
       });
 
-      // Converter para objetos Date usando horário local (SEM UTC)
       const dataInicio = new Date(dataAgendamento);
       const dataFim = dataFimAgendamento 
         ? new Date(dataFimAgendamento)
         : new Date(dataInicio.getTime() + 45 * 60 * 1000);
-
+      
       console.log('📅 Datas convertidas:', {
-        dataInicio: dataInicio.toISOString(),
-        dataFim: dataFim.toISOString(),
-        dataInicioLocal: dataInicio.toLocaleString('pt-BR'),
-        dataFimLocal: dataFim.toLocaleString('pt-BR')
+        dataInicio_ISO: dataInicio.toISOString(),
+        dataFim_ISO: dataFim.toISOString(),
+        dataInicio_Local: dataInicio.toLocaleString('pt-BR'),
+        dataFim_Local: dataFim.toLocaleString('pt-BR')
       });
 
-      // Buscar agendamentos do vendedor no mesmo dia (usando formato sem timezone)
-      const dataConsulta = dataAgendamento.split('T')[0]; // YYYY-MM-DD
+      // CORREÇÃO: Buscar agendamentos em um range mais amplo para capturar conversões de timezone
+      // Vamos buscar desde 12 horas antes até 12 horas depois para garantir que não perdemos nada
+      const dataInicioRange = new Date(dataInicio.getTime() - 12 * 60 * 60 * 1000); // 12h antes
+      const dataFimRange = new Date(dataFim.getTime() + 12 * 60 * 60 * 1000); // 12h depois
       
-      console.log('🔍 QUERY CONFLITOS - Parâmetros:', {
-        vendedorId,
-        dataConsulta,
-        statusBuscados: ['agendado', 'atrasado', 'finalizado', 'finalizado_venda']
+      console.log('🔍 QUERY RANGE EXPANDIDO (para capturar timezones):', {
+        dataInicioRange_ISO: dataInicioRange.toISOString(),
+        dataFimRange_ISO: dataFimRange.toISOString()
       });
       
       const { data, error } = await supabase
@@ -470,15 +472,15 @@ export class AgendamentosService {
         .select('id, data_agendamento, data_fim_agendamento, status, observacoes')
         .eq('vendedor_id', vendedorId)
         .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda'])
-        .gte('data_agendamento', `${dataConsulta}T00:00:00`)
-        .lte('data_agendamento', `${dataConsulta}T23:59:59`);
+        .gte('data_agendamento', dataInicioRange.toISOString())
+        .lte('data_agendamento', dataFimRange.toISOString());
 
       if (error) {
         console.error('❌ Erro na query de conflitos:', error);
         throw error;
       }
       
-      console.log('📋 TOTAL AGENDAMENTOS ENCONTRADOS:', data?.length || 0);
+      console.log('📋 TOTAL AGENDAMENTOS ENCONTRADOS NO RANGE EXPANDIDO:', data?.length || 0);
       console.log('📋 DETALHES DOS AGENDAMENTOS:', JSON.stringify(data, null, 2));
       
       // Se não há agendamentos, não há conflitos
