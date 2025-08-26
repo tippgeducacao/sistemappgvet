@@ -351,13 +351,13 @@ export class SupervisorComissionamentoService {
     semana: number
   ): Promise<SupervisorComissionamentoData | null> {
     try {
-      console.log('🚀🚀🚀 INICIANDO CÁLCULO SUPERVISOR COMISSIONAMENTO 🚀🚀🚀');
+      console.log(`🚀🚀🚀 INICIANDO CÁLCULO SUPERVISOR COMISSIONAMENTO SEMANA ${semana} 🚀🚀🚀`);
       console.log(`🔍 CALCULANDO COMISSIONAMENTO: Supervisor ${supervisorId}, Ano ${ano}, Mês ${mes}, Semana ${semana}`);
       
       // IMPORTANTE: Usar o mês passado como parâmetro para o cálculo das semanas
       const { inicioSemana, fimSemana } = this.calcularDatasSemanaDoMes(ano, mes, semana);
       
-      console.log(`📅 Período calculado: ${inicioSemana.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}`);
+      console.log(`📅 SEMANA ${semana} - Período calculado: ${inicioSemana.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}`);
 
       // Buscar dados do supervisor
       const { data: supervisorData, error: supervisorError } = await supabase
