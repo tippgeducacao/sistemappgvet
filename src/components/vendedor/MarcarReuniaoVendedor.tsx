@@ -115,9 +115,10 @@ export const MarcarReuniaoVendedor: React.FC<MarcarReuniaoVendedorProps> = ({
   const carregarPosGraduacoes = async () => {
     try {
       const { data, error } = await supabase
-        .from('grupos_pos_graduacoes')
+        .from('cursos')
         .select('id, nome')
         .eq('ativo', true)
+        .eq('modalidade', 'Pós-Graduação')
         .order('nome');
 
       if (error) throw error;
