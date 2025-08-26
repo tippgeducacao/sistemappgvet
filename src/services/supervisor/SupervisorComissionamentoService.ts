@@ -193,18 +193,31 @@ export class SupervisorComissionamentoService {
         console.log(`📊 Nível data para ${membroNome}:`, nivelData);
 
         let metaSemanal = 0;
+        
+        // Definir metas padrão baseadas no nível e tipo
+        let metaPadrao = 0;
         if (membroTipo === 'vendedor') {
-          metaSemanal = nivelData?.meta_semanal_vendedor || 0;
+          metaPadrao = membroNivel === 'junior' ? 7 : membroNivel === 'pleno' ? 8 : membroNivel === 'senior' ? 10 : 7;
+        } else {
+          // Para SDRs (todos os tipos)
+          metaPadrao = membroNivel === 'junior' ? 55 : membroNivel === 'pleno' ? 70 : membroNivel === 'senior' ? 85 : 55;
+        }
+        
+        if (membroTipo === 'vendedor') {
+          metaSemanal = nivelData?.meta_semanal_vendedor || metaPadrao;
         } else if (membroTipo === 'sdr_inbound') {
-          metaSemanal = nivelData?.meta_semanal_inbound || 55;
+          metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
         } else if (membroTipo === 'sdr_outbound') {
-          metaSemanal = nivelData?.meta_semanal_outbound || 55;
+          metaSemanal = nivelData?.meta_semanal_outbound || metaPadrao;
         } else if (membroTipo === 'sdr') {
           // Para SDRs genéricos, usar meta_semanal_inbound como padrão
-          metaSemanal = nivelData?.meta_semanal_inbound || 55;
+          metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
+        } else {
+          // Fallback para tipos desconhecidos
+          metaSemanal = metaPadrao;
         }
 
-        console.log(`🎯 Meta semanal para ${membroNome}: ${metaSemanal}`);
+        console.log(`🎯 Meta semanal calculada para ${membroNome} (${membroTipo}, ${membroNivel}): ${metaSemanal} (meta do BD: ${nivelData ? 'encontrada' : 'não encontrada'})`);
         
         // Buscar atividades realizadas baseada no tipo
         let reunioesRealizadas = 0;
@@ -507,18 +520,31 @@ export class SupervisorComissionamentoService {
           .maybeSingle();
 
         let metaSemanal = 0;
+        
+        // Definir metas padrão baseadas no nível e tipo
+        let metaPadrao = 0;
         if (membroTipo === 'vendedor') {
-          metaSemanal = nivelData?.meta_semanal_vendedor || 0;
+          metaPadrao = membroNivel === 'junior' ? 7 : membroNivel === 'pleno' ? 8 : membroNivel === 'senior' ? 10 : 7;
+        } else {
+          // Para SDRs (todos os tipos)
+          metaPadrao = membroNivel === 'junior' ? 55 : membroNivel === 'pleno' ? 70 : membroNivel === 'senior' ? 85 : 55;
+        }
+        
+        if (membroTipo === 'vendedor') {
+          metaSemanal = nivelData?.meta_semanal_vendedor || metaPadrao;
         } else if (membroTipo === 'sdr_inbound') {
-          metaSemanal = nivelData?.meta_semanal_inbound || 55;
+          metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
         } else if (membroTipo === 'sdr_outbound') {
-          metaSemanal = nivelData?.meta_semanal_outbound || 55;
+          metaSemanal = nivelData?.meta_semanal_outbound || metaPadrao;
         } else if (membroTipo === 'sdr') {
           // Para SDRs genéricos, usar meta_semanal_inbound como padrão
-          metaSemanal = nivelData?.meta_semanal_inbound || 55;
+          metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
+        } else {
+          // Fallback para tipos desconhecidos
+          metaSemanal = metaPadrao;
         }
 
-        console.log(`🎯 Meta semanal: ${metaSemanal}`);
+        console.log(`🎯 Meta semanal calculada para ${membroNome} (${membroTipo}, ${membroNivel}): ${metaSemanal} (meta do BD: ${nivelData ? 'encontrada' : 'não encontrada'})`);
 
         // Buscar atividades realizadas baseada no tipo
         let reunioesRealizadas = 0;
