@@ -454,6 +454,86 @@ export class SupervisorComissionamentoService {
 
       if (membrosValidosParaPeriodo.length === 0) {
         console.warn('⚠️ Nenhum membro válido encontrado para o período');
+        
+        // Mesmo sem membros válidos no período, vamos buscar todos os membros atuais 
+        // para mostrar suas metas (0/55, 0/7, etc.)
+        const { data: todosMembrosDados } = await supabase
+          .from('membros_grupos_supervisores')
+          .select(`
+            usuario_id,
+            created_at,
+            left_at,
+            usuario:profiles!usuario_id(
+              id,
+              name,
+              nivel,
+              user_type,
+              ativo
+            )
+          `)
+          .eq('grupo_id', grupoData.id)
+          .is('left_at', null); // Apenas membros que não saíram
+          
+        const membrosAtuaisAtivos = todosMembrosDados?.filter(
+          membro => membro.usuario?.ativo === true && 
+          (membro.usuario?.user_type === 'sdr' || 
+           membro.usuario?.user_type === 'sdr_inbound' || 
+           membro.usuario?.user_type === 'sdr_outbound' || 
+           membro.usuario?.user_type === 'vendedor')
+        ) || [];
+        
+        console.log(`📊 Encontrados ${membrosAtuaisAtivos.length} membros atuais para mostrar metas`);
+        
+        // Criar SDRDetalhes com metas zeradas para todos os membros atuais
+        const sdrsDetalhesZerados: SDRResumo[] = [];
+        
+        for (const membro of membrosAtuaisAtivos) {
+          const membroId = membro.usuario_id;
+          const membroNome = membro.usuario?.name || 'Membro';
+          const membroNivel = membro.usuario?.nivel || 'junior';
+          const membroTipo = membro.usuario?.user_type;
+          
+          // Buscar meta baseada no tipo e nível do membro
+          const { data: nivelData } = await supabase
+            .from('niveis_vendedores')
+            .select('meta_semanal_inbound, meta_semanal_outbound, meta_semanal_vendedor')
+            .eq('nivel', membroNivel)
+            .eq('tipo_usuario', membroTipo === 'vendedor' ? 'vendedor' : 'sdr')
+            .maybeSingle();
+          
+          // Definir metas padrão baseadas no nível e tipo
+          let metaPadrao = 0;
+          if (membroTipo === 'vendedor') {
+            metaPadrao = membroNivel === 'junior' ? 7 : membroNivel === 'pleno' ? 8 : membroNivel === 'senior' ? 10 : 7;
+          } else {
+            // Para SDRs (todos os tipos)
+            metaPadrao = membroNivel === 'junior' ? 55 : membroNivel === 'pleno' ? 70 : membroNivel === 'senior' ? 85 : 55;
+          }
+          
+          let metaSemanal = 0;
+          if (membroTipo === 'vendedor') {
+            metaSemanal = nivelData?.meta_semanal_vendedor || metaPadrao;
+          } else if (membroTipo === 'sdr_inbound') {
+            metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
+          } else if (membroTipo === 'sdr_outbound') {
+            metaSemanal = nivelData?.meta_semanal_outbound || metaPadrao;
+          } else if (membroTipo === 'sdr') {
+            metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
+          } else {
+            metaSemanal = metaPadrao;
+          }
+          
+          console.log(`📊 Meta zerada para ${membroNome} (${membroTipo}, ${membroNivel}): 0/${metaSemanal}`);
+          
+          sdrsDetalhesZerados.push({
+            id: membroId,
+            nome: membroNome,
+            percentualAtingimento: 0,
+            reunioesRealizadas: 0,
+            metaSemanal
+          });
+        }
+        
         return {
           supervisorId,
           nome: supervisorData.name,
@@ -461,12 +541,12 @@ export class SupervisorComissionamentoService {
           nomeGrupo: grupoData.nome_grupo,
           ano,
           semana,
-          totalSDRs: 0,
+          totalSDRs: sdrsDetalhesZerados.length,
           mediaPercentualAtingimento: 0,
           variabelSemanal: 0,
           multiplicador: 0,
           valorComissao: 0,
-          sdrsDetalhes: []
+          sdrsDetalhes: sdrsDetalhesZerados
         };
       }
 
@@ -483,6 +563,86 @@ export class SupervisorComissionamentoService {
 
       if (membrosAtivos.length === 0) {
         console.warn('⚠️ Nenhum membro ativo encontrado no grupo para o período');
+        
+        // Mesmo com membros válidos mas inativos, vamos buscar todos os membros atuais ativos
+        // para mostrar suas metas (0/55, 0/7, etc.)
+        const { data: todosMembrosDados } = await supabase
+          .from('membros_grupos_supervisores')
+          .select(`
+            usuario_id,
+            created_at,
+            left_at,
+            usuario:profiles!usuario_id(
+              id,
+              name,
+              nivel,
+              user_type,
+              ativo
+            )
+          `)
+          .eq('grupo_id', grupoData.id)
+          .is('left_at', null); // Apenas membros que não saíram
+          
+        const membrosAtuaisAtivos = todosMembrosDados?.filter(
+          membro => membro.usuario?.ativo === true && 
+          (membro.usuario?.user_type === 'sdr' || 
+           membro.usuario?.user_type === 'sdr_inbound' || 
+           membro.usuario?.user_type === 'sdr_outbound' || 
+           membro.usuario?.user_type === 'vendedor')
+        ) || [];
+        
+        console.log(`📊 Encontrados ${membrosAtuaisAtivos.length} membros atuais ativos para mostrar metas`);
+        
+        // Criar SDRDetalhes com metas zeradas para todos os membros atuais ativos
+        const sdrsDetalhesZerados: SDRResumo[] = [];
+        
+        for (const membro of membrosAtuaisAtivos) {
+          const membroId = membro.usuario_id;
+          const membroNome = membro.usuario?.name || 'Membro';
+          const membroNivel = membro.usuario?.nivel || 'junior';
+          const membroTipo = membro.usuario?.user_type;
+          
+          // Buscar meta baseada no tipo e nível do membro
+          const { data: nivelData } = await supabase
+            .from('niveis_vendedores')
+            .select('meta_semanal_inbound, meta_semanal_outbound, meta_semanal_vendedor')
+            .eq('nivel', membroNivel)
+            .eq('tipo_usuario', membroTipo === 'vendedor' ? 'vendedor' : 'sdr')
+            .maybeSingle();
+          
+          // Definir metas padrão baseadas no nível e tipo
+          let metaPadrao = 0;
+          if (membroTipo === 'vendedor') {
+            metaPadrao = membroNivel === 'junior' ? 7 : membroNivel === 'pleno' ? 8 : membroNivel === 'senior' ? 10 : 7;
+          } else {
+            // Para SDRs (todos os tipos)
+            metaPadrao = membroNivel === 'junior' ? 55 : membroNivel === 'pleno' ? 70 : membroNivel === 'senior' ? 85 : 55;
+          }
+          
+          let metaSemanal = 0;
+          if (membroTipo === 'vendedor') {
+            metaSemanal = nivelData?.meta_semanal_vendedor || metaPadrao;
+          } else if (membroTipo === 'sdr_inbound') {
+            metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
+          } else if (membroTipo === 'sdr_outbound') {
+            metaSemanal = nivelData?.meta_semanal_outbound || metaPadrao;
+          } else if (membroTipo === 'sdr') {
+            metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
+          } else {
+            metaSemanal = metaPadrao;
+          }
+          
+          console.log(`📊 Meta zerada para ${membroNome} (${membroTipo}, ${membroNivel}): 0/${metaSemanal}`);
+          
+          sdrsDetalhesZerados.push({
+            id: membroId,
+            nome: membroNome,
+            percentualAtingimento: 0,
+            reunioesRealizadas: 0,
+            metaSemanal
+          });
+        }
+        
         return {
           supervisorId,
           nome: supervisorData.name,
@@ -490,12 +650,12 @@ export class SupervisorComissionamentoService {
           nomeGrupo: grupoData.nome_grupo,
           ano,
           semana,
-          totalSDRs: 0,
+          totalSDRs: sdrsDetalhesZerados.length,
           mediaPercentualAtingimento: 0,
           variabelSemanal: 0,
           multiplicador: 0,
           valorComissao: 0,
-          sdrsDetalhes: []
+          sdrsDetalhes: sdrsDetalhesZerados
         };
       }
 
