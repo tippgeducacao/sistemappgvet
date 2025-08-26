@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,13 +36,66 @@ const MarcarReuniaoVendedor: React.FC<MarcarReuniaoVendedorProps> = ({
   const [searchType, setSearchType] = useState<'nome' | 'email' | 'whatsapp'>('nome');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Estado para busca dinâmica de leads
+  const [searchLoading, setSearchLoading] = useState(false);
+  
+  // Busca dinâmica de leads quando há termo de busca
+  useEffect(() => {
+    const buscarLeadsDinamicamente = async () => {
+      if (!searchTerm || searchTerm.length < 2) return;
+      
+      setSearchLoading(true);
+      try {
+        let query = supabase
+          .from('leads')
+          .select('id, nome, email, whatsapp, status')
+          .order('created_at', { ascending: false });
+
+        // Aplicar filtro baseado no tipo de busca
+        if (searchType === 'nome') {
+          query = query.ilike('nome', `%${searchTerm}%`);
+        } else if (searchType === 'email') {
+          query = query.ilike('email', `%${searchTerm}%`);
+        } else if (searchType === 'whatsapp') {
+          query = query.ilike('whatsapp', `%${searchTerm}%`);
+        }
+
+        const { data: searchResults, error } = await query.limit(50);
+        
+        if (error) throw error;
+        
+        console.log(`🔍 Busca por "${searchTerm}" no campo ${searchType}:`, searchResults?.length || 0, 'resultados');
+        
+        // Combinar resultados da busca com leads já carregados (evitar duplicatas)
+        const leadIds = new Set(leads.map(lead => lead.id));
+        const newLeads = searchResults?.filter(lead => !leadIds.has(lead.id)) || [];
+        
+        if (newLeads.length > 0) {
+          setLeads(prev => [...searchResults || [], ...prev.filter(lead => 
+            !(searchResults || []).some(result => result.id === lead.id)
+          )]);
+        }
+      } catch (error) {
+        console.error('Erro na busca dinâmica de leads:', error);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(buscarLeadsDinamicamente, 300); // Debounce de 300ms
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, searchType]);
+
   // Filtered leads based on search
-  const filteredLeads = searchTerm 
-    ? leads.filter(lead => {
+  const filteredLeads = useMemo(() => {
+    if (searchTerm && searchTerm.length >= 2) {
+      return leads.filter(lead => {
         const searchValue = lead[searchType]?.toLowerCase() || '';
         return searchValue.includes(searchTerm.toLowerCase());
-      })
-    : leads.slice(0, 50); // Limitar a 50 leads iniciais
+      });
+    }
+    return leads.slice(0, 100); // Mostrar primeiros 100 leads quando não há busca
+  }, [leads, searchTerm, searchType]);
 
   // New lead form state
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
@@ -72,14 +125,14 @@ const MarcarReuniaoVendedor: React.FC<MarcarReuniaoVendedorProps> = ({
       if (!isOpen) return;
       
       try {
-        // Carregar leads
+        // Carregar leads (sem limite para pegar todos)
         const { data: leadsData, error: leadsError } = await supabase
           .from('leads')
           .select('id, nome, email, whatsapp, status')
-          .order('created_at', { ascending: false })
-          .limit(100);
+          .order('created_at', { ascending: false });
 
         if (leadsError) throw leadsError;
+        console.log('📋 Total de leads carregados:', leadsData?.length || 0);
         setLeads(leadsData || []);
 
         // Carregar pós-graduações que o vendedor pode trabalhar
@@ -342,16 +395,21 @@ const MarcarReuniaoVendedor: React.FC<MarcarReuniaoVendedorProps> = ({
                     </SelectContent>
                   </Select>
                   <Input
-                    placeholder={`Buscar por ${searchType}...`}
+                    placeholder={`Buscar por ${searchType}... ${searchLoading ? '(buscando...)' : ''}`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="flex-1"
+                    disabled={searchLoading}
                   />
                 </div>
 
                 <Select value={selectedLead} onValueChange={setSelectedLead}>
                   <SelectTrigger>
-                    <SelectValue placeholder={filteredLeads.length === 0 ? "Nenhum lead encontrado" : "Selecione um lead"} />
+                    <SelectValue placeholder={
+                      searchLoading ? "Buscando leads..." : 
+                      filteredLeads.length === 0 ? "Nenhum lead encontrado" : 
+                      `${filteredLeads.length} leads encontrados - Selecione um`
+                    } />
                   </SelectTrigger>
                   <SelectContent>
                     {filteredLeads.map((lead) => (
