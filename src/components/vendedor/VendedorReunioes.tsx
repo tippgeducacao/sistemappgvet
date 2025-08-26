@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, List, Users } from 'lucide-react';
+import { Calendar, List, Users, Plus } from 'lucide-react';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import ReunioesPlanilha from './ReunioesPlanilha';
 import ReunisoesCalendario from './ReunisoesCalendario';
+import MarcarReuniaoVendedor from './MarcarReuniaoVendedor';
 
 const VendedorReunioes: React.FC = () => {
-  const { agendamentos, isLoading, atualizarResultadoReuniao } = useAgendamentos();
+  const { agendamentos, isLoading, atualizarResultadoReuniao, fetchAgendamentos } = useAgendamentos();
+  const [showMarcarReuniao, setShowMarcarReuniao] = useState(false);
 
   if (isLoading) {
     return (
@@ -29,9 +31,16 @@ const VendedorReunioes: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Reuniões</h1>
           <p className="text-muted-foreground">
-            Gerencie suas Reuniões agendadas pelos SDRs
+            Gerencie suas reuniões e agende novas reuniões
           </p>
         </div>
+        <Button 
+          onClick={() => setShowMarcarReuniao(true)}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Marcar Reunião
+        </Button>
       </div>
 
       {/* Estatísticas */}
@@ -109,6 +118,16 @@ const VendedorReunioes: React.FC = () => {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Modal para Marcar Reunião */}
+      <MarcarReuniaoVendedor
+        isOpen={showMarcarReuniao}
+        onClose={() => setShowMarcarReuniao(false)}
+        onSuccess={() => {
+          fetchAgendamentos();
+          setShowMarcarReuniao(false);
+        }}
+      />
     </div>
   );
 };

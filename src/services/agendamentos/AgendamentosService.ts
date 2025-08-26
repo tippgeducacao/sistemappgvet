@@ -205,6 +205,158 @@ export class AgendamentosService {
     }
   }
 
+  static async criarAgendamentoVendedor(dados: {
+    lead_id: string;
+    vendedor_id: string;
+    pos_graduacao_interesse: string;
+    data_agendamento: string;
+    data_fim_agendamento?: string;
+    link_reuniao: string;
+    observacoes?: string;
+  }): Promise<Agendamento | null> {
+    try {
+      console.log('🚀 AgendamentosService.criarAgendamentoVendedor - INÍCIO');
+      console.log('📅 Dados recebidos (vendedor agendando para si):', JSON.stringify(dados, null, 2));
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('❌ Usuário não autenticado');
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Verificar se o usuário é realmente o vendedor que está tentando agendar para si
+      if (user.id !== dados.vendedor_id) {
+        console.error('❌ Vendedor só pode agendar para si mesmo');
+        throw new Error('Você só pode agendar reuniões para você mesmo');
+      }
+
+      console.log('✅ Vendedor verificado:', user.id);
+
+      // Validar se o link da reunião foi fornecido
+      if (!dados.link_reuniao?.trim()) {
+        console.error('❌ Link da reunião não fornecido');
+        throw new Error('Link da reunião é obrigatório');
+      }
+      console.log('✅ Link da reunião validado');
+
+      // Validar se a data/hora é no futuro (com margem de 5 minutos)
+      const dataAgendamento = new Date(dados.data_agendamento);
+      const agora = new Date();
+      const cincoMinutosAtras = new Date(agora.getTime() - 5 * 60 * 1000);
+      
+      console.log('📅 Validação de data/hora:');
+      console.log('  - Data agendamento:', dataAgendamento.toISOString());
+      console.log('  - Agora (original):', agora.toISOString());
+      console.log('  - 5 min atrás:', cincoMinutosAtras.toISOString());
+      console.log('  - É futuro?', dataAgendamento > cincoMinutosAtras);
+      
+      if (dataAgendamento <= cincoMinutosAtras) {
+        console.error('❌ Data/hora já passou');
+        throw new Error('Não é possível agendar para uma data/hora que já passou');
+      }
+      console.log('✅ Data/hora validada');
+
+      // Verificar horário de trabalho do vendedor
+      console.log('🕒 Verificando horário de trabalho...');
+      const verificacaoHorario = await this.verificarHorarioTrabalho(
+        dados.vendedor_id, 
+        dados.data_agendamento, 
+        dados.data_fim_agendamento
+      );
+      
+      console.log('🕒 Resultado verificação horário:', verificacaoHorario);
+      
+      if (!verificacaoHorario.valido) {
+        console.error('❌ Horário inválido:', verificacaoHorario.motivo);
+        throw new Error(verificacaoHorario.motivo || 'Horário inválido');
+      }
+      console.log('✅ Horário de trabalho validado');
+
+      // Verificar conflitos com eventos especiais
+      console.log('📅 Verificando conflitos com eventos especiais...');
+      const temConflitosEventos = await this.verificarConflitosEventosEspeciais(dados.data_agendamento, dados.data_fim_agendamento);
+      console.log('📅 Resultado verificação eventos especiais:', temConflitosEventos);
+      
+      if (temConflitosEventos) {
+        console.error('❌ Conflito com evento especial detectado');
+        throw new Error('Este horário está bloqueado por um evento especial/recorrente');
+      }
+      console.log('✅ Sem conflitos com eventos especiais');
+
+      // Verificar conflitos de agenda
+      console.log('⚔️ Verificando conflitos de agenda...');
+      const temConflito = await this.verificarConflitosAgenda(dados.vendedor_id, dados.data_agendamento, dados.data_fim_agendamento);
+      console.log('⚔️ Resultado verificação conflitos:', temConflito);
+      
+      if (temConflito) {
+        console.error('❌ Conflito de agenda detectado');
+        throw new Error('Você já possui agendamento neste horário');
+      }
+      console.log('✅ Sem conflitos de agenda');
+
+      console.log('💾 Inserindo agendamento no banco de dados...');
+      console.log('💾 Dados para inserção (vendedor como SDR):', {
+        lead_id: dados.lead_id,
+        vendedor_id: dados.vendedor_id,
+        sdr_id: user.id, // Vendedor é também o SDR que está agendando
+        pos_graduacao_interesse: dados.pos_graduacao_interesse,
+        data_agendamento: dados.data_agendamento,
+        data_fim_agendamento: dados.data_fim_agendamento,
+        link_reuniao: dados.link_reuniao,
+        observacoes: dados.observacoes,
+        status: 'agendado'
+      });
+
+      // Inserir agendamento
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .insert({
+          lead_id: dados.lead_id,
+          vendedor_id: dados.vendedor_id,
+          sdr_id: user.id, // Vendedor é também o SDR que está agendando
+          pos_graduacao_interesse: dados.pos_graduacao_interesse,
+          data_agendamento: dados.data_agendamento,
+          data_fim_agendamento: dados.data_fim_agendamento,
+          link_reuniao: dados.link_reuniao,
+          observacoes: dados.observacoes || 'Reunião agendada pelo próprio vendedor',
+          status: 'agendado'
+        })
+        .select(`
+          *,
+          lead:leads(id, nome, email, whatsapp),
+          vendedor:profiles!agendamentos_vendedor_id_fkey(id, name, email),
+          sdr:profiles!agendamentos_sdr_id_fkey(id, name, email)
+        `)
+        .single();
+
+      console.log('💾 Resultado da inserção:');
+      console.log('  - Data:', data ? 'Presente' : 'Null');
+      console.log('  - Error:', error);
+
+      if (error) {
+        console.error('❌ Erro do Supabase ao inserir agendamento:', error);
+        throw error;
+      }
+      
+      console.log('✅ Agendamento do vendedor inserido com sucesso!');
+      console.log('✅ ID do agendamento criado:', data?.id);
+      
+      return data;
+    } catch (error) {
+      console.error('🚨 ERRO DETALHADO AO CRIAR AGENDAMENTO DO VENDEDOR:', error);
+      console.error('📅 Dados enviados:', dados);
+      
+      if (error instanceof Error) {
+        console.error('📝 Mensagem de erro:', error.message);
+        console.error('📝 Stack trace:', error.stack);
+        // Re-lançar o erro para mostrar a mensagem específica
+        throw error;
+      }
+      
+      throw new Error('Erro inesperado ao criar agendamento');
+    }
+  }
+
   static async buscarAgendamentos(): Promise<Agendamento[]> {
     try {
       const { data, error } = await supabase
