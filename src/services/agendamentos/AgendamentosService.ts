@@ -256,21 +256,7 @@ export class AgendamentosService {
       }
       console.log('✅ Data/hora validada');
 
-      // Verificar horário de trabalho do vendedor
-      console.log('🕒 Verificando horário de trabalho...');
-      const verificacaoHorario = await this.verificarHorarioTrabalho(
-        dados.vendedor_id, 
-        dados.data_agendamento, 
-        dados.data_fim_agendamento
-      );
-      
-      console.log('🕒 Resultado verificação horário:', verificacaoHorario);
-      
-      if (!verificacaoHorario.valido) {
-        console.error('❌ Horário inválido:', verificacaoHorario.motivo);
-        throw new Error(verificacaoHorario.motivo || 'Horário inválido');
-      }
-      console.log('✅ Horário de trabalho validado');
+      // Vendedores podem agendar fora do horário de trabalho - não verificar horário
 
       // Verificar conflitos com eventos especiais
       console.log('📅 Verificando conflitos com eventos especiais...');
@@ -307,13 +293,13 @@ export class AgendamentosService {
         status: 'agendado'
       });
 
-      // Inserir agendamento
+      // Inserir agendamento - vendedor agenda para si mesmo
       const { data, error } = await supabase
         .from('agendamentos')
         .insert({
           lead_id: dados.lead_id,
-          vendedor_id: dados.vendedor_id,
-          sdr_id: user.id, // Vendedor é também o SDR que está agendando
+          vendedor_id: dados.vendedor_id, // Vendedor que vai fazer a reunião
+          sdr_id: dados.vendedor_id, // Vendedor que está agendando (mesmo ID)
           pos_graduacao_interesse: dados.pos_graduacao_interesse,
           data_agendamento: dados.data_agendamento,
           data_fim_agendamento: dados.data_fim_agendamento,

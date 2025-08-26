@@ -232,19 +232,7 @@ export const MarcarReuniaoVendedor: React.FC<MarcarReuniaoVendedorProps> = ({
         vendedorId: user.id
       });
 
-      // Verificar horário de trabalho
-      const verificacaoHorario = await AgendamentosService.verificarHorarioTrabalho(
-        user.id,
-        dataHoraAgendamento,
-        dataHoraFim
-      );
-
-      if (!verificacaoHorario.valido) {
-        toast.error(`Horário inválido: ${verificacaoHorario.motivo}`);
-        return;
-      }
-
-      // Verificar eventos especiais
+      // Vendedores podem agendar fora do horário de trabalho - apenas verificar eventos especiais
       const temConflitosEventos = await AgendamentosService.verificarConflitosEventosEspeciais(
         dataHoraAgendamento,
         dataHoraFim
