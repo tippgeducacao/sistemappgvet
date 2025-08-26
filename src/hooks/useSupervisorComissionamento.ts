@@ -6,14 +6,14 @@ export const useSupervisorComissionamento = (supervisorId: string, ano: number, 
   console.log(`🔍 Hook useSupervisorComissionamento chamado para:`, { supervisorId, ano, mes, semana });
   
   return useQuery({
-    queryKey: ['supervisor-comissionamento', supervisorId, ano, mes, semana, Date.now()], // Força refresh
+    queryKey: ['supervisor-comissionamento', supervisorId, ano, mes, semana],
     queryFn: () => {
       console.log(`📞 Chamando SupervisorComissionamentoService.calcularComissionamentoSupervisor:`, { supervisorId, ano, mes, semana });
       return SupervisorComissionamentoService.calcularComissionamentoSupervisor(supervisorId, ano, mes, semana);
     },
     enabled: !!supervisorId && !!ano && !!mes && !!semana,
-    staleTime: 0, // Forçar sempre buscar dados frescos
-    refetchOnMount: true,
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
