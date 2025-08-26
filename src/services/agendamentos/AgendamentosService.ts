@@ -457,14 +457,15 @@ export class AgendamentosService {
         dataFim_Local: dataFim.toLocaleString('pt-BR')
       });
 
-      // CORREÇÃO: Buscar agendamentos em um range mais amplo para capturar conversões de timezone
-      // Vamos buscar desde 12 horas antes até 12 horas depois para garantir que não perdemos nada
-      const dataInicioRange = new Date(dataInicio.getTime() - 12 * 60 * 60 * 1000); // 12h antes
-      const dataFimRange = new Date(dataFim.getTime() + 12 * 60 * 60 * 1000); // 12h depois
+      // CORREÇÃO: Buscar pelo dia completo baseado na data de início
+      const dataConsulta = dataInicio.toISOString().split('T')[0]; // YYYY-MM-DD
+      const inicioRangeBusca = `${dataConsulta}T00:00:00.000Z`;
+      const fimRangeBusca = `${dataConsulta}T23:59:59.999Z`;
       
-      console.log('🔍 QUERY RANGE EXPANDIDO (para capturar timezones):', {
-        dataInicioRange_ISO: dataInicioRange.toISOString(),
-        dataFimRange_ISO: dataFimRange.toISOString()
+      console.log('🔍 RANGE DE BUSCA CORRIGIDO:', {
+        dataConsulta,
+        inicioRangeBusca,
+        fimRangeBusca
       });
       
       const { data, error } = await supabase
@@ -472,15 +473,15 @@ export class AgendamentosService {
         .select('id, data_agendamento, data_fim_agendamento, status, observacoes')
         .eq('vendedor_id', vendedorId)
         .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda'])
-        .gte('data_agendamento', dataInicioRange.toISOString())
-        .lte('data_agendamento', dataFimRange.toISOString());
+        .gte('data_agendamento', inicioRangeBusca)
+        .lte('data_agendamento', fimRangeBusca);
 
       if (error) {
         console.error('❌ Erro na query de conflitos:', error);
         throw error;
       }
       
-      console.log('📋 TOTAL AGENDAMENTOS ENCONTRADOS NO RANGE EXPANDIDO:', data?.length || 0);
+      console.log('📋 TOTAL AGENDAMENTOS ENCONTRADOS:', data?.length || 0);
       console.log('📋 DETALHES DOS AGENDAMENTOS:', JSON.stringify(data, null, 2));
       
       // Se não há agendamentos, não há conflitos
