@@ -15,7 +15,7 @@ import VendedorProfileModal from '@/components/dashboard/VendedorProfileModal';
 import SDRProfileModal from '@/components/dashboard/SDRProfileModal';
 
 
-export const SupervisorDashboardAtualizado: React.FC = () => {
+const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
   const { grupos, loading } = useGruposSupervisores();
   
@@ -494,3 +494,5 @@ export const SupervisorDashboardAtualizado: React.FC = () => {
     </div>
   );
 };
+
+export default SupervisorDashboardAtualizado;

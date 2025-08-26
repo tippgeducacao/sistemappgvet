@@ -48,7 +48,7 @@ const RouteRenderer: React.FC = () => {
         return <SDRDashboard />;
       }
       if (isSupervisor) {
-        const SupervisorDashboardAtualizado = React.lazy(() => import('@/components/supervisor/SupervisorDashboardAtualizado').then(m => ({ default: m.SupervisorDashboardAtualizado })));
+        const SupervisorDashboardAtualizado = React.lazy(() => import('@/components/supervisor/SupervisorDashboardAtualizado'));
         return (
           <React.Suspense fallback={<div>Carregando...</div>}>
             <SupervisorDashboardAtualizado />
