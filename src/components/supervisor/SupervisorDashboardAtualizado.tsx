@@ -25,6 +25,13 @@ const SupervisorDashboardAtualizado: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState(initialAno);
   const [selectedMonth, setSelectedMonth] = useState(initialMes);
   
+  console.log('🔍 SupervisorDashboard - Estado inicial:', { 
+    initialMes, 
+    initialAno, 
+    selectedYear, 
+    selectedMonth 
+  });
+  
   // Estado para navegação semanal
   const [currentDate, setCurrentDate] = useState(new Date());
   const currentYear = selectedYear;
@@ -43,7 +50,13 @@ const SupervisorDashboardAtualizado: React.FC = () => {
   const { getSemanasDoMes, getSemanaAtual } = useMetasSemanais();
   
   // Verificar se as funções estão disponíveis
-  const isMetasFunctionsReady = getSemanasDoMes && getSemanaAtual;
+  const isMetasFunctionsReady = Boolean(getSemanasDoMes && getSemanaAtual);
+  
+  console.log('🔍 SupervisorDashboard - Funções de metas:', { 
+    getSemanasDoMes: typeof getSemanasDoMes,
+    getSemanaAtual: typeof getSemanaAtual,
+    isMetasFunctionsReady 
+  });
   
   // Gerar opções de anos (últimos 3 anos + próximos 2)
   const yearOptions = useMemo(() => {
@@ -121,18 +134,54 @@ const SupervisorDashboardAtualizado: React.FC = () => {
 
   // Semanas do mês atual
   const semanasDoMes = useMemo(() => {
-    if (!isMetasFunctionsReady || !getSemanasDoMes) return [];
-    return getSemanasDoMes(currentYear, currentMonth);
-  }, [currentYear, currentMonth, getSemanasDoMes, isMetasFunctionsReady]);
+    console.log('🔍 useMemo semanasDoMes executando:', { 
+      isMetasFunctionsReady, 
+      currentYear, 
+      currentMonth,
+      getSemanasDoMes: typeof getSemanasDoMes 
+    });
+    
+    if (!isMetasFunctionsReady || typeof getSemanasDoMes !== 'function') {
+      console.log('⚠️ Retornando array vazio - funções não estão prontas');
+      return [];
+    }
+    
+    try {
+      const result = getSemanasDoMes(currentYear, currentMonth);
+      console.log('✅ semanasDoMes resultado:', result);
+      return Array.isArray(result) ? result : [];
+    } catch (error) {
+      console.error('❌ Erro ao obter semanas do mês:', error);
+      return [];
+    }
+  }, [currentYear, currentMonth, isMetasFunctionsReady]);
   
   const semanaAtual = useMemo(() => {
-    if (!isMetasFunctionsReady || !getSemanaAtual) return 1;
-    const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
-    if (currentAno === currentYear && currentMes === currentMonth) {
-      return getSemanaAtual();
+    console.log('🔍 useMemo semanaAtual executando:', { 
+      isMetasFunctionsReady, 
+      currentYear, 
+      currentMonth,
+      getSemanaAtual: typeof getSemanaAtual 
+    });
+    
+    if (!isMetasFunctionsReady || typeof getSemanaAtual !== 'function') {
+      console.log('⚠️ Retornando semana 1 - funções não estão prontas');
+      return 1;
     }
-    return 1; // Padrão para meses diferentes
-  }, [getSemanaAtual, currentYear, currentMonth, isMetasFunctionsReady]);
+    
+    try {
+      const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
+      if (currentAno === currentYear && currentMes === currentMonth) {
+        const result = getSemanaAtual();
+        console.log('✅ semanaAtual resultado:', result);
+        return typeof result === 'number' ? result : 1;
+      }
+      return 1; // Padrão para meses diferentes
+    } catch (error) {
+      console.error('❌ Erro ao obter semana atual:', error);
+      return 1;
+    }
+  }, [currentYear, currentMonth, isMetasFunctionsReady]);
   
   const [selectedWeek, setSelectedWeek] = useState(semanaAtual);
   
@@ -274,7 +323,13 @@ const SupervisorDashboardAtualizado: React.FC = () => {
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold text-foreground">META COLETIVA</h2>
             <div className="flex items-center gap-2">
-              <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+            <Select 
+              value={selectedMonth.toString()} 
+              onValueChange={(value) => {
+                console.log('🔄 Mudando mês de', selectedMonth, 'para', value);
+                setSelectedMonth(parseInt(value));
+              }}
+            >
                 <SelectTrigger className="w-36">
                   <SelectValue />
                 </SelectTrigger>
@@ -286,7 +341,13 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+            <Select 
+              value={selectedYear.toString()} 
+              onValueChange={(value) => {
+                console.log('🔄 Mudando ano de', selectedYear, 'para', value);
+                setSelectedYear(parseInt(value));
+              }}
+            >
                 <SelectTrigger className="w-24">
                   <SelectValue />
                 </SelectTrigger>
