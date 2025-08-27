@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { useAgendamentosStatsVendedores } from '@/hooks/useAgendamentosStatsVendedores';
-import { AgendamentosListaModal } from '@/components/agendamentos/AgendamentosListaModal';
 import LoadingState from '@/components/ui/loading-state';
 
 interface ReunioesVendedoresChartProps {
@@ -14,20 +13,12 @@ interface ReunioesVendedoresChartProps {
 const COLORS = {
   convertidas: '#10b981', // Verde para vendas convertidas
   compareceram: '#f59e0b', // Amarelo para compareceram mas não compraram
-  naoCompareceram: '#ef4444', // Vermelho para não compareceram
-  pendentes: '#3b82f6' // Azul para pendentes
+  naoCompareceram: '#ef4444' // Vermelho para não compareceram
 };
 
 export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = ({ selectedVendedor }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedWeek, setSelectedWeek] = useState(new Date());
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedVendedorForModal, setSelectedVendedorForModal] = useState<{
-    id: string;
-    name: string;
-    tab: 'convertidas' | 'pendentes' | 'compareceram' | 'naoCompareceram';
-  } | null>(null);
-  
   const { statsData, isLoading } = useAgendamentosStatsVendedores(selectedVendedor, selectedWeek);
 
   // Função para calcular início e fim da semana
@@ -95,27 +86,13 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
     const reunioesComComparecimento = stats.convertidas + stats.compareceram;
     return {
       vendedor: stats.vendedor_name.split(' ')[0], // Apenas primeiro nome
-      vendedorId: stats.vendedor_id, // Adicionar ID para click handlers
-      vendedorName: stats.vendedor_name, // Nome completo para modal
       convertidas: stats.convertidas,
       compareceram: stats.compareceram,
       naoCompareceram: stats.naoCompareceram,
-      pendentes: stats.pendentes,
       total: stats.total,
       taxaConversao: reunioesComComparecimento > 0 ? ((stats.convertidas / reunioesComComparecimento) * 100).toFixed(1) : '0'
     };
   });
-
-  const handleBarClick = (data: any, tab: 'convertidas' | 'pendentes' | 'compareceram' | 'naoCompareceram') => {
-    if (data && data.vendedorId) {
-      setSelectedVendedorForModal({
-        id: data.vendedorId,
-        name: data.vendedorName,
-        tab
-      });
-      setIsModalOpen(true);
-    }
-  };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -126,9 +103,6 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
           <div className="space-y-1">
             <p className="text-sm">
               <span className="text-green-600">Convertidas:</span> {data.convertidas}
-            </p>
-            <p className="text-sm">
-              <span className="text-blue-600">Pendentes:</span> {data.pendentes}
             </p>
             <p className="text-sm">
               <span className="text-yellow-600">Compareceram:</span> {data.compareceram}
@@ -253,32 +227,18 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
                     name="Convertidas" 
                     fill={COLORS.convertidas}
                     stackId="a"
-                    onClick={(data) => handleBarClick(data, 'convertidas')}
-                    style={{ cursor: 'pointer' }}
-                  />
-                  <Bar 
-                    dataKey="pendentes" 
-                    name="Pendentes" 
-                    fill={COLORS.pendentes}
-                    stackId="a"
-                    onClick={(data) => handleBarClick(data, 'pendentes')}
-                    style={{ cursor: 'pointer' }}
                   />
                   <Bar 
                     dataKey="compareceram" 
                     name="Compareceram" 
                     fill={COLORS.compareceram}
                     stackId="a"
-                    onClick={(data) => handleBarClick(data, 'compareceram')}
-                    style={{ cursor: 'pointer' }}
                   />
                   <Bar 
                     dataKey="naoCompareceram" 
                     name="Não Compareceram" 
                     fill={COLORS.naoCompareceram}
                     stackId="a"
-                    onClick={(data) => handleBarClick(data, 'naoCompareceram')}
-                    style={{ cursor: 'pointer' }}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -294,24 +254,13 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
                   return (
                     <div key={stats.vendedor_id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                       <div className="font-medium">{stats.vendedor_name}</div>
-                      <div className="flex gap-4 text-sm items-center">
+                      <div className="flex gap-4 text-sm">
                         <span className="text-green-600">{stats.convertidas} convertidas</span>
-                        <span className="text-blue-600">{stats.pendentes} pendentes</span>
                         <span className="text-yellow-600">{stats.compareceram} compareceram</span>
                         <span className="text-red-600">{stats.naoCompareceram} não compareceram</span>
                         <span className="font-medium">
                           Taxa: {reunioesComComparecimento > 0 ? ((stats.convertidas / reunioesComComparecimento) * 100).toFixed(1) : 0}%
                         </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleBarClick({
-                            vendedorId: stats.vendedor_id,
-                            vendedorName: stats.vendedor_name
-                          }, 'convertidas')}
-                        >
-                          Ver detalhes
-                        </Button>
                       </div>
                     </div>
                   );
@@ -321,19 +270,6 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
           </>
         )}
       </CardContent>
-      
-      {/* Modal de detalhes */}
-      {selectedVendedorForModal && (
-        <AgendamentosListaModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          vendedorId={selectedVendedorForModal.id}
-          vendedorName={selectedVendedorForModal.name}
-          startDate={weekStart}
-          endDate={weekEnd}
-          initialTab={selectedVendedorForModal.tab}
-        />
-      )}
     </Card>
   );
 };

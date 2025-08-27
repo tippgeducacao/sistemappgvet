@@ -63,15 +63,21 @@ export class VendedorConversionService {
       ag.resultado_reuniao && ['presente', 'compareceu', 'realizada'].includes(ag.resultado_reuniao.toLowerCase())
     ).length || 0;
 
-    // Buscar vendas efetivas (matriculadas) do vendedor usando data de assinatura
-    const { EffectiveSalesService } = await import('@/services/vendas/EffectiveSalesService');
-    const vendasEfetivas = await EffectiveSalesService.getMatriculasByEffectiveDate(
-      vendedorId,
-      dataInicioSemana,
-      dataFimSemana
-    );
+    // Buscar vendas matriculadas do vendedor na mesma semana
+    const { data: vendas, error: vendasError } = await supabase
+      .from('form_entries')
+      .select('id, status, vendedor_id, created_at')
+      .eq('vendedor_id', vendedorId)
+      .gte('created_at', dataInicioSemana.toISOString())
+      .lte('created_at', dataFimSemana.toISOString())
+      .eq('status', 'matriculado');
 
-    const reunioesComVenda = vendasEfetivas.length;
+    if (vendasError) {
+      console.error('❌ Erro ao buscar vendas:', vendasError);
+      throw vendasError;
+    }
+
+    const reunioesComVenda = vendas?.length || 0;
 
     const taxaComparecimento = totalReunioes > 0 ? (reunioesComComparecimento / totalReunioes) * 100 : 0;
     const taxaConversao = reunioesComComparecimento > 0 ? (reunioesComVenda / reunioesComComparecimento) * 100 : 0;
@@ -121,15 +127,21 @@ export class VendedorConversionService {
       ag.status === 'finalizado'
     ).length || 0;
 
-    // Buscar matrículas efetivas do vendedor no período (usando data de assinatura)
-    const { EffectiveSalesService } = await import('@/services/vendas/EffectiveSalesService');
-    const vendasEfetivas = await EffectiveSalesService.getMatriculasByEffectiveDate(
-      vendedorId,
-      startDate,
-      endDate
-    );
+    // Buscar matrículas do vendedor no período (vendas matriculadas)
+    const { data: vendas, error: vendasError } = await supabase
+      .from('form_entries')
+      .select('*')
+      .eq('vendedor_id', vendedorId)
+      .eq('status', 'matriculado')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
 
-    const matriculas = vendasEfetivas.length;
+    if (vendasError) {
+      console.error('❌ Erro ao buscar vendas:', vendasError);
+      throw vendasError;
+    }
+
+    const matriculas = vendas?.length || 0;
 
     // Calcular taxa de conversão: (Matrículas / Reuniões Realizadas) * 100
     const taxaConversao = reunioesRealizadas > 0 ? (matriculas / reunioesRealizadas) * 100 : 0;
