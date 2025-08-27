@@ -99,6 +99,14 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   const selectedMonth = propSelectedMonth && propSelectedYear 
     ? `${propSelectedYear}-${String(propSelectedMonth).padStart(2, '0')}`
     : internalSelectedMonth;
+    
+  console.log('📊 VendorsRanking Filtros:', { 
+    propSelectedMonth, 
+    propSelectedYear, 
+    internalSelectedMonth, 
+    selectedMonth,
+    totalVendas: vendas?.length || 0
+  });
 
   const isLoading = vendasLoading || vendedoresLoading || metasLoading || niveisLoading;
 
@@ -937,18 +945,20 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
               onMonthChange={(month) => {
                 // Sempre permitir alteração do filtro interno da planilha detalhada
                 const currentYear = selectedMonth.split('-')[0];
-                if (month === 0) {
-                  // "Todos os meses" - usar mês atual
-                  const now = new Date();
-                  setInternalSelectedMonth(`${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`);
-                } else {
-                  setInternalSelectedMonth(`${currentYear}-${String(month).padStart(2, '0')}`);
-                }
+                const newSelectedMonth = month === 0 
+                  ? `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+                  : `${currentYear}-${String(month).padStart(2, '0')}`;
+                
+                console.log('🔄 Mudando mês:', { month, newSelectedMonth, currentYear });
+                setInternalSelectedMonth(newSelectedMonth);
               }}
               onYearChange={(year) => {
                 // Sempre permitir alteração do filtro interno da planilha detalhada
                 const currentMonth = selectedMonth.split('-')[1];
-                setInternalSelectedMonth(`${year}-${currentMonth}`);
+                const newSelectedMonth = `${year}-${currentMonth}`;
+                
+                console.log('🔄 Mudando ano:', { year, newSelectedMonth, currentMonth });
+                setInternalSelectedMonth(newSelectedMonth);
               }}
               showAll={false}
             />
