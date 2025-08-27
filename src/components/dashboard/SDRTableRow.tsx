@@ -22,18 +22,13 @@ const getMultiplicadorSDR = (percentual: number): number => {
   let regra = null;
   
   for (const r of REGRAS_COMISSIONAMENTO_SDR) {
-    // Para 100% exato, deve usar a regra 100-119
-    if (percentual === 100 && r.percentual_minimo === 100) {
+    // Para percentuais >= 999 (muito altos) - verificar primeiro
+    if (r.percentual_maximo >= 999 && percentual >= r.percentual_minimo) {
       regra = r;
       break;
     }
-    // Para outros percentuais, usar >= minimo e < maximo
-    else if (percentual >= r.percentual_minimo && percentual < r.percentual_maximo) {
-      regra = r;
-      break;
-    }
-    // Para percentuais >= 999 (muito altos)
-    else if (r.percentual_maximo >= 999 && percentual >= r.percentual_minimo) {
+    // Para outros percentuais, usar >= minimo e <= maximo (CORRIGIDO)
+    else if (percentual >= r.percentual_minimo && percentual <= r.percentual_maximo) {
       regra = r;
       break;
     }
