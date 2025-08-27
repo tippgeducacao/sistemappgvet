@@ -262,18 +262,13 @@ export class HistoricoMensalService {
     const regrasUsuario = regras.filter(r => r.tipo_usuario === tipoUsuario);
     
     for (const regra of regrasUsuario) {
-      // Para 100% exato, deve usar a regra 100-119
-      if (percentual === 100 && regra.percentual_minimo === 100) {
+      // Para percentuais >= 999 (muito altos) - verificar primeiro
+      if (regra.percentual_maximo >= 999 && percentual >= regra.percentual_minimo) {
         regraAplicavel = regra;
         break;
       }
-      // Para outros percentuais, usar >= minimo e < maximo
-      else if (percentual >= regra.percentual_minimo && percentual < regra.percentual_maximo) {
-        regraAplicavel = regra;
-        break;
-      }
-      // Para percentuais >= 999 (ou seja, muito altos)
-      else if (regra.percentual_maximo >= 999 && percentual >= regra.percentual_minimo) {
+      // Para outros percentuais, usar >= minimo e <= maximo (CORRIGIDO)
+      else if (percentual >= regra.percentual_minimo && percentual <= regra.percentual_maximo) {
         regraAplicavel = regra;
         break;
       }
