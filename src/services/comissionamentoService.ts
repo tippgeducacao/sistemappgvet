@@ -48,27 +48,31 @@ export class ComissionamentoService {
     variabelSemanal: number,
     tipoUsuario = 'vendedor'
   ): Promise<{ valor: number; multiplicador: number; percentual: number }> {
-    const percentual = (pontosObtidos / metaSemanal) * 100;
+    const percentualBruto = (pontosObtidos / metaSemanal) * 100;
+    const percentual = Math.round(percentualBruto); // ARREDONDAR antes da comparação
     const regras = await this.fetchRegras(tipoUsuario);
     
     console.log('🔢 DEBUG COMISSIONAMENTO:', {
       pontosObtidos,
       metaSemanal, 
-      percentual,
-      percentualArredondado: Math.round(percentual),
+      percentualBruto,
+      percentualArredondado: percentual,
       regras: regras.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
     });
     
-    // LÓGICA CORRIGIDA: encontrar a regra correta
+    // LÓGICA CORRIGIDA: encontrar a regra mais específica aplicável
     let regraAplicavel = null;
     
-    for (const regra of regras) {
+    // Ordenar regras por percentual_minimo DESC para pegar a mais específica primeiro
+    const regrasOrdenadas = [...regras].sort((a, b) => b.percentual_minimo - a.percentual_minimo);
+    
+    for (const regra of regrasOrdenadas) {
       // Para percentuais >= 999 (ou seja, muito altos) - deve ser verificado primeiro
       if (regra.percentual_maximo >= 999 && percentual >= regra.percentual_minimo) {
         regraAplicavel = regra;
         break;
       }
-      // Para outros percentuais, usar >= minimo e <= maximo (CORRIGIDO: usar <= em vez de <)
+      // Para outros percentuais, usar >= minimo e <= maximo
       else if (percentual >= regra.percentual_minimo && percentual <= regra.percentual_maximo) {
         regraAplicavel = regra;
         break;
@@ -86,7 +90,7 @@ export class ComissionamentoService {
     return {
       valor,
       multiplicador,
-      percentual: Math.round(percentual * 100) / 100
+      percentual: Math.round(percentualBruto * 100) / 100 // Retornar percentual original para display
     };
   }
 }

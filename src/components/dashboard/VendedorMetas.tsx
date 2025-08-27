@@ -143,13 +143,39 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
           const startSemana = getDataInicioSemana(selectedYear, selectedMonth, numeroSemana);
           const endSemana = getDataFimSemana(selectedYear, selectedMonth, numeroSemana);
           
-          const pontosDaSemana = vendas.filter(venda => {
+          // UNIFICADO: Usar a mesma lógica do display (vendasWithResponses)
+          const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
             if (venda.vendedor_id !== profile.id) return false;
             if (venda.status !== 'matriculado') return false;
             
-            const vendaDate = new Date(venda.enviado_em);
-            return vendaDate >= startSemana && vendaDate <= endSemana;
-          }).reduce((total, venda) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+            // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
+            let dataVenda: Date;
+            
+            if (venda.data_assinatura_contrato) {
+              dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
+            } else {
+              const dataMatricula = getDataMatriculaFromRespostas(respostas);
+              if (dataMatricula) {
+                dataVenda = dataMatricula;
+              } else {
+                dataVenda = new Date(venda.enviado_em);
+              }
+            }
+            
+            // Aplicar a mesma lógica de validação de período do display
+            const vendaPeriod = getVendaPeriod(dataVenda);
+            const periodoCorreto = vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
+            
+            // Verificar se está na semana específica
+            dataVenda.setHours(0, 0, 0, 0);
+            const startSemanaUTC = new Date(startSemana);
+            startSemanaUTC.setHours(0, 0, 0, 0);
+            const endSemanaUTC = new Date(endSemana);
+            endSemanaUTC.setHours(23, 59, 59, 999);
+            const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+            
+            return periodoCorreto && isInRange;
+          }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
           
           try {
             const comissaoData = await ComissionamentoService.calcularComissao(

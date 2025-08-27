@@ -257,17 +257,20 @@ export class HistoricoMensalService {
       regras: regras.filter(r => r.tipo_usuario === tipoUsuario).map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
     });
     
-    // LÓGICA CORRIGIDA: encontrar a regra correta
+    // LÓGICA CORRIGIDA: encontrar a regra mais específica aplicável  
     let regraAplicavel = null;
     const regrasUsuario = regras.filter(r => r.tipo_usuario === tipoUsuario);
     
-    for (const regra of regrasUsuario) {
+    // Ordenar regras por percentual_minimo DESC para pegar a mais específica primeiro
+    const regrasOrdenadas = regrasUsuario.sort((a, b) => b.percentual_minimo - a.percentual_minimo);
+    
+    for (const regra of regrasOrdenadas) {
       // Para percentuais >= 999 (muito altos) - verificar primeiro
       if (regra.percentual_maximo >= 999 && percentual >= regra.percentual_minimo) {
         regraAplicavel = regra;
         break;
       }
-      // Para outros percentuais, usar >= minimo e <= maximo (CORRIGIDO)
+      // Para outros percentuais, usar >= minimo e <= maximo
       else if (percentual >= regra.percentual_minimo && percentual <= regra.percentual_maximo) {
         regraAplicavel = regra;
         break;
