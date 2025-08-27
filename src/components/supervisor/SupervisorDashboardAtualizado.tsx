@@ -46,8 +46,10 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     nivel?: string;
   } | null>(null);
   
-  // Hooks para metas semanais
-  const { getSemanasDoMes, getSemanaAtual } = useMetasSemanais();
+  // Hooks para metas semanais - armazenar as funções de forma estável
+  const metasHook = useMetasSemanais();
+  const getSemanasDoMes = metasHook.getSemanasDoMes;
+  const getSemanaAtual = metasHook.getSemanaAtual;
   
   // Verificar se as funções estão disponíveis
   const isMetasFunctionsReady = Boolean(getSemanasDoMes && getSemanaAtual);
@@ -132,16 +134,15 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     };
   };
 
-  // Semanas do mês atual
+  // Semanas do mês atual - usar callback estável
   const semanasDoMes = useMemo(() => {
     console.log('🔍 useMemo semanasDoMes executando:', { 
       isMetasFunctionsReady, 
       currentYear, 
-      currentMonth,
-      getSemanasDoMes: typeof getSemanasDoMes 
+      currentMonth
     });
     
-    if (!isMetasFunctionsReady || typeof getSemanasDoMes !== 'function') {
+    if (!isMetasFunctionsReady) {
       console.log('⚠️ Retornando array vazio - funções não estão prontas');
       return [];
     }
@@ -154,17 +155,16 @@ const SupervisorDashboardAtualizado: React.FC = () => {
       console.error('❌ Erro ao obter semanas do mês:', error);
       return [];
     }
-  }, [currentYear, currentMonth, isMetasFunctionsReady]);
+  }, [currentYear, currentMonth, isMetasFunctionsReady, getSemanasDoMes]);
   
   const semanaAtual = useMemo(() => {
     console.log('🔍 useMemo semanaAtual executando:', { 
       isMetasFunctionsReady, 
       currentYear, 
-      currentMonth,
-      getSemanaAtual: typeof getSemanaAtual 
+      currentMonth
     });
     
-    if (!isMetasFunctionsReady || typeof getSemanaAtual !== 'function') {
+    if (!isMetasFunctionsReady) {
       console.log('⚠️ Retornando semana 1 - funções não estão prontas');
       return 1;
     }
@@ -181,7 +181,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
       console.error('❌ Erro ao obter semana atual:', error);
       return 1;
     }
-  }, [currentYear, currentMonth, isMetasFunctionsReady]);
+  }, [currentYear, currentMonth, isMetasFunctionsReady, getSemanaAtual]);
   
   const [selectedWeek, setSelectedWeek] = useState(semanaAtual);
   
