@@ -1,15 +1,13 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Target, Clock } from 'lucide-react';
+import { useQueries } from '@tanstack/react-query';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
-import { useSupervisorComissionamentoAtual, useSupervisorComissionamento } from '@/hooks/useSupervisorComissionamento';
-import { WeeklyDataProvider } from './WeeklyDataProvider';
-import { WeeklyAverageCalculator } from './WeeklyAverageCalculator';
+import { useSupervisorComissionamento } from '@/hooks/useSupervisorComissionamento';
 import UserProfileModal from '@/components/UserProfileModal';
 import VendedorProfileModal from '@/components/dashboard/VendedorProfileModal';
 import SDRProfileModal from '@/components/dashboard/SDRProfileModal';
@@ -31,11 +29,6 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     selectedYear, 
     selectedMonth 
   });
-  
-  // Estado para navegação semanal
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const currentYear = selectedYear;
-  const currentMonth = selectedMonth;
   
   // Estado para modais de perfil
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
@@ -138,8 +131,8 @@ const SupervisorDashboardAtualizado: React.FC = () => {
   const semanasDoMes = useMemo(() => {
     console.log('🔍 useMemo semanasDoMes executando:', { 
       isMetasFunctionsReady, 
-      currentYear, 
-      currentMonth
+      selectedYear, 
+      selectedMonth
     });
     
     if (!isMetasFunctionsReady) {
@@ -148,20 +141,20 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     }
     
     try {
-      const result = getSemanasDoMes(currentYear, currentMonth);
+      const result = getSemanasDoMes(selectedYear, selectedMonth);
       console.log('✅ semanasDoMes resultado:', result);
       return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('❌ Erro ao obter semanas do mês:', error);
       return [];
     }
-  }, [currentYear, currentMonth, isMetasFunctionsReady]);
+  }, [selectedYear, selectedMonth, isMetasFunctionsReady]);
   
   const semanaAtual = useMemo(() => {
     console.log('🔍 useMemo semanaAtual executando:', { 
       isMetasFunctionsReady, 
-      currentYear, 
-      currentMonth
+      selectedYear, 
+      selectedMonth
     });
     
     if (!isMetasFunctionsReady) {
@@ -171,7 +164,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     
     try {
       const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
-      if (currentAno === currentYear && currentMes === currentMonth) {
+      if (currentAno === selectedYear && currentMes === selectedMonth) {
         const result = getSemanaAtual();
         console.log('✅ semanaAtual resultado:', result);
         return typeof result === 'number' ? result : 1;
@@ -181,23 +174,9 @@ const SupervisorDashboardAtualizado: React.FC = () => {
       console.error('❌ Erro ao obter semana atual:', error);
       return 1;
     }
-  }, [currentYear, currentMonth, isMetasFunctionsReady]);
+  }, [selectedYear, selectedMonth, isMetasFunctionsReady]);
   
-  const [selectedWeek, setSelectedWeek] = useState(semanaAtual);
-  
-  // Atualizar selectedWeek quando o mês/ano muda
-  useEffect(() => {
-    setSelectedWeek(semanaAtual);
-  }, [semanaAtual]);
-
-  // Atualizar mês/ano quando a semana atual muda de período
-  useEffect(() => {
-    const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
-    if (currentAno !== selectedYear || currentMes !== selectedMonth) {
-      setSelectedYear(currentAno);
-      setSelectedMonth(currentMes);
-    }
-  }, [selectedYear, selectedMonth]);
+  // Remover selectedWeek - não precisamos mais
 
   // Encontrar o grupo do supervisor logado
   const meuGrupo = useMemo(() => {
@@ -218,21 +197,34 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     return grupo;
   }, [user, grupos]);
 
-  // Buscar dados para todas as semanas do mês
-  const semanaQueries = (semanasDoMes || []).map(semana => ({
+  // Buscar dados para todas as semanas do mês usando useQueries
+  const semanaQueriesResults = useQueries({
+    queries: (semanasDoMes || []).map(semana => ({
+      queryKey: ['supervisor-comissionamento', user?.id, selectedYear, selectedMonth, semana],
+      queryFn: async () => {
+        const { SupervisorComissionamentoService } = await import('@/services/supervisor/SupervisorComissionamentoService');
+        return SupervisorComissionamentoService.calcularComissionamentoSupervisor(user?.id || '', selectedYear, selectedMonth, semana);
+      },
+      enabled: !!user?.id && !!selectedYear && !!selectedMonth && !!semana,
+      staleTime: 1000 * 60 * 5, // 5 minutos
+    }))
+  });
+  
+  // Mapear resultados para formato esperado
+  const semanaQueries = (semanasDoMes || []).map((semana, index) => ({
     semana,
-    data: useSupervisorComissionamento(user?.id || '', selectedYear, selectedMonth, semana)
+    data: semanaQueriesResults[index] || { isLoading: true, data: null }
   }));
   
   // Coletar status de loading de todos os queries
   const supervisorLoading = semanaQueries.some(query => query.data.isLoading);
   
-  // Buscar dados da semana selecionada para o card de resumo
+  // Buscar dados da semana atual para o card de resumo
   const { data: supervisorData } = useSupervisorComissionamento(
     user?.id || '', 
     selectedYear, 
     selectedMonth, 
-    selectedWeek
+    semanaAtual
   );
 
   // Log para debug
@@ -240,17 +232,9 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     supervisorId: user?.id,
     selectedYear,
     selectedMonth,
-    selectedWeek,
+    semanaAtual,
     supervisorData
   });
-
-  // Funções de navegação semanal
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newWeek = direction === 'prev' ? selectedWeek - 1 : selectedWeek + 1;
-    if (semanasDoMes && semanasDoMes.includes(newWeek)) {
-      setSelectedWeek(newWeek);
-    }
-  };
 
   // Memoizar cálculos dos cards baseados na planilha detalhada
   const percentualGeral = useMemo(() => {
@@ -363,30 +347,6 @@ const SupervisorDashboardAtualizado: React.FC = () => {
           </div>
         </div>
 
-        {/* Navegação Semanal */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h3 className="text-lg font-semibold text-foreground">Semana {selectedWeek}</h3>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigateWeek('prev')}
-                disabled={!semanasDoMes || !semanasDoMes.includes(selectedWeek - 1)}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigateWeek('next')}
-                disabled={!semanasDoMes || !semanasDoMes.includes(selectedWeek + 1)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
 
         {/* Cards de Métricas */}
         <div className="flex justify-center">
@@ -429,7 +389,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Nível</th>
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Meta Semanal</th>
                      {(semanasDoMes || []).map((semana) => {
-                       const { start, end } = getWeekDates(currentYear, currentMonth, semana);
+                       const { start, end } = getWeekDates(selectedYear, selectedMonth, semana);
                        const startFormatted = start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                        const endFormatted = end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                        
@@ -439,7 +399,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                        const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
                        
                        // É semana atual se as datas se sobrepõem E estamos no mesmo mês/ano
-                       const isCurrentWeek = (currentAno === currentYear && currentMes === currentMonth) &&
+                       const isCurrentWeek = (currentAno === selectedYear && currentMes === selectedMonth) &&
                          (start <= currentWeekEnd && end >= currentWeekStart);
                        
                        return (
@@ -532,13 +492,13 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                         
                          {/* Colunas das Semanas */}
                          {(semanasDoMes || []).map((semana) => {
-                           const { start, end } = getWeekDates(currentYear, currentMonth, semana);
+                           const { start, end } = getWeekDates(selectedYear, selectedMonth, semana);
                            const today = new Date();
                            const { start: currentWeekStart, end: currentWeekEnd } = getWeekRange(today);
                            const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
                            
                            // É semana atual se as datas se sobrepõem E estamos no mesmo mês/ano
-                           const isCurrentWeek = (currentAno === currentYear && currentMes === currentMonth) &&
+                           const isCurrentWeek = (currentAno === selectedYear && currentMes === selectedMonth) &&
                              (start <= currentWeekEnd && end >= currentWeekStart);
                            
                             // Buscar dados específicos desta semana
@@ -546,22 +506,22 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                             const semanaData = semanaQuery?.data.data;
                             const membroDetalhe = semanaData?.sdrsDetalhes?.find(sdr => sdr.id === membro.usuario_id);
                             
-                            console.log(`🔍 DEBUG SEMANA ${semana} - ${membro.usuario?.name}:`, {
-                              semanaQuery: !!semanaQuery,
-                              dataLoading: semanaQuery?.data.isLoading,
-                              dataError: semanaQuery?.data.error,
-                              semanaData: !!semanaData,
-                              totalSDRs: semanaData?.sdrsDetalhes?.length || 0,
-                              membroEncontrado: !!membroDetalhe,
-                              membroId: membro.usuario_id.substring(0, 8),
-                              sdrsIds: semanaData?.sdrsDetalhes?.map(sdr => sdr.id.substring(0, 8)) || [],
-                              membroDetalhe: membroDetalhe ? {
-                                nome: membroDetalhe.nome,
-                                reunioes: membroDetalhe.reunioesRealizadas,
-                                meta: membroDetalhe.metaSemanal,
-                                percentual: membroDetalhe.percentualAtingimento
-                              } : null
-                            });
+                             console.log(`🔍 DEBUG SEMANA ${semana} - ${membro.usuario?.name}:`, {
+                               semanaQuery: !!semanaQuery,
+                               dataLoading: semanaQuery?.data?.isLoading,
+                               hasData: !!semanaQuery?.data?.data,
+                               semanaData: !!semanaData,
+                               totalSDRs: semanaData?.sdrsDetalhes?.length || 0,
+                               membroEncontrado: !!membroDetalhe,
+                               membroId: membro.usuario_id.substring(0, 8),
+                               sdrsIds: semanaData?.sdrsDetalhes?.map(sdr => sdr.id.substring(0, 8)) || [],
+                               membroDetalhe: membroDetalhe ? {
+                                 nome: membroDetalhe.nome,
+                                 reunioes: membroDetalhe.reunioesRealizadas,
+                                 meta: membroDetalhe.metaSemanal,
+                                 percentual: membroDetalhe.percentualAtingimento
+                               } : null
+                             });
                             
                             return (
                               <td key={semana} className={`py-4 px-4 text-center border-l border-border ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
@@ -607,13 +567,13 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                       Taxa de Atingimento Média
                     </td>
                      {(semanasDoMes || []).map((semana) => {
-                       const { start, end } = getWeekDates(currentYear, currentMonth, semana);
+                       const { start, end } = getWeekDates(selectedYear, selectedMonth, semana);
                        const today = new Date();
                        const { start: currentWeekStart, end: currentWeekEnd } = getWeekRange(today);
                        const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
                        
                        // É semana atual se as datas se sobrepõem E estamos no mesmo mês/ano
-                       const isCurrentWeek = (currentAno === currentYear && currentMes === currentMonth) &&
+                       const isCurrentWeek = (currentAno === selectedYear && currentMes === selectedMonth) &&
                          (start <= currentWeekEnd && end >= currentWeekStart);
                        
                        // Buscar dados específicos desta semana
