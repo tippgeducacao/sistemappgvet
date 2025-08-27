@@ -19,6 +19,7 @@ export interface Agendamento {
   observacoes_resultado?: string;
   created_at: string;
   updated_at: string;
+  form_entry_id?: string; // Campo adicionado para suporte à nova lógica
   lead?: {
     nome: string;
     email?: string;
