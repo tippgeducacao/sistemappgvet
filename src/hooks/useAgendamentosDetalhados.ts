@@ -170,9 +170,13 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
       const agendamentosComprou = agendamentos?.filter(a => a.resultado_reuniao === 'comprou' && a.form_entry_id) || [];
       const formEntryIds = agendamentosComprou.map(a => a.form_entry_id).filter(Boolean);
       
+      // Também buscar "comprou" sem form_entry_id para matching por lead
+      const agendamentosComprouSemFormEntry = agendamentos?.filter(a => a.resultado_reuniao === 'comprou' && !a.form_entry_id) || [];
+      
       console.log('🎯 DEBUG MODAL - Agendamentos "comprou":', {
         totalComprou: agendamentos?.filter(a => a.resultado_reuniao === 'comprou').length || 0,
         comprouComFormEntry: agendamentosComprou.length,
+        comprouSemFormEntry: agendamentosComprouSemFormEntry.length,
         formEntryIds: formEntryIds,
         detalhesComprou: agendamentos?.filter(a => a.resultado_reuniao === 'comprou').map(a => ({
           id: a.id,
@@ -200,6 +204,75 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         });
         
         vendasGlobal?.forEach(v => convertidasGlobal.add(v.id));
+      }
+
+      // Buscar agendamentos "comprou" sem form_entry_id e fazer matching por lead + vincular com vendas da semana
+      let agendamentosMatchingLeads = new Set<string>();
+      let vendasComAgendamento = new Map<string, { agendamento_id: string; data_agendamento: string }>();
+      
+      if (agendamentosComprouSemFormEntry.length > 0 && vendas && vendas.length > 0) {
+        // Buscar dados dos alunos das vendas da semana
+        const vendaIds = vendas.map(v => v.id);
+        const { data: alunosVendas } = await supabase
+          .from('alunos')
+          .select('form_entry_id, nome, email, telefone')
+          .in('form_entry_id', vendaIds);
+        
+        console.log('🎯 DEBUG MODAL MATCHING - Dados para matching:', {
+          agendamentosComprouSemFormEntry: agendamentosComprouSemFormEntry.length,
+          alunosVendas: alunosVendas?.length || 0,
+          leadsData: leadsData.length
+        });
+        
+        // Fazer matching entre agendamentos "comprou" sem form_entry_id e vendas da semana
+        agendamentosComprouSemFormEntry.forEach(agendamento => {
+          const leadData = leadsData.find(l => l.id === agendamento.lead_id);
+          if (!leadData) return;
+          
+          const leadWhatsApp = leadData.whatsapp?.replace(/\D/g, '');
+          const leadEmail = leadData.email?.toLowerCase();
+          
+          const alunoMatching = alunosVendas?.find(aluno => {
+            const alunoWhatsApp = aluno.telefone?.replace(/\D/g, '');
+            const alunoEmail = aluno.email?.toLowerCase();
+            
+            // Match por WhatsApp
+            if (leadWhatsApp && alunoWhatsApp && leadWhatsApp === alunoWhatsApp) {
+              return true;
+            }
+            
+            // Match por email
+            if (leadEmail && alunoEmail && leadEmail === alunoEmail) {
+              return true;
+            }
+            
+            return false;
+          });
+          
+          if (alunoMatching) {
+            agendamentosMatchingLeads.add(agendamento.id);
+            vendasComAgendamento.set(alunoMatching.form_entry_id, {
+              agendamento_id: agendamento.id,
+              data_agendamento: agendamento.data_agendamento
+            });
+            
+            console.log('✅ MODAL MATCH ENCONTRADO:', {
+              agendamento_id: agendamento.id,
+              data_agendamento: agendamento.data_agendamento,
+              lead_whatsapp: leadWhatsApp,
+              lead_email: leadEmail,
+              venda_id: alunoMatching.form_entry_id,
+              aluno_nome: alunoMatching.nome,
+              aluno_whatsapp: alunoMatching.telefone?.replace(/\D/g, ''),
+              aluno_email: alunoMatching.email?.toLowerCase()
+            });
+          }
+        });
+        
+        console.log('🎯 DEBUG MODAL MATCHING - Resultado:', {
+          agendamentosComMatching: agendamentosMatchingLeads.size,
+          vendasComAgendamento: vendasComAgendamento.size
+        });
       }
 
       console.log('📊 Modal - Dados coletados:', {
@@ -230,25 +303,28 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
           } : undefined
         };
 
-        // Categorização CORRIGIDA: "comprou" só fica pendente se não foi convertido globalmente
+        // Categorização CORRIGIDA: "comprou" só fica pendente se não foi convertido globalmente OU por matching
         switch (agendamento.resultado_reuniao) {
           case 'comprou':
-            // Só vai para pendentes se NÃO foi convertido globalmente
-            const jaConvertido = agendamento.form_entry_id && convertidasGlobal.has(agendamento.form_entry_id);
+            // Só vai para pendentes se NÃO foi convertido globalmente OU por matching de lead
+            const jaConvertidoPorFormEntry = agendamento.form_entry_id && convertidasGlobal.has(agendamento.form_entry_id);
+            const jaConvertidoPorLead = agendamentosMatchingLeads.has(agendamento.id);
+            const jaConvertido = jaConvertidoPorFormEntry || jaConvertidoPorLead;
             
             console.log('🎯 DEBUG MODAL COMPROU - Processando agendamento:', {
               agendamento_id: agendamento.id,
               form_entry_id: agendamento.form_entry_id,
+              jaConvertidoPorFormEntry,
+              jaConvertidoPorLead,
               jaConvertido,
-              data_resultado: agendamento.data_resultado,
-              convertidasGlobalContains: agendamento.form_entry_id ? convertidasGlobal.has(agendamento.form_entry_id) : 'sem form_entry_id'
+              data_resultado: agendamento.data_resultado
             });
             
             if (!jaConvertido) {
               pendentes.push(agendamentoDetalhado);
               console.log('✅ MODAL: Adicionando como PENDENTE');
             } else {
-              console.log('❌ MODAL: NÃO adicionando como pendente (já convertido)');
+              console.log('❌ MODAL: NÃO adicionando como pendente (já convertido via form_entry ou matching)');
             }
             break;
           case 'compareceu_nao_comprou':
@@ -263,15 +339,19 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         }
       });
 
-      // 6. Processar APENAS vendas convertidas com assinatura de contrato na semana
-      const convertidas: VendaConvertida[] = vendas?.map(venda => ({
-        id: venda.id,
-        data_assinatura_contrato: venda.data_assinatura_contrato,
-        aluno_nome: alunosMap.get(venda.id) || 'Nome não informado',
-        curso_nome: cursosMap.get(venda.id) || 'Curso não informado',
-        agendamento_id: undefined,
-        data_agendamento: undefined
-      })) || [];
+      // 6. Processar vendas convertidas com assinatura de contrato na semana + vincular com agendamentos
+      const convertidas: VendaConvertida[] = vendas?.map(venda => {
+        const agendamentoData = vendasComAgendamento.get(venda.id);
+        
+        return {
+          id: venda.id,
+          data_assinatura_contrato: venda.data_assinatura_contrato,
+          aluno_nome: alunosMap.get(venda.id) || 'Nome não informado',
+          curso_nome: cursosMap.get(venda.id) || 'Curso não informado',
+          agendamento_id: agendamentoData?.agendamento_id,
+          data_agendamento: agendamentoData?.data_agendamento
+        };
+      }) || [];
 
       const resultado = {
         convertidas,
