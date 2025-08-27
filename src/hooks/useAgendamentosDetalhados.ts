@@ -173,10 +173,11 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         endOfWeek: endOfWeek.toISOString()
       });
 
-      // 5. Categorizar agendamentos (EXATAMENTE IGUAL AO GRÁFICO)
+      // 5. Categorizar agendamentos e inicializar arrays
       const pendentes: AgendamentoDetalhado[] = [];
       const compareceram: AgendamentoDetalhado[] = [];
       const naoCompareceram: AgendamentoDetalhado[] = [];
+      const convertidasAgendamentos: VendaConvertida[] = [];
 
       agendamentos?.forEach(agendamento => {
         // Encontrar dados do lead
@@ -191,10 +192,19 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
           } : undefined
         };
 
-        // Categorização EXATAMENTE igual ao gráfico
+        // Categorização CORRIGIDA: comprou = convertidas, não pendentes
         switch (agendamento.resultado_reuniao) {
           case 'comprou':
-            pendentes.push(agendamentoDetalhado);
+            // Reuniões com resultado "comprou" são convertidas, não pendentes
+            const vendaConvertida: VendaConvertida = {
+              id: agendamento.id,
+              data_assinatura_contrato: agendamento.data_resultado || agendamento.data_agendamento,
+              aluno_nome: leadData?.nome || 'Nome não informado',
+              curso_nome: agendamento.pos_graduacao_interesse || 'Curso não informado',
+              agendamento_id: agendamento.id,
+              data_agendamento: agendamento.data_agendamento
+            };
+            convertidasAgendamentos.push(vendaConvertida);
             break;
           case 'compareceu_nao_comprou':
           case 'presente':
@@ -208,8 +218,8 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         }
       });
 
-      // 6. Processar vendas convertidas
-      const convertidas: VendaConvertida[] = vendas?.map(venda => ({
+      // 6. Processar vendas convertidas e combinar com agendamentos convertidos
+      const convertidasVendas: VendaConvertida[] = vendas?.map(venda => ({
         id: venda.id,
         data_assinatura_contrato: venda.data_assinatura_contrato,
         aluno_nome: alunosMap.get(venda.id) || 'Nome não informado',
@@ -217,6 +227,9 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         agendamento_id: undefined,
         data_agendamento: undefined
       })) || [];
+
+      // Combinar todas as vendas convertidas
+      const convertidas = [...convertidasAgendamentos, ...convertidasVendas];
 
       const resultado = {
         convertidas,
