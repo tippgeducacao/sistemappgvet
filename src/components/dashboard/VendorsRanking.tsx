@@ -935,22 +935,20 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
               selectedMonth={parseInt(selectedMonth.split('-')[1])}
               selectedYear={parseInt(selectedMonth.split('-')[0])}
               onMonthChange={(month) => {
-                if (!propSelectedMonth && !propSelectedYear) {
-                  const currentYear = selectedMonth.split('-')[0];
-                  if (month === 0) {
-                    // "Todos os meses" - usar mês atual
-                    const now = new Date();
-                    setInternalSelectedMonth(`${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`);
-                  } else {
-                    setInternalSelectedMonth(`${currentYear}-${String(month).padStart(2, '0')}`);
-                  }
+                // Sempre permitir alteração do filtro interno da planilha detalhada
+                const currentYear = selectedMonth.split('-')[0];
+                if (month === 0) {
+                  // "Todos os meses" - usar mês atual
+                  const now = new Date();
+                  setInternalSelectedMonth(`${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+                } else {
+                  setInternalSelectedMonth(`${currentYear}-${String(month).padStart(2, '0')}`);
                 }
               }}
               onYearChange={(year) => {
-                if (!propSelectedMonth && !propSelectedYear) {
-                  const currentMonth = selectedMonth.split('-')[1];
-                  setInternalSelectedMonth(`${year}-${currentMonth}`);
-                }
+                // Sempre permitir alteração do filtro interno da planilha detalhada
+                const currentMonth = selectedMonth.split('-')[1];
+                setInternalSelectedMonth(`${year}-${currentMonth}`);
               }}
               showAll={false}
             />
