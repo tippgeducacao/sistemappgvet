@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getWeekRange } from '@/utils/semanaUtils';
 
 export interface AgendamentoDetalhado {
   id: string;
@@ -17,50 +18,48 @@ export interface AgendamentoDetalhado {
   };
 }
 
+export interface VendaConvertida {
+  id: string;
+  data_assinatura_contrato: string;
+  aluno_nome: string;
+  curso_nome: string;
+  agendamento_id?: string;
+  data_agendamento?: string;
+}
+
+export interface ReunioesCategorizada {
+  convertidas: VendaConvertida[];
+  pendentes: AgendamentoDetalhado[];
+  compareceram: AgendamentoDetalhado[];
+  naoCompareceram: AgendamentoDetalhado[];
+}
+
 export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) => {
-  const [agendamentos, setAgendamentos] = useState<AgendamentoDetalhado[]>([]);
+  const [reunioesCategorizada, setReunioesCategorizada] = useState<ReunioesCategorizada>({
+    convertidas: [],
+    pendentes: [],
+    compareceram: [],
+    naoCompareceram: []
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAgendamentosDetalhados = async () => {
     try {
       setIsLoading(true);
       
-      // Usar a mesma lógica de cálculo de semana do hook de resultados
-      const currentDate = new Date(weekDate);
-      const dayOfWeek = currentDate.getDay(); // 0 = domingo, 1 = segunda, etc.
-      
-      // Calcular quantos dias subtrair para chegar na quarta-feira anterior
-      let daysToWednesday;
-      if (dayOfWeek === 0) { // Domingo
-        daysToWednesday = 4;
-      } else if (dayOfWeek === 1) { // Segunda
-        daysToWednesday = 5;
-      } else if (dayOfWeek === 2) { // Terça
-        daysToWednesday = 6;
-      } else { // Quarta em diante
-        daysToWednesday = dayOfWeek - 3;
-      }
-      
-      const startOfWeek = new Date(currentDate);
-      startOfWeek.setDate(currentDate.getDate() - daysToWednesday);
-      startOfWeek.setHours(0, 0, 0, 0);
-      
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6); // Quarta + 6 dias = Terça
-      endOfWeek.setHours(23, 59, 59, 999);
+      // Usar getWeekRange para consistência
+      const { start: startOfWeek, end: endOfWeek } = getWeekRange(weekDate);
 
-      console.log('🔍 Buscando agendamentos detalhados EXATOS:', {
+      console.log('🎯 Buscando reuniões categorizadas:', {
         vendedorId,
         weekDate: weekDate.toLocaleDateString('pt-BR'),
-        dayOfWeek,
-        daysToWednesday,
         startOfWeek: startOfWeek.toLocaleDateString('pt-BR'),
         endOfWeek: endOfWeek.toLocaleDateString('pt-BR'),
         periodo: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`
       });
 
-      // Buscar agendamentos com query mais específica
-      const { data, error } = await supabase
+      // 1. Buscar todos os agendamentos do vendedor na semana
+      const { data: agendamentos, error: agendamentosError } = await supabase
         .from('agendamentos')
         .select(`
           id,
@@ -82,43 +81,82 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         .lte('data_agendamento', endOfWeek.toISOString())
         .order('data_agendamento', { ascending: false });
 
-      if (error) {
-        console.error('Erro ao buscar agendamentos detalhados:', error);
+      if (agendamentosError) {
+        console.error('Erro ao buscar agendamentos:', agendamentosError);
         return;
       }
 
-      console.log('📅 Query executada:', {
-        vendedor: vendedorId,
-        start: startOfWeek.toISOString(),
-        end: endOfWeek.toISOString(),
-        total_encontrados: data?.length || 0
+      // 2. Buscar vendas convertidas da semana (baseado na data_assinatura_contrato)
+      const { data: vendas, error: vendasError } = await supabase
+        .from('form_entries')
+        .select(`
+          id,
+          data_assinatura_contrato,
+          alunos (nome),
+          cursos (nome),
+          agendamentos (
+            id,
+            data_agendamento
+          )
+        `)
+        .eq('vendedor_id', vendedorId)
+        .eq('status', 'matriculado')
+        .gte('data_assinatura_contrato', startOfWeek.toISOString().split('T')[0])
+        .lte('data_assinatura_contrato', endOfWeek.toISOString().split('T')[0]);
+
+      if (vendasError) {
+        console.error('Erro ao buscar vendas:', vendasError);
+        return;
+      }
+
+      console.log('📊 Dados coletados:', {
+        agendamentos: agendamentos?.length || 0,
+        vendas: vendas?.length || 0
       });
 
-      // Filtro adicional para garantir precisão
-      const agendamentosFiltrados = data?.filter(agendamento => {
-        const dataAgendamento = new Date(agendamento.data_agendamento);
-        const dentroDoIntervalo = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
-        
-        console.log('📋 Verificando agendamento:', {
-          id: agendamento.id,
-          data_agendamento: dataAgendamento.toLocaleDateString('pt-BR'),
-          dentro_intervalo: dentroDoIntervalo,
-          resultado: agendamento.resultado_reuniao || 'sem resultado',
-          status: agendamento.status
-        });
-        
-        return dentroDoIntervalo;
-      }) || [];
-      
-      console.log('✅ Agendamentos FINAIS:', {
-        total_filtrados: agendamentosFiltrados.length,
-        vendedor: vendedorId,
-        semana: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`
+      // 3. Categorizar agendamentos
+      const pendentes: AgendamentoDetalhado[] = [];
+      const compareceram: AgendamentoDetalhado[] = [];
+      const naoCompareceram: AgendamentoDetalhado[] = [];
+
+      agendamentos?.forEach(agendamento => {
+        if (!agendamento.resultado_reuniao || agendamento.status === 'agendado') {
+          pendentes.push(agendamento);
+        } else if (['compareceu', 'presente', 'compareceu_nao_comprou'].includes(agendamento.resultado_reuniao)) {
+          compareceram.push(agendamento);
+        } else if (['nao_compareceu', 'ausente'].includes(agendamento.resultado_reuniao)) {
+          naoCompareceram.push(agendamento);
+        }
+      });
+
+      // 4. Processar vendas convertidas
+      const convertidas: VendaConvertida[] = vendas?.map(venda => ({
+        id: venda.id,
+        data_assinatura_contrato: venda.data_assinatura_contrato,
+        aluno_nome: venda.alunos?.nome || 'Nome não informado',
+        curso_nome: venda.cursos?.nome || 'Curso não informado',
+        agendamento_id: venda.agendamentos?.[0]?.id,
+        data_agendamento: venda.agendamentos?.[0]?.data_agendamento
+      })) || [];
+
+      const resultado = {
+        convertidas,
+        pendentes,
+        compareceram,
+        naoCompareceram
+      };
+
+      console.log('✅ Reuniões categorizadas:', {
+        convertidas: resultado.convertidas.length,
+        pendentes: resultado.pendentes.length,
+        compareceram: resultado.compareceram.length,
+        naoCompareceram: resultado.naoCompareceram.length,
+        total: resultado.convertidas.length + resultado.pendentes.length + resultado.compareceram.length + resultado.naoCompareceram.length
       });
       
-      setAgendamentos(agendamentosFiltrados);
+      setReunioesCategorizada(resultado);
     } catch (error) {
-      console.error('Erro ao buscar agendamentos detalhados:', error);
+      console.error('Erro ao buscar reuniões categorizadas:', error);
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +169,7 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
   }, [vendedorId, weekDate]);
 
   return {
-    agendamentos,
+    reunioesCategorizada,
     isLoading,
     fetchAgendamentosDetalhados
   };
