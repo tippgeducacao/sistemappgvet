@@ -96,9 +96,27 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
         return;
       }
 
+      // Buscar vendas convertidas globalmente para filtrar "comprou" já assinados
+      const agendamentosComprou = agendamentos?.filter(a => a.resultado_reuniao === 'comprou' && a.form_entry_id) || [];
+      const formEntryIds = agendamentosComprou.map(a => a.form_entry_id).filter(Boolean);
+      
+      let convertidasGlobal = new Set<string>();
+      if (formEntryIds.length > 0) {
+        const { data: vendasGlobal } = await supabase
+          .from('form_entries')
+          .select('id')
+          .in('id', formEntryIds)
+          .eq('status', 'matriculado')
+          .not('data_assinatura_contrato', 'is', null);
+        
+        vendasGlobal?.forEach(v => convertidasGlobal.add(v.id));
+      }
+
       console.log('📊 Dados encontrados:', {
         agendamentos: agendamentos?.length || 0,
-        vendas: vendas?.length || 0
+        vendas: vendas?.length || 0,
+        comprouTotal: agendamentosComprou.length,
+        comprouJaConvertidos: convertidasGlobal.size
       });
 
       // Agrupar dados por vendedor
@@ -126,9 +144,10 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
 
         switch (agendamento.resultado_reuniao) {
           case 'comprou':
-            // Se tem form_entry_id vinculado, verificar se foi aprovado
-            // Caso contrário, considerar como pendente
-            stats.pendentes++;
+            // Só conta como pendente se NÃO foi convertido globalmente
+            if (!agendamento.form_entry_id || !convertidasGlobal.has(agendamento.form_entry_id)) {
+              stats.pendentes++;
+            }
             break;
           case 'compareceu_nao_comprou':
           case 'presente':

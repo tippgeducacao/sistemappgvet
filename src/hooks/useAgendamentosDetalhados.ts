@@ -166,15 +166,33 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         }
       }
 
+      // 5. Buscar vendas convertidas globalmente para filtrar "comprou" já assinados
+      const agendamentosComprou = agendamentos?.filter(a => a.resultado_reuniao === 'comprou' && a.form_entry_id) || [];
+      const formEntryIds = agendamentosComprou.map(a => a.form_entry_id).filter(Boolean);
+      
+      let convertidasGlobal = new Set<string>();
+      if (formEntryIds.length > 0) {
+        const { data: vendasGlobal } = await supabase
+          .from('form_entries')
+          .select('id')
+          .in('id', formEntryIds)
+          .eq('status', 'matriculado')
+          .not('data_assinatura_contrato', 'is', null);
+        
+        vendasGlobal?.forEach(v => convertidasGlobal.add(v.id));
+      }
+
       console.log('📊 Modal - Dados coletados:', {
         agendamentos: agendamentos?.length || 0,
         vendas: vendas?.length || 0,
         leads: leadsData.length,
+        comprouTotal: agendamentosComprou.length,
+        comprouJaConvertidos: convertidasGlobal.size,
         startOfWeek: startOfWeek.toISOString(),
         endOfWeek: endOfWeek.toISOString()
       });
 
-      // 5. Categorizar agendamentos - CORREÇÃO: "comprou" deve ficar como "Pendente"
+      // 6. Categorizar agendamentos - agora filtrando "comprou" já convertidos
       const pendentes: AgendamentoDetalhado[] = [];
       const compareceram: AgendamentoDetalhado[] = [];
       const naoCompareceram: AgendamentoDetalhado[] = [];
@@ -192,11 +210,13 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
           } : undefined
         };
 
-        // Categorização CORRIGIDA: "comprou" fica como "Pendente" até assinar contrato
+        // Categorização CORRIGIDA: "comprou" só fica pendente se não foi convertido globalmente
         switch (agendamento.resultado_reuniao) {
           case 'comprou':
-            // Reuniões com resultado "comprou" ficam como PENDENTES até a assinatura do contrato
-            pendentes.push(agendamentoDetalhado);
+            // Só vai para pendentes se NÃO foi convertido globalmente
+            if (!agendamento.form_entry_id || !convertidasGlobal.has(agendamento.form_entry_id)) {
+              pendentes.push(agendamentoDetalhado);
+            }
             break;
           case 'compareceu_nao_comprou':
           case 'presente':
