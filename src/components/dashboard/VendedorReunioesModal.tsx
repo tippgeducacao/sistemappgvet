@@ -63,7 +63,7 @@ const VendedorReunioesModal: React.FC<VendedorReunioesModalProps> = ({
             Reuniões de {vendedorName}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Semana de {weekDate.toLocaleDateString('pt-BR')}
+            Semana de {weekDate.toLocaleDateString('pt-BR')} (quarta a terça)
           </p>
         </DialogHeader>
 
@@ -75,6 +75,11 @@ const VendedorReunioesModal: React.FC<VendedorReunioesModalProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
+            <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+              <strong>Atenção:</strong> Mostrando reuniões da semana específica (quarta a terça).
+              Reuniões são contabilizadas pela data do resultado (quando finalizada) ou data do agendamento (se ainda não finalizada).
+            </div>
+            
             {agendamentos.map((agendamento) => (
               <div key={agendamento.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex items-start justify-between">

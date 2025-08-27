@@ -42,7 +42,7 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         periodo: `${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`
       });
 
-      // Buscar agendamentos na semana (baseado em data_resultado se houver, senão data_agendamento)
+      // Buscar agendamentos com resultado na semana (baseado em data_resultado se houver, senão data_agendamento)
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -61,7 +61,7 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
           )
         `)
         .eq('vendedor_id', vendedorId)
-        .or(`and(data_resultado.gte.${startOfWeek.toISOString()},data_resultado.lte.${endOfWeek.toISOString()}),and(data_resultado.is.null,data_agendamento.gte.${startOfWeek.toISOString()},data_agendamento.lte.${endOfWeek.toISOString()})`)
+        .or(`and(data_resultado.gte.${startOfWeek.toISOString()},data_resultado.lte.${endOfWeek.toISOString()},not.resultado_reuniao.is.null),and(data_resultado.is.null,data_agendamento.gte.${startOfWeek.toISOString()},data_agendamento.lte.${endOfWeek.toISOString()})`)
         .order('data_agendamento', { ascending: false });
 
       if (error) {
@@ -69,8 +69,26 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         return;
       }
 
-      console.log('📅 Agendamentos encontrados:', data?.length || 0);
-      setAgendamentos(data || []);
+      console.log('📅 Agendamentos encontrados:', {
+        total: data?.length || 0,
+        periodo: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`,
+        vendedor: vendedorId
+      });
+      
+      // Filtrar localmente para garantir que apenas reuniões da semana sejam mostradas
+      const agendamentosFiltrados = data?.filter(agendamento => {
+        if (agendamento.data_resultado) {
+          // Se tem resultado, usar a data do resultado
+          const dataResultado = new Date(agendamento.data_resultado);
+          return dataResultado >= startOfWeek && dataResultado <= endOfWeek;
+        } else {
+          // Se não tem resultado, usar a data do agendamento
+          const dataAgendamento = new Date(agendamento.data_agendamento);
+          return dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
+        }
+      }) || [];
+      
+      setAgendamentos(agendamentosFiltrados);
     } catch (error) {
       console.error('Erro ao buscar agendamentos detalhados:', error);
     } finally {
