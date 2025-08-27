@@ -58,7 +58,7 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         periodo: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`
       });
 
-      // 1. Buscar agendamentos do vendedor - agendados OU finalizados na semana
+      // 1. Buscar TODOS os agendamentos do vendedor (simplificado)
       const { data: agendamentos, error: agendamentosError } = await supabase
         .from('agendamentos')
         .select(`
@@ -77,7 +77,6 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
           )
         `)
         .eq('vendedor_id', vendedorId)
-        .or(`and(data_agendamento.gte.${startOfWeek.toISOString()},data_agendamento.lte.${endOfWeek.toISOString()}),and(data_resultado.gte.${startOfWeek.toISOString()},data_resultado.lte.${endOfWeek.toISOString()})`)
         .order('data_agendamento', { ascending: false });
 
       if (agendamentosError) {
@@ -108,44 +107,61 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         return;
       }
 
-      console.log('📊 Dados coletados:', {
+      console.log('📊 Dados coletados (TODOS OS AGENDAMENTOS):', {
         agendamentos: agendamentos?.length || 0,
         vendas: vendas?.length || 0,
-        agendamentosData: agendamentos,
-        vendasData: vendas
+        startOfWeek: startOfWeek.toISOString(),
+        endOfWeek: endOfWeek.toISOString(),
+        todosAgendamentos: agendamentos?.map(a => ({
+          id: a.id,
+          data_agendamento: a.data_agendamento,
+          data_resultado: a.data_resultado,
+          resultado_reuniao: a.resultado_reuniao,
+          status: a.status,
+          lead_nome: a.leads?.nome
+        }))
       });
 
-      // 3. Categorizar agendamentos (IGUAL AO GRÁFICO)
+      // 3. Filtrar e categorizar agendamentos pela SEMANA
+      const agendamentosDaSemana = agendamentos?.filter(agendamento => {
+        const dataAgendamento = new Date(agendamento.data_agendamento);
+        const dataResultado = agendamento.data_resultado ? new Date(agendamento.data_resultado) : null;
+        
+        // Incluir se foi agendado na semana OU se teve resultado na semana
+        const agendadoNaSemana = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
+        const resultadoNaSemana = dataResultado && dataResultado >= startOfWeek && dataResultado <= endOfWeek;
+        
+        return agendadoNaSemana || resultadoNaSemana;
+      }) || [];
+
+      console.log('🎯 Agendamentos filtrados para a semana:', {
+        total: agendamentosDaSemana.length,
+        agendamentosFiltrados: agendamentosDaSemana.map(a => ({
+          id: a.id,
+          data_agendamento: a.data_agendamento,
+          data_resultado: a.data_resultado,
+          resultado_reuniao: a.resultado_reuniao,
+          lead_nome: a.leads?.nome
+        }))
+      });
+
+      // 4. Categorizar agendamentos (IGUAL AO GRÁFICO)
       const pendentes: AgendamentoDetalhado[] = [];
       const compareceram: AgendamentoDetalhado[] = [];
       const naoCompareceram: AgendamentoDetalhado[] = [];
 
-      agendamentos?.forEach(agendamento => {
-        // Verificar se o agendamento tem data_resultado na semana
-        const temResultadoNaSemana = agendamento.data_resultado && 
-          new Date(agendamento.data_resultado) >= startOfWeek && 
-          new Date(agendamento.data_resultado) <= endOfWeek;
-
-        // Se não tem resultado_reuniao OU não tem data_resultado na semana = PENDENTE
-        if (!agendamento.resultado_reuniao || !temResultadoNaSemana) {
-          // Só incluir se foi agendado na semana (evitar duplicatas)
-          const agendadoNaSemana = new Date(agendamento.data_agendamento) >= startOfWeek && 
-            new Date(agendamento.data_agendamento) <= endOfWeek;
-          
-          if (agendadoNaSemana && !agendamento.data_resultado) {
-            pendentes.push(agendamento);
-          }
-        } else if (temResultadoNaSemana) {
-          // Se tem resultado na semana, categorizar pelo resultado
-          if (['compareceu', 'presente', 'compareceu_nao_comprou'].includes(agendamento.resultado_reuniao)) {
-            compareceram.push(agendamento);
-          } else if (['nao_compareceu', 'ausente'].includes(agendamento.resultado_reuniao)) {
-            naoCompareceram.push(agendamento);
-          }
+      agendamentosDaSemana.forEach(agendamento => {
+        // Se não tem resultado_reuniao = PENDENTE
+        if (!agendamento.resultado_reuniao) {
+          pendentes.push(agendamento);
+        } else if (['compareceu', 'presente', 'compareceu_nao_comprou'].includes(agendamento.resultado_reuniao)) {
+          compareceram.push(agendamento);
+        } else if (['nao_compareceu', 'ausente'].includes(agendamento.resultado_reuniao)) {
+          naoCompareceram.push(agendamento);
         }
       });
 
-      // 4. Processar vendas convertidas
+      // 5. Processar vendas convertidas
       const convertidas: VendaConvertida[] = vendas?.map(venda => ({
         id: venda.id,
         data_assinatura_contrato: venda.data_assinatura_contrato,
