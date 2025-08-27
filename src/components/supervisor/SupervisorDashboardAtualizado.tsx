@@ -42,6 +42,9 @@ const SupervisorDashboardAtualizado: React.FC = () => {
   // Hooks para metas semanais
   const { getSemanasDoMes, getSemanaAtual } = useMetasSemanais();
   
+  // Verificar se as funções estão disponíveis
+  const isMetasFunctionsReady = getSemanasDoMes && getSemanaAtual;
+  
   // Gerar opções de anos (últimos 3 anos + próximos 2)
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -117,14 +120,19 @@ const SupervisorDashboardAtualizado: React.FC = () => {
   };
 
   // Semanas do mês atual
-  const semanasDoMes = useMemo(() => getSemanasDoMes(currentYear, currentMonth), [currentYear, currentMonth, getSemanasDoMes]);
+  const semanasDoMes = useMemo(() => {
+    if (!isMetasFunctionsReady) return [];
+    return getSemanasDoMes(currentYear, currentMonth);
+  }, [currentYear, currentMonth, getSemanasDoMes, isMetasFunctionsReady]);
+  
   const semanaAtual = useMemo(() => {
+    if (!isMetasFunctionsReady) return 1;
     const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
     if (currentAno === currentYear && currentMes === currentMonth) {
       return getSemanaAtual();
     }
     return 1; // Padrão para meses diferentes
-  }, [getSemanaAtual, currentYear, currentMonth]);
+  }, [getSemanaAtual, currentYear, currentMonth, isMetasFunctionsReady]);
   
   const [selectedWeek, setSelectedWeek] = useState(semanaAtual);
   
@@ -147,11 +155,11 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     console.log('🔍 DEBUG meuGrupo:', { 
       userId: user?.id, 
       gruposCount: grupos?.length,
-      grupos: grupos?.map(g => ({ id: g.id, supervisor_id: g.supervisor_id, nome: g.nome_grupo }))
+      grupos: grupos?.map(g => ({ id: g.id, supervisor_id: g.supervisor_id, nome: g.nome_grupo })) || []
     });
     
-    if (!user || !grupos) {
-      console.log('⚠️ User ou grupos não disponíveis:', { user: !!user, grupos: !!grupos });
+    if (!user || !grupos || grupos.length === 0) {
+      console.log('⚠️ User ou grupos não disponíveis:', { user: !!user, grupos: !!grupos, gruposLength: grupos?.length });
       return null;
     }
     
@@ -201,8 +209,8 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     return supervisorData.mediaPercentualAtingimento || 0;
   }, [supervisorData]);
 
-  if (loading || supervisorLoading) {
-    console.log('⏳ Estado de carregamento:', { loading, supervisorLoading });
+  if (loading || supervisorLoading || !isMetasFunctionsReady) {
+    console.log('⏳ Estado de carregamento:', { loading, supervisorLoading, isMetasFunctionsReady });
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
