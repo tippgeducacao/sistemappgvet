@@ -9,6 +9,7 @@ import DashboardMetricsCards from '@/components/dashboard/DashboardMetricsCards'
 import VendedorMetas from '@/components/dashboard/VendedorMetas';
 
 import SemanasConsecutivasCard from '@/components/dashboard/SemanasConsecutivasCard';
+import { ReunioesVendedoresChart } from '@/components/dashboard/ReunioesVendedoresChart';
 import ReuniaoAtrasadaModal from '@/components/vendedor/ReuniaoAtrasadaModal';
 import { useReuniaoAtrasada } from '@/hooks/useReuniaoAtrasada';
 import { FileText, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -110,6 +111,9 @@ const VendedorDashboard: React.FC = () => {
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
       />
+
+      {/* Gráfico de Resultados das Reuniões */}
+      <ReunioesVendedoresChart selectedVendedor={profile?.id} />
 
       {/* Lista de vendas recentes */}
       <Card>

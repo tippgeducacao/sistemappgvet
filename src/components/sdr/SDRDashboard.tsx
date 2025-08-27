@@ -12,6 +12,7 @@ import HistoricoReunioes from './HistoricoReunioes';
 import { SDRMetasSemanais } from './SDRMetasSemanais';
 import { ReunioesChart } from '@/components/dashboard/ReunioesChart';
 import SemanasConsecutivasCard from '@/components/dashboard/SemanasConsecutivasCard';
+import { ReunioesVendedoresChart } from '@/components/dashboard/ReunioesVendedoresChart';
 import SDRAgendamentosComparativo from './SDRAgendamentosComparativo';
 import { SDRComissionamentoSemanal } from './SDRComissionamentoSemanal';
 import { GerenciarComissionamentoSDR } from './GerenciarComissionamentoSDR';
@@ -144,6 +145,9 @@ const SDRDashboard: React.FC = () => {
 
       {/* Metas Semanais Detalhadas */}
       <SDRMetasSemanais />
+
+      {/* Gráfico de Resultados das Reuniões */}
+      <ReunioesVendedoresChart selectedVendedor={profile?.id} />
 
       {/* Gráfico de Pizza das Reuniões */}
       <ReunioesChart />
