@@ -521,9 +521,13 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           }
         }
         
-        // Aplicar a mesma lógica de validação de período do dashboard pessoal
+        // Usar o período do filtro selecionado em vez do atual
+        const filterMonth = parseInt(selectedMonth.split('-')[1]);
+        const filterYear = parseInt(selectedMonth.split('-')[0]);
+        
+        // Aplicar a mesma lógica de validação de período do filtro
         const vendaPeriod = getVendaPeriod(dataVenda);
-        const periodoCorreto = vendaPeriod.mes === currentMonth && vendaPeriod.ano === currentYear;
+        const periodoCorreto = vendaPeriod.mes === filterMonth && vendaPeriod.ano === filterYear;
         
         // Verificar se está na semana específica
         dataVenda.setHours(0, 0, 0, 0);
