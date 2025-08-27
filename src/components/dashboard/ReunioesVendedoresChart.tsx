@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Eye } from 'lucide-react';
 import { useResultadosReunioesVendedores } from '@/hooks/useResultadosReunioesVendedores';
 import LoadingState from '@/components/ui/loading-state';
+import VendedorReunioesModal from './VendedorReunioesModal';
 
 interface ReunioesVendedoresChartProps {
   selectedVendedor?: string;
@@ -20,6 +21,7 @@ const COLORS = {
 export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = ({ selectedVendedor }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const [modalVendedor, setModalVendedor] = useState<{ id: string; name: string } | null>(null);
   const { statsData, isLoading } = useResultadosReunioesVendedores(selectedVendedor, selectedWeek);
 
   // Função para calcular início e fim da semana
@@ -265,7 +267,7 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
                   return (
                     <div key={stats.vendedor_id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                       <div className="font-medium">{stats.vendedor_name}</div>
-                      <div className="flex gap-4 text-sm">
+                      <div className="flex gap-4 text-sm items-center">
                         <span className="text-green-600">{stats.convertidas} convertidas</span>
                         <span className="text-blue-600">{stats.pendentes} pendentes</span>
                         <span className="text-yellow-600">{stats.compareceram} compareceram</span>
@@ -273,6 +275,15 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
                         <span className="font-medium">
                           Taxa: {reunioesFinalizadas > 0 ? (((stats.convertidas + stats.pendentes) / reunioesFinalizadas) * 100).toFixed(1) : 0}%
                         </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setModalVendedor({ id: stats.vendedor_id, name: stats.vendedor_name })}
+                          className="ml-2"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Ver
+                        </Button>
                       </div>
                     </div>
                   );
@@ -280,6 +291,17 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
               </div>
             </div>
           </>
+        )}
+
+        {/* Modal de Reuniões Detalhadas */}
+        {modalVendedor && (
+          <VendedorReunioesModal
+            vendedorId={modalVendedor.id}
+            vendedorName={modalVendedor.name}
+            weekDate={selectedWeek}
+            isOpen={!!modalVendedor}
+            onClose={() => setModalVendedor(null)}
+          />
         )}
       </CardContent>
     </Card>
