@@ -58,7 +58,7 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         periodo: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`
       });
 
-      // 1. Buscar todos os agendamentos do vendedor na semana
+      // 1. Buscar agendamentos do vendedor - agendados OU finalizados na semana
       const { data: agendamentos, error: agendamentosError } = await supabase
         .from('agendamentos')
         .select(`
@@ -77,8 +77,7 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
           )
         `)
         .eq('vendedor_id', vendedorId)
-        .gte('data_agendamento', startOfWeek.toISOString())
-        .lte('data_agendamento', endOfWeek.toISOString())
+        .or(`and(data_agendamento.gte.${startOfWeek.toISOString()},data_agendamento.lte.${endOfWeek.toISOString()}),and(data_resultado.gte.${startOfWeek.toISOString()},data_resultado.lte.${endOfWeek.toISOString()})`)
         .order('data_agendamento', { ascending: false });
 
       if (agendamentosError) {
@@ -116,18 +115,33 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         vendasData: vendas
       });
 
-      // 3. Categorizar agendamentos
+      // 3. Categorizar agendamentos (IGUAL AO GRÁFICO)
       const pendentes: AgendamentoDetalhado[] = [];
       const compareceram: AgendamentoDetalhado[] = [];
       const naoCompareceram: AgendamentoDetalhado[] = [];
 
       agendamentos?.forEach(agendamento => {
-        if (!agendamento.resultado_reuniao || agendamento.status === 'agendado') {
-          pendentes.push(agendamento);
-        } else if (['compareceu', 'presente', 'compareceu_nao_comprou'].includes(agendamento.resultado_reuniao)) {
-          compareceram.push(agendamento);
-        } else if (['nao_compareceu', 'ausente'].includes(agendamento.resultado_reuniao)) {
-          naoCompareceram.push(agendamento);
+        // Verificar se o agendamento tem data_resultado na semana
+        const temResultadoNaSemana = agendamento.data_resultado && 
+          new Date(agendamento.data_resultado) >= startOfWeek && 
+          new Date(agendamento.data_resultado) <= endOfWeek;
+
+        // Se não tem resultado_reuniao OU não tem data_resultado na semana = PENDENTE
+        if (!agendamento.resultado_reuniao || !temResultadoNaSemana) {
+          // Só incluir se foi agendado na semana (evitar duplicatas)
+          const agendadoNaSemana = new Date(agendamento.data_agendamento) >= startOfWeek && 
+            new Date(agendamento.data_agendamento) <= endOfWeek;
+          
+          if (agendadoNaSemana && !agendamento.data_resultado) {
+            pendentes.push(agendamento);
+          }
+        } else if (temResultadoNaSemana) {
+          // Se tem resultado na semana, categorizar pelo resultado
+          if (['compareceu', 'presente', 'compareceu_nao_comprou'].includes(agendamento.resultado_reuniao)) {
+            compareceram.push(agendamento);
+          } else if (['nao_compareceu', 'ausente'].includes(agendamento.resultado_reuniao)) {
+            naoCompareceram.push(agendamento);
+          }
         }
       });
 
@@ -148,12 +162,30 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         naoCompareceram
       };
 
-      console.log('✅ Reuniões categorizadas:', {
+      console.log('✅ Reuniões categorizadas (ALINHADO COM GRÁFICO):', {
         convertidas: resultado.convertidas.length,
         pendentes: resultado.pendentes.length,
         compareceram: resultado.compareceram.length,
         naoCompareceram: resultado.naoCompareceram.length,
-        total: resultado.convertidas.length + resultado.pendentes.length + resultado.compareceram.length + resultado.naoCompareceram.length
+        total: resultado.convertidas.length + resultado.pendentes.length + resultado.compareceram.length + resultado.naoCompareceram.length,
+        detalhes: {
+          pendentesList: resultado.pendentes.map(r => ({ 
+            id: r.id, 
+            data_agendamento: r.data_agendamento, 
+            data_resultado: r.data_resultado,
+            resultado: r.resultado_reuniao 
+          })),
+          compareceramList: resultado.compareceram.map(r => ({ 
+            id: r.id, 
+            data_resultado: r.data_resultado,
+            resultado: r.resultado_reuniao 
+          })),
+          naoCompareceramList: resultado.naoCompareceram.map(r => ({ 
+            id: r.id, 
+            data_resultado: r.data_resultado,
+            resultado: r.resultado_reuniao 
+          }))
+        }
       });
       
       setReunioesCategorizada(resultado);
