@@ -170,14 +170,34 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
       const agendamentosComprou = agendamentos?.filter(a => a.resultado_reuniao === 'comprou' && a.form_entry_id) || [];
       const formEntryIds = agendamentosComprou.map(a => a.form_entry_id).filter(Boolean);
       
+      console.log('🎯 DEBUG MODAL - Agendamentos "comprou":', {
+        totalComprou: agendamentos?.filter(a => a.resultado_reuniao === 'comprou').length || 0,
+        comprouComFormEntry: agendamentosComprou.length,
+        formEntryIds: formEntryIds,
+        detalhesComprou: agendamentos?.filter(a => a.resultado_reuniao === 'comprou').map(a => ({
+          id: a.id,
+          data_resultado: a.data_resultado,
+          form_entry_id: a.form_entry_id
+        }))
+      });
+      
       let convertidasGlobal = new Set<string>();
       if (formEntryIds.length > 0) {
         const { data: vendasGlobal } = await supabase
           .from('form_entries')
-          .select('id')
+          .select('id, status, data_assinatura_contrato')
           .in('id', formEntryIds)
           .eq('status', 'matriculado')
           .not('data_assinatura_contrato', 'is', null);
+        
+        console.log('🎯 DEBUG MODAL - Vendas convertidas globalmente:', {
+          vendasEncontradas: vendasGlobal?.length || 0,
+          detalhesVendas: vendasGlobal?.map(v => ({
+            id: v.id,
+            status: v.status,
+            data_assinatura_contrato: v.data_assinatura_contrato
+          }))
+        });
         
         vendasGlobal?.forEach(v => convertidasGlobal.add(v.id));
       }
@@ -214,8 +234,21 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         switch (agendamento.resultado_reuniao) {
           case 'comprou':
             // Só vai para pendentes se NÃO foi convertido globalmente
-            if (!agendamento.form_entry_id || !convertidasGlobal.has(agendamento.form_entry_id)) {
+            const jaConvertido = agendamento.form_entry_id && convertidasGlobal.has(agendamento.form_entry_id);
+            
+            console.log('🎯 DEBUG MODAL COMPROU - Processando agendamento:', {
+              agendamento_id: agendamento.id,
+              form_entry_id: agendamento.form_entry_id,
+              jaConvertido,
+              data_resultado: agendamento.data_resultado,
+              convertidasGlobalContains: agendamento.form_entry_id ? convertidasGlobal.has(agendamento.form_entry_id) : 'sem form_entry_id'
+            });
+            
+            if (!jaConvertido) {
               pendentes.push(agendamentoDetalhado);
+              console.log('✅ MODAL: Adicionando como PENDENTE');
+            } else {
+              console.log('❌ MODAL: NÃO adicionando como pendente (já convertido)');
             }
             break;
           case 'compareceu_nao_comprou':
