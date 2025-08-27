@@ -121,12 +121,12 @@ const SupervisorDashboardAtualizado: React.FC = () => {
 
   // Semanas do mês atual
   const semanasDoMes = useMemo(() => {
-    if (!isMetasFunctionsReady) return [];
+    if (!isMetasFunctionsReady || !getSemanasDoMes) return [];
     return getSemanasDoMes(currentYear, currentMonth);
   }, [currentYear, currentMonth, getSemanasDoMes, isMetasFunctionsReady]);
   
   const semanaAtual = useMemo(() => {
-    if (!isMetasFunctionsReady) return 1;
+    if (!isMetasFunctionsReady || !getSemanaAtual) return 1;
     const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
     if (currentAno === currentYear && currentMes === currentMonth) {
       return getSemanaAtual();
