@@ -25,24 +25,41 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
     try {
       setIsLoading(true);
       
-      // Calcular o início e fim da semana (quarta a terça)
-      const dayOfWeek = weekDate.getDay();
-      let daysToSubtract = dayOfWeek >= 3 ? dayOfWeek - 3 : dayOfWeek + 4;
+      // Usar a mesma lógica de cálculo de semana do hook de resultados
+      const currentDate = new Date(weekDate);
+      const dayOfWeek = currentDate.getDay(); // 0 = domingo, 1 = segunda, etc.
       
-      const startOfWeek = new Date(weekDate);
-      startOfWeek.setDate(weekDate.getDate() - daysToSubtract);
+      // Calcular quantos dias subtrair para chegar na quarta-feira anterior
+      let daysToWednesday;
+      if (dayOfWeek === 0) { // Domingo
+        daysToWednesday = 4;
+      } else if (dayOfWeek === 1) { // Segunda
+        daysToWednesday = 5;
+      } else if (dayOfWeek === 2) { // Terça
+        daysToWednesday = 6;
+      } else { // Quarta em diante
+        daysToWednesday = dayOfWeek - 3;
+      }
+      
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - daysToWednesday);
       startOfWeek.setHours(0, 0, 0, 0);
       
       const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setDate(startOfWeek.getDate() + 6); // Quarta + 6 dias = Terça
       endOfWeek.setHours(23, 59, 59, 999);
 
-      console.log('🔍 Buscando agendamentos detalhados:', {
+      console.log('🔍 Buscando agendamentos detalhados EXATOS:', {
         vendedorId,
-        periodo: `${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`
+        weekDate: weekDate.toLocaleDateString('pt-BR'),
+        dayOfWeek,
+        daysToWednesday,
+        startOfWeek: startOfWeek.toLocaleDateString('pt-BR'),
+        endOfWeek: endOfWeek.toLocaleDateString('pt-BR'),
+        periodo: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`
       });
 
-      // Buscar todos os agendamentos do vendedor e filtrar localmente
+      // Buscar agendamentos com query mais específica
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -61,6 +78,8 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
           )
         `)
         .eq('vendedor_id', vendedorId)
+        .gte('data_agendamento', startOfWeek.toISOString())
+        .lte('data_agendamento', endOfWeek.toISOString())
         .order('data_agendamento', { ascending: false });
 
       if (error) {
@@ -68,37 +87,30 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         return;
       }
 
-      console.log('📅 Agendamentos encontrados:', {
-        total: data?.length || 0,
-        periodo: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`,
-        vendedor: vendedorId
+      console.log('📅 Query executada:', {
+        vendedor: vendedorId,
+        start: startOfWeek.toISOString(),
+        end: endOfWeek.toISOString(),
+        total_encontrados: data?.length || 0
       });
-      
-      // Filtrar localmente para garantir que apenas reuniões da semana sejam mostradas
+
+      // Filtro adicional para garantir precisão
       const agendamentosFiltrados = data?.filter(agendamento => {
         const dataAgendamento = new Date(agendamento.data_agendamento);
-        const dataResultado = agendamento.data_resultado ? new Date(agendamento.data_resultado) : null;
-        
-        // Se tem resultado, a reunião conta na semana do resultado
-        // Se não tem resultado, conta na semana do agendamento
-        const dataReferencia = dataResultado || dataAgendamento;
-        const naSemanaSelecionada = dataReferencia >= startOfWeek && dataReferencia <= endOfWeek;
+        const dentroDoIntervalo = dataAgendamento >= startOfWeek && dataAgendamento <= endOfWeek;
         
         console.log('📋 Verificando agendamento:', {
           id: agendamento.id,
           data_agendamento: dataAgendamento.toLocaleDateString('pt-BR'),
-          data_resultado: dataResultado?.toLocaleDateString('pt-BR') || 'sem resultado',
-          data_referencia: dataReferencia.toLocaleDateString('pt-BR'),
-          periodo_semana: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`,
-          na_semana: naSemanaSelecionada,
-          resultado: agendamento.resultado_reuniao || 'sem resultado'
+          dentro_intervalo: dentroDoIntervalo,
+          resultado: agendamento.resultado_reuniao || 'sem resultado',
+          status: agendamento.status
         });
         
-        return naSemanaSelecionada;
+        return dentroDoIntervalo;
       }) || [];
       
-      console.log('✅ Agendamentos filtrados:', {
-        total_encontrados: data?.length || 0,
+      console.log('✅ Agendamentos FINAIS:', {
         total_filtrados: agendamentosFiltrados.length,
         vendedor: vendedorId,
         semana: `${startOfWeek.toLocaleDateString('pt-BR')} - ${endOfWeek.toLocaleDateString('pt-BR')}`
