@@ -188,18 +188,26 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
             });
           }
           
-          if (propSelectedMonth && propSelectedYear) {
-            // Usar filtros externos do dashboard com regra de semana
-            if (!isVendaInPeriod(dataParaFiltro, propSelectedMonth, propSelectedYear)) {
-              return false;
-            }
-          } else {
+          // Na planilha detalhada, sempre usar filtro interno se existe
+          if (internalSelectedMonth) {
             // Usar filtro interno mensal com regra de semana
             const { mes: vendaMes, ano: vendaAno } = getVendaPeriod(dataParaFiltro);
             const filterMonth = parseInt(internalSelectedMonth.split('-')[1]);
             const filterYear = parseInt(internalSelectedMonth.split('-')[0]);
             
+            console.log('🎯 Filtro detalhado:', {
+              vendaMes, vendaAno,
+              filterMonth, filterYear,
+              dataParaFiltro: dataParaFiltro.toLocaleDateString('pt-BR'),
+              match: vendaMes === filterMonth && vendaAno === filterYear
+            });
+            
             if (vendaMes !== filterMonth || vendaAno !== filterYear) {
+              return false;
+            }
+          } else if (propSelectedMonth && propSelectedYear) {
+            // Usar filtros externos do dashboard apenas se não há filtro interno
+            if (!isVendaInPeriod(dataParaFiltro, propSelectedMonth, propSelectedYear)) {
               return false;
             }
           }
