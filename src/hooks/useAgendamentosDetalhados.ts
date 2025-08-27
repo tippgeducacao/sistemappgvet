@@ -111,7 +111,9 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
 
       console.log('📊 Dados coletados:', {
         agendamentos: agendamentos?.length || 0,
-        vendas: vendas?.length || 0
+        vendas: vendas?.length || 0,
+        agendamentosData: agendamentos,
+        vendasData: vendas
       });
 
       // 3. Categorizar agendamentos
