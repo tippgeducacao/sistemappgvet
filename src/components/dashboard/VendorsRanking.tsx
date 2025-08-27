@@ -95,8 +95,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   
   console.log('🔥 VendorsRanking - isTVMode atual:', isTVMode);
   
-  // Usar filtro externo se disponível, senão usar interno
-  const selectedMonth = propSelectedMonth && propSelectedYear 
+  // Separar lógica: planilha detalhada sempre usa filtro interno
+  const selectedMonth = internalSelectedMonth;
+  
+  // Para o ranking geral (não detalhado), usar props externos se disponíveis
+  const rankingSelectedMonth = propSelectedMonth && propSelectedYear 
     ? `${propSelectedYear}-${String(propSelectedMonth).padStart(2, '0')}`
     : internalSelectedMonth;
   
@@ -962,8 +965,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                   ? `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
                   : `${currentYear}-${String(month).padStart(2, '0')}`;
                 
-                console.log('🔄 Mudando mês:', { month, newSelectedMonth, currentYear });
+                console.log('🔄 Mudando mês:', { month, newSelectedMonth, currentYear, beforeUpdate: internalSelectedMonth });
                 setInternalSelectedMonth(newSelectedMonth);
+                console.log('🔄 Após mudança:', { afterUpdate: newSelectedMonth });
               }}
               onYearChange={(year) => {
                 // Sempre permitir alteração do filtro interno da planilha detalhada
