@@ -20,6 +20,16 @@ const MonthYearSelector: React.FC<MonthYearSelectorProps> = ({
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   
+  console.log('🎯 MonthYearSelector props:', {
+    selectedMonth,
+    selectedYear,
+    showAll,
+    currentMonth,
+    currentYear,
+    selectedMonthType: typeof selectedMonth,
+    selectedYearType: typeof selectedYear
+  });
+  
   // Gerar lista de anos (atual e dois anteriores)
   const years = Array.from({ length: 3 }, (_, i) => currentYear - i);
   
@@ -46,6 +56,7 @@ const MonthYearSelector: React.FC<MonthYearSelectorProps> = ({
       <Select 
         value={selectedMonth?.toString() || (showAll ? "all" : currentMonth.toString())} 
         onValueChange={(value) => {
+          console.log('🔄 MonthYearSelector - Mudando mês:', { value, currentValue: selectedMonth });
           if (value === "all") {
             onMonthChange(0); // 0 indica "todos os meses"
           } else {
@@ -70,7 +81,10 @@ const MonthYearSelector: React.FC<MonthYearSelectorProps> = ({
 
       <Select 
         value={selectedYear?.toString() || currentYear.toString()} 
-        onValueChange={(value) => onYearChange(parseInt(value))}
+        onValueChange={(value) => {
+          console.log('🔄 MonthYearSelector - Mudando ano:', { value, currentValue: selectedYear });
+          onYearChange(parseInt(value));
+        }}
       >
         <SelectTrigger className="w-24">
           <SelectValue placeholder="Ano" />

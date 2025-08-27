@@ -66,6 +66,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     return `${ano}-${String(mes).padStart(2, '0')}`;
   });
   
+  // Debug effect para monitorar mudanças no estado
+  useEffect(() => {
+    console.log('🔄 internalSelectedMonth mudou:', internalSelectedMonth);
+  }, [internalSelectedMonth]);
+  
   // Hook para verificar se o mês está fechado
   const currentMonth = propSelectedMonth || parseInt(internalSelectedMonth?.split('-')[1] || '1');
   const currentYear = propSelectedYear || parseInt(internalSelectedMonth?.split('-')[0] || '2025');
@@ -113,6 +118,10 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     selectedMonth,
     selectedYearNum,
     selectedMonthNum,
+    selectedMonthNumType: typeof selectedMonthNum,
+    selectedYearNumType: typeof selectedYearNum,
+    isNaNMonth: isNaN(selectedMonthNum),
+    isNaNYear: isNaN(selectedYearNum),
     totalVendas: vendas?.length || 0
   });
 
