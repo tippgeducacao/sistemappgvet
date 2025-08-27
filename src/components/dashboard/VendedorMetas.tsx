@@ -159,6 +159,14 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               'vendedor'
             );
             
+            console.log('🎯 VENDEDOR METAS DEBUG:', {
+              numeroSemana,
+              pontosDaSemana,
+              metaSemanal: metaSemanal.meta_vendas,
+              percentual: (pontosDaSemana / metaSemanal.meta_vendas) * 100,
+              comissaoData
+            });
+            
             novasComissoes[`${selectedYear}-${selectedMonth}-${numeroSemana}`] = comissaoData;
           } catch (error) {
             console.error('Erro ao calcular comissão:', error);
