@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import { useAgendamentosStatsVendedores } from '@/hooks/useAgendamentosStatsVendedores';
+import { useResultadosReunioesVendedores } from '@/hooks/useResultadosReunioesVendedores';
 import LoadingState from '@/components/ui/loading-state';
 
 interface ReunioesVendedoresChartProps {
@@ -11,7 +11,8 @@ interface ReunioesVendedoresChartProps {
 }
 
 const COLORS = {
-  convertidas: '#10b981', // Verde para vendas convertidas
+  convertidas: '#10b981', // Verde para vendas convertidas (aprovadas)
+  pendentes: '#3b82f6', // Azul para reuniões marcadas como comprou mas pendentes
   compareceram: '#f59e0b', // Amarelo para compareceram mas não compraram
   naoCompareceram: '#ef4444' // Vermelho para não compareceram
 };
@@ -19,7 +20,7 @@ const COLORS = {
 export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = ({ selectedVendedor }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedWeek, setSelectedWeek] = useState(new Date());
-  const { statsData, isLoading } = useAgendamentosStatsVendedores(selectedVendedor, selectedWeek);
+  const { statsData, isLoading } = useResultadosReunioesVendedores(selectedVendedor, selectedWeek);
 
   // Função para calcular início e fim da semana
   const getWeekBounds = (date: Date) => {
@@ -82,15 +83,16 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
 
   // Preparar dados para o gráfico
   const chartData = statsData.map(stats => {
-    // Taxa de conversão baseada apenas em reuniões onde houve comparecimento (ignora não comparecidas)
-    const reunioesComComparecimento = stats.convertidas + stats.compareceram;
+    // Taxa de conversão baseada em reuniões finalizadas
+    const reunioesFinalizadas = stats.convertidas + stats.pendentes + stats.compareceram;
     return {
       vendedor: stats.vendedor_name.split(' ')[0], // Apenas primeiro nome
       convertidas: stats.convertidas,
+      pendentes: stats.pendentes,
       compareceram: stats.compareceram,
       naoCompareceram: stats.naoCompareceram,
       total: stats.total,
-      taxaConversao: reunioesComComparecimento > 0 ? ((stats.convertidas / reunioesComComparecimento) * 100).toFixed(1) : '0'
+      taxaConversao: reunioesFinalizadas > 0 ? (((stats.convertidas + stats.pendentes) / reunioesFinalizadas) * 100).toFixed(1) : '0'
     };
   });
 
@@ -103,6 +105,9 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
           <div className="space-y-1">
             <p className="text-sm">
               <span className="text-green-600">Convertidas:</span> {data.convertidas}
+            </p>
+            <p className="text-sm">
+              <span className="text-blue-600">Pendentes:</span> {data.pendentes}
             </p>
             <p className="text-sm">
               <span className="text-yellow-600">Compareceram:</span> {data.compareceram}
@@ -229,6 +234,12 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
                     stackId="a"
                   />
                   <Bar 
+                    dataKey="pendentes" 
+                    name="Pendentes" 
+                    fill={COLORS.pendentes}
+                    stackId="a"
+                  />
+                  <Bar 
                     dataKey="compareceram" 
                     name="Compareceram" 
                     fill={COLORS.compareceram}
@@ -249,17 +260,18 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
               <h4 className="font-semibold text-sm">Resumo Detalhado:</h4>
               <div className="grid gap-3">
                 {statsData.map((stats) => {
-                  // Taxa de conversão baseada apenas em reuniões onde houve comparecimento
-                  const reunioesComComparecimento = stats.convertidas + stats.compareceram;
+                  // Taxa de conversão baseada em reuniões finalizadas
+                  const reunioesFinalizadas = stats.convertidas + stats.pendentes + stats.compareceram;
                   return (
                     <div key={stats.vendedor_id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                       <div className="font-medium">{stats.vendedor_name}</div>
                       <div className="flex gap-4 text-sm">
                         <span className="text-green-600">{stats.convertidas} convertidas</span>
+                        <span className="text-blue-600">{stats.pendentes} pendentes</span>
                         <span className="text-yellow-600">{stats.compareceram} compareceram</span>
                         <span className="text-red-600">{stats.naoCompareceram} não compareceram</span>
                         <span className="font-medium">
-                          Taxa: {reunioesComComparecimento > 0 ? ((stats.convertidas / reunioesComComparecimento) * 100).toFixed(1) : 0}%
+                          Taxa: {reunioesFinalizadas > 0 ? (((stats.convertidas + stats.pendentes) / reunioesFinalizadas) * 100).toFixed(1) : 0}%
                         </span>
                       </div>
                     </div>

@@ -20,6 +20,7 @@ export type Database = {
           data_agendamento: string
           data_fim_agendamento: string | null
           data_resultado: string | null
+          form_entry_id: string | null
           id: string
           lead_id: string
           link_reuniao: string
@@ -37,6 +38,7 @@ export type Database = {
           data_agendamento: string
           data_fim_agendamento?: string | null
           data_resultado?: string | null
+          form_entry_id?: string | null
           id?: string
           lead_id: string
           link_reuniao?: string
@@ -54,6 +56,7 @@ export type Database = {
           data_agendamento?: string
           data_fim_agendamento?: string | null
           data_resultado?: string | null
+          form_entry_id?: string | null
           id?: string
           lead_id?: string
           link_reuniao?: string
@@ -67,6 +70,13 @@ export type Database = {
           vendedor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "agendamentos_form_entry_id_fkey"
+            columns: ["form_entry_id"]
+            isOneToOne: false
+            referencedRelation: "form_entries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "agendamentos_lead_id_fkey"
             columns: ["lead_id"]
