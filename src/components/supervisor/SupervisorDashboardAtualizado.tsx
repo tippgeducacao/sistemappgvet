@@ -20,9 +20,10 @@ const SupervisorDashboardAtualizado: React.FC = () => {
   const { user } = useAuthStore();
   const { grupos, loading } = useGruposSupervisores();
   
-  // Estado para seleção de mês/ano
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  // Estado para seleção de mês/ano - usando lógica de semanas
+  const { mes: initialMes, ano: initialAno } = getMesAnoSemanaAtual();
+  const [selectedYear, setSelectedYear] = useState(initialAno);
+  const [selectedMonth, setSelectedMonth] = useState(initialMes);
   
   // Estado para navegação semanal
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -131,6 +132,15 @@ const SupervisorDashboardAtualizado: React.FC = () => {
   useEffect(() => {
     setSelectedWeek(semanaAtual);
   }, [semanaAtual]);
+
+  // Atualizar mês/ano quando a semana atual muda de período
+  useEffect(() => {
+    const { mes: currentMes, ano: currentAno } = getMesAnoSemanaAtual();
+    if (currentAno !== selectedYear || currentMes !== selectedMonth) {
+      setSelectedYear(currentAno);
+      setSelectedMonth(currentMes);
+    }
+  }, [selectedYear, selectedMonth]);
 
   // Encontrar o grupo do supervisor logado
   const meuGrupo = useMemo(() => {

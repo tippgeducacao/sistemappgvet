@@ -975,7 +975,10 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                 // Sempre permitir alteração do filtro interno da planilha detalhada
                 const currentYear = selectedMonth.split('-')[0];
                 const newSelectedMonth = month === 0 
-                  ? `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+                  ? (() => {
+                      const { mes, ano } = getMesAnoSemanaAtual();
+                      return `${ano}-${String(mes).padStart(2, '0')}`;
+                    })()
                   : `${currentYear}-${String(month).padStart(2, '0')}`;
                 
                 console.log('🔄 Mudando mês:', { month, newSelectedMonth, currentYear, beforeUpdate: internalSelectedMonth });
