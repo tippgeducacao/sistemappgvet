@@ -99,12 +99,17 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   const selectedMonth = propSelectedMonth && propSelectedYear 
     ? `${propSelectedYear}-${String(propSelectedMonth).padStart(2, '0')}`
     : internalSelectedMonth;
+  
+  // Extrair mês e ano do selectedMonth para o filtro  
+  const [selectedYearNum, selectedMonthNum] = selectedMonth.split('-').map(Number);
     
   console.log('📊 VendorsRanking Filtros:', { 
     propSelectedMonth, 
     propSelectedYear, 
     internalSelectedMonth, 
     selectedMonth,
+    selectedYearNum,
+    selectedMonthNum,
     totalVendas: vendas?.length || 0
   });
 
@@ -940,8 +945,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           <h2 className="text-xl font-semibold">Planilha Detalhada</h2>
           <div className="flex gap-2 items-center">
             <MonthYearSelector
-              selectedMonth={parseInt(selectedMonth.split('-')[1])}
-              selectedYear={parseInt(selectedMonth.split('-')[0])}
+              selectedMonth={selectedMonthNum}
+              selectedYear={selectedYearNum}
               onMonthChange={(month) => {
                 // Sempre permitir alteração do filtro interno da planilha detalhada
                 const currentYear = selectedMonth.split('-')[0];
