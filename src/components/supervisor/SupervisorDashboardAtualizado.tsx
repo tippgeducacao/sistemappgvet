@@ -155,7 +155,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
       console.error('❌ Erro ao obter semanas do mês:', error);
       return [];
     }
-  }, [currentYear, currentMonth, isMetasFunctionsReady, getSemanasDoMes]);
+  }, [currentYear, currentMonth, isMetasFunctionsReady]);
   
   const semanaAtual = useMemo(() => {
     console.log('🔍 useMemo semanaAtual executando:', { 
@@ -181,7 +181,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
       console.error('❌ Erro ao obter semana atual:', error);
       return 1;
     }
-  }, [currentYear, currentMonth, isMetasFunctionsReady, getSemanaAtual]);
+  }, [currentYear, currentMonth, isMetasFunctionsReady]);
   
   const [selectedWeek, setSelectedWeek] = useState(semanaAtual);
   
