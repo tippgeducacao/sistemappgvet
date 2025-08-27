@@ -170,7 +170,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
   }, [user, grupos]);
 
   // Buscar dados para todas as semanas do mês
-  const semanaQueries = semanasDoMes.map(semana => ({
+  const semanaQueries = (semanasDoMes || []).map(semana => ({
     semana,
     data: useSupervisorComissionamento(user?.id || '', selectedYear, selectedMonth, semana)
   }));
@@ -198,7 +198,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
   // Funções de navegação semanal
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newWeek = direction === 'prev' ? selectedWeek - 1 : selectedWeek + 1;
-    if (semanasDoMes.includes(newWeek)) {
+    if (semanasDoMes && semanasDoMes.includes(newWeek)) {
       setSelectedWeek(newWeek);
     }
   };
@@ -311,7 +311,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigateWeek('prev')}
-                disabled={!semanasDoMes.includes(selectedWeek - 1)}
+                disabled={!semanasDoMes || !semanasDoMes.includes(selectedWeek - 1)}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -319,7 +319,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigateWeek('next')}
-                disabled={!semanasDoMes.includes(selectedWeek + 1)}
+                disabled={!semanasDoMes || !semanasDoMes.includes(selectedWeek + 1)}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -367,7 +367,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Membro</th>
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Nível</th>
                     <th className="text-left py-3 px-2 font-semibold text-foreground">Meta Semanal</th>
-                     {semanasDoMes.map((semana) => {
+                     {(semanasDoMes || []).map((semana) => {
                        const { start, end } = getWeekDates(currentYear, currentMonth, semana);
                        const startFormatted = start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                        const endFormatted = end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
@@ -470,7 +470,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                         </td>
                         
                          {/* Colunas das Semanas */}
-                         {semanasDoMes.map((semana) => {
+                         {(semanasDoMes || []).map((semana) => {
                            const { start, end } = getWeekDates(currentYear, currentMonth, semana);
                            const today = new Date();
                            const { start: currentWeekStart, end: currentWeekEnd } = getWeekRange(today);
@@ -545,7 +545,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                     <td colSpan={3} className="py-3 px-2 font-semibold text-foreground">
                       Taxa de Atingimento Média
                     </td>
-                     {semanasDoMes.map((semana) => {
+                     {(semanasDoMes || []).map((semana) => {
                        const { start, end } = getWeekDates(currentYear, currentMonth, semana);
                        const today = new Date();
                        const { start: currentWeekStart, end: currentWeekEnd } = getWeekRange(today);
