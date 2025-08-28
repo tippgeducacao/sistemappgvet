@@ -203,10 +203,21 @@ export const useLeadsFilterData = () => {
     queryFn: async () => {
       console.log('🔍 [useLeadsFilterData] Iniciando busca de dados para filtros...');
       
+      // Debug específico para mba-gestao-ia PRIMEIRO
+      const { data: mbaCheck, error: mbaError } = await supabase
+        .from('leads')
+        .select('pagina_nome')
+        .ilike('pagina_nome', '%mba-gestao-ia%');
+      
+      console.log('🎯 [DEBUG MBA] Leads encontrados:', mbaCheck?.length);
+      mbaCheck?.forEach((lead, i) => {
+        console.log(`🎯 [DEBUG MBA ${i+1}]`, lead.pagina_nome);
+      });
+      
       const { data, error } = await supabase
         .from('leads')
         .select('observacoes, pagina_nome, utm_source')
-        .not('pagina_nome', 'is', null) // Só buscar leads com pagina_nome
+        .not('pagina_nome', 'is', null)
         .limit(50000);
 
       if (error) {
@@ -232,11 +243,21 @@ export const useLeadsFilterData = () => {
       // Usar a função normalizePageSlug consistentemente
       
       // Extrair slugs únicos usando a mesma função que o filtro
+      console.log('🔧 [DEBUG] Processando slugs...');
       const slugsExtraidos = (data || [])
-        .map(item => normalizePageSlug(item.pagina_nome))
+        .map((item, index) => {
+          const slug = normalizePageSlug(item.pagina_nome);
+          if (item.pagina_nome?.includes('mba-gestao-ia')) {
+            console.log(`🎯 [DEBUG MBA SLUG ${index}] "${item.pagina_nome}" → "${slug}"`);
+          }
+          return slug;
+        })
         .filter(Boolean);
       
+      console.log('🔧 [DEBUG] Total de slugs extraídos:', slugsExtraidos.length);
+      
       const paginasCaptura = [...new Set(slugsExtraidos)];
+      console.log('🔧 [DEBUG] Páginas únicas após deduplicação:', paginasCaptura.length);
       
       // Garantir que mba-gestao-ia sempre apareça no filtro se houver leads
       const mbaLeadsExist = (data || []).some(item => 
