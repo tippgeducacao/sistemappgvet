@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Calendar, Eye } from 'lucide-react';
 import { useResultadosReunioesVendedores } from '@/hooks/useResultadosReunioesVendedores';
 import LoadingState from '@/components/ui/loading-state';
 import VendedorReunioesModal from './VendedorReunioesModal';
+import { getWeekRange } from '@/utils/semanaUtils';
 
 interface ReunioesVendedoresChartProps {
   selectedVendedor?: string;
@@ -24,21 +25,8 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
   const [modalVendedor, setModalVendedor] = useState<{ id: string; name: string } | null>(null);
   const { statsData, isLoading } = useResultadosReunioesVendedores(selectedVendedor, selectedWeek);
 
-  // Função para calcular início e fim da semana
-  const getWeekBounds = (date: Date) => {
-    const dayOfWeek = date.getDay();
-    let daysToSubtract = dayOfWeek >= 3 ? dayOfWeek - 3 : dayOfWeek + 4;
-    
-    const startOfWeek = new Date(date);
-    startOfWeek.setDate(date.getDate() - daysToSubtract);
-    
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    
-    return { start: startOfWeek, end: endOfWeek };
-  };
-
-  const { start: weekStart, end: weekEnd } = getWeekBounds(selectedWeek);
+  // Usar função unificada de cálculo de semana
+  const { start: weekStart, end: weekEnd } = getWeekRange(selectedWeek);
 
   const goToPreviousWeek = () => {
     const previousWeek = new Date(selectedWeek);
@@ -59,7 +47,7 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
 
   const isCurrentWeek = () => {
     const now = new Date();
-    const { start: currentStart } = getWeekBounds(now);
+    const { start: currentStart } = getWeekRange(now);
     return weekStart.getTime() === currentStart.getTime();
   };
 

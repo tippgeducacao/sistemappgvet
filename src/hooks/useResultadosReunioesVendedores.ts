@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { findContactMatches } from '@/utils/contactMatchingUtils';
+import { getWeekRange } from '@/utils/semanaUtils';
 
 export interface ResultadosReunioesVendedores {
   vendedor_id: string;
@@ -20,20 +21,9 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
     try {
       setIsLoading(true);
       
-      // Calcular o início e fim da semana (quarta a terça)
+      // Usar função unificada de cálculo de semana
       const targetDate = weekDate || new Date();
-      const dayOfWeek = targetDate.getDay(); // 0 = domingo, 3 = quarta
-      
-      // Calcular quantos dias subtrair para chegar na quarta-feira
-      let daysToSubtract = dayOfWeek >= 3 ? dayOfWeek - 3 : dayOfWeek + 4;
-      
-      const startOfWeek = new Date(targetDate);
-      startOfWeek.setDate(targetDate.getDate() - daysToSubtract);
-      startOfWeek.setHours(0, 0, 0, 0);
-      
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      endOfWeek.setHours(23, 59, 59, 999);
+      const { start: startOfWeek, end: endOfWeek } = getWeekRange(targetDate);
       
       console.log('🔍 Buscando resultados das reuniões para:', {
         periodo: `${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`,
@@ -202,12 +192,26 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
         }
       }
 
+      // Buscar status atual de todos os form_entries dos agendamentos "comprou" para diagnóstico
+      const formEntryStatusMap = new Map<string, string>();
+      if (formEntryIds.length > 0) {
+        const { data: allFormEntries } = await supabase
+          .from('form_entries')
+          .select('id, status, data_assinatura_contrato')
+          .in('id', formEntryIds);
+        
+        allFormEntries?.forEach(entry => {
+          formEntryStatusMap.set(entry.id, entry.status);
+        });
+      }
+
       console.log('📊 Dados encontrados:', {
         agendamentos: agendamentos?.length || 0,
         vendas: vendas?.length || 0,
         comprouTotal: agendamentosComprou.length,
         comprouJaConvertidos: convertidasGlobal.size,
-        convertidasGlobalSet: Array.from(convertidasGlobal)
+        convertidasGlobalSet: Array.from(convertidasGlobal),
+        formEntryStatusMap: Object.fromEntries(formEntryStatusMap)
       });
 
       // Agrupar dados por vendedor
@@ -235,26 +239,45 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
 
         switch (agendamento.resultado_reuniao) {
           case 'comprou':
-            // Só conta como pendente se NÃO foi convertido globalmente OU por matching de lead
-            const jaConvertidoPorFormEntry = agendamento.form_entry_id && convertidasGlobal.has(agendamento.form_entry_id);
+            // Verificar se há form_entry_id e seu status
+            let jaConvertidoPorFormEntry = false;
+            let statusFormEntry = null;
+            
+            if (agendamento.form_entry_id) {
+              // Se tem form_entry_id, verificar se está matriculado
+              jaConvertidoPorFormEntry = convertidasGlobal.has(agendamento.form_entry_id);
+              statusFormEntry = formEntryStatusMap.get(agendamento.form_entry_id) || null;
+            }
+            
             const jaConvertidoPorLead = agendamentosMatchingLeads.has(agendamento.id);
             const jaConvertido = jaConvertidoPorFormEntry || jaConvertidoPorLead;
             
-            console.log('🔍 DEBUG COMPROU - Processando agendamento:', {
+            console.log('🔍 DEBUG COMPROU DETALHADO - Processando agendamento:', {
               agendamento_id: agendamento.id,
               form_entry_id: agendamento.form_entry_id,
+              statusFormEntry,
               jaConvertidoPorFormEntry,
               jaConvertidoPorLead,
               jaConvertido,
               vendedor: vendedorName,
-              data_resultado: agendamento.data_resultado
+              data_resultado: agendamento.data_resultado,
+              lead_id: agendamento.lead_id
             });
             
             if (!jaConvertido) {
               stats.pendentes++;
-              console.log('✅ Contando como PENDENTE');
+              console.log('✅ CONTANDO COMO PENDENTE - Motivo:', {
+                temFormEntry: !!agendamento.form_entry_id,
+                statusFormEntry,
+                formEntryMatriculado: jaConvertidoPorFormEntry,
+                temMatchingLead: jaConvertidoPorLead
+              });
             } else {
-              console.log('❌ NÃO contando como pendente (já convertido via form_entry ou matching)');
+              console.log('❌ NÃO contando como pendente - Motivo:', {
+                convertidoPorFormEntry: jaConvertidoPorFormEntry,
+                convertidoPorLead: jaConvertidoPorLead,
+                statusFormEntry
+              });
             }
             break;
           case 'compareceu_nao_comprou':
