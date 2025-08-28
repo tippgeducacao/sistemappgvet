@@ -114,10 +114,18 @@ const EditMatriculaDateDialog: React.FC<EditMatriculaDateDialogProps> = ({
         description: "Data de assinatura de contrato atualizada com sucesso"
       });
 
-      // Invalidar cache de vendas para atualizar ranking
+      // Invalidar TODOS os caches relacionados a vendas, agendamentos e reuniões
       queryClient.invalidateQueries({ queryKey: ['all-vendas'] });
       queryClient.invalidateQueries({ queryKey: ['vendas'] });
       queryClient.invalidateQueries({ queryKey: ['simple-admin-vendas'] });
+      queryClient.invalidateQueries({ queryKey: ['vendas-with-responses'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['reunioes'] });
+      queryClient.invalidateQueries({ queryKey: ['form-details'] });
+      
+      // Força recarregamento completo dos dados
+      await queryClient.refetchQueries({ queryKey: ['all-vendas'] });
+      await queryClient.refetchQueries({ queryKey: ['vendas'] });
 
       setIsOpen(false);
       onUpdate();
