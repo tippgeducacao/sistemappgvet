@@ -113,7 +113,7 @@ async function checkScheduleConflict(
     .eq('vendedor_id', vendedorId)
     .gte('data_agendamento', new Date(dataInicio.getTime() - 2 * 60 * 60 * 1000).toISOString()) // 2h antes
     .lte('data_agendamento', new Date(dataFim.getTime() + 2 * 60 * 60 * 1000).toISOString()) // 2h depois
-    .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda'])
+    .in('status', ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'remarcado'])
     .neq('id', excludeId || '')
 
   if (error) {
