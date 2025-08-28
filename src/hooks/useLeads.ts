@@ -199,7 +199,8 @@ export const useLeadsCount = () => {
 export const useLeadsFilterData = () => {
   return useQuery({
     queryKey: ['leads-filter-data'],
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 0, // Sempre buscar dados frescos
+    refetchOnMount: 'always', // Sempre refazer query ao montar
     queryFn: async () => {
       console.log('🔍 [useLeadsFilterData] Iniciando busca de dados para filtros...');
       
@@ -259,14 +260,10 @@ export const useLeadsFilterData = () => {
       const paginasCaptura = [...new Set(slugsExtraidos)];
       console.log('🔧 [DEBUG] Páginas únicas após deduplicação:', paginasCaptura.length);
       
-      // Garantir que mba-gestao-ia sempre apareça no filtro se houver leads
-      const mbaLeadsExist = (data || []).some(item => 
-        item.pagina_nome?.includes('mba-gestao-ia')
-      );
-      
-      if (mbaLeadsExist && !paginasCaptura.includes('mba-gestao-ia')) {
+      // SEMPRE garantir que mba-gestao-ia apareça no filtro (forçado pelo usuário)
+      if (!paginasCaptura.includes('mba-gestao-ia')) {
         paginasCaptura.push('mba-gestao-ia');
-        console.log('➕ [useLeadsFilterData] Adicionado mba-gestao-ia manualmente ao filtro');
+        console.log('➕ [FORÇADO] Adicionado mba-gestao-ia ao filtro');
       }
       
       console.log('✅ [useLeadsFilterData] Páginas únicas extraídas:', paginasCaptura.length);
