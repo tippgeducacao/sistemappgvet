@@ -17,7 +17,7 @@ import { getDataEfetivaVenda, getVendaEffectivePeriod } from '@/utils/vendaDateU
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
 import { ComissionamentoService } from '@/services/comissionamentoService';
-import { useVendaWithFormResponses, getDataMatriculaFromRespostas } from '@/hooks/useVendaWithFormResponses';
+import { useVendaWithFormResponses } from '@/hooks/useVendaWithFormResponses';
 
 interface VendedorData {
   id: string;
@@ -521,24 +521,27 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const vendasMesAtual = vendas.filter(venda => {
     if (venda.status !== 'matriculado') return false;
     
-    // MESMA LÓGICA - priorizar data_assinatura_contrato
-    let vendaDate: Date;
-    if (venda.data_assinatura_contrato) {
-      vendaDate = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-    } else {
-      const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
-      if (respostasVenda) {
-        const dataMatricula = getDataMatriculaFromRespostas(respostasVenda.respostas);
-        if (dataMatricula) {
-          vendaDate = dataMatricula;
-        } else {
-          vendaDate = new Date(venda.enviado_em);
-        }
-      } else {
-        vendaDate = new Date(venda.enviado_em);
-      }
+    // PADRONIZADO: Usar função centralizada para obter data efetiva
+    const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+    const vendaDate = getDataEfetivaVenda(venda, respostasVenda?.respostas);
+    
+    // Debug específico para Pedro Garbelini
+    if (venda.id === '53af0209-9b2d-4b76-b6a2-2c9d8e4f7a8c' || 
+        (venda.aluno && (venda.aluno.nome === 'Pedro Garbelini' || venda.aluno.nome?.includes('Pedro')))) {
+      console.log(`🚨 PEDRO GARBELINI - TVRankingDisplay vendas mês:`, {
+        venda_id: venda.id?.substring(0, 8),
+        aluno: venda.aluno?.nome,
+        data_efetiva: vendaDate.toISOString(),
+        data_efetiva_br: vendaDate.toLocaleDateString('pt-BR'),
+        data_assinatura_contrato: venda.data_assinatura_contrato,
+        data_enviado: venda.enviado_em,
+        status: venda.status
+      });
     }
-    const { mes, ano } = getVendaPeriod(vendaDate);
+    vendaDate.setHours(0, 0, 0, 0);
+    
+    // Usar a regra de semana para categorizar o mês correto
+    const { mes, ano } = getVendaEffectivePeriod(venda, respostasVenda?.respostas);
     return mes === currentMonth && ano === currentYear;
   });
 
@@ -547,26 +550,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(today);
   endOfDay.setHours(23, 59, 59, 999);
-
+  
   const vendasDiaAtual = vendas.filter(venda => {
-    // CORREÇÃO: Usar mesma lógica para tratar fuso horário
-    let vendaDate: Date;
-    if (venda.data_assinatura_contrato) {
-      // CORREÇÃO: Adicionar horário para evitar problemas de fuso horário
-      vendaDate = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-    } else {
-      const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
-      if (respostasVenda) {
-        const dataMatricula = getDataMatriculaFromRespostas(respostasVenda.respostas);
-        if (dataMatricula) {
-          vendaDate = dataMatricula;
-        } else {
-          vendaDate = new Date(venda.enviado_em);
-        }
-      } else {
-        vendaDate = new Date(venda.enviado_em);
-      }
-    }
+    if (venda.status !== 'matriculado') return false;
+    
+    // PADRONIZADO: Usar função centralizada para obter data efetiva
+    const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+    const vendaDate = getDataEfetivaVenda(venda, respostasVenda?.respostas);
     vendaDate.setHours(0, 0, 0, 0);
     
     console.log(`🐛 TVRankingDisplay - Resumo Geral - Venda do dia:`, {
@@ -608,18 +598,23 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         if (venda.vendedor_id !== vendedorId) return false;
         if (venda.status !== 'matriculado') return false;
         
-        // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-        let dataVenda: Date;
+        // PADRONIZADO: Usar função centralizada para obter data efetiva
+        const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+        const dataVenda = getDataEfetivaVenda(venda, respostasVenda?.respostas);
         
-        if (venda.data_assinatura_contrato) {
-          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-        } else {
-          const dataMatricula = getDataMatriculaFromRespostas(respostas);
-          if (dataMatricula) {
-            dataVenda = dataMatricula;
-          } else {
-            dataVenda = new Date(venda.enviado_em);
-          }
+        // Debug específico para Pedro Garbelini
+        if (venda.id === '53af0209-9b2d-4b76-b6a2-2c9d8e4f7a8c' || 
+            (venda.aluno && (venda.aluno.nome === 'Pedro Garbelini' || venda.aluno.nome?.includes('Pedro')))) {
+          console.log(`🚨 PEDRO GARBELINI - TVRankingDisplay weekly points:`, {
+            venda_id: venda.id?.substring(0, 8),
+            aluno: venda.aluno?.nome,
+            data_efetiva: dataVenda.toISOString(),
+            data_efetiva_br: dataVenda.toLocaleDateString('pt-BR'),
+            data_assinatura_contrato: venda.data_assinatura_contrato,
+            data_enviado: venda.enviado_em,
+            status: venda.status,
+            pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0
+          });
         }
         
         // Verificar se está na semana específica

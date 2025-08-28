@@ -9,9 +9,10 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useVendedores } from '@/hooks/useVendedores';
 import { ComissionamentoService } from '@/services/comissionamentoService';
-import { useVendaWithFormResponses, getDataMatriculaFromRespostas } from '@/hooks/useVendaWithFormResponses';
+import { useVendaWithFormResponses } from '@/hooks/useVendaWithFormResponses';
 import { debugSemanasAgosto2025 } from '@/utils/semanasDebug';
 import { getVendaPeriod } from '@/utils/semanaUtils';
+import { getDataEfetivaVenda, getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 
 interface VendedorMetasProps {
   selectedMonth: number;
@@ -148,22 +149,25 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             if (venda.vendedor_id !== profile.id) return false;
             if (venda.status !== 'matriculado') return false;
             
-            // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-            let dataVenda: Date;
+            // PADRONIZADO: Usar função centralizada para obter data efetiva e período
+            const dataVenda = getDataEfetivaVenda(venda, respostas);
+            const vendaPeriod = getVendaEffectivePeriod(venda, respostas);
             
-            if (venda.data_assinatura_contrato) {
-              dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-            } else {
-              const dataMatricula = getDataMatriculaFromRespostas(respostas);
-              if (dataMatricula) {
-                dataVenda = dataMatricula;
-              } else {
-                dataVenda = new Date(venda.enviado_em);
-              }
+            // Debug específico para Pedro Garbelini
+            if (venda.id === '53af0209-9b2d-4b76-b6a2-2c9d8e4f7a8c' || 
+                (venda.aluno && (venda.aluno.nome === 'Pedro Garbelini' || venda.aluno.nome?.includes('Pedro')))) {
+              console.log(`🚨 PEDRO GARBELINI - VendedorMetas comissão:`, {
+                venda_id: venda.id?.substring(0, 8),
+                aluno: venda.aluno?.nome,
+                data_efetiva: dataVenda.toISOString(),
+                data_efetiva_br: dataVenda.toLocaleDateString('pt-BR'),
+                periodo_calculado: vendaPeriod,
+                data_assinatura_contrato: venda.data_assinatura_contrato,
+                data_enviado: venda.enviado_em,
+                status: venda.status,
+                numero_semana: numeroSemana
+              });
             }
-            
-            // Aplicar a mesma lógica de validação de período do display
-            const vendaPeriod = getVendaPeriod(dataVenda);
             const periodoCorreto = vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
             
             // Verificar se está na semana específica
@@ -346,22 +350,25 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 if (venda.vendedor_id !== profile.id) return false;
                 if (venda.status !== 'matriculado') return false;
                 
-                // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-                let dataVenda: Date;
+                // PADRONIZADO: Usar função centralizada para obter data efetiva e período
+                const dataVenda = getDataEfetivaVenda(venda, respostas);
+                const vendaPeriod = getVendaEffectivePeriod(venda, respostas);
                 
-                if (venda.data_assinatura_contrato) {
-                  dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-                } else {
-                  const dataMatricula = getDataMatriculaFromRespostas(respostas);
-                  if (dataMatricula) {
-                    dataVenda = dataMatricula;
-                  } else {
-                    dataVenda = new Date(venda.enviado_em);
-                  }
+                // Debug específico para Pedro Garbelini
+                if (venda.id === '53af0209-9b2d-4b76-b6a2-2c9d8e4f7a8c' || 
+                    (venda.aluno && (venda.aluno.nome === 'Pedro Garbelini' || venda.aluno.nome?.includes('Pedro')))) {
+                  console.log(`🚨 PEDRO GARBELINI - VendedorMetas semanas:`, {
+                    venda_id: venda.id?.substring(0, 8),
+                    aluno: venda.aluno?.nome,
+                    data_efetiva: dataVenda.toISOString(),
+                    data_efetiva_br: dataVenda.toLocaleDateString('pt-BR'),
+                    periodo_calculado: vendaPeriod,
+                    data_assinatura_contrato: venda.data_assinatura_contrato,
+                    data_enviado: venda.enviado_em,
+                    status: venda.status,
+                    numero_semana: numeroSemana
+                  });
                 }
-                
-                // NOVA LÓGICA: Verificar se a venda pertence ao período correto usando a mesma regra das semanas
-                const vendaPeriod = getVendaPeriod(dataVenda);
                 const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
                 
                 // Verificar se está na semana específica
@@ -518,31 +525,21 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                       if (venda.vendedor_id !== profile.id) return false;
                       if (venda.status !== 'matriculado') return false;
                       
-                      // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-                      let dataVenda: Date;
-                      
-                      if (venda.data_assinatura_contrato) {
-                        dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-                      } else {
-                        const dataMatricula = getDataMatriculaFromRespostas(respostas);
-                        if (dataMatricula) {
-                          dataVenda = dataMatricula;
-                        } else {
-                          dataVenda = new Date(venda.enviado_em);
-                        }
-                      }
+        // PADRONIZADO: Usar função centralizada
+        const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+        const vendaDate = getDataEfetivaVenda(venda, respostasVenda?.respostas);
                       
                       // CORREÇÃO: Aplicar a mesma lógica de validação de período
-                      const vendaPeriod = getVendaPeriod(dataVenda);
+                      const vendaPeriod = getVendaPeriod(vendaDate);
                       const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
                       
                       // Verificar se está na semana específica
-                      dataVenda.setHours(0, 0, 0, 0);
+                      vendaDate.setHours(0, 0, 0, 0);
                       const startSemanaUTC = new Date(startSemana);
                       startSemanaUTC.setHours(0, 0, 0, 0);
                       const endSemanaUTC = new Date(endSemana);
                       endSemanaUTC.setHours(23, 59, 59, 999);
-                      const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+                      const isInRange = vendaDate >= startSemanaUTC && vendaDate <= endSemanaUTC;
                       
                       return periodoCorreto && isInRange;
                     }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
@@ -565,31 +562,21 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                          if (venda.vendedor_id !== profile.id) return false;
                          if (venda.status !== 'matriculado') return false;
                          
-                         // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-                         let dataVenda: Date;
+          // PADRONIZADO: Usar função centralizada
+          const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+          const dataVenda = getDataEfetivaVenda(venda, respostasVenda?.respostas);
                          
-                         if (venda.data_assinatura_contrato) {
-                           dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-                         } else {
-                           const dataMatricula = getDataMatriculaFromRespostas(respostas);
-                           if (dataMatricula) {
-                             dataVenda = dataMatricula;
-                           } else {
-                             dataVenda = new Date(venda.enviado_em);
-                           }
-                         }
-                         
-                         // CORREÇÃO: Aplicar a mesma lógica de validação de período
-                         const vendaPeriod = getVendaPeriod(dataVenda);
-                         const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
-                         
-                         // Verificar se está na semana específica
-                         dataVenda.setHours(0, 0, 0, 0);
-                         const startSemanaUTC = new Date(startSemana);
-                         startSemanaUTC.setHours(0, 0, 0, 0);
-                         const endSemanaUTC = new Date(endSemana);
-                         endSemanaUTC.setHours(23, 59, 59, 999);
-                         const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+                          // CORREÇÃO: Aplicar a mesma lógica de validação de período
+                          const vendaPeriod = getVendaPeriod(dataVenda);
+                          const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
+                          
+                          // Verificar se está na semana específica
+                          dataVenda.setHours(0, 0, 0, 0);
+                          const startSemanaUTC = new Date(startSemana);
+                          startSemanaUTC.setHours(0, 0, 0, 0);
+                          const endSemanaUTC = new Date(endSemana);
+                          endSemanaUTC.setHours(23, 59, 59, 999);
+                          const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
                          
                          return periodoCorreto && isInRange;
                        }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
@@ -621,27 +608,19 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                          if (venda.vendedor_id !== profile.id) return false;
                          if (venda.status !== 'matriculado') return false;
                          
-                         let dataVenda: Date;
-                         if (venda.data_assinatura_contrato) {
-                           dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-                         } else {
-                           const dataMatricula = getDataMatriculaFromRespostas(respostas);
-                           if (dataMatricula) {
-                             dataVenda = dataMatricula;
-                           } else {
-                             dataVenda = new Date(venda.enviado_em);
-                           }
-                         }
+          // PADRONIZADO: Usar função centralizada
+          const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+          const dataVenda = getDataEfetivaVenda(venda, respostasVenda?.respostas);
                          
-                         const vendaPeriod = getVendaPeriod(dataVenda);
-                         const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
-                         
-                         dataVenda.setHours(0, 0, 0, 0);
-                         const startSemanaUTC = new Date(startSemana);
-                         startSemanaUTC.setHours(0, 0, 0, 0);
-                         const endSemanaUTC = new Date(endSemana);
-                         endSemanaUTC.setHours(23, 59, 59, 999);
-                         const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+                          const vendaPeriod = getVendaPeriod(dataVenda);
+                          const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
+                          
+                          dataVenda.setHours(0, 0, 0, 0);
+                          const startSemanaUTC = new Date(startSemana);
+                          startSemanaUTC.setHours(0, 0, 0, 0);
+                          const endSemanaUTC = new Date(endSemana);
+                          endSemanaUTC.setHours(23, 59, 59, 999);
+                          const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
                          
                          return periodoCorreto && isInRange;
                        }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);

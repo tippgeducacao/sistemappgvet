@@ -23,6 +23,7 @@ import { useVendedoresWeeklyConversions } from '@/hooks/useVendedorConversion';
 import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
 import html2canvas from 'html2canvas';
 import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
+import { getDataEfetivaVenda, getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 import VendorWeeklyGoalsModal from './VendorWeeklyGoalsModal';
 import TVRankingDisplay from './TVRankingDisplay';
 import SimpleSDRRanking from './SimpleSDRRanking';
@@ -39,7 +40,7 @@ import MonthYearSelector from '@/components/common/MonthYearSelector';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { useVendaWithFormResponses, getDataMatriculaFromRespostas } from '@/hooks/useVendaWithFormResponses';
+import { useVendaWithFormResponses } from '@/hooks/useVendaWithFormResponses';
 
 interface VendorsRankingProps {
   selectedVendedor?: string;
@@ -174,15 +175,21 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         
         // Filtro por período usando a regra de semana (quarta a terça)
         if ((propSelectedMonth && propSelectedYear) || internalSelectedMonth) {
-          // NOVA LÓGICA: Usar data de matrícula das respostas do formulário
-          let dataParaFiltro: Date;
-          const dataMatricula = getDataMatriculaFromRespostas(respostas);
+          // PADRONIZADO: Usar função centralizada para obter data efetiva
+          const dataEfetiva = getDataEfetivaVenda(venda, respostas);
           
-          if (dataMatricula) {
-            dataParaFiltro = dataMatricula;
-          } else {
-            // Fallback para data de envio se não houver data de matrícula
-            dataParaFiltro = new Date(venda.enviado_em);
+          // Debug específico para Pedro Garbelini
+          if (venda.id === '53af0209-9b2d-4b76-b6a2-2c9d8e4f7a8c' || 
+              (venda.aluno && (venda.aluno.nome === 'Pedro Garbelini' || venda.aluno.nome?.includes('Pedro')))) {
+            console.log(`🚨 PEDRO GARBELINI - VendorsRanking filtro:`, {
+              venda_id: venda.id?.substring(0, 8),
+              aluno: venda.aluno?.nome,
+              data_efetiva: dataEfetiva.toISOString(),
+              data_efetiva_br: dataEfetiva.toLocaleDateString('pt-BR'),
+              data_assinatura_contrato: venda.data_assinatura_contrato,
+              data_enviado: venda.enviado_em,
+              status: venda.status
+            });
           }
           
           // Debug detalhado para identificar inconsistências no dashboard geral
@@ -191,10 +198,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
               venda_id: venda.id.substring(0, 8),
               aluno: venda.aluno?.nome,
               status: venda.status,
-              data_matricula_formulario: dataMatricula?.toLocaleDateString('pt-BR'),
-              data_enviado: venda.enviado_em,
-              data_usada: dataParaFiltro.toISOString(),
-              data_usada_br: dataParaFiltro.toLocaleDateString('pt-BR'),
+              data_efetiva: dataEfetiva.toISOString(),
+              data_efetiva_br: dataEfetiva.toLocaleDateString('pt-BR'),
               pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
               periodo_filtro: `${propSelectedMonth}/${propSelectedYear}`
             });
@@ -203,14 +208,14 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           // Na planilha detalhada, sempre usar filtro interno se existe
           if (internalSelectedMonth) {
             // Usar filtro interno mensal com regra de semana
-            const { mes: vendaMes, ano: vendaAno } = getVendaPeriod(dataParaFiltro);
+            const { mes: vendaMes, ano: vendaAno } = getVendaEffectivePeriod(venda, respostas);
             const filterMonth = parseInt(internalSelectedMonth.split('-')[1]);
             const filterYear = parseInt(internalSelectedMonth.split('-')[0]);
             
             console.log('🎯 Filtro detalhado:', {
               vendaMes, vendaAno,
               filterMonth, filterYear,
-              dataParaFiltro: dataParaFiltro.toLocaleDateString('pt-BR'),
+              dataEfetiva: dataEfetiva.toLocaleDateString('pt-BR'),
               match: vendaMes === filterMonth && vendaAno === filterYear
             });
             
@@ -219,7 +224,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
             }
           } else if (propSelectedMonth && propSelectedYear) {
             // Usar filtros externos do dashboard apenas se não há filtro interno
-            if (!isVendaInPeriod(dataParaFiltro, propSelectedMonth, propSelectedYear)) {
+            if (!isVendaInPeriod(dataEfetiva, propSelectedMonth, propSelectedYear)) {
               return false;
             }
           }
@@ -235,18 +240,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const meses = new Set<string>();
     
     vendas.forEach(venda => {
-      // Priorizar data_assinatura_contrato
-      let dataParaGrupar: Date;
-      if (venda.data_assinatura_contrato) {
-        dataParaGrupar = new Date(venda.data_assinatura_contrato);
-      } else {
-        dataParaGrupar = venda.status === 'matriculado' && venda.data_aprovacao 
-          ? new Date(venda.data_aprovacao)
-          : new Date(venda.enviado_em);
-      }
+      // PADRONIZADO: Usar função centralizada para obter data efetiva
+      const dataEfetiva = getDataEfetivaVenda(venda);
       
       // Usar a regra de semana para categorizar o mês correto
-      const { mes, ano } = getVendaPeriod(dataParaGrupar);
+      const { mes, ano } = getVendaEffectivePeriod(venda);
       const mesAno = `${ano}-${String(mes).padStart(2, '0')}`;
       meses.add(mesAno);
     });
@@ -340,13 +338,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const vendasSemanaAtual = vendas.filter(venda => {
       if (venda.vendedor_id !== vendedorId || venda.status !== 'matriculado') return false;
       
-      // Priorizar data_assinatura_contrato
-      let vendaDate: Date;
-      if (venda.data_assinatura_contrato) {
-        vendaDate = new Date(venda.data_assinatura_contrato);
-      } else {
-        vendaDate = new Date(venda.enviado_em);
-      }
+      // PADRONIZADO: Usar função centralizada para obter data efetiva
+      const vendaDate = getDataEfetivaVenda(venda);
       return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
     });
 
@@ -507,19 +500,9 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
         if (venda.vendedor_id !== vendedorId) return false;
         if (venda.status !== 'matriculado') return false;
         
-        // Usar data_assinatura_contrato se existir, senão usar data de matrícula das respostas
-        let dataVenda: Date;
-        
-        if (venda.data_assinatura_contrato) {
-          dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-        } else {
-          const dataMatricula = getDataMatriculaFromRespostas(respostas);
-          if (dataMatricula) {
-            dataVenda = dataMatricula;
-          } else {
-            dataVenda = new Date(venda.enviado_em);
-          }
-        }
+        // PADRONIZADO: Usar função centralizada
+        const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
+        const dataVenda = getDataEfetivaVenda(venda, respostasVenda?.respostas);
         
         // Usar o período do filtro selecionado em vez do atual
         const filterMonth = parseInt(selectedMonth.split('-')[1]);
