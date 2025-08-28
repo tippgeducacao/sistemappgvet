@@ -122,10 +122,14 @@ const EditMatriculaDateDialog: React.FC<EditMatriculaDateDialogProps> = ({
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       queryClient.invalidateQueries({ queryKey: ['reunioes'] });
       queryClient.invalidateQueries({ queryKey: ['form-details'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-detalhados'] });
       
       // Força recarregamento completo dos dados
       await queryClient.refetchQueries({ queryKey: ['all-vendas'] });
       await queryClient.refetchQueries({ queryKey: ['vendas'] });
+      
+      console.log('🔄 CACHES INVALIDADOS após edição de data de assinatura de contrato');
 
       setIsOpen(false);
       onUpdate();
