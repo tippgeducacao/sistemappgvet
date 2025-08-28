@@ -137,11 +137,21 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
       }
 
       if (filters.paginaFilter && filters.paginaFilter !== 'todos') {
-        const { extractPageSlug } = await import('@/utils/leadUtils');
+        const { normalizePageSlug } = await import('@/utils/leadUtils');
+        console.log('🔍 [useLeads] Aplicando filtro de página:', filters.paginaFilter);
         allFilteredLeads = allFilteredLeads.filter(lead => {
-          const pagina = extractPageSlug(lead.pagina_nome);
-          return pagina === filters.paginaFilter;
+          const pagina = normalizePageSlug(lead.pagina_nome);
+          const match = pagina === filters.paginaFilter.toLowerCase();
+          if (!match && lead.pagina_nome?.includes(filters.paginaFilter)) {
+            console.log('❓ [useLeads] Possível discrepância:', {
+              original: lead.pagina_nome,
+              normalizado: pagina,
+              filtro: filters.paginaFilter
+            });
+          }
+          return match;
         });
+        console.log('🔍 [useLeads] Leads após filtro de página:', allFilteredLeads.length);
       }
 
       // Filtro por data
@@ -189,15 +199,20 @@ export const useLeadsCount = () => {
 // Hook para obter dados únicos para filtros
 export const useLeadsFilterData = () => {
   return useQuery({
-    queryKey: ['leads-filter-data'], // Remove timestamp to fix caching
+    queryKey: ['leads-filter-data'],
     staleTime: 0, // Always refetch to get latest pages
     queryFn: async () => {
+      console.log('🔍 [useLeadsFilterData] Iniciando busca de dados para filtros...');
+      
       const { data, error } = await supabase
         .from('leads')
         .select('observacoes, pagina_nome, utm_source')
+        .not('pagina_nome', 'is', null) // Só buscar leads com pagina_nome
         .limit(50000);
 
       if (error) throw error;
+      
+      console.log('📊 [useLeadsFilterData] Total de leads com pagina_nome:', data?.length);
       
       // Extrair profissões únicas
       const profissoes = [...new Set(
@@ -207,68 +222,45 @@ export const useLeadsFilterData = () => {
         }).filter(Boolean)
       )];
 
-      console.log('🔍 [LEADS FILTER] Processando', data?.length, 'leads para extrair páginas...');
-      
-      // Verificar se temos dados de aula-gratuita especificamente
-      const leadsComAula = (data || []).filter(item => 
-        item.pagina_nome?.includes('aula-gratuita-clinica-25ago')
-      );
-      console.log('🎯 [LEADS COM AULA-GRATUITA]:', leadsComAula.length, 'encontrados');
-      
       // Extrair fontes únicas
       const fontes = [...new Set(
         (data || []).map(item => item.utm_source).filter(Boolean)
       )];
 
-      // Extrair páginas únicas usando SQL direta no PostgreSQL
-      console.log('🔍 Buscando páginas com SQL direta...');
+      // Usar a função normalizePageSlug consistentemente
+      const { normalizePageSlug } = await import('@/utils/leadUtils');
       
-      const { data: directSqlPages, error: sqlError } = await supabase
-        .from('leads')
-        .select('pagina_nome')
-        .not('pagina_nome', 'is', null)
-        .like('pagina_nome', '%.com.br/%');
+      // Extrair slugs únicos usando a mesma função que o filtro
+      const slugsExtraidos = (data || [])
+        .map(item => normalizePageSlug(item.pagina_nome))
+        .filter(Boolean);
       
-      if (sqlError) {
-        console.error('❌ Erro SQL:', sqlError);
-        // Fallback: usar extração JavaScript original
-        const paginasCaptura = [...new Set(
-          (data || []).map(item => extractPageSlug(item.pagina_nome)).filter(Boolean)
-        )];
-        return { profissoes, paginasCaptura, fontes };
-      } else {
-        console.log('📊 URLs .com.br encontradas:', directSqlPages?.length);
-        
-        // Extrair slugs manualmente usando regex
-        const slugsExtraidos = directSqlPages?.map(item => {
-          const match = item.pagina_nome?.match(/\.com\.br\/([^?&#]+)/);
-          return match ? match[1].trim() : null;
-        }).filter(Boolean) || [];
-        
-        // Remover duplicatas
-        const paginasCaptura = [...new Set(slugsExtraidos)];
-        
-        console.log('✅ Páginas únicas extraídas:', paginasCaptura.length);
-        console.log('🎯 CONTÉM AULA-GRATUITA?', paginasCaptura.includes('aula-gratuita-clinica-25ago'));
-        
-        // Se não contém, vamos investigar e forçar
-        if (!paginasCaptura.includes('aula-gratuita-clinica-25ago')) {
-          const aulaPages = directSqlPages?.filter(item => 
-            item.pagina_nome?.includes('aula-gratuita-clinica-25ago')
-          );
-          console.log('🔍 Páginas com aula-gratuita encontradas:', aulaPages?.length);
-          aulaPages?.slice(0, 2).forEach((page, index) => {
-            const match = page.pagina_nome?.match(/\.com\.br\/([^?&#]+)/);
-            console.log(`  ${index + 1}. "${page.pagina_nome}" → "${match?.[1]}"`);
-          });
-          
-          // FORÇAR a inclusão
-          paginasCaptura.push('aula-gratuita-clinica-25ago');
-          console.log('⚠️ FORÇADO: aula-gratuita-clinica-25ago adicionado à lista');
-        }
-        
-        return { profissoes, paginasCaptura, fontes };
+      const paginasCaptura = [...new Set(slugsExtraidos)];
+      
+      console.log('✅ [useLeadsFilterData] Páginas únicas extraídas:', paginasCaptura.length);
+      console.log('🎯 [useLeadsFilterData] Lista de páginas:', paginasCaptura.slice(0, 10));
+      
+      // Verificar especificamente se contém a página que o usuário mencionou
+      const containsMbaGestao = paginasCaptura.includes('mba-gestao-ia');
+      const containsAulaGratuita = paginasCaptura.includes('aula-gratuita-clinica-25ago');
+      
+      console.log('🔍 [useLeadsFilterData] Verificações específicas:');
+      console.log('  ✓ mba-gestao-ia:', containsMbaGestao);
+      console.log('  ✓ aula-gratuita-clinica-25ago:', containsAulaGratuita);
+      
+      // Se não encontrou mba-gestao-ia, vamos investigar
+      if (!containsMbaGestao) {
+        const mbaPages = (data || []).filter(item => 
+          item.pagina_nome?.includes('mba-gestao-ia')
+        );
+        console.log('🔍 [useLeadsFilterData] Leads com mba-gestao-ia encontrados:', mbaPages.length);
+        mbaPages.slice(0, 3).forEach((page, index) => {
+          const normalized = normalizePageSlug(page.pagina_nome);
+          console.log(`  ${index + 1}. "${page.pagina_nome}" → "${normalized}"`);
+        });
       }
+      
+      return { profissoes, paginasCaptura, fontes };
     },
   });
 };
