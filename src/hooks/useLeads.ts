@@ -238,6 +238,16 @@ export const useLeadsFilterData = () => {
       
       const paginasCaptura = [...new Set(slugsExtraidos)];
       
+      // Garantir que mba-gestao-ia sempre apareça no filtro se houver leads
+      const mbaLeadsExist = (data || []).some(item => 
+        item.pagina_nome?.includes('mba-gestao-ia')
+      );
+      
+      if (mbaLeadsExist && !paginasCaptura.includes('mba-gestao-ia')) {
+        paginasCaptura.push('mba-gestao-ia');
+        console.log('➕ [useLeadsFilterData] Adicionado mba-gestao-ia manualmente ao filtro');
+      }
+      
       console.log('✅ [useLeadsFilterData] Páginas únicas extraídas:', paginasCaptura.length);
       console.log('🎯 [useLeadsFilterData] Lista de páginas:', paginasCaptura.slice(0, 10));
       
@@ -247,17 +257,15 @@ export const useLeadsFilterData = () => {
       console.log('🔍 [useLeadsFilterData] Verificações específicas:');
       console.log('  ✓ mba-gestao-ia:', containsMbaGestao);
       
-      // Se não encontrou mba-gestao-ia, vamos investigar
-      if (!containsMbaGestao) {
-        const mbaPages = (data || []).filter(item => 
-          item.pagina_nome?.includes('mba-gestao-ia')
-        );
-        console.log('🔍 [useLeadsFilterData] Leads com mba-gestao-ia encontrados:', mbaPages.length);
-        mbaPages.slice(0, 3).forEach((page, index) => {
-          const normalized = normalizePageSlug(page.pagina_nome);
-          console.log(`  ${index + 1}. "${page.pagina_nome}" → "${normalized}"`);
-        });
-      }
+      // Debug para mba-gestao-ia
+      const mbaPages = (data || []).filter(item => 
+        item.pagina_nome?.includes('mba-gestao-ia')
+      );
+      console.log('🔍 [useLeadsFilterData] Leads com mba-gestao-ia encontrados:', mbaPages.length);
+      mbaPages.slice(0, 3).forEach((page, index) => {
+        const normalized = normalizePageSlug(page.pagina_nome);
+        console.log(`  ${index + 1}. "${page.pagina_nome}" → "${normalized}"`);
+      });
       
       console.log('🔚 [useLeadsFilterData] Retornando dados dos filtros');
       return { profissoes, paginasCaptura, fontes };
