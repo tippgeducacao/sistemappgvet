@@ -190,13 +190,48 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       
       if (novaHoraFim) {
         novaDataFim = new Date(`${novaData}T${novaHoraFim}:00`);
+      } else {
+        // Se não especificou hora fim, usa 1 hora como padrão
+        novaDataFim = new Date(novaDataAgendamento.getTime() + 60 * 60 * 1000);
       }
 
+      // Verificar se a nova data/hora é no futuro
+      const agora = new Date();
+      if (novaDataAgendamento <= agora) {
+        toast({
+          title: "Erro",
+          description: "Não é possível remarcar para uma data/hora que já passou",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Importar o serviço de agendamentos dinamicamente
+      const { AgendamentosService } = await import('@/services/agendamentos/AgendamentosService');
+      
+      // Verificar conflitos de agenda (ignorando o próprio agendamento)
+      const temConflito = await AgendamentosService.verificarConflitosAgenda(
+        agendamentoSelecionado.vendedor_id,
+        novaDataAgendamento.toISOString(),
+        novaDataFim.toISOString(),
+        agendamentoSelecionado.id // Ignorar este agendamento na verificação
+      );
+
+      if (temConflito) {
+        toast({
+          title: "Conflito de Agenda",
+          description: "Já existe uma reunião agendada neste horário. Escolha outro horário.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Se chegou até aqui, não há conflitos - pode remarcar
       const { error } = await supabase
         .from('agendamentos')
         .update({
           data_agendamento: novaDataAgendamento.toISOString(),
-          data_fim_agendamento: novaDataFim?.toISOString() || null,
+          data_fim_agendamento: novaDataFim.toISOString(),
           status: 'remarcado'
         })
         .eq('id', agendamentoSelecionado.id);
