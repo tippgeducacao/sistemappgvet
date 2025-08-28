@@ -7,31 +7,21 @@ export const normalizePageSlug = (pageName?: string): string | null => {
   
   console.log('🔍 [normalizePageSlug] Processando:', pageName);
   
-  // Pattern 1: Extract from .com.br/ URLs (most common)
-  const comBrMatch = pageName.match(/\.com\.br\/([^?&#\s]+)/);
-  if (comBrMatch) {
-    const slug = comBrMatch[1].trim().toLowerCase();
-    console.log('✅ [normalizePageSlug] .com.br match:', slug);
-    return slug;
+  // Pattern 1: Extract from any https URL - get the last path segment
+  const httpsMatch = pageName.match(/https?:\/\/[^\/]+\/(.+)/);
+  if (httpsMatch) {
+    const fullPath = httpsMatch[1];
+    // Remove query parameters and fragments, then get the last segment
+    const cleanPath = fullPath.split(/[?&#]/)[0];
+    const segments = cleanPath.split('/').filter(segment => segment.length > 0);
+    if (segments.length > 0) {
+      const slug = segments[segments.length - 1].trim().toLowerCase();
+      console.log('✅ [normalizePageSlug] URL match - last segment:', slug);
+      return slug;
+    }
   }
   
-  // Pattern 2: Extract from other .com/ URLs  
-  const comMatch = pageName.match(/\.com\/([^?&#\s]+)/);
-  if (comMatch) {
-    const slug = comMatch[1].trim().toLowerCase();
-    console.log('✅ [normalizePageSlug] .com match:', slug);
-    return slug;
-  }
-  
-  // Pattern 3: Extract from full URLs with other domains
-  const fullUrlMatch = pageName.match(/https?:\/\/[^\/]+\/([^?&#\s]+)/);
-  if (fullUrlMatch) {
-    const slug = fullUrlMatch[1].trim().toLowerCase();
-    console.log('✅ [normalizePageSlug] full URL match:', slug);
-    return slug;
-  }
-  
-  // Pattern 4: Direct slug without domain (fallback)
+  // Pattern 2: Direct slug without domain (fallback)
   const directSlugMatch = pageName.match(/^([a-zA-Z0-9\-_.]+)$/);
   if (directSlugMatch) {
     const slug = directSlugMatch[1].trim().toLowerCase();
