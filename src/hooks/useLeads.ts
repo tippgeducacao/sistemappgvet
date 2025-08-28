@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { extractPageSlug } from '@/utils/leadUtils';
+import { normalizePageSlug } from '@/utils/leadUtils';
 
 export interface Lead {
   id: string;
@@ -137,7 +137,6 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
       }
 
       if (filters.paginaFilter && filters.paginaFilter !== 'todos') {
-        const { normalizePageSlug } = await import('@/utils/leadUtils');
         console.log('🔍 [useLeads] Aplicando filtro de página:', filters.paginaFilter);
         allFilteredLeads = allFilteredLeads.filter(lead => {
           const pagina = normalizePageSlug(lead.pagina_nome);
@@ -199,8 +198,8 @@ export const useLeadsCount = () => {
 // Hook para obter dados únicos para filtros
 export const useLeadsFilterData = () => {
   return useQuery({
-    queryKey: ['leads-filter-data', Date.now()], // Forçar refetch com timestamp
-    staleTime: 0, // Always refetch to get latest pages
+    queryKey: ['leads-filter-data'],
+    staleTime: 5 * 60 * 1000, // 5 minutos
     queryFn: async () => {
       console.log('🔍 [useLeadsFilterData] Iniciando busca de dados para filtros...');
       
@@ -210,7 +209,10 @@ export const useLeadsFilterData = () => {
         .not('pagina_nome', 'is', null) // Só buscar leads com pagina_nome
         .limit(50000);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [useLeadsFilterData] Erro ao buscar dados:', error);
+        throw error;
+      }
       
       console.log('📊 [useLeadsFilterData] Total de leads com pagina_nome:', data?.length);
       
@@ -228,7 +230,6 @@ export const useLeadsFilterData = () => {
       )];
 
       // Usar a função normalizePageSlug consistentemente
-      const { normalizePageSlug } = await import('@/utils/leadUtils');
       
       // Extrair slugs únicos usando a mesma função que o filtro
       const slugsExtraidos = (data || [])
@@ -242,11 +243,9 @@ export const useLeadsFilterData = () => {
       
       // Verificar especificamente se contém a página que o usuário mencionou
       const containsMbaGestao = paginasCaptura.includes('mba-gestao-ia');
-      const containsAulaGratuita = paginasCaptura.includes('aula-gratuita-clinica-25ago');
       
       console.log('🔍 [useLeadsFilterData] Verificações específicas:');
       console.log('  ✓ mba-gestao-ia:', containsMbaGestao);
-      console.log('  ✓ aula-gratuita-clinica-25ago:', containsAulaGratuita);
       
       // Se não encontrou mba-gestao-ia, vamos investigar
       if (!containsMbaGestao) {
@@ -260,6 +259,7 @@ export const useLeadsFilterData = () => {
         });
       }
       
+      console.log('🔚 [useLeadsFilterData] Retornando dados dos filtros');
       return { profissoes, paginasCaptura, fontes };
     },
   });
