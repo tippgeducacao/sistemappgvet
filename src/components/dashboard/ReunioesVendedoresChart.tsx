@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar, Eye } from 'lucide-react';
 import { useResultadosReunioesVendedores } from '@/hooks/useResultadosReunioesVendedores';
+import { useAgendamentosDetalhados } from '@/hooks/useAgendamentosDetalhados';
 import LoadingState from '@/components/ui/loading-state';
 import VendedorReunioesModal from './VendedorReunioesModal';
 import { getWeekRange } from '@/utils/semanaUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ReunioesVendedoresChartProps {
   selectedVendedor?: string;
@@ -24,6 +26,167 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
   const [selectedWeek, setSelectedWeek] = useState(new Date());
   const [modalVendedor, setModalVendedor] = useState<{ id: string; name: string } | null>(null);
   const { statsData, isLoading } = useResultadosReunioesVendedores(selectedVendedor, selectedWeek);
+  
+  // Hook para dados detalhados corretos do resumo (mesmos dados do modal)
+  const [detailedStatsData, setDetailedStatsData] = useState<any[]>([]);
+  const [loadingDetailed, setLoadingDetailed] = useState(false);
+
+  // Função para buscar dados detalhados corretos para o resumo
+  const fetchDetailedStats = async () => {
+    if (!statsData.length) return;
+    
+    setLoadingDetailed(true);
+    const detailedResults = [];
+    
+    for (const vendedor of statsData) {
+      // Para cada vendedor, buscar os dados detalhados corretos (mesma lógica do modal)
+      try {
+        const { start: startOfWeek, end: endOfWeek } = getWeekRange(selectedWeek);
+
+        // Buscar agendamentos com resultado na semana
+        const { data: agendamentos } = await supabase
+          .from('agendamentos')
+          .select(`
+            id,
+            lead_id,
+            data_agendamento,
+            data_resultado,
+            resultado_reuniao,
+            form_entry_id
+          `)
+          .eq('vendedor_id', vendedor.vendedor_id)
+          .not('resultado_reuniao', 'is', null)
+          .gte('data_resultado', startOfWeek.toISOString())
+          .lte('data_resultado', endOfWeek.toISOString());
+
+        // Buscar vendas convertidas da semana
+        const { data: vendas } = await supabase
+          .from('form_entries')
+          .select('id')
+          .eq('vendedor_id', vendedor.vendedor_id)
+          .eq('status', 'matriculado')
+          .not('data_assinatura_contrato', 'is', null)
+          .gte('data_assinatura_contrato', startOfWeek.toISOString().split('T')[0])
+          .lte('data_assinatura_contrato', endOfWeek.toISOString().split('T')[0]);
+
+        // Filtrar "comprou" já convertidos globalmente
+        const agendamentosComprou = agendamentos?.filter(a => a.resultado_reuniao === 'comprou' && a.form_entry_id) || [];
+        const agendamentosComprouSemFormEntry = agendamentos?.filter(a => a.resultado_reuniao === 'comprou' && !a.form_entry_id) || [];
+        const formEntryIds = agendamentosComprou.map(a => a.form_entry_id).filter(Boolean);
+        
+        let convertidasGlobal = new Set<string>();
+        if (formEntryIds.length > 0) {
+          const { data: vendasGlobal } = await supabase
+            .from('form_entries')
+            .select('id')
+            .in('id', formEntryIds)
+            .eq('status', 'matriculado')
+            .not('data_assinatura_contrato', 'is', null);
+          
+          vendasGlobal?.forEach(v => convertidasGlobal.add(v.id));
+        }
+
+        // Fazer matching por leads para agendamentos sem form_entry_id (IGUAL AO MODAL)
+        let agendamentosMatchingLeads = new Set<string>();
+        if (agendamentosComprouSemFormEntry.length > 0 && vendas && vendas.length > 0) {
+          // Buscar dados dos leads
+          const leadIds = agendamentosComprouSemFormEntry.map(a => a.lead_id).filter(Boolean);
+          
+          if (leadIds.length > 0) {
+            const { data: leadsData } = await supabase
+              .from('leads')
+              .select('id, whatsapp, email')
+              .in('id', leadIds);
+
+            // Buscar dados dos alunos das vendas para matching
+            const vendaIds = vendas.map(v => v.id);
+            const { data: alunosVendas } = await supabase
+              .from('alunos')
+              .select('form_entry_id, nome, email, telefone')
+              .in('form_entry_id', vendaIds);
+            
+            if (leadsData && alunosVendas && alunosVendas.length > 0) {
+              // Matching simples por telefone e email (mesma lógica básica do modal)
+              agendamentosComprouSemFormEntry.forEach(agendamento => {
+                const lead = leadsData.find(l => l.id === agendamento.lead_id);
+                if (lead) {
+                  const matchingAluno = alunosVendas.find(aluno => {
+                    // Normalizar telefones
+                    const leadPhone = lead.whatsapp?.replace(/\D/g, '') || '';
+                    const alunoPhone = aluno.telefone?.replace(/\D/g, '') || '';
+                    
+                    // Normalizar emails
+                    const leadEmail = lead.email?.toLowerCase().trim() || '';
+                    const alunoEmail = aluno.email?.toLowerCase().trim() || '';
+                    
+                    return (leadPhone && alunoPhone && leadPhone === alunoPhone) ||
+                           (leadEmail && alunoEmail && leadEmail === alunoEmail);
+                  });
+                  
+                  if (matchingAluno) {
+                    agendamentosMatchingLeads.add(agendamento.id);
+                  }
+                }
+              });
+            }
+          }
+        }
+
+        // Contar por categoria (mesma lógica do modal COM MATCHING)
+        let pendentes = 0, compareceram = 0, naoCompareceram = 0;
+        
+        agendamentos?.forEach(agendamento => {
+          switch (agendamento.resultado_reuniao) {
+            case 'comprou':
+              // Só conta como pendente se NÃO foi convertido globalmente OU por matching de lead
+              const jaConvertidoPorFormEntry = agendamento.form_entry_id && convertidasGlobal.has(agendamento.form_entry_id);
+              const jaConvertidoPorLead = agendamentosMatchingLeads.has(agendamento.id);
+              const jaConvertido = jaConvertidoPorFormEntry || jaConvertidoPorLead;
+              
+              if (!jaConvertido) {
+                pendentes++;
+              }
+              break;
+            case 'compareceu_nao_comprou':
+            case 'presente':
+            case 'compareceu':
+              compareceram++;
+              break;
+            case 'nao_compareceu':
+            case 'ausente':
+              naoCompareceram++;
+              break;
+          }
+        });
+
+        detailedResults.push({
+          vendedor_id: vendedor.vendedor_id,
+          vendedor_name: vendedor.vendedor_name,
+          convertidas: vendas?.length || 0,
+          pendentes,
+          compareceram,
+          naoCompareceram,
+          total: (vendas?.length || 0) + pendentes + compareceram + naoCompareceram
+        });
+        
+      } catch (error) {
+        console.error('Erro ao buscar dados detalhados para', vendedor.vendedor_name, error);
+        // Fallback para dados originais
+        detailedResults.push(vendedor);
+      }
+    }
+    
+    console.log('📊 DADOS DETALHADOS CORRETOS (mesma lógica do modal):', detailedResults);
+    setDetailedStatsData(detailedResults);
+    setLoadingDetailed(false);
+  };
+
+  // Executar busca detalhada quando statsData mudar
+  useEffect(() => {
+    if (statsData.length > 0) {
+      fetchDetailedStats();
+    }
+  }, [statsData, selectedWeek]);
 
   // Usar função unificada de cálculo de semana
   const { start: weekStart, end: weekEnd } = getWeekRange(selectedWeek);
@@ -245,11 +408,11 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
               </ResponsiveContainer>
             </div>
 
-            {/* Resumo por Vendedor */}
+            {/* Resumo por Vendedor - USANDO DADOS CORRETOS */}
             <div className="space-y-3">
               <h4 className="font-semibold text-sm">Resumo Detalhado:</h4>
               <div className="grid gap-3">
-                {statsData.map((stats) => {
+                {(loadingDetailed ? statsData : detailedStatsData).map((stats) => {
                   // Taxa de conversão baseada em reuniões finalizadas
                   const reunioesFinalizadas = stats.convertidas + stats.pendentes + stats.compareceram;
                   return (
