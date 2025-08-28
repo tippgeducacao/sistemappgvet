@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { findContactMatches } from '@/utils/contactMatchingUtils';
 
 export interface ResultadosReunioesVendedores {
   vendedor_id: string;
@@ -138,7 +139,7 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
         vendasGlobal?.forEach(v => convertidasGlobal.add(v.id));
       }
 
-      // Buscar agendamentos "comprou" sem form_entry_id e fazer matching por lead
+      // Buscar agendamentos "comprou" sem form_entry_id e fazer matching por lead usando utilitário unificado
       let agendamentosMatchingLeads = new Set<string>();
       if (agendamentosComprouSemFormEntry.length > 0) {
         // Buscar dados dos leads dos agendamentos sem form_entry_id
@@ -167,52 +168,33 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
               .eq('status', 'matriculado')
               .not('data_assinatura_contrato', 'is', null);
             
-            console.log('🔍 DEBUG MATCHING - Dados para matching:', {
+            console.log('🔍 RESUMO - Dados para matching:', {
               leadsComWhatsApp: leadsData.filter(l => l.whatsapp).length,
               leadsComEmail: leadsData.filter(l => l.email).length,
               vendasMatriculadas: vendasMatriculadas?.length || 0
             });
             
-            // Fazer matching por WhatsApp ou email
-            agendamentosComprouSemFormEntry.forEach(agendamento => {
-              const leadData = leadsData.find(l => l.id === agendamento.lead_id);
-              if (!leadData) return;
-              
-              const leadWhatsApp = leadData.whatsapp?.replace(/\D/g, ''); // Remove non-digits
-              const leadEmail = leadData.email?.toLowerCase();
-              
-              const vendaMatching = vendasMatriculadas?.find(venda => {
-                const alunoWhatsApp = venda.alunos?.telefone?.replace(/\D/g, '');
-                const alunoEmail = venda.alunos?.email?.toLowerCase();
-                
-                // Match por WhatsApp (se ambos existem e são iguais)
-                if (leadWhatsApp && alunoWhatsApp && leadWhatsApp === alunoWhatsApp) {
-                  return true;
-                }
-                
-                // Match por email (se ambos existem e são iguais)
-                if (leadEmail && alunoEmail && leadEmail === alunoEmail) {
-                  return true;
-                }
-                
-                return false;
-              });
-              
-              if (vendaMatching) {
-                agendamentosMatchingLeads.add(agendamento.id);
-                console.log('✅ MATCH ENCONTRADO:', {
-                  agendamento_id: agendamento.id,
-                  lead_whatsapp: leadWhatsApp,
-                  lead_email: leadEmail,
-                  venda_id: vendaMatching.id,
-                  aluno_whatsapp: vendaMatching.alunos?.telefone?.replace(/\D/g, ''),
-                  aluno_email: vendaMatching.alunos?.email?.toLowerCase(),
-                  data_assinatura: vendaMatching.data_assinatura_contrato
-                });
-              }
+            // Usar utilitário unificado para matching
+            const alunosData = vendasMatriculadas?.map(v => ({
+              form_entry_id: v.id,
+              nome: v.alunos?.nome || '',
+              email: v.alunos?.email || '',
+              telefone: v.alunos?.telefone || ''
+            })) || [];
+            
+            const agendamentosComLeads = agendamentosComprouSemFormEntry.map(a => ({
+              id: a.id,
+              lead_id: a.lead_id
+            }));
+            
+            const matches = findContactMatches(agendamentosComLeads, leadsData, alunosData);
+            
+            // Converter matches para o Set existente
+            matches.forEach((_, agendamentoId) => {
+              agendamentosMatchingLeads.add(agendamentoId);
             });
             
-            console.log('🔍 DEBUG MATCHING - Resultado:', {
+            console.log('🔍 RESUMO - Resultado do matching unificado:', {
               agendamentosComMatching: agendamentosMatchingLeads.size,
               detalhesMatching: Array.from(agendamentosMatchingLeads)
             });
@@ -310,7 +292,7 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
 
       const finalStats = Array.from(statsMap.values());
       
-      console.log('📈 Estatísticas finais:', finalStats.map(s => ({
+      console.log('📈 RESUMO - Estatísticas finais UNIFICADAS:', finalStats.map(s => ({
         vendedor: s.vendedor_name,
         compareceram: s.compareceram,
         naoCompareceram: s.naoCompareceram,
@@ -318,6 +300,23 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
         convertidas: s.convertidas,
         total: s.total
       })));
+      
+      // Log específico para debugging de inconsistências
+      if (selectedVendedor && selectedVendedor !== 'todos') {
+        const vendedorStats = finalStats.find(s => s.vendedor_id === selectedVendedor);
+        if (vendedorStats) {
+          console.log('🔍 RESUMO - DEBUGGING para vendedor específico:', {
+            vendedor_id: selectedVendedor,
+            vendedor_name: vendedorStats.vendedor_name,
+            PENDENTES: vendedorStats.pendentes,
+            totalAgendamentosComprou: agendamentos?.filter(a => 
+              a.vendedor_id === selectedVendedor && a.resultado_reuniao === 'comprou'
+            ).length || 0,
+            convertidasGlobal: convertidasGlobal.size,
+            matchingLeads: agendamentosMatchingLeads.size
+          });
+        }
+      }
 
       setStatsData(finalStats);
     } catch (error) {

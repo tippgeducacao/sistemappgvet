@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getWeekRange } from '@/utils/semanaUtils';
+import { findContactMatches } from '@/utils/contactMatchingUtils';
 
 export interface AgendamentoDetalhado {
   id: string;
@@ -206,7 +207,7 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         vendasGlobal?.forEach(v => convertidasGlobal.add(v.id));
       }
 
-      // Buscar agendamentos "comprou" sem form_entry_id e fazer matching por lead + vincular com vendas da semana
+      // Buscar agendamentos "comprou" sem form_entry_id e fazer matching por lead usando utilitário unificado
       let agendamentosMatchingLeads = new Set<string>();
       let vendasComAgendamento = new Map<string, { agendamento_id: string; data_agendamento: string }>();
       
@@ -218,61 +219,45 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
           .select('form_entry_id, nome, email, telefone')
           .in('form_entry_id', vendaIds);
         
-        console.log('🎯 DEBUG MODAL MATCHING - Dados para matching:', {
+        console.log('🎯 MODAL - Dados para matching unificado:', {
           agendamentosComprouSemFormEntry: agendamentosComprouSemFormEntry.length,
           alunosVendas: alunosVendas?.length || 0,
           leadsData: leadsData.length
         });
         
-        // Fazer matching entre agendamentos "comprou" sem form_entry_id e vendas da semana
-        agendamentosComprouSemFormEntry.forEach(agendamento => {
-          const leadData = leadsData.find(l => l.id === agendamento.lead_id);
-          if (!leadData) return;
+        if (alunosVendas && alunosVendas.length > 0) {
+          // Usar utilitário unificado para matching
+          const alunosData = alunosVendas.map(aluno => ({
+            form_entry_id: aluno.form_entry_id,
+            nome: aluno.nome,
+            email: aluno.email || '',
+            telefone: aluno.telefone || ''
+          }));
           
-          const leadWhatsApp = leadData.whatsapp?.replace(/\D/g, '');
-          const leadEmail = leadData.email?.toLowerCase();
+          const agendamentosComLeads = agendamentosComprouSemFormEntry.map(a => ({
+            id: a.id,
+            lead_id: a.lead_id
+          }));
           
-          const alunoMatching = alunosVendas?.find(aluno => {
-            const alunoWhatsApp = aluno.telefone?.replace(/\D/g, '');
-            const alunoEmail = aluno.email?.toLowerCase();
-            
-            // Match por WhatsApp
-            if (leadWhatsApp && alunoWhatsApp && leadWhatsApp === alunoWhatsApp) {
-              return true;
+          const matches = findContactMatches(agendamentosComLeads, leadsData, alunosData);
+          
+          // Converter matches para os Sets/Maps existentes
+          matches.forEach((alunoData, agendamentoId) => {
+            agendamentosMatchingLeads.add(agendamentoId);
+            const agendamento = agendamentosComprouSemFormEntry.find(a => a.id === agendamentoId);
+            if (agendamento) {
+              vendasComAgendamento.set(alunoData.form_entry_id, {
+                agendamento_id: agendamentoId,
+                data_agendamento: agendamento.data_agendamento
+              });
             }
-            
-            // Match por email
-            if (leadEmail && alunoEmail && leadEmail === alunoEmail) {
-              return true;
-            }
-            
-            return false;
           });
           
-          if (alunoMatching) {
-            agendamentosMatchingLeads.add(agendamento.id);
-            vendasComAgendamento.set(alunoMatching.form_entry_id, {
-              agendamento_id: agendamento.id,
-              data_agendamento: agendamento.data_agendamento
-            });
-            
-            console.log('✅ MODAL MATCH ENCONTRADO:', {
-              agendamento_id: agendamento.id,
-              data_agendamento: agendamento.data_agendamento,
-              lead_whatsapp: leadWhatsApp,
-              lead_email: leadEmail,
-              venda_id: alunoMatching.form_entry_id,
-              aluno_nome: alunoMatching.nome,
-              aluno_whatsapp: alunoMatching.telefone?.replace(/\D/g, ''),
-              aluno_email: alunoMatching.email?.toLowerCase()
-            });
-          }
-        });
-        
-        console.log('🎯 DEBUG MODAL MATCHING - Resultado:', {
-          agendamentosComMatching: agendamentosMatchingLeads.size,
-          vendasComAgendamento: vendasComAgendamento.size
-        });
+          console.log('🎯 MODAL - Resultado do matching unificado:', {
+            agendamentosComMatching: agendamentosMatchingLeads.size,
+            vendasComAgendamento: vendasComAgendamento.size
+          });
+        }
       }
 
       console.log('📊 Modal - Dados coletados:', {
@@ -360,12 +345,19 @@ export const useAgendamentosDetalhados = (vendedorId: string, weekDate: Date) =>
         naoCompareceram
       };
 
-      console.log('✅ Reuniões categorizadas (ALINHADO COM GRÁFICO):', {
+      console.log('✅ MODAL - Reuniões categorizadas UNIFICADAS:', {
         convertidas: resultado.convertidas.length,
         pendentes: resultado.pendentes.length,
         compareceram: resultado.compareceram.length,
         naoCompareceram: resultado.naoCompareceram.length,
         total: resultado.convertidas.length + resultado.pendentes.length + resultado.compareceram.length + resultado.naoCompareceram.length,
+        // Log específico para comparação com resumo
+        VALIDACAO_PENDENTES: {
+          totalAgendamentosComprou: agendamentos?.filter(a => a.resultado_reuniao === 'comprou').length || 0,
+          convertidasGlobal: convertidasGlobal.size,
+          matchingLeads: agendamentosMatchingLeads.size,
+          PENDENTES_FINAL: resultado.pendentes.length
+        },
         detalhes: {
           pendentesList: resultado.pendentes.map(r => ({ 
             id: r.id, 
