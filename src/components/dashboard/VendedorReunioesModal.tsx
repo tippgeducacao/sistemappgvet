@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, User, FileText, CheckCircle, Clock3, UserCheck, UserX } from 'lucide-react';
 import { useAgendamentosDetalhados, type AgendamentoDetalhado, type VendaConvertida } from '@/hooks/useAgendamentosDetalhados';
 import LoadingState from '@/components/ui/loading-state';
+import { getDataEfetivaVenda } from '@/utils/vendaDateUtils';
 
 interface VendedorReunioesModalProps {
   vendedorId: string;
@@ -99,7 +100,7 @@ const VendedorReunioesModal: React.FC<VendedorReunioesModalProps> = ({
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-green-500" />
             <span className="font-medium text-green-700">
-              {new Date(venda.data_assinatura_contrato).toLocaleDateString('pt-BR')}
+              {getDataEfetivaVenda(venda).toLocaleDateString('pt-BR')}
             </span>
           </div>
           
