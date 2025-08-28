@@ -199,7 +199,7 @@ export const useLeadsCount = () => {
 // Hook para obter dados únicos para filtros
 export const useLeadsFilterData = () => {
   return useQuery({
-    queryKey: ['leads-filter-data'],
+    queryKey: ['leads-filter-data', Date.now()], // Forçar refetch com timestamp
     staleTime: 0, // Always refetch to get latest pages
     queryFn: async () => {
       console.log('🔍 [useLeadsFilterData] Iniciando busca de dados para filtros...');
