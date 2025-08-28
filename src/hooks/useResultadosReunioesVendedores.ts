@@ -60,7 +60,7 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
         return;
       }
 
-      // Query para buscar vendas aprovadas baseadas na data de assinatura na semana
+      // Buscar vendas aprovadas baseadas na data de assinatura na semana ESPECÍFICA (aparecem como "convertidas")
       let vendasQuery = supabase
         .from('form_entries')
         .select(`
@@ -108,12 +108,19 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
         }))
       });
       
+      // Buscar todas as vendas convertidas globalmente (de qualquer período)
       let convertidasGlobal = new Set<string>();
+      let allFormEntryIds: string[] = [];
+      
       if (formEntryIds.length > 0) {
+        allFormEntryIds = [...formEntryIds];
+      }
+      
+      if (allFormEntryIds.length > 0) {
         const { data: vendasGlobal } = await supabase
           .from('form_entries')
-          .select('id, status, data_assinatura_contrato')
-          .in('id', formEntryIds)
+          .select('id, status, data_assinatura_contrato, vendedor_id')
+          .in('id', allFormEntryIds)
           .eq('status', 'matriculado')
           .not('data_assinatura_contrato', 'is', null);
         
@@ -122,14 +129,38 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
           detalhesVendas: vendasGlobal?.map(v => ({
             id: v.id,
             status: v.status,
-            data_assinatura_contrato: v.data_assinatura_contrato
+            data_assinatura_contrato: v.data_assinatura_contrato,
+            vendedor_id: v.vendedor_id
           }))
         });
         
         vendasGlobal?.forEach(v => convertidasGlobal.add(v.id));
       }
+      
+      // ADDITIONALLY: Buscar todas as vendas matriculadas dos vendedores da consulta para matching por contato
+      let vendedoresQuery = supabase
+        .from('form_entries')
+        .select(`
+          id,
+          vendedor_id,
+          status,
+          data_assinatura_contrato,
+          alunos!inner (
+            nome,
+            email,
+            telefone
+          )
+        `)
+        .eq('status', 'matriculado')
+        .not('data_assinatura_contrato', 'is', null);
 
-      // Buscar agendamentos "comprou" sem form_entry_id e fazer matching por lead usando utilitário unificado
+      if (selectedVendedor && selectedVendedor !== 'todos') {
+        vendedoresQuery = vendedoresQuery.eq('vendedor_id', selectedVendedor);
+      }
+
+      const { data: todasVendasMatriculadas } = await vendedoresQuery;
+
+      // Buscar agendamentos "comprou" sem form_entry_id e fazer matching por lead
       let agendamentosMatchingLeads = new Set<string>();
       if (agendamentosComprouSemFormEntry.length > 0) {
         // Buscar dados dos leads dos agendamentos sem form_entry_id
@@ -141,36 +172,20 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
             .select('id, whatsapp, email')
             .in('id', leadIds);
             
-          if (leadsData && leadsData.length > 0) {
-            // Buscar vendas matriculadas para comparar por contato do lead
-            const { data: vendasMatriculadas } = await supabase
-              .from('form_entries')
-              .select(`
-                id,
-                status,
-                data_assinatura_contrato,
-                alunos!inner (
-                  nome,
-                  email,
-                  telefone
-                )
-              `)
-              .eq('status', 'matriculado')
-              .not('data_assinatura_contrato', 'is', null);
-            
+          if (leadsData && leadsData.length > 0 && todasVendasMatriculadas) {
             console.log('🔍 RESUMO - Dados para matching:', {
               leadsComWhatsApp: leadsData.filter(l => l.whatsapp).length,
               leadsComEmail: leadsData.filter(l => l.email).length,
-              vendasMatriculadas: vendasMatriculadas?.length || 0
+              todasVendasMatriculadas: todasVendasMatriculadas.length
             });
             
-            // Usar utilitário unificado para matching
-            const alunosData = vendasMatriculadas?.map(v => ({
+            // Usar utilitário unificado para matching com todas as vendas matriculadas
+            const alunosData = todasVendasMatriculadas.map(v => ({
               form_entry_id: v.id,
               nome: v.alunos?.nome || '',
               email: v.alunos?.email || '',
               telefone: v.alunos?.telefone || ''
-            })) || [];
+            }));
             
             const agendamentosComLeads = agendamentosComprouSemFormEntry.map(a => ({
               id: a.id,
@@ -205,13 +220,15 @@ export const useResultadosReunioesVendedores = (selectedVendedor?: string, weekD
         });
       }
 
-      console.log('📊 Dados encontrados:', {
-        agendamentos: agendamentos?.length || 0,
-        vendas: vendas?.length || 0,
-        comprouTotal: agendamentosComprou.length,
-        comprouJaConvertidos: convertidasGlobal.size,
-        convertidasGlobalSet: Array.from(convertidasGlobal),
-        formEntryStatusMap: Object.fromEntries(formEntryStatusMap)
+      console.log('📊 DADOS FINAIS - Comparação detalhada:', {
+        agendamentosTotal: agendamentos?.length || 0,
+        vendasDaSemana: vendas?.length || 0,
+        comprouComFormEntry: agendamentosComprou.length,
+        comprouSemFormEntry: agendamentosComprouSemFormEntry.length,
+        convertidasGlobal: convertidasGlobal.size,
+        matchingLeads: agendamentosMatchingLeads.size,
+        formEntryStatusMap: Object.fromEntries(formEntryStatusMap),
+        periodoConsulta: `${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`
       });
 
       // Agrupar dados por vendedor
