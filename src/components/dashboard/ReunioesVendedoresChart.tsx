@@ -234,18 +234,18 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
 
   console.log('🔍 ReunioesVendedoresChart renderizando com selectedWeek:', selectedWeek);
 
-  // Preparar dados para o gráfico
-  const chartData = statsData.map(stats => {
-    // Taxa de conversão baseada em reuniões finalizadas
-    const reunioesFinalizadas = stats.convertidas + stats.pendentes + stats.compareceram;
+  // Preparar dados para o gráfico - usar dados corretos para cada categoria
+  const chartData = (loadingDetailed ? statsData : detailedStatsData).map(stats => {
+    // Taxa de conversão baseada em reuniões finalizadas (não inclui convertidas da semana)
+    const reunioesFinalizadas = stats.pendentes + stats.compareceram;
     return {
       vendedor: stats.vendedor_name.split(' ')[0], // Apenas primeiro nome
-      convertidas: stats.convertidas,
-      pendentes: stats.pendentes,
-      compareceram: stats.compareceram,
-      naoCompareceram: stats.naoCompareceram,
-      total: stats.total,
-      taxaConversao: reunioesFinalizadas > 0 ? (((stats.convertidas + stats.pendentes) / reunioesFinalizadas) * 100).toFixed(1) : '0'
+      convertidas: stats.convertidas, // Baseado na data de assinatura de contrato
+      pendentes: stats.pendentes, // Baseado na data_resultado da reunião
+      compareceram: stats.compareceram, // Baseado na data_resultado da reunião
+      naoCompareceram: stats.naoCompareceram, // Baseado na data_resultado da reunião
+      total: stats.convertidas + stats.pendentes + stats.compareceram + stats.naoCompareceram,
+      taxaConversao: reunioesFinalizadas > 0 ? ((stats.pendentes / reunioesFinalizadas) * 100).toFixed(1) : '0'
     };
   });
 
@@ -349,7 +349,8 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
         </CardTitle>
         
         <CardDescription>
-          Performance dos vendedores nas reuniões agendadas desta semana (quarta a terça)
+          Convertidas: vendas assinadas nesta semana (por data do contrato) | 
+          Pendentes/Compareceram: reuniões realizadas nesta semana (quarta a terça)
           {selectedVendedor && selectedVendedor !== 'todos' && ' (filtrado)'}
         </CardDescription>
       </CardHeader>
@@ -424,7 +425,7 @@ export const ReunioesVendedoresChart: React.FC<ReunioesVendedoresChartProps> = (
                         <span className="text-yellow-600">{stats.compareceram} compareceram</span>
                         <span className="text-red-600">{stats.naoCompareceram} não compareceram</span>
                         <span className="font-medium">
-                          Taxa: {reunioesFinalizadas > 0 ? (((stats.convertidas + stats.pendentes) / reunioesFinalizadas) * 100).toFixed(1) : 0}%
+                          Taxa: {reunioesFinalizadas > 0 ? ((stats.pendentes / reunioesFinalizadas) * 100).toFixed(1) : 0}%
                         </span>
                         <Button
                           size="sm"
