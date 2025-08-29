@@ -266,6 +266,11 @@ export const useLeadsFilterData = () => {
         console.log('➕ [FORÇADO] Adicionado mba-gestao-ia ao filtro');
       }
       
+      if (!paginasCaptura.includes('mba-extensao-rural')) {
+        paginasCaptura.push('mba-extensao-rural');
+        console.log('➕ [FORÇADO] Adicionado mba-extensao-rural ao filtro');
+      }
+      
       if (!paginasCaptura.includes('lancamento')) {
         paginasCaptura.push('lancamento');
         console.log('➕ [FORÇADO] Adicionado lancamento ao filtro');
