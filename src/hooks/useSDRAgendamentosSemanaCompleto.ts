@@ -27,15 +27,15 @@ export const useSDRAgendamentosSemanaCompleto = () => {
       const inicioSemana = getDataInicioSemana(ano, new Date().getMonth() + 1, semana);
       const fimSemana = getDataFimSemana(ano, new Date().getMonth() + 1, semana);
 
-      // Buscar agendamentos da semana específica que tiveram resultado positivo E já aconteceram
-      const agora = new Date();
+      // Buscar agendamentos da semana específica que tiveram resultado registrado
       const { data: agendamentos, error } = await supabase
         .from('agendamentos')
         .select('*')
         .eq('sdr_id', profile.id)
-        .gte('data_agendamento', inicioSemana.toISOString())
-        .lte('data_agendamento', fimSemana.toISOString())
-        .lt('data_agendamento', agora.toISOString()) // Só reuniões que já passaram
+        .gte('data_resultado', inicioSemana.toISOString())
+        .lte('data_resultado', fimSemana.toISOString())
+        .not('resultado_reuniao', 'is', null) // Apenas reuniões com resultado
+        .not('data_resultado', 'is', null)
         .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
 
       if (error) throw error;
