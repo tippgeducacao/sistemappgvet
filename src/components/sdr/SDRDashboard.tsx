@@ -147,7 +147,7 @@ const SDRDashboard: React.FC = () => {
       <SDRMetasSemanais />
 
       {/* Gráfico de Resultados das Reuniões */}
-      <ReunioesVendedoresChart selectedVendedor={profile?.id} />
+      {!isSDR && <ReunioesVendedoresChart selectedVendedor={profile?.id} />}
 
       {/* Gráfico de Pizza das Reuniões */}
       <ReunioesChart />
