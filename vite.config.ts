@@ -37,14 +37,7 @@ export default defineConfig(({ mode }) => ({
       }
     },
     assetsInlineLimit: 4096,
-    sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: mode === 'production',
-        drop_debugger: mode === 'production'
-      }
-    }
+    sourcemap: false
   },
   plugins: [
     react(),
