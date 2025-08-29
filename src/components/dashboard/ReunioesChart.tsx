@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAgendamentosStats } from '@/hooks/useAgendamentosStats';
+import { getWeekRange } from '@/utils/semanaUtils';
 import LoadingState from '@/components/ui/loading-state';
 
 const COLORS = {
@@ -11,7 +14,23 @@ const COLORS = {
 };
 
 export const ReunioesChart: React.FC = () => {
-  const { stats, isLoading } = useAgendamentosStats();
+  const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
+  const { stats, isLoading } = useAgendamentosStats(currentWeek);
+
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    setCurrentWeek(prev => {
+      const newWeek = new Date(prev);
+      newWeek.setDate(newWeek.getDate() + (direction === 'prev' ? -7 : 7));
+      return newWeek;
+    });
+  };
+
+  const { start: weekStart, end: weekEnd } = getWeekRange(currentWeek);
+  const formatDate = (date: Date) => date.toLocaleDateString('pt-BR', { 
+    day: '2-digit', 
+    month: '2-digit' 
+  });
+  const weekPeriod = `${formatDate(weekStart)} - ${formatDate(weekEnd)}`;
 
   if (isLoading) {
     return (
@@ -28,12 +47,39 @@ export const ReunioesChart: React.FC = () => {
   }
 
   if (stats.total === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Resultados das Reuniões</CardTitle>
-          <CardDescription>Distribuição dos resultados das suas reuniões</CardDescription>
-        </CardHeader>
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Resultados das Reuniões</CardTitle>
+            <CardDescription>Semana de {weekPeriod}</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateWeek('prev')}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentWeek(new Date())}
+            >
+              Hoje
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateWeek('next')}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-muted-foreground">
             <div className="text-center">
@@ -103,10 +149,35 @@ export const ReunioesChart: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Resultados das Reuniões</CardTitle>
-        <CardDescription>
-          Distribuição dos resultados das suas {stats.total} reuniões finalizadas
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Resultados das Reuniões</CardTitle>
+            <CardDescription>Semana de {weekPeriod}</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateWeek('prev')}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentWeek(new Date())}
+            >
+              Hoje
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateWeek('next')}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="h-80">
