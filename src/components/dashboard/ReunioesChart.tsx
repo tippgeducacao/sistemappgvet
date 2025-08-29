@@ -68,7 +68,7 @@ export const ReunioesChart: React.FC = () => {
               size="sm"
               onClick={() => setCurrentWeek(new Date())}
             >
-              Hoje
+              Semana Atual
             </Button>
             <Button
               variant="outline"
@@ -167,7 +167,7 @@ export const ReunioesChart: React.FC = () => {
               size="sm"
               onClick={() => setCurrentWeek(new Date())}
             >
-              Hoje
+              Semana Atual
             </Button>
             <Button
               variant="outline"

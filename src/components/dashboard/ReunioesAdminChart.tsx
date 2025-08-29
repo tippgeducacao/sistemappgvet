@@ -176,7 +176,7 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
                   onClick={goToCurrentWeek}
                   className="text-sm h-8 px-3 text-white hover:bg-white/20 font-medium"
                 >
-                  Atual
+                  Semana Atual
                 </Button>
               )}
               
