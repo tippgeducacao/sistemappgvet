@@ -95,8 +95,8 @@ export const MarcarReuniaoVendedor: React.FC<MarcarReuniaoVendedorProps> = ({
       const selectedDay = selectedDateForm ? new Date(selectedDateForm + 'T00:00:00').getDay() : null;
       const isSaturday = selectedDay === 6;
       
-      // 30 minutos se for depois das 17h ou sábado, senão 45 minutos
-      const durationMinutes = (isAfter17h || isSaturday) ? 30 : 45;
+      // Duração padrão de 30 minutos
+      const durationMinutes = 30;
       const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
       const endTimeString = endTime.toTimeString().slice(0, 5);
       
