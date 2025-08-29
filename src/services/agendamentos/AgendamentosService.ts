@@ -448,7 +448,7 @@ export class AgendamentosService {
       const dataInicio = new Date(dataAgendamento);
       const dataFim = dataFimAgendamento 
         ? new Date(dataFimAgendamento)
-        : new Date(dataInicio.getTime() + 45 * 60 * 1000);
+        : new Date(dataInicio.getTime() + 30 * 60 * 1000);
       
       console.log('📅 Datas convertidas:', {
         dataInicio_ISO: dataInicio.toISOString(),
@@ -500,7 +500,7 @@ export class AgendamentosService {
         const agendamentoInicio = new Date(agendamento.data_agendamento);
         const agendamentoFim = agendamento.data_fim_agendamento 
           ? new Date(agendamento.data_fim_agendamento)
-          : new Date(agendamentoInicio.getTime() + 45 * 60 * 1000);
+          : new Date(agendamentoInicio.getTime() + 30 * 60 * 1000);
         
         console.log('🔍 COMPARANDO HORÁRIOS:');
         console.log('  📅 AGENDAMENTO EXISTENTE:', {
@@ -848,8 +848,8 @@ export class AgendamentosService {
         dataFimAgendamento
       });
 
-      // Se não há data de fim, assumir 45 minutos
-      const dataFim = dataFimAgendamento || new Date(new Date(dataAgendamento).getTime() + 45 * 60 * 1000).toISOString();
+      // Se não há data de fim, assumir 30 minutos
+      const dataFim = dataFimAgendamento || new Date(new Date(dataAgendamento).getTime() + 30 * 60 * 1000).toISOString();
       
       console.log('🎯 Dados processados:', {
         dataInicio: dataAgendamento,

@@ -83,34 +83,27 @@ export const MarcarReuniaoVendedor: React.FC<MarcarReuniaoVendedorProps> = ({
     }
   }, [searchTerm, searchType]);
 
-  // Auto-calcular horário final - EXATAMENTE como no SDR
+  // Auto-calcular horário final - sempre 30 minutos
   useEffect(() => {
-    if (selectedTime && selectedDateForm) {
+    if (selectedTime) {
       const [hours, minutes] = selectedTime.split(':');
       const startTime = new Date();
       startTime.setHours(parseInt(hours), parseInt(minutes));
       
-      // Verificar se é depois das 17h ou se é sábado
-      const isAfter17h = parseInt(hours) >= 17;
-      const selectedDay = selectedDateForm ? new Date(selectedDateForm + 'T00:00:00').getDay() : null;
-      const isSaturday = selectedDay === 6;
-      
-      // Duração padrão de 30 minutos
+      // Duração fixa de 30 minutos
       const durationMinutes = 30;
       const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
       const endTimeString = endTime.toTimeString().slice(0, 5);
       
       console.log('🎯 Definindo horário final:', {
         horario: selectedTime,
-        isAfter17h,
-        isSaturday,
         duracao: `${durationMinutes}min`,
         horarioFinal: endTimeString
       });
       
       setSelectedEndTime(endTimeString);
     }
-  }, [selectedTime, selectedDateForm]);
+  }, [selectedTime]);
 
   const carregarPosGraduacoes = async () => {
     try {

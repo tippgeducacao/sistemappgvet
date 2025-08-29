@@ -1436,29 +1436,22 @@ const AgendamentosPage: React.FC = () => {
                            setSelectedTime(e.target.value);
                            // Automaticamente definir horário final com duração baseada no horário e dia
                            if (e.target.value) {
-                             const [hours, minutes] = e.target.value.split(':');
-                             const startTime = new Date();
-                             startTime.setHours(parseInt(hours), parseInt(minutes));
-                             
-                             // Verificar se é depois das 17h ou se é sábado
-                             const isAfter17h = parseInt(hours) >= 17;
-                             const selectedDay = selectedDateForm ? new Date(selectedDateForm + 'T00:00:00').getDay() : null;
-                             const isSaturday = selectedDay === 6;
-                             
-                             // 30 minutos se for depois das 17h ou sábado, senão 45 minutos
-                             const durationMinutes = (isAfter17h || isSaturday) ? 30 : 45;
-                             const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
-                             const endTimeString = endTime.toTimeString().slice(0, 5);
-                             
-                             console.log('🎯 Definindo horário final:', {
-                               horario: e.target.value,
-                               isAfter17h,
-                               isSaturday,
-                               duracao: `${durationMinutes}min`,
-                               horarioFinal: endTimeString
-                             });
-                             
-                             setSelectedEndTime(endTimeString);
+                              const [hours, minutes] = e.target.value.split(':');
+                              const startTime = new Date();
+                              startTime.setHours(parseInt(hours), parseInt(minutes));
+                              
+                              // Duração fixa de 30 minutos
+                              const durationMinutes = 30;
+                              const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+                              const endTimeString = endTime.toTimeString().slice(0, 5);
+                              
+                              console.log('🎯 Definindo horário final:', {
+                                horario: e.target.value,
+                                duracao: `${durationMinutes}min`,
+                                horarioFinal: endTimeString
+                              });
+                              
+                              setSelectedEndTime(endTimeString);
                            }
                          }}
                        className="pl-10"
