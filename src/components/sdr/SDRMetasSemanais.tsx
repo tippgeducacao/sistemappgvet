@@ -93,13 +93,15 @@ export const SDRMetasSemanais = () => {
           semana_consultada: semana
         });
         
-        // Buscar agendamentos da semana específica que tiveram resultado positivo
+        // Buscar agendamentos da semana específica que tiveram resultado positivo E já aconteceram
+        const agora = new Date();
         const { data: agendamentos, error } = await supabase
           .from('agendamentos')
           .select('*')
           .eq('sdr_id', profile.id)
           .gte('data_agendamento', startDateFormatted.toISOString())
           .lte('data_agendamento', endDateFormatted.toISOString())
+          .lt('data_agendamento', agora.toISOString()) // Só reuniões que já passaram
           .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']);
 
         if (error) {

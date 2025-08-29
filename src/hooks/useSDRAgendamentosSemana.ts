@@ -23,13 +23,15 @@ export const useSDRAgendamentosSemana = () => {
       fimSemana.setDate(fimSemana.getDate() + 6); // Próxima terça-feira
       fimSemana.setHours(23, 59, 59, 999);
 
-      // Buscar agendamentos da semana atual que tiveram resultado positivo
+      // Buscar agendamentos da semana atual que tiveram resultado positivo E já aconteceram
+      const agora = new Date();
       const { data: agendamentos, error } = await supabase
         .from('agendamentos')
         .select('*')
         .eq('sdr_id', profile.id)
         .gte('data_agendamento', inicioSemana.toISOString())
         .lte('data_agendamento', fimSemana.toISOString())
+        .lt('data_agendamento', agora.toISOString()) // Só reuniões que já passaram
         .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou']); // Apenas comparecimentos válidos
 
       if (error) throw error;
