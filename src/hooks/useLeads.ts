@@ -260,10 +260,15 @@ export const useLeadsFilterData = () => {
       const paginasCaptura = [...new Set(slugsExtraidos)];
       console.log('🔧 [DEBUG] Páginas únicas após deduplicação:', paginasCaptura.length);
       
-      // SEMPRE garantir que mba-gestao-ia apareça no filtro (forçado pelo usuário)
+      // SEMPRE garantir que páginas específicas apareçam no filtro (forçado pelo usuário)
       if (!paginasCaptura.includes('mba-gestao-ia')) {
         paginasCaptura.push('mba-gestao-ia');
         console.log('➕ [FORÇADO] Adicionado mba-gestao-ia ao filtro');
+      }
+      
+      if (!paginasCaptura.includes('lancamento')) {
+        paginasCaptura.push('lancamento');
+        console.log('➕ [FORÇADO] Adicionado lancamento ao filtro');
       }
       
       console.log('✅ [useLeadsFilterData] Páginas únicas extraídas:', paginasCaptura.length);
