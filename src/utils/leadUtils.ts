@@ -4,45 +4,66 @@
 
 export const normalizePageSlug = (pageName?: string): string | null => {
   if (!pageName || typeof pageName !== 'string') {
-    console.log('❌ [normalizePageSlug] Input inválido:', pageName);
     return null;
   }
   
-  console.log('🔍 [normalizePageSlug] Processando:', pageName);
+  const original = pageName.trim();
+  if (!original) return null;
   
-  // Debug específico para mba-gestao-ia
-  if (pageName.includes('mba-gestao-ia')) {
-    console.log('🎯 🎯 🎯 [FOUND MBA-GESTAO-IA] URL encontrada:', pageName);
-  }
-  
-  // Versão mais simples: extrair sempre o último segmento após barra
-  if (pageName.includes('/')) {
-    // Remove query parameters e fragments primeiro
-    const cleanUrl = pageName.split(/[?&#]/)[0];
-    // Pega o último segmento após /
-    const segments = cleanUrl.split('/');
-    const lastSegment = segments[segments.length - 1];
-    
-    if (lastSegment && lastSegment.length > 0) {
-      const slug = lastSegment.trim().toLowerCase();
-      console.log('✅ [normalizePageSlug] Extraído slug:', slug, 'de:', pageName);
+  // Se contém protocolo HTTP/HTTPS, é uma URL
+  if (original.match(/^https?:\/\//)) {
+    try {
+      const url = new URL(original);
+      const pathname = url.pathname;
       
-      if (pageName.includes('mba-gestao-ia')) {
-        console.log('🎯 🎯 🎯 [MBA-GESTAO-IA] RESULTADO:', slug);
+      // Ignorar domínios genéricos sem path específico
+      if (pathname === '/' || pathname === '') {
+        return null;
       }
       
-      return slug;
+      // Extrair o último segmento significativo do path
+      const segments = pathname.split('/').filter(segment => segment.length > 0);
+      if (segments.length > 0) {
+        const lastSegment = segments[segments.length - 1];
+        // Verificar se não é um arquivo (.html, .php, etc)
+        if (lastSegment.includes('.')) {
+          const nameWithoutExt = lastSegment.split('.')[0];
+          return nameWithoutExt.toLowerCase();
+        }
+        return lastSegment.toLowerCase();
+      }
+    } catch (error) {
+      // Se falhar ao processar como URL, tratar como texto
     }
   }
   
-  // Fallback: usar diretamente se já for um slug
-  const slug = pageName.trim().toLowerCase();
-  console.log('📝 [normalizePageSlug] Usando direto como slug:', slug);
-  return slug;
+  // Se contém barra mas não é URL completa
+  if (original.includes('/')) {
+    const segments = original.split('/').filter(segment => segment.trim().length > 0);
+    if (segments.length > 0) {
+      const lastSegment = segments[segments.length - 1];
+      return convertToSlug(lastSegment);
+    }
+  }
+  
+  // Converter texto normal para slug
+  return convertToSlug(original);
 };
 
-// Teste imediato quando o módulo carrega
-console.log('🧪 TESTE IMEDIATO:', normalizePageSlug('https://www.ppgvet.com.br/mba-gestao-ia'));
+// Função auxiliar para converter texto em slug
+const convertToSlug = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    // Remove acentos
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    // Substitui espaços e caracteres especiais por hífen
+    .replace(/[^a-z0-9]+/g, '-')
+    // Remove hífens no início e fim
+    .replace(/^-+|-+$/g, '')
+    // Remove hífens duplos
+    .replace(/-+/g, '-');
+};
 
 // Backward compatibility
 export const extractPageSlug = normalizePageSlug;

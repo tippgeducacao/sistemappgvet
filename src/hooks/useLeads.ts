@@ -243,38 +243,40 @@ export const useLeadsFilterData = () => {
 
       // Usar a função normalizePageSlug consistentemente
       
-      // Extrair slugs únicos usando a mesma função que o filtro
-      console.log('🔧 [DEBUG] Processando slugs...');
+      // Extrair slugs únicos usando a função normalizePageSlug aprimorada
       const slugsExtraidos = (data || [])
-        .map((item, index) => {
-          const slug = normalizePageSlug(item.pagina_nome);
-          if (item.pagina_nome?.includes('mba-gestao-ia')) {
-            console.log(`🎯 [DEBUG MBA SLUG ${index}] "${item.pagina_nome}" → "${slug}"`);
-          }
-          return slug;
-        })
-        .filter(Boolean);
+        .map(item => normalizePageSlug(item.pagina_nome))
+        .filter(slug => {
+          // Filtrar slugs válidos: não nulos, não muito curtos, não genéricos
+          if (!slug || slug.length < 2) return false;
+          
+          // Ignorar slugs genéricos/inúteis
+          const genericSlugs = ['home', 'index', 'main', 'page', 'default', 'www', 'com', 'br', 'https', 'http'];
+          if (genericSlugs.includes(slug)) return false;
+          
+          return true;
+        });
       
-      console.log('🔧 [DEBUG] Total de slugs extraídos:', slugsExtraidos.length);
+      // Deduplizar e ordenar
+      const paginasCaptura = [...new Set(slugsExtraidos)].sort();
       
-      const paginasCaptura = [...new Set(slugsExtraidos)];
-      console.log('🔧 [DEBUG] Páginas únicas após deduplicação:', paginasCaptura.length);
+      // Adicionar páginas específicas que devem sempre aparecer (baseado no feedback do usuário)
+      const paginasObrigatorias = [
+        'pre-lancamento-alunos',
+        'aula-ia-agro-9-set', 
+        'lancamento',
+        'mba-gestao-ia',
+        'mba-extensao-rural'
+      ];
       
-      // SEMPRE garantir que páginas específicas apareçam no filtro (forçado pelo usuário)
-      if (!paginasCaptura.includes('mba-gestao-ia')) {
-        paginasCaptura.push('mba-gestao-ia');
-        console.log('➕ [FORÇADO] Adicionado mba-gestao-ia ao filtro');
-      }
+      paginasObrigatorias.forEach(pagina => {
+        if (!paginasCaptura.includes(pagina)) {
+          paginasCaptura.push(pagina);
+        }
+      });
       
-      if (!paginasCaptura.includes('mba-extensao-rural')) {
-        paginasCaptura.push('mba-extensao-rural');
-        console.log('➕ [FORÇADO] Adicionado mba-extensao-rural ao filtro');
-      }
-      
-      if (!paginasCaptura.includes('lancamento')) {
-        paginasCaptura.push('lancamento');
-        console.log('➕ [FORÇADO] Adicionado lancamento ao filtro');
-      }
+      // Ordenar novamente após adicionar páginas obrigatórias
+      paginasCaptura.sort();
       
       console.log('✅ [useLeadsFilterData] Páginas únicas extraídas:', paginasCaptura.length);
       console.log('🎯 [useLeadsFilterData] Lista de páginas:', paginasCaptura.slice(0, 10));
