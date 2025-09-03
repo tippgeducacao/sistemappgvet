@@ -69,7 +69,7 @@ export class AgendamentosService {
       }
       console.log('✅ Link da reunião validado');
 
-      // Validar se a data/hora é no futuro (com margem de 5 minutos)
+      // Determinar o status do agendamento baseado na data
       const dataAgendamento = new Date(dados.data_agendamento);
       const agora = new Date();
       const cincoMinutosAtras = new Date(agora.getTime() - 5 * 60 * 1000);
@@ -79,8 +79,13 @@ export class AgendamentosService {
       console.log('  - Agora (original):', agora.toISOString());
       console.log('  - 5 min atrás:', cincoMinutosAtras.toISOString());
       console.log('  - É futuro?', dataAgendamento > cincoMinutosAtras);
+      console.log('  - É forçado?', forcarAgendamento);
       
-      if (dataAgendamento <= cincoMinutosAtras) {
+      const statusAgendamento = (forcarAgendamento && dataAgendamento <= agora) ? 'atrasado' : 'agendado';
+      console.log('  - Status definido:', statusAgendamento);
+      
+      // Só validar data futura se não for agendamento forçado
+      if (!forcarAgendamento && dataAgendamento <= cincoMinutosAtras) {
         console.error('❌ Data/hora já passou');
         throw new Error('Não é possível agendar para uma data/hora que já passou');
       }
@@ -167,7 +172,7 @@ export class AgendamentosService {
           data_fim_agendamento: dados.data_fim_agendamento,
           link_reuniao: dados.link_reuniao,
           observacoes: dados.observacoes || '',
-          status: 'agendado'
+          status: statusAgendamento
         })
         .select(`
           *,

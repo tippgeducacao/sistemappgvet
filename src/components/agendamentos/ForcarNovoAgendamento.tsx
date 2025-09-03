@@ -241,7 +241,8 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
         <Card className="border-orange-200 bg-orange-50/50">
           <CardHeader className="pb-3">
             <CardDescription className="text-orange-700 font-medium">
-              ⚠️ Este recurso permite agendar reuniões ignorando as restrições de pós-graduação do vendedor.
+              ⚠️ Este recurso permite agendar reuniões ignorando restrições de pós-graduação e horário de trabalho.
+              Também permite selecionar datas passadas (criará reunião com status "atrasado").
               Use apenas em casos excepcionais!
             </CardDescription>
           </CardHeader>
@@ -456,7 +457,6 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
               />
             </div>
             <div className="space-y-2">
