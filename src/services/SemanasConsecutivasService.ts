@@ -64,9 +64,17 @@ export class SemanasConsecutivasService {
     }
 
     let semanasConsecutivas = 0;
+    const hoje = new Date();
+    const { ano: anoAtual, semana: semanaAtual } = this.getAnoSemanaFromDate(hoje);
     
-    // Verificar cada semana (da mais recente para a mais antiga)
+    // Verificar cada semana (da mais recente para a mais antiga), excluindo a semana atual
     for (const meta of metasSemanais) {
+      // Pular a semana atual (que ainda está em progresso)
+      if (meta.ano === anoAtual && meta.semana === semanaAtual) {
+        console.log(`⏳ Pulando semana atual ${meta.semana}/${meta.ano} (em progresso)`);
+        continue;
+      }
+      
       const pontuacaoNaSemana = this.calcularPontuacaoNaSemana(vendas || [], meta.ano, meta.semana);
       
       console.log(`🔍 Semana ${meta.semana}/${meta.ano}: Pontuação=${pontuacaoNaSemana}, Meta=${meta.meta_vendas}`);
@@ -76,13 +84,13 @@ export class SemanasConsecutivasService {
         semanasConsecutivas++;
         console.log(`✅ Meta batida na semana ${meta.semana}/${meta.ano}! Total consecutivas: ${semanasConsecutivas}`);
       } else {
-        console.log(`❌ Meta não batida na semana ${meta.semana}/${meta.ano}. Parando contagem.`);
-        // Se não bateu a meta nesta semana, para a contagem
+        console.log(`❌ Meta não batida na semana ${meta.semana}/${meta.ano}. Zerando contador.`);
+        // Se não bateu a meta nesta semana, para a contagem (contador zerado)
         break;
       }
     }
 
-    console.log(`🏆 Total de semanas consecutivas batendo meta: ${semanasConsecutivas}`);
+    console.log(`🏆 Total de semanas consecutivas batendo meta (excluindo semana atual): ${semanasConsecutivas}`);
     return semanasConsecutivas;
   }
 
@@ -134,48 +142,56 @@ export class SemanasConsecutivasService {
       return 0;
     }
 
-    // Calcular semanas desde a mais recente
+    // Calcular semanas desde a mais recente (excluindo a semana atual)
     const hoje = new Date();
     const dataCriacao = new Date(profile.created_at);
     const { ano: anoCriacao, semana: semanaCriacao } = this.getAnoSemanaFromDate(dataCriacao);
+    const { ano: anoHoje, semana: semanaHoje } = this.getAnoSemanaFromDate(hoje);
     
     let semanasConsecutivas = 0;
-    let semanaAtual = this.getSemanaAtual();
-    let anoAtual = hoje.getFullYear();
+    let semanaVerificar = semanaHoje - 1; // Começar da semana anterior (não incluir a atual)
+    let anoVerificar = anoHoje;
+    
+    // Ajustar se a semana ficou negativa (ir para ano anterior)
+    if (semanaVerificar <= 0) {
+      anoVerificar--;
+      semanaVerificar = 52; // Assumindo 52 semanas por ano
+    }
 
     // Verificar semanas desde a criação até agora (máximo 20 semanas para performance)
     for (let i = 0; i < 20; i++) {
       // Parar se chegamos na semana de criação do usuário
-      if (anoAtual < anoCriacao || (anoAtual === anoCriacao && semanaAtual < semanaCriacao)) {
+      if (anoVerificar < anoCriacao || (anoVerificar === anoCriacao && semanaVerificar < semanaCriacao)) {
         break;
       }
+      
       const agendamentosNaSemana = this.contarAgendamentosNaSemana(
         agendamentos || [], 
-        anoAtual, 
-        semanaAtual
+        anoVerificar, 
+        semanaVerificar
       );
       
-      console.log(`🔍 SDR Semana ${semanaAtual}/${anoAtual}: ${agendamentosNaSemana} agendamentos, Meta: ${metaSemanal}`);
+      console.log(`🔍 SDR Semana ${semanaVerificar}/${anoVerificar}: ${agendamentosNaSemana} agendamentos, Meta: ${metaSemanal}`);
       
       // Meta batida se agendamentos >= meta (100% ou mais)
       if (agendamentosNaSemana >= metaSemanal) {
         semanasConsecutivas++;
-        console.log(`✅ Meta de agendamentos batida na semana ${semanaAtual}/${anoAtual}! Total consecutivas: ${semanasConsecutivas}`);
+        console.log(`✅ Meta de agendamentos batida na semana ${semanaVerificar}/${anoVerificar}! Total consecutivas: ${semanasConsecutivas}`);
       } else {
-        console.log(`❌ Meta de agendamentos não batida na semana ${semanaAtual}/${anoAtual}. Parando contagem.`);
-        // Se não bateu a meta nesta semana, para a contagem
+        console.log(`❌ Meta de agendamentos não batida na semana ${semanaVerificar}/${anoVerificar}. Zerando contador.`);
+        // Se não bateu a meta nesta semana, para a contagem (contador zerado)
         break;
       }
 
       // Ir para semana anterior
-      semanaAtual--;
-      if (semanaAtual <= 0) {
-        anoAtual--;
-        semanaAtual = 52; // Assumindo 52 semanas por ano
+      semanaVerificar--;
+      if (semanaVerificar <= 0) {
+        anoVerificar--;
+        semanaVerificar = 52; // Assumindo 52 semanas por ano
       }
     }
 
-    console.log(`🏆 SDR Total de semanas consecutivas batendo meta de agendamentos: ${semanasConsecutivas}`);
+    console.log(`🏆 SDR Total de semanas consecutivas batendo meta de agendamentos (excluindo semana atual): ${semanasConsecutivas}`);
     return semanasConsecutivas;
   }
 

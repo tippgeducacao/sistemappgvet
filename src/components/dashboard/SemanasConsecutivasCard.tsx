@@ -71,7 +71,7 @@ const SemanasConsecutivasCard: React.FC<SemanasConsecutivasCardProps> = ({
         <p className="text-xs text-muted-foreground mt-1">
           {semanasConsecutivas === 0 
             ? "Sem sequência ativa" 
-            : `${semanasConsecutivas} semana${semanasConsecutivas > 1 ? 's' : ''} consecutiva${semanasConsecutivas > 1 ? 's' : ''}`
+            : `${semanasConsecutivas} semana${semanasConsecutivas > 1 ? 's' : ''} anterior${semanasConsecutivas > 1 ? 'es' : ''} com meta batida`
           }
         </p>
       </CardContent>
