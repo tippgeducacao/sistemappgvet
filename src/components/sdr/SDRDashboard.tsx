@@ -10,7 +10,6 @@ import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import ReunioesCanceladasSDR from './ReunioesCanceladasSDR';
 import HistoricoReunioes from './HistoricoReunioes';
 import { SDRMetasSemanais } from './SDRMetasSemanais';
-import { ReunioesChart } from '@/components/dashboard/ReunioesChart';
 import SemanasConsecutivasCard from '@/components/dashboard/SemanasConsecutivasCard';
 import { ReunioesVendedoresChart } from '@/components/dashboard/ReunioesVendedoresChart';
 import SDRAgendamentosComparativo from './SDRAgendamentosComparativo';
@@ -150,7 +149,7 @@ const SDRDashboard: React.FC = () => {
       {!isSDR && <ReunioesVendedoresChart selectedVendedor={profile?.id} />}
 
       {/* Gráfico de Pizza das Reuniões */}
-      <ReunioesChart />
+      {/* <ReunioesChart /> */}
 
       {/* Tabs para diferentes visualizações */}
       <Tabs defaultValue="vendas" className="space-y-4">
