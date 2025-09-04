@@ -6,7 +6,7 @@ import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye, Filter, X } f
 import { useAuthStore } from '@/stores/AuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingState from '@/components/ui/loading-state';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -99,11 +99,14 @@ const HistoricoReunioes: React.FC = () => {
 
   // Filtrar reuniões pelo período e status selecionados
   const reunioesFiltradas = reunioes.filter(reuniao => {
-    // Filtro por período de agendamento
+    // Filtro por período de agendamento (inclusivo dos dias de início e fim)
     if (dateRange?.from || dateRange?.to) {
       const dataAgendamento = new Date(reuniao.data_agendamento);
-      if (dateRange.from && dataAgendamento < dateRange.from) return false;
-      if (dateRange.to && dataAgendamento > dateRange.to) return false;
+      const startDate = dateRange.from ? startOfDay(dateRange.from) : null;
+      const endDate = dateRange.to ? endOfDay(dateRange.to) : null;
+      
+      if (startDate && dataAgendamento < startDate) return false;
+      if (endDate && dataAgendamento > endDate) return false;
     }
     
     // Filtro por data específica de criação

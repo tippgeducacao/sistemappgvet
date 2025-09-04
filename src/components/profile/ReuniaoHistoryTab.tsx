@@ -7,7 +7,7 @@ import { CalendarIcon, Search, Download, Eye } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import AgendamentoDetailsModal from '@/components/agendamentos/AgendamentoDetailsModal';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAllAgendamentos } from '@/hooks/useAllAgendamentos';
 import type { DateRange } from 'react-day-picker';
@@ -35,11 +35,14 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
       if (isSDR && agendamento.sdr_id !== userId) return false;
       if (!isSDR && agendamento.vendedor_id !== userId) return false;
       
-      // Filtrar por período
+      // Filtrar por período (inclusivo dos dias de início e fim)
       if (dateRange?.from || dateRange?.to) {
         const agendamentoDate = new Date(agendamento.data_agendamento);
-        if (dateRange.from && agendamentoDate < dateRange.from) return false;
-        if (dateRange.to && agendamentoDate > dateRange.to) return false;
+        const startDate = dateRange.from ? startOfDay(dateRange.from) : null;
+        const endDate = dateRange.to ? endOfDay(dateRange.to) : null;
+        
+        if (startDate && agendamentoDate < startDate) return false;
+        if (endDate && agendamentoDate > endDate) return false;
       }
       
       // Filtro por busca
