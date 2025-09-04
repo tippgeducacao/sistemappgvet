@@ -14,7 +14,7 @@ interface AgendamentosRowProps {
     meta: number;
     percentual: number;
   }>;
-  calcularComissaoSemana: (cursosVendidos: number, metaCursos: number) => Promise<{
+  calcularComissaoSemana: (agendamentosRealizados: number, metaAgendamentos: number) => Promise<{
     valor: number;
     multiplicador: number;
     percentual: number;
@@ -48,10 +48,13 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [agendamentosResult, comissaoResult] = await Promise.all([
-          getAgendamentosNaSemana(semana),
-          calcularComissaoSemana(realizado, metaValue)
-        ]);
+        const agendamentosResult = await getAgendamentosNaSemana(semana);
+        
+        // Para SDRs, calcular comissão baseada nos agendamentos realizados vs meta de agendamentos
+        const comissaoResult = await calcularComissaoSemana(
+          agendamentosResult.realizados, 
+          agendamentosResult.meta
+        );
         
         setAgendamentosData(agendamentosResult);
         setComissaoData(comissaoResult);
@@ -64,7 +67,7 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
     };
     
     fetchData();
-  }, [semana, realizado, metaValue]);
+  }, [semana]);
 
   return (
     <tr 

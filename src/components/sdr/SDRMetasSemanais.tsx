@@ -157,7 +157,7 @@ export const SDRMetasSemanais = () => {
     };
   };
 
-  const calcularComissaoSemana = async (cursosVendidos: number, metaCursos: number) => {
+  const calcularComissaoSemana = async (agendamentosRealizados: number, metaAgendamentos: number) => {
     if (!profile) return { valor: 0, multiplicador: 0, percentual: 0 };
     
     // Buscar configuração do nível SDR
@@ -167,10 +167,10 @@ export const SDRMetasSemanais = () => {
     
     if (!nivelSDR) return { valor: 0, multiplicador: 0, percentual: 0 };
     
-    // Calcular comissão baseada nos cursos vendidos vs meta de cursos
+    // Para SDRs, a comissão é baseada nos agendamentos realizados vs meta de agendamentos
     const comissao = await calcularComissao(
-      cursosVendidos, 
-      metaCursos, 
+      agendamentosRealizados, 
+      metaAgendamentos, 
       nivelSDR.variavel_semanal
     );
     
