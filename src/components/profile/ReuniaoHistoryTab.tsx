@@ -51,7 +51,8 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
         return (
           agendamento.pos_graduacao_interesse?.toLowerCase().includes(searchLower) ||
           agendamento.status?.toLowerCase().includes(searchLower) ||
-          agendamento.resultado_reuniao?.toLowerCase().includes(searchLower)
+          agendamento.resultado_reuniao?.toLowerCase().includes(searchLower) ||
+          agendamento.lead?.nome?.toLowerCase().includes(searchLower)
         );
       }
       
@@ -129,7 +130,7 @@ const ReuniaoHistoryTab: React.FC<ReuniaoHistoryTabProps> = ({ userId, userType 
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Buscar por status, resultado ou interesse..."
+              placeholder="Buscar por nome, status, resultado ou interesse..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"

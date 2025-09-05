@@ -2,16 +2,16 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit } from 'lucide-react';
+import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import NovaVendaForm from '@/components/NovaVendaForm';
 import { useFormStore } from '@/store/FormStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,18 +37,27 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [novaData, setNovaData] = useState('');
   const [novaHoraInicio, setNovaHoraInicio] = useState('');
   const [novaHoraFim, setNovaHoraFim] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const { updateField, clearForm } = useFormStore();
 
-  // Separar reuniões em agendadas (sem resultado) e histórico (com resultado)
+  // Separar reuniões em agendadas (sem resultado) e histórico (com resultado) com filtro de pesquisa
   const { reunioesAgendadas, reunioesHistorico } = useMemo(() => {
-    const agendadas = agendamentos.filter(agendamento => !agendamento.resultado_reuniao);
-    const historico = agendamentos.filter(agendamento => agendamento.resultado_reuniao);
+    const filteredAgendamentos = agendamentos.filter(agendamento => {
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        return agendamento.lead?.nome?.toLowerCase().includes(searchLower);
+      }
+      return true;
+    });
+
+    const agendadas = filteredAgendamentos.filter(agendamento => !agendamento.resultado_reuniao);
+    const historico = filteredAgendamentos.filter(agendamento => agendamento.resultado_reuniao);
     
     return {
       reunioesAgendadas: agendadas,
       reunioesHistorico: historico
     };
-  }, [agendamentos]);
+  }, [agendamentos, searchTerm]);
 
   const getStatusBadge = (agendamento: Agendamento) => {
     if (agendamento.resultado_reuniao) {
@@ -410,6 +419,17 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Filtro de pesquisa */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Buscar por nome do lead..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       <Tabs defaultValue="agendadas" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="agendadas" className="flex items-center gap-2">
