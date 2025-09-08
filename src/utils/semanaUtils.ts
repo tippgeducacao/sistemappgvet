@@ -42,19 +42,15 @@ export const isVendaInPeriod = (vendaDate: Date, targetMonth: number, targetYear
  * baseado na regra de semana (quarta a terça)
  */
 export const getVendaPeriod = (vendaDate: Date): { mes: number; ano: number } => {
-  // Debug específico para identificar problemas de data
-  const hoje = new Date();
-  const isToday = vendaDate.toDateString() === hoje.toDateString();
+  // Debug específico para Pedro Garbelini - data 27/08/2025
+  const isPedroGarbelini = vendaDate.toISOString().includes('2025-08-27') || vendaDate.toISOString().includes('2025-08-20');
   
-  if (isToday || vendaDate.toISOString().includes('2025-08-20')) {
-    console.log(`🚨 semanaUtils.getVendaPeriod - Calculando período:`, {
+  if (isPedroGarbelini) {
+    console.log(`🚨 PEDRO GARBELINI - getVendaPeriod:`, {
       vendaDate: vendaDate.toISOString(),
       vendaDate_br: vendaDate.toLocaleDateString('pt-BR'),
-      vendaDate_time: vendaDate.toLocaleString('pt-BR'),
       day_of_week: vendaDate.getDay(),
-      isToday,
-      hoje: hoje.toISOString(),
-      hoje_br: hoje.toLocaleDateString('pt-BR')
+      day_name: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'][vendaDate.getDay()]
     });
   }
 
@@ -63,22 +59,22 @@ export const getVendaPeriod = (vendaDate: Date): { mes: number; ano: number } =>
   
   if (tercaQueEncerra.getDay() === 2) {
     // A venda foi feita numa terça-feira - a semana termina no mesmo dia
-    if (vendaDate.toISOString().includes('2025-08-20')) {
-      console.log(`📅 Venda foi numa terça-feira, semana termina no mesmo dia`);
+    if (isPedroGarbelini) {
+      console.log(`📅 PEDRO - Venda foi numa terça-feira, semana termina no mesmo dia`);
     }
   } else {
     // Encontrar a próxima terça-feira (que encerra a semana da venda)
     const diasAteTerca = (2 - tercaQueEncerra.getDay() + 7) % 7;
     const diasParaSomar = diasAteTerca === 0 ? 7 : diasAteTerca;
     
-    if (vendaDate.toISOString().includes('2025-08-20')) {
-      console.log(`📅 Calculando próxima terça: dias até terça = ${diasAteTerca}, dias para somar = ${diasParaSomar}`);
+    if (isPedroGarbelini) {
+      console.log(`📅 PEDRO - Calculando próxima terça: dias até terça = ${diasAteTerca}, dias para somar = ${diasParaSomar}`);
     }
     
     tercaQueEncerra.setDate(tercaQueEncerra.getDate() + diasParaSomar);
     
-    if (vendaDate.toISOString().includes('2025-08-20')) {
-      console.log(`📅 Próxima terça que encerra: ${tercaQueEncerra.toLocaleDateString('pt-BR')}`);
+    if (isPedroGarbelini) {
+      console.log(`📅 PEDRO - Próxima terça que encerra: ${tercaQueEncerra.toLocaleDateString('pt-BR')} (mês ${tercaQueEncerra.getMonth() + 1})`);
     }
   }
   
@@ -87,8 +83,8 @@ export const getVendaPeriod = (vendaDate: Date): { mes: number; ano: number } =>
     ano: tercaQueEncerra.getFullYear()
   };
   
-  if (vendaDate.toISOString().includes('2025-08-20')) {
-    console.log(`✅ Período final calculado: mês ${resultado.mes}, ano ${resultado.ano}`);
+  if (isPedroGarbelini) {
+    console.log(`✅ PEDRO - Período final calculado: mês ${resultado.mes}, ano ${resultado.ano}`);
   }
   
   // O mês/ano da venda é determinado pela terça-feira (fim da semana)
