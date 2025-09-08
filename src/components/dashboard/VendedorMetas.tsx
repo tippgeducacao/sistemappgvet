@@ -2,7 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Trophy, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Trophy, DollarSign, FileDown } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useAuthStore } from '@/stores/AuthStore';
@@ -35,6 +39,10 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   
   // Estado para armazenar os cálculos de comissão de cada semana
   const [comissoesPorSemana, setComissoesPorSemana] = useState<{[key: string]: {valor: number, multiplicador: number, percentual: number}}>({});
+  
+  // Estado para controlar exportação de PDF
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const { toast } = useToast();
 
   // Função para obter meta baseada no nível do vendedor
   const getMetaBaseadaNivel = (semana: number) => {
@@ -220,6 +228,163 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     calcularComissoes();
   }, [profile?.id, vendas, metasSemanais, niveis, vendedores, selectedMonth, selectedYear, vendasLoading, metasSemanaisLoading]);
 
+  // Função para exportar PDF do ano inteiro
+  const exportarPDFAno = async () => {
+    if (!profile?.id) return;
+    
+    setIsExportingPDF(true);
+    
+    try {
+      const doc = new jsPDF();
+      const vendedorInfo = vendedores.find(v => v.id === profile.id);
+      const vendedorNome = vendedorInfo?.name || profile.name || 'Vendedor';
+      
+      // Título do documento
+      doc.setFontSize(16);
+      doc.text(`Metas Semanais ${selectedYear} - ${vendedorNome}`, 20, 20);
+      
+      let yPosition = 40;
+      
+      // Loop pelos 12 meses do ano
+      for (let mes = 1; mes <= 12; mes++) {
+        const nomesMeses = [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        
+        // Verificar se precisa de nova página
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        // Título do mês
+        doc.setFontSize(14);
+        doc.text(`${nomesMeses[mes - 1]} ${selectedYear}`, 20, yPosition);
+        yPosition += 10;
+        
+        // Obter semanas do mês
+        const semanasDoAno = getSemanasDoAno(selectedYear);
+        const semanasDoMes = semanasDoAno.filter(semana => {
+          const { start, end } = getWeekDatesFromNumber(selectedYear, semana);
+          const weekMonth = start.getMonth() + 1;
+          return weekMonth === mes || end.getMonth() + 1 === mes;
+        });
+        
+        if (semanasDoMes.length === 0) {
+          doc.setFontSize(10);
+          doc.text('Nenhuma semana encontrada para este mês', 20, yPosition);
+          yPosition += 15;
+          continue;
+        }
+        
+        // Dados da tabela
+        const tableData = [];
+        let totalMeta = 0;
+        let totalPontos = 0;
+        let totalComissao = 0;
+        
+        for (const numeroSemana of semanasDoMes) {
+          const metaSemanal = metasSemanais.find(meta => 
+            meta.vendedor_id === profile.id && 
+            meta.ano === selectedYear && 
+            meta.semana === numeroSemana
+          );
+          
+          const { start: startSemana, end: endSemana } = getWeekDatesFromNumber(selectedYear, numeroSemana);
+          
+          // Calcular pontos da semana
+          const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
+            if (venda.vendedor_id !== profile.id) return false;
+            if (venda.status !== 'matriculado') return false;
+            
+            const dataVenda = getDataEfetivaVenda(venda, respostas);
+            const vendaPeriod = getVendaEffectivePeriod(venda, respostas);
+            const periodoCorreto = vendaPeriod.mes === mes && vendaPeriod.ano === selectedYear;
+            
+            dataVenda.setHours(0, 0, 0, 0);
+            const startSemanaUTC = new Date(startSemana);
+            startSemanaUTC.setHours(0, 0, 0, 0);
+            const endSemanaUTC = new Date(endSemana);
+            endSemanaUTC.setHours(23, 59, 59, 999);
+            const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+            
+            return periodoCorreto && isInRange;
+          }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+          
+          // Buscar comissão
+          const chaveComissao = `${selectedYear}-${numeroSemana}`;
+          const comissaoData = comissoesPorSemana[chaveComissao] || { valor: 0, multiplicador: 0 };
+          
+          // Formatação das datas
+          const formatDate = (date: Date) => date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+          const periodoSemana = `${formatDate(startSemana)} - ${formatDate(endSemana)}`;
+          
+          const metaVendas = metaSemanal?.meta_vendas || 0;
+          const percentual = metaVendas > 0 ? Math.floor((pontosDaSemana / metaVendas) * 100) : 0;
+          
+          tableData.push([
+            numeroSemana.toString(),
+            periodoSemana,
+            metaVendas.toString(),
+            pontosDaSemana.toFixed(1),
+            `${percentual}%`,
+            `${comissaoData.multiplicador.toFixed(1)}x`,
+            `R$ ${comissaoData.valor.toFixed(0)}`
+          ]);
+          
+          totalMeta += metaVendas;
+          totalPontos += pontosDaSemana;
+          totalComissao += comissaoData.valor;
+        }
+        
+        // Adicionar linha de total
+        const percentualTotal = totalMeta > 0 ? Math.floor((totalPontos / totalMeta) * 100) : 0;
+        tableData.push([
+          'TOTAL',
+          '-',
+          totalMeta.toString(),
+          totalPontos.toFixed(1),
+          `${percentualTotal}%`,
+          '-',
+          `R$ ${totalComissao.toFixed(0)}`
+        ]);
+        
+        // Criar tabela
+        (doc as any).autoTable({
+          startY: yPosition,
+          head: [['Semana', 'Período', 'Meta', 'Pontos', '%', 'Mult.', 'Comissão']],
+          body: tableData,
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [66, 139, 202] },
+          alternateRowStyles: { fillColor: [245, 245, 245] },
+          margin: { left: 20, right: 20 }
+        });
+        
+        // Atualizar posição Y
+        yPosition = (doc as any).lastAutoTable.finalY + 15;
+      }
+      
+      // Salvar o PDF
+      doc.save(`metas-semanais-${selectedYear}-${vendedorNome.replace(/\s+/g, '-')}.pdf`);
+      
+      toast({
+        title: "PDF Exportado",
+        description: `Relatório anual de metas semanais salvo com sucesso.`
+      });
+      
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast({
+        title: "Erro na Exportação",
+        description: "Ocorreu um erro ao gerar o PDF. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
+
   if (vendasLoading || metasSemanaisLoading) {
     return (
       <Card>
@@ -303,14 +468,26 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
       {/* Metas Semanais Detalhadas */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Metas Semanais - {mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}
-            {isSemanaAtual && (
-              <Badge variant="default" className="text-xs">
-                Semana Atual
-              </Badge>
-            )}
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Metas Semanais - {mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}
+              {isSemanaAtual && (
+                <Badge variant="default" className="text-xs">
+                  Semana Atual
+                </Badge>
+              )}
+            </div>
+            <Button
+              onClick={exportarPDFAno}
+              disabled={isExportingPDF}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <FileDown className="h-4 w-4" />
+              {isExportingPDF ? 'Exportando...' : `Exportar PDF do Ano ${selectedYear}`}
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
