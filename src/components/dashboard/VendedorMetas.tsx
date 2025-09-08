@@ -18,6 +18,7 @@ import { debugSemanasAgosto2025 } from '@/utils/semanasDebug';
 import { getVendaPeriod, getSemanaAtual, getSemanaFromDate, getSemanasDoAno, getWeekDatesFromNumber, getMesAnoSemanaAtual } from '@/utils/semanaUtils';
 import { getDataEfetivaVenda, getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 import { useBatchWeeklyCommissions } from '@/hooks/useWeeklyCommission';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VendedorMetasProps {
   selectedMonth: number;
@@ -43,12 +44,26 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   
   // Hook para buscar comissionamentos em cache
   const allSemanasDoAno = getSemanasDoAno(selectedYear);
+  
+  console.log('🔍 VendedorMetas - Tentando buscar comissionamentos:', {
+    profileId: profile?.id,
+    selectedYear,
+    totalSemanas: allSemanasDoAno.length,
+    profileExists: !!profile?.id
+  });
+  
   const { data: weeklyCommissions, isLoading: commissionsLoading } = useBatchWeeklyCommissions(
     profile?.id ? [{ id: profile.id, type: 'vendedor' as const }] : [],
     selectedYear,
-    0, // Não usar semana específica, será filtrado depois
+    0, // Buscar todas as semanas do ano
     !!profile?.id
   );
+  
+  console.log('📊 VendedorMetas - Status comissionamentos:', {
+    weeklyCommissions: weeklyCommissions?.length || 0,
+    commissionsLoading,
+    sampleData: weeklyCommissions?.slice(0, 2)
+  });
   
   // Estado para controlar exportação de PDF
   const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -139,23 +154,32 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
   // Sincronizar comissões do cache com o estado local
   useEffect(() => {
-    if (!weeklyCommissions || commissionsLoading) return;
+    if (commissionsLoading) return;
     
-    console.log('📋 Sincronizando comissões do cache:', weeklyCommissions.length);
+    console.log('📋 Sincronizando comissões do cache:', {
+      weeklyCommissions: weeklyCommissions?.length || 0,
+      sampleData: weeklyCommissions?.slice(0, 2)
+    });
     
     const novasComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
     
-    weeklyCommissions.forEach(commission => {
-      const chave = `${commission.ano}-${commission.semana}`;
-      novasComissoes[chave] = {
-        valor: Math.floor(commission.valor),
-        multiplicador: commission.multiplicador,
-        percentual: commission.percentual
-      };
-    });
-    
-    console.log('✅ Comissões sincronizadas do cache:', Object.keys(novasComissoes).length);
-    setComissoesPorSemana(novasComissoes);
+    if (weeklyCommissions && weeklyCommissions.length > 0) {
+      weeklyCommissions.forEach(commission => {
+        const chave = `${commission.ano}-${commission.semana}`;
+        novasComissoes[chave] = {
+          valor: Math.floor(commission.valor),
+          multiplicador: commission.multiplicador,
+          percentual: commission.percentual
+        };
+        
+        console.log(`✅ Cache: ${chave} = ${commission.multiplicador}x / R$ ${commission.valor}`);
+      });
+      
+      console.log('✅ Comissões sincronizadas do cache:', Object.keys(novasComissoes).length);
+      setComissoesPorSemana(novasComissoes);
+    } else {
+      console.log('⚠️ Nenhuma comissão encontrada no cache, mantendo cálculo fallback');
+    }
     
   }, [weeklyCommissions, commissionsLoading]);
 
@@ -346,7 +370,62 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground">Carregando metas...</p>
+          <div className="space-y-4">
+            <p className="text-muted-foreground">Carregando metas...</p>
+            
+            {/* Botões temporários para teste */}
+            <div className="flex gap-2 justify-center">
+              <Button 
+                onClick={() => {
+                  console.log('🧪 Teste: Forçando recálculo de comissionamentos');
+                  if (profile?.id) {
+                    supabase.functions.invoke('recalc-weekly-commissions', {
+                      body: {
+                        scope: 'user-week',
+                        userId: profile.id,
+                        userType: 'vendedor',
+                        ano: selectedYear,
+                        semana: 32 // Semana de exemplo
+                      }
+                    }).then(({ data, error }) => {
+                      if (error) {
+                        console.error('❌ Erro no teste:', error);
+                      } else {
+                        console.log('✅ Teste concluído:', data);
+                      }
+                    });
+                  }
+                }}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                🧪 Recalcular S32
+              </Button>
+              
+              <Button 
+                onClick={async () => {
+                  console.log('🔍 Verificando dados na tabela cache');
+                  if (profile?.id) {
+                    const { data, error } = await supabase
+                      .from('comissionamentos_semanais')
+                      .select('*')
+                      .eq('user_id', profile.id)
+                      .eq('ano', selectedYear)
+                      .order('semana');
+                    
+                    if (error) {
+                      console.error('❌ Erro ao buscar cache:', error);
+                    } else {
+                      console.log('📊 Dados no cache:', data?.length || 0, 'registros');
+                      console.table(data);
+                    }
+                  }
+                }}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                🔍 Ver Cache
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );

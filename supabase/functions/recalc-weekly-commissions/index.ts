@@ -32,8 +32,15 @@ serve(async (req) => {
   }
 
   try {
+    console.log('🚀 Edge Function iniciada - recalc-weekly-commissions');
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    console.log('🔑 Variáveis de ambiente:', {
+      hasUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey
+    });
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -43,10 +50,18 @@ serve(async (req) => {
     const { scope, userId, userType, ano, semana, mes } = body;
 
     // Buscar regras de comissionamento (cache local)
-    const { data: regras } = await supabase
+    console.log('📋 Buscando regras de comissionamento...');
+    const { data: regras, error: regrasError } = await supabase
       .from('regras_comissionamento')
       .select('*')
       .order('percentual_minimo');
+
+    if (regrasError) {
+      console.error('❌ Erro ao buscar regras:', regrasError);
+      throw regrasError;
+    }
+
+    console.log('📋 Regras encontradas:', regras?.length || 0);
 
     if (!regras?.length) {
       throw new Error('Nenhuma regra de comissionamento encontrada');
@@ -150,17 +165,38 @@ async function calcularComissionamentoUsuario(
     let variavel = 0;
 
     if (userType === 'vendedor') {
-      // Calcular pontos das vendas
-      const { data: vendas } = await supabase
+      // Calcular pontos das vendas matriculadas
+      console.log(`📊 Buscando vendas para vendedor ${userId} na semana ${semana}/${ano}`);
+      
+      const { data: vendas, error: vendasError } = await supabase
         .from('form_entries')
-        .select('pontuacao_validada, pontuacao_esperada')
+        .select('pontuacao_validada, pontuacao_esperada, data_aprovacao, data_assinatura_contrato, enviado_em')
         .eq('vendedor_id', userId)
-        .eq('status', 'matriculado')
-        .gte('data_aprovacao', startDate.toISOString())
-        .lte('data_aprovacao', endDate.toISOString());
+        .eq('status', 'matriculado');
 
-      pontos = vendas?.reduce((sum: number, venda: any) => 
-        sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0) || 0;
+      if (vendasError) {
+        console.error('❌ Erro ao buscar vendas:', vendasError);
+        throw vendasError;
+      }
+
+      console.log(`📊 Total de vendas matriculadas encontradas: ${vendas?.length || 0}`);
+
+      // Filtrar vendas da semana específica
+      const vendasDaSemana = vendas?.filter(venda => {
+        // Usar a mesma lógica do frontend para data efetiva
+        const dataEfetiva = venda.data_assinatura_contrato 
+          ? new Date(venda.data_assinatura_contrato)
+          : new Date(venda.data_aprovacao || venda.enviado_em);
+        
+        return dataEfetiva >= startDate && dataEfetiva <= endDate;
+      }) || [];
+
+      console.log(`📊 Vendas da semana ${semana}: ${vendasDaSemana.length} vendas`);
+
+      pontos = vendasDaSemana.reduce((sum: number, venda: any) => 
+        sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+
+      console.log(`📊 Total de pontos calculados: ${pontos}`);
 
       // Buscar meta semanal
       const { data: metaData } = await supabase
@@ -282,9 +318,15 @@ function getNumeroSemana(date: Date): number {
   const ano = date.getFullYear();
   const startOfYear = new Date(ano, 0, 1);
   
+  // Encontrar primeira quarta-feira do ano
   let firstWednesday = new Date(startOfYear);
   while (firstWednesday.getDay() !== 3) {
     firstWednesday.setDate(firstWednesday.getDate() + 1);
+  }
+  
+  // Se está antes da primeira quarta, pertence à última semana do ano anterior
+  if (date < firstWednesday) {
+    return getNumeroSemana(new Date(ano - 1, 11, 31));
   }
   
   const diffTime = date.getTime() - firstWednesday.getTime();

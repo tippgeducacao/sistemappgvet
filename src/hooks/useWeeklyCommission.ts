@@ -96,24 +96,31 @@ export const useWeeklyCommission = (
 export const useBatchWeeklyCommissions = (
   users: Array<{ id: string; type: 'vendedor' | 'sdr' | 'supervisor' }>,
   ano: number,
-  semana: number,
+  semana: number, // Se for 0, busca todas as semanas do ano
   enabled: boolean = true
 ) => {
   return useQuery({
-    queryKey: ['batch-weekly-commissions', users.map(u => u.id).join(','), ano, semana],
+    queryKey: ['batch-weekly-commissions', users.map(u => u.id).join(','), ano, semana || 'all'],
     queryFn: async (): Promise<WeeklyCommissionData[]> => {
       if (!users.length) return [];
 
-      console.log(`🔍 Buscando ${users.length} comissionamentos em lote: ${ano}S${semana}`);
+      console.log(`🔍 Buscando ${users.length} comissionamentos em lote: ${ano}${semana ? `S${semana}` : ' (todas semanas)'}`);
 
       const userIds = users.map(u => u.id);
       
-      const { data, error } = await supabase
+      // Query builder
+      let query = supabase
         .from('comissionamentos_semanais')
         .select('*')
         .in('user_id', userIds)
-        .eq('ano', ano)
-        .eq('semana', semana);
+        .eq('ano', ano);
+      
+      // Se semana específica, filtrar por ela
+      if (semana > 0) {
+        query = query.eq('semana', semana);
+      }
+      
+      const { data, error } = await query;
 
       if (error) {
         console.error('❌ Erro ao buscar comissionamentos em lote:', error);
@@ -121,28 +128,44 @@ export const useBatchWeeklyCommissions = (
       }
 
       const found = data || [];
-      const missing = users.filter(u => !found.some(f => f.user_id === u.id));
+      console.log('📊 Comissionamentos encontrados no cache:', found.length);
 
-      // Se tem dados faltando, disparar recálculo em background
-      if (missing.length > 0) {
-        console.log(`🔄 Recalculando ${missing.length} comissionamentos faltantes...`);
+      // Se não encontrou dados, disparar recálculo
+      if (found.length === 0 && users.length > 0) {
+        console.log(`🔄 Cache vazio, iniciando recálculo...`);
         
-        missing.forEach(user => {
+        // Para semana específica
+        if (semana > 0) {
+          users.forEach(user => {
+            supabase.functions.invoke('recalc-weekly-commissions', {
+              body: {
+                scope: 'user-week',
+                userId: user.id,
+                userType: user.type,
+                ano,
+                semana
+              }
+            }).then(({ error }) => {
+              if (error) console.error('❌ Erro no recálculo:', error);
+              else console.log(`✅ Recálculo iniciado para ${user.id} - ${ano}S${semana}`);
+            });
+          });
+        } else {
+          // Para todas as semanas do ano
           supabase.functions.invoke('recalc-weekly-commissions', {
             body: {
-              scope: 'user-week',
-              userId: user.id,
-              userType: user.type,
-              ano,
-              semana
+              scope: 'current-week-all'
             }
+          }).then(({ error }) => {
+            if (error) console.error('❌ Erro no recálculo geral:', error);
+            else console.log('✅ Recálculo geral iniciado');
           });
-        });
+        }
       }
 
       return found as WeeklyCommissionData[];
     },
-    enabled: enabled && users.length > 0 && !!ano && !!semana,
+    enabled: enabled && users.length > 0 && !!ano,
     staleTime: 5 * 60 * 1000, // 5 minutos
     retry: 1,
     refetchOnWindowFocus: false,
