@@ -376,23 +376,43 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             {/* Botões temporários para teste */}
             <div className="flex gap-2 justify-center">
               <Button 
-                onClick={() => {
-                  console.log('🧪 Teste: Forçando recálculo de comissionamentos');
-                  if (profile?.id) {
-                    supabase.functions.invoke('recalc-weekly-commissions', {
+                onClick={async () => {
+                  console.log('🧪 Testando recálculo manual para S32...');
+                  
+                  try {
+                    console.log('👤 Usuario atual:', profile?.id, profile?.user_type);
+                    
+                    const { data, error } = await supabase.functions.invoke('recalc-weekly-commissions', {
                       body: {
                         scope: 'user-week',
                         userId: profile.id,
                         userType: 'vendedor',
-                        ano: selectedYear,
-                        semana: 32 // Semana de exemplo
+                        ano: 2025,
+                        semana: 32
                       }
-                    }).then(({ data, error }) => {
-                      if (error) {
-                        console.error('❌ Erro no teste:', error);
-                      } else {
-                        console.log('✅ Teste concluído:', data);
-                      }
+                    });
+
+                    if (error) {
+                      console.error('❌ Erro no teste:', error);
+                      toast({
+                        title: "Erro no teste",
+                        description: `Erro: ${error.message}`,
+                        variant: "destructive"
+                      });
+                    } else {
+                      console.log('✅ Resultado do teste:', data);
+                      toast({
+                        title: "Teste executado",
+                        description: "Veja o console para detalhes"
+                      });
+                      window.location.reload();
+                    }
+                  } catch (err: any) {
+                    console.error('❌ Erro na chamada:', err);
+                    toast({
+                      title: "Erro na chamada",
+                      description: `Erro: ${err.message}`,
+                      variant: "destructive"
                     });
                   }
                 }}
@@ -403,21 +423,38 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               
               <Button 
                 onClick={async () => {
-                  console.log('🔍 Verificando dados na tabela cache');
-                  if (profile?.id) {
+                  try {
+                    console.log('📋 Buscando cache para usuario:', profile?.id);
+                    
                     const { data, error } = await supabase
                       .from('comissionamentos_semanais')
                       .select('*')
                       .eq('user_id', profile.id)
-                      .eq('ano', selectedYear)
+                      .eq('ano', 2025)
                       .order('semana');
-                    
+
                     if (error) {
                       console.error('❌ Erro ao buscar cache:', error);
+                      toast({
+                        title: "Erro",
+                        description: `Erro: ${error.message}`,
+                        variant: "destructive"
+                      });
                     } else {
-                      console.log('📊 Dados no cache:', data?.length || 0, 'registros');
+                      console.log('📋 Cache atual:', data);
                       console.table(data);
+                      toast({
+                        title: "Cache consultado",
+                        description: `${data?.length || 0} registros - veja console`
+                      });
                     }
+                  } catch (err: any) {
+                    console.error('❌ Erro:', err);
+                    toast({
+                      title: "Erro",
+                      description: `Erro: ${err.message}`,
+                      variant: "destructive"
+                    });
                   }
                 }}
                 className="bg-blue-500 hover:bg-blue-600"

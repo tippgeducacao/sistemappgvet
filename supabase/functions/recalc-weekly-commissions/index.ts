@@ -158,7 +158,10 @@ async function calcularComissionamentoUsuario(
   regras: any[]
 ): Promise<ComissionamentoData | null> {
   try {
+    console.log(`🔄 Calculando comissionamento para ${userId} (${userType}) - ${ano}S${semana}`);
+    
     const { startDate, endDate } = getDatasSemana(ano, semana);
+    console.log(`📅 Período da semana: ${startDate.toISOString()} até ${endDate.toISOString()}`);
     
     let pontos = 0;
     let meta = 0;
@@ -166,7 +169,7 @@ async function calcularComissionamentoUsuario(
 
     if (userType === 'vendedor') {
       // Calcular pontos das vendas matriculadas
-      console.log(`📊 Buscando vendas para vendedor ${userId} na semana ${semana}/${ano}`);
+      console.log(`📊 Buscando vendas para vendedor ${userId}...`);
       
       const { data: vendas, error: vendasError } = await supabase
         .from('form_entries')
@@ -179,7 +182,10 @@ async function calcularComissionamentoUsuario(
         throw vendasError;
       }
 
-      console.log(`📊 Total de vendas matriculadas encontradas: ${vendas?.length || 0}`);
+      console.log(`📊 Total de vendas matriculadas: ${vendas?.length || 0}`);
+      if (vendas && vendas.length > 0) {
+        console.log('📊 Amostra de vendas:', vendas.slice(0, 3));
+      }
 
       // Filtrar vendas da semana específica
       const vendasDaSemana = vendas?.filter(venda => {
@@ -188,7 +194,11 @@ async function calcularComissionamentoUsuario(
           ? new Date(venda.data_assinatura_contrato)
           : new Date(venda.data_aprovacao || venda.enviado_em);
         
-        return dataEfetiva >= startDate && dataEfetiva <= endDate;
+        const isInWeek = dataEfetiva >= startDate && dataEfetiva <= endDate;
+        if (isInWeek) {
+          console.log(`✅ Venda na semana: ${dataEfetiva.toISOString()} - pontos: ${venda.pontuacao_validada || venda.pontuacao_esperada || 0}`);
+        }
+        return isInWeek;
       }) || [];
 
       console.log(`📊 Vendas da semana ${semana}: ${vendasDaSemana.length} vendas`);
@@ -199,7 +209,8 @@ async function calcularComissionamentoUsuario(
       console.log(`📊 Total de pontos calculados: ${pontos}`);
 
       // Buscar meta semanal
-      const { data: metaData } = await supabase
+      console.log(`🎯 Buscando meta semanal para ${userId}...`);
+      const { data: metaData, error: metaError } = await supabase
         .from('metas_semanais_vendedores')
         .select('meta_vendas')
         .eq('vendedor_id', userId)
@@ -207,28 +218,49 @@ async function calcularComissionamentoUsuario(
         .eq('semana', semana)
         .single();
 
+      if (metaError) {
+        console.log(`⚠️ Não encontrou meta específica:`, metaError);
+      }
+      
       meta = metaData?.meta_vendas || 0;
+      console.log(`🎯 Meta semanal: ${meta}`);
 
       // Buscar variável do nível
-      const { data: profile } = await supabase
+      console.log(`📈 Buscando dados do perfil para ${userId}...`);
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('nivel')
         .eq('id', userId)
         .single();
 
+      if (profileError) {
+        console.error('❌ Erro ao buscar perfil:', profileError);
+      } else {
+        console.log(`👤 Perfil encontrado - nível: ${profile?.nivel}`);
+      }
+
       if (profile?.nivel) {
-        const { data: nivelData } = await supabase
+        console.log(`📈 Buscando variável para nível ${profile.nivel}...`);
+        const { data: nivelData, error: nivelError } = await supabase
           .from('niveis_vendedores')
           .select('variavel_semanal')
           .eq('nivel', profile.nivel)
           .eq('tipo_usuario', 'vendedor')
           .single();
 
+        if (nivelError) {
+          console.error('❌ Erro ao buscar nível:', nivelError);
+        } else {
+          console.log(`📈 Dados do nível:`, nivelData);
+        }
+
         variavel = nivelData?.variavel_semanal || 0;
       }
 
     } else if (userType === 'sdr') {
       // Contar reuniões realizadas
+      console.log(`📊 Buscando reuniões para SDR ${userId}...`);
+      
       const { data: reunioes } = await supabase
         .from('agendamentos')
         .select('id')
@@ -239,6 +271,7 @@ async function calcularComissionamentoUsuario(
         .lte('data_agendamento', endDate.toISOString());
 
       pontos = reunioes?.length || 0;
+      console.log(`📊 Reuniões realizadas: ${pontos}`);
 
       // Buscar meta e variável do nível SDR
       const { data: profile } = await supabase
@@ -266,15 +299,25 @@ async function calcularComissionamentoUsuario(
     const percentual = meta > 0 ? (pontos / meta) * 100 : 0;
     const percentualFloor = Math.floor(percentual);
     
-    const regra = regras
-      .filter(r => r.tipo_usuario === userType)
+    console.log(`📊 Resumo: pontos=${pontos}, meta=${meta}, percentual=${percentual.toFixed(2)}%`);
+    
+    console.log(`🔍 Buscando regra para ${userType} com ${percentualFloor}%...`);
+    const regrasFiltradas = regras.filter(r => r.tipo_usuario === userType);
+    console.log(`📋 Regras disponíveis para ${userType}:`, regrasFiltradas.map(r => 
+      `${r.percentual_minimo}-${r.percentual_maximo}% = ${r.multiplicador}x`));
+    
+    const regra = regrasFiltradas
       .find(r => percentualFloor >= r.percentual_minimo && 
                 (r.percentual_maximo >= percentualFloor || r.percentual_maximo >= 999));
+
+    console.log(`🎯 Regra encontrada:`, regra ? `${regra.percentual_minimo}-${regra.percentual_maximo}% = ${regra.multiplicador}x` : 'nenhuma');
 
     const multiplicador = regra?.multiplicador || 1;
     const valor = variavel * multiplicador;
 
-    return {
+    console.log(`💰 Resultado final: variável=${variavel} x multiplicador=${multiplicador} = valor=${valor}`);
+
+    const resultado = {
       user_id: userId,
       user_type: userType,
       ano,
@@ -287,6 +330,9 @@ async function calcularComissionamentoUsuario(
       valor,
       regra_id: regra?.id
     };
+
+    console.log(`✅ Resultado completo:`, resultado);
+    return resultado;
 
   } catch (error) {
     console.error(`❌ Erro ao calcular comissionamento para ${userId}:`, error);
