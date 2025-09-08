@@ -414,10 +414,9 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
               const variavelSemanal = nivelConfig?.variavel_semanal || 0;
 
-              // Usar a meta baseada no nível para o cálculo de progresso
-              const metaBaseadaNivel = getMetaBaseadaNivel(numeroSemana);
-              const progressoSemanal = metaBaseadaNivel > 0 
-                ? (pontosDaSemana / metaBaseadaNivel) * 100 
+              // CORREÇÃO: Usar metasSemanais como fonte única da verdade para meta e cálculo
+              const progressoSemanal = metaSemanal?.meta_vendas > 0 
+                ? (pontosDaSemana / metaSemanal.meta_vendas) * 100 
                 : 0;
 
               // Buscar dados de comissão calculados
@@ -458,7 +457,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                   {/* Meta */}
                   <div className="flex items-center">
                     <Badge variant="default" className="text-[10px] h-4 px-1">
-                      {getMetaBaseadaNivel(numeroSemana)}
+                      {metaSemanal?.meta_vendas || 0}
                     </Badge>
                   </div>
                   
@@ -473,20 +472,20 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                        progressoSemanal >= 100 ? 'text-green-600' : 
                        progressoSemanal >= 80 ? 'text-yellow-600' : 'text-muted-foreground'
                      }`}>
-                       {progressoSemanal.toFixed(0)}%
+                       {Math.floor(progressoSemanal)}%
                      </span>
                    </div>
                   
                   {/* Multiplicador */}
                   <div className="flex items-center">
                     <Badge variant={comissaoData.multiplicador > 0 ? "default" : "secondary"} className="text-[10px] h-4 px-1">
-                      {progressoSemanal === 100 ? '1.0' : comissaoData.multiplicador.toFixed(1)}x
+                      {comissaoData.multiplicador.toFixed(1)}x
                     </Badge>
                   </div>
                   
                   {/* Comissão */}
                   <div className="flex items-center font-medium text-green-600">
-                    R$ {progressoSemanal === 100 ? (variavelSemanal * 1.0).toFixed(0) : comissaoData.valor.toFixed(0)}
+                    R$ {comissaoData.valor.toFixed(0)}
                   </div>
                   
                   {/* Status */}
@@ -513,7 +512,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 <div className="text-muted-foreground">-</div>
                 <div className="font-bold">
                   {semanasDoMes.reduce((total, numeroSemana) => {
-                    return total + getMetaBaseadaNivel(numeroSemana);
+                    const metaSemanal = metasSemanais.find(meta => 
+                      meta.vendedor_id === profile.id && 
+                      meta.ano === anoParaExibir && 
+                      meta.semana === numeroSemana
+                    );
+                    return total + (metaSemanal?.meta_vendas || 0);
                   }, 0)}
                 </div>
                 <div className="font-bold text-primary">
@@ -549,9 +553,14 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 </div>
                 <div className="font-bold">
                    {(() => {
-                     // Usar metas baseadas no nível para o cálculo total
+                     // CORREÇÃO: Usar metasSemanais como fonte única da verdade
                      const totalMetaNivel = semanasDoMes.reduce((total, numeroSemana) => {
-                       return total + getMetaBaseadaNivel(numeroSemana);
+                       const metaSemanal = metasSemanais.find(meta => 
+                         meta.vendedor_id === profile.id && 
+                         meta.ano === anoParaExibir && 
+                         meta.semana === numeroSemana
+                       );
+                       return total + (metaSemanal?.meta_vendas || 0);
                      }, 0);
                      
                      const totalPontos = semanasDoMes.reduce((total, numeroSemana) => {
@@ -584,8 +593,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                        return total + pontosDaSemana;
                      }, 0);
                      
-                     const percentualTotal = totalMetaNivel > 0 ? (totalPontos / totalMetaNivel) * 100 : 0;
-                     return `${percentualTotal.toFixed(0)}%`;
+                      const percentualTotal = totalMetaNivel > 0 ? (totalPontos / totalMetaNivel) * 100 : 0;
+                      return `${Math.floor(percentualTotal)}%`;
                    })()}
                 </div>
                 <div>-</div>
@@ -600,45 +609,14 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
                      const variavelSemanal = nivelConfig?.variavel_semanal || 0;
                      
-                     semanasDoMes.forEach(numeroSemana => {
-                       const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
-                       const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
-                       
-                       const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
-                         if (venda.vendedor_id !== profile.id) return false;
-                         if (venda.status !== 'matriculado') return false;
-                         
-          // PADRONIZADO: Usar função centralizada
-          const respostasVenda = vendasWithResponses.find(({ venda: v }) => v.id === venda.id);
-          const dataVenda = getDataEfetivaVenda(venda, respostasVenda?.respostas);
-                         
-                          const vendaPeriod = getVendaPeriod(dataVenda);
-                          const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
-                          
-                          dataVenda.setHours(0, 0, 0, 0);
-                          const startSemanaUTC = new Date(startSemana);
-                          startSemanaUTC.setHours(0, 0, 0, 0);
-                          const endSemanaUTC = new Date(endSemana);
-                          endSemanaUTC.setHours(23, 59, 59, 999);
-                          const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
-                         
-                         return periodoCorreto && isInRange;
-                       }).reduce((sum, { venda }) => sum + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-                       
-                       const metaBaseadaNivel = getMetaBaseadaNivel(numeroSemana);
-                       const progressoSemanal = metaBaseadaNivel > 0 ? (pontosDaSemana / metaBaseadaNivel) * 100 : 0;
-                       
-                       // Se for exatamente 100%, usar multiplicador 1.0
-                       if (progressoSemanal === 100) {
-                         totalComissao += variavelSemanal * 1.0;
-                       } else {
-                         const chaveComissao = `${selectedYear}-${selectedMonth}-${numeroSemana}`;
-                         const comissaoData = comissoesPorSemana[chaveComissao];
-                         if (comissaoData) {
-                           totalComissao += comissaoData.valor;
-                         }
-                       }
-                     });
+                      semanasDoMes.forEach(numeroSemana => {
+                        // CORREÇÃO: Usar apenas comissaoData calculada, sem tratamento especial para 100%
+                        const chaveComissao = `${selectedYear}-${selectedMonth}-${numeroSemana}`;
+                        const comissaoData = comissoesPorSemana[chaveComissao];
+                        if (comissaoData) {
+                          totalComissao += comissaoData.valor;
+                        }
+                      });
                      
                      return totalComissao.toFixed(0);
                    })()}

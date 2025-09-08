@@ -49,7 +49,7 @@ export class ComissionamentoService {
     tipoUsuario = 'vendedor'
   ): Promise<{ valor: number; multiplicador: number; percentual: number }> {
     const percentualBruto = (pontosObtidos / metaSemanal) * 100;
-    const percentual = Math.round(percentualBruto); // ARREDONDAR antes da comparação
+    const percentual = Math.floor(percentualBruto); // USAR FLOOR para seleção de regra
     const regras = await this.fetchRegras(tipoUsuario);
     
     console.log('🔢 DEBUG COMISSIONAMENTO:', {
@@ -90,7 +90,7 @@ export class ComissionamentoService {
     return {
       valor,
       multiplicador,
-      percentual: Math.round(percentualBruto * 100) / 100 // Retornar percentual original para display
+      percentual: Math.round(percentualBruto * 100) / 100 // Percentual exato para display
     };
   }
 }
