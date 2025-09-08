@@ -205,6 +205,60 @@ export type Database = {
         }
         Relationships: []
       }
+      comissionamentos_semanais: {
+        Row: {
+          ano: number
+          calculated_at: string
+          created_at: string
+          id: string
+          meta: number
+          multiplicador: number
+          percentual: number
+          pontos: number
+          regra_id: string | null
+          semana: number
+          updated_at: string
+          user_id: string
+          user_type: string
+          valor: number
+          variavel: number
+        }
+        Insert: {
+          ano: number
+          calculated_at?: string
+          created_at?: string
+          id?: string
+          meta?: number
+          multiplicador?: number
+          percentual?: number
+          pontos?: number
+          regra_id?: string | null
+          semana: number
+          updated_at?: string
+          user_id: string
+          user_type: string
+          valor?: number
+          variavel?: number
+        }
+        Update: {
+          ano?: number
+          calculated_at?: string
+          created_at?: string
+          id?: string
+          meta?: number
+          multiplicador?: number
+          percentual?: number
+          pontos?: number
+          regra_id?: string | null
+          semana?: number
+          updated_at?: string
+          user_id?: string
+          user_type?: string
+          valor?: number
+          variavel?: number
+        }
+        Relationships: []
+      }
       cursos: {
         Row: {
           ativo: boolean | null

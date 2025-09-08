@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.agendamentos-api]
 verify_jwt = false
+
+[functions.recalc-weekly-commissions]
+verify_jwt = false

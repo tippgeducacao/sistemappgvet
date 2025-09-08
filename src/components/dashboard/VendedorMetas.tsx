@@ -17,6 +17,7 @@ import { useVendaWithFormResponses } from '@/hooks/useVendaWithFormResponses';
 import { debugSemanasAgosto2025 } from '@/utils/semanasDebug';
 import { getVendaPeriod, getSemanaAtual, getSemanaFromDate, getSemanasDoAno, getWeekDatesFromNumber, getMesAnoSemanaAtual } from '@/utils/semanaUtils';
 import { getDataEfetivaVenda, getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
+import { useBatchWeeklyCommissions } from '@/hooks/useWeeklyCommission';
 
 interface VendedorMetasProps {
   selectedMonth: number;
@@ -37,8 +38,17 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   // Buscar respostas do formulário para usar data de matrícula
   const { vendasWithResponses, isLoading: isLoadingResponses } = useVendaWithFormResponses(vendas);
   
-  // Estado para armazenar os cálculos de comissão de cada semana
+  // Estado para armazenar os cálculos de comissão de cada semana (mantido para compatibilidade)
   const [comissoesPorSemana, setComissoesPorSemana] = useState<{[key: string]: {valor: number, multiplicador: number, percentual: number}}>({});
+  
+  // Hook para buscar comissionamentos em cache
+  const allSemanasDoAno = getSemanasDoAno(selectedYear);
+  const { data: weeklyCommissions, isLoading: commissionsLoading } = useBatchWeeklyCommissions(
+    profile?.id ? [{ id: profile.id, type: 'vendedor' as const }] : [],
+    selectedYear,
+    0, // Não usar semana específica, será filtrado depois
+    !!profile?.id
+  );
   
   // Estado para controlar exportação de PDF
   const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -127,127 +137,27 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     sincronizarMetas();
   }, [profile?.id, selectedMonth, selectedYear, metasSemanaisLoading]);
 
-  // Calcular comissões quando os dados mudarem - OTIMIZADO
+  // Sincronizar comissões do cache com o estado local
   useEffect(() => {
-    const calcularComissoes = async () => {
-      if (!profile?.id || vendasLoading || metasSemanaisLoading || !vendasWithResponses.length) {
-        console.log('⏸️ Pulando cálculo de comissão:', { 
-          profileId: profile?.id, 
-          vendasLoading, 
-          metasSemanaisLoading, 
-          vendasCount: vendasWithResponses.length 
-        });
-        return;
-      }
-      
-      console.log('🚀 Iniciando cálculo de comissão para:', { 
-        vendedor: profile.id, 
-        periodo: `${selectedMonth}/${selectedYear}`,
-        totalVendas: vendasWithResponses.length 
-      });
-      
-      const vendedorInfo = vendedores.find(v => v.id === profile.id);
-      const vendedorNivel = vendedorInfo?.nivel || 'junior';
-      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
-      
-      if (!nivelConfig) {
-        console.log('❌ Configuração de nível não encontrada:', { vendedorNivel });
-        return;
-      }
-
-      // USAR A MESMA LÓGICA DA TELA PARA DETERMINAR MÊS/ANO
-      const semanaAtual = getSemanaAtual();
-      const { mes: mesCorretoSemana, ano: anoCorretoSemana } = getMesAnoSemanaAtual();
-      
-      const { mesParaExibir, anoParaExibir } = 
-        (selectedMonth === mesCorretoSemana && selectedYear === anoCorretoSemana)
-        ? { mesParaExibir: mesCorretoSemana, anoParaExibir: anoCorretoSemana }
-        : { mesParaExibir: selectedMonth, anoParaExibir: selectedYear };
-      
-      const semanasDoAno = getSemanasDoAno(selectedYear);
-      const novasComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
-      
-      console.log('📊 Calculando para:', { 
-        mesParaExibir, 
-        anoParaExibir, 
-        totalSemanas: semanasDoAno.length,
-        nivelConfig: nivelConfig.nivel
-      });
-      
-      for (const numeroSemana of semanasDoAno) {
-        // Try to get specific meta for this seller and week
-        const metaSemanal = getMetaSemanalVendedor(profile.id, selectedYear, numeroSemana);
-        
-        // If no specific meta, use level-based meta
-        const metaVendas = metaSemanal?.meta_vendas || getMetaBaseadaNivel(numeroSemana);
-        
-        if (metaVendas > 0) {
-          const { start: startSemana, end: endSemana } = getWeekDatesFromNumber(selectedYear, numeroSemana);
-          
-          // UNIFICADO: Usar a mesma lógica do display (vendasWithResponses)
-          const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
-            if (venda.vendedor_id !== profile.id) return false;
-            if (venda.status !== 'matriculado') return false;
-            
-            // PADRONIZADO: Usar função centralizada para obter data efetiva e período
-            const dataVenda = getDataEfetivaVenda(venda, respostas);
-            const vendaPeriod = getVendaEffectivePeriod(venda, respostas);
-            
-            // CORREÇÃO: Usar selectedMonth/selectedYear (lógica original)
-            const periodoCorreto = vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
-            
-            // Verificar se está na semana específica
-            dataVenda.setHours(0, 0, 0, 0);
-            const startSemanaUTC = new Date(startSemana);
-            startSemanaUTC.setHours(0, 0, 0, 0);
-            const endSemanaUTC = new Date(endSemana);
-            endSemanaUTC.setHours(23, 59, 59, 999);
-            const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
-            
-            return periodoCorreto && isInRange;
-          }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-          
-            try {
-              const comissaoData = await ComissionamentoService.calcularComissao(
-                pontosDaSemana,
-                metaVendas,
-                nivelConfig.variavel_semanal,
-                'vendedor'
-              );
-              
-              console.log('✅ COMISSÃO CALCULADA:', {
-                semana: numeroSemana,
-                pontos: pontosDaSemana,
-                meta: metaVendas,
-                percentual: Math.round((pontosDaSemana / metaVendas) * 100),
-                multiplicador: comissaoData.multiplicador,
-                valor: comissaoData.valor
-              });
-              
-              // Use Math.floor for commission value
-              const comissaoCorrigida = {
-                ...comissaoData,
-                valor: Math.floor(comissaoData.valor)
-              };
-              
-              novasComissoes[`${selectedYear}-${numeroSemana}`] = comissaoCorrigida;
-            } catch (error) {
-              console.error('❌ Erro ao calcular comissão:', error);
-              novasComissoes[`${selectedYear}-${numeroSemana}`] = {
-                valor: 0,
-                multiplicador: 0,
-                percentual: 0
-              };
-            }
-        }
-      }
-      
-      console.log('✅ Comissões calculadas:', Object.keys(novasComissoes).length, 'semanas processadas');
-      setComissoesPorSemana(novasComissoes);
-    };
+    if (!weeklyCommissions || commissionsLoading) return;
     
-    calcularComissoes();
-  }, [profile?.id, vendas, metasSemanais, niveis, vendedores, selectedMonth, selectedYear, vendasWithResponses.length]);
+    console.log('📋 Sincronizando comissões do cache:', weeklyCommissions.length);
+    
+    const novasComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
+    
+    weeklyCommissions.forEach(commission => {
+      const chave = `${commission.ano}-${commission.semana}`;
+      novasComissoes[chave] = {
+        valor: Math.floor(commission.valor),
+        multiplicador: commission.multiplicador,
+        percentual: commission.percentual
+      };
+    });
+    
+    console.log('✅ Comissões sincronizadas do cache:', Object.keys(novasComissoes).length);
+    setComissoesPorSemana(novasComissoes);
+    
+  }, [weeklyCommissions, commissionsLoading]);
 
   // Função para exportar PDF do ano inteiro
   const exportarPDFAno = async () => {

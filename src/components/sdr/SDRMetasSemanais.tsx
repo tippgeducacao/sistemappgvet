@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { isVendaInWeek } from '@/utils/vendaDateUtils';
 import AgendamentosRow from './AgendamentosRow';
 import { Calendar } from 'lucide-react';
+import { useWeeklyCommission } from '@/hooks/useWeeklyCommission';
 
 export const SDRMetasSemanais = () => {
   const { profile } = useAuthStore();
@@ -160,14 +161,13 @@ export const SDRMetasSemanais = () => {
   const calcularComissaoSemana = async (agendamentosRealizados: number, metaAgendamentos: number) => {
     if (!profile) return { valor: 0, multiplicador: 0, percentual: 0 };
     
-    // Buscar configuração do nível SDR
+    // Fallback para cálculo direto se não houver cache
     const nivelSDR = niveis.find(nivel => 
       nivel.nivel === profile.nivel && nivel.tipo_usuario === 'sdr'
     );
     
     if (!nivelSDR) return { valor: 0, multiplicador: 0, percentual: 0 };
     
-    // Para SDRs, a comissão é baseada nos agendamentos realizados vs meta de agendamentos
     const comissao = await calcularComissao(
       agendamentosRealizados, 
       metaAgendamentos, 

@@ -21,6 +21,7 @@ import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
 import { useAvaliacaoSemanal } from '@/hooks/useAvaliacaoSemanal';
 import { useVendedoresWeeklyConversions } from '@/hooks/useVendedorConversion';
 import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
+import { useBatchWeeklyCommissions } from '@/hooks/useWeeklyCommission';
 import html2canvas from 'html2canvas';
 import { isVendaInPeriod, getVendaPeriod } from '@/utils/semanaUtils';
 import { getDataEfetivaVenda, getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
@@ -134,6 +135,12 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   
   const { data: vendedorConversions } = useCurrentWeekConversions(vendedorIds, 'vendedor');
   const { data: sdrConversions } = useCurrentWeekConversions(sdrIds, 'sdr');
+  
+  // Hook para comissionamentos em cache
+  const todayDate = new Date();
+  const currentYearForCommission = todayDate.getFullYear();
+  const currentWeekForCommission = Math.ceil((todayDate.getTime() - new Date(currentYearForCommission, 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+  
   // Filtrar vendedores - apenas vendedores ativos e remover "Vendedor teste" exceto para admin específico
   const vendedoresFiltrados = useMemo(() => {
     const userEmail = profile?.email || currentUser?.email;
@@ -159,6 +166,14 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       return vendedor.name !== 'Vendedor teste';
     });
   }, [vendedores, profile?.email, currentUser?.email]);
+  
+  const vendedoresForCommission = vendedoresFiltrados.map(v => ({ id: v.id, type: 'vendedor' as const }));
+  const { data: weeklyCommissions, isLoading: commissionsLoading } = useBatchWeeklyCommissions(
+    vendedoresForCommission,
+    currentYearForCommission,
+    currentWeekForCommission,
+    vendedoresForCommission.length > 0
+  );
 
   // Filtrar vendas por período e vendedor se especificados
   const vendasFiltradas = useMemo(() => {
@@ -398,6 +413,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     const conversaoData = vendedorConversions?.find(c => 'vendedorId' in c && c.vendedorId === vendedor.id);
     const taxaConversao = conversaoData?.taxaConversao || 0;
     
+    // Buscar comissionamento da semana atual do cache
+    const weeklyCommission = weeklyCommissions?.find(c => c.user_id === vendedor.id);
+    const multiplicadorAtual = weeklyCommission?.multiplicador || 0;
+    const valorComissao = weeklyCommission?.valor || 0;
+    
     // Calcular meta diária dinâmica baseada no progresso da semana atual
     const metaDiariaRestante = calculateDynamicDailyGoal(metaSemanal, progressoSemanaAtual.pontos);
     
@@ -414,6 +434,8 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
       pontuacao: pontuacaoAtual,
       metaSemanal,
       metaDiariaRestante,
+      multiplicadorAtual,
+      valorComissao,
       diaAtualNaSemana,
       vendasSemanais: vendasAprovadas, // Usar vendas da semana atual
       progressoSemanal: metaSemanal > 0 ? (pontuacaoAtual / metaSemanal) * 100 : 0,

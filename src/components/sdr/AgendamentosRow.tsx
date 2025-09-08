@@ -19,6 +19,8 @@ interface AgendamentosRowProps {
     multiplicador: number;
     percentual: number;
   }>;
+  cachedCommission?: any;
+  isLoadingCommission?: boolean;
 }
 
 const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
@@ -30,7 +32,9 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
   realizado,
   getStatusBadge,
   getAgendamentosNaSemana,
-  calcularComissaoSemana
+  calcularComissaoSemana,
+  cachedCommission,
+  isLoadingCommission
 }) => {
   const [agendamentosData, setAgendamentosData] = useState({
     realizados: 0,
