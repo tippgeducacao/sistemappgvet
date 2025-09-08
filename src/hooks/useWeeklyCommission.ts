@@ -96,17 +96,19 @@ export const useWeeklyCommission = (
 export const useBatchWeeklyCommissions = (
   users: Array<{ id: string; type: 'vendedor' | 'sdr' | 'supervisor' }>,
   ano: number,
-  semana: number, // Se for 0, busca todas as semanas do ano
+  semana: number | number[], // Se for 0, busca todas as semanas do ano; array para semanas específicas
   enabled: boolean = true
 ) => {
   const queryClient = useQueryClient();
   
   return useQuery({
-    queryKey: ['batch-weekly-commissions', users.map(u => u.id).join(','), ano, semana || 'all'],
+    queryKey: ['batch-weekly-commissions', users.map(u => u.id).join(','), ano, Array.isArray(semana) ? semana.join(',') : semana || 'all'],
     queryFn: async (): Promise<WeeklyCommissionData[]> => {
       if (!users.length) return [];
 
-      console.log(`🔍 Buscando ${users.length} comissionamentos em lote: ${ano}${semana ? `S${semana}` : ' (todas semanas)'}`);
+      const isArray = Array.isArray(semana);
+      const semanaDisplay = isArray ? `S[${semana.join(',')}]` : semana ? `S${semana}` : ' (todas semanas)';
+      console.log(`🔍 Buscando ${users.length} comissionamentos em lote: ${ano}${semanaDisplay}`);
 
       const userIds = users.map(u => u.id);
       
@@ -117,8 +119,10 @@ export const useBatchWeeklyCommissions = (
         .in('user_id', userIds)
         .eq('ano', ano);
       
-      // Se semana específica, filtrar por ela
-      if (semana > 0) {
+      // Se semana específica ou array de semanas, filtrar
+      if (isArray && semana.length > 0) {
+        query = query.in('semana', semana);
+      } else if (typeof semana === 'number' && semana > 0) {
         query = query.eq('semana', semana);
       }
       
@@ -137,7 +141,7 @@ export const useBatchWeeklyCommissions = (
         console.log(`🔄 Cache vazio, iniciando recálculo...`);
         
         // Para uma única semana
-        if (semana > 0) {
+        if (typeof semana === 'number' && semana > 0) {
           users.forEach(user => {
             supabase.functions.invoke('recalc-weekly-commissions', {
               body: {

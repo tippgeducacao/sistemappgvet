@@ -72,7 +72,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   const { data: weeklyCommissions, isLoading: commissionsLoading } = useBatchWeeklyCommissions(
     profile?.id ? [{ id: profile.id, type: 'vendedor' as const }] : [],
     selectedYear,
-    0, // Ainda buscar todas para compatibilidade, mas filtrar no processamento
+    semanasDoMesSelecionado, // Buscar apenas as semanas do mês selecionado
     !!profile?.id
   );
   
@@ -171,119 +171,32 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
 
   // Sincronizar comissões do cache com estado local + fallback client-side
   useEffect(() => {
-    if (commissionsLoading) return;
-    
-    console.log('📋 Sincronizando comissões do cache:', {
-      weeklyCommissions: weeklyCommissions?.length || 0,
-      sampleData: weeklyCommissions?.slice(0, 2)
-    });
-    
-    const novasComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
-    
-    // Filtrar apenas dados do cache que têm meta válida (> 0)
-    const cacheComDadosValidos = weeklyCommissions?.filter(commission => 
-      commission.meta > 0 && commission.multiplicador > 0) || [];
-    
-    if (cacheComDadosValidos.length > 0) {
-      cacheComDadosValidos.forEach(commission => {
-        const chave = `${commission.ano}-${commission.semana}`;
-        novasComissoes[chave] = {
-          valor: Math.floor(commission.valor),
-          multiplicador: commission.multiplicador,
-          percentual: commission.percentual
-        };
-        
-        console.log(`✅ Cache válido: ${chave} = ${commission.multiplicador}x / R$ ${commission.valor} (meta: ${commission.meta})`);
+    const syncCommissions = async () => {
+      if (commissionsLoading || !profile?.id) return;
+      
+      console.log('🔄 Sincronizando comissões com estado local...');
+      
+      const newComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
+      
+      // Processar comissões já calculadas
+      weeklyCommissions?.forEach(comm => {
+        if (comm.ano === selectedYear) {
+          const key = `${comm.ano}-${comm.semana}`;
+          newComissoes[key] = {
+            valor: comm.valor,
+            multiplicador: comm.multiplicador,
+            percentual: comm.percentual
+          };
+          console.log(`💾 Comissão semana ${comm.semana}: R$ ${comm.valor} (${comm.multiplicador}x)`);
+        }
       });
       
-      console.log('✅ Comissões válidas do cache:', Object.keys(novasComissoes).length);
-    }
+      console.log('✅ Estado de comissões atualizado:', Object.keys(newComissoes).length, 'semanas');
+      setComissoesPorSemana(newComissoes);
+    };
     
-    // SEMPRE calcular fallback client-side apenas para semanas do mês selecionado
-    console.log('🔄 Calculando fallback client-side apenas para o mês selecionado...');
-    const calcularFallbackComissoes = async () => {
-        if (!profile?.id || !profile?.nivel || !niveis?.length) return;
-        
-        const nivelConfig = niveis.find(n => 
-          n.nivel === profile.nivel && 
-          n.tipo_usuario === profile.user_type
-        );
-        
-        if (!nivelConfig) return;
-        
-        const variabelSemanal = nivelConfig.variavel_semanal || 500;
-        // Meta efetiva: usar configuração do nível ou padrão baseado no nível
-        const metaEfetiva = nivelConfig.meta_semanal_vendedor > 0 ? 
-          nivelConfig.meta_semanal_vendedor : 
-          (profile.nivel === 'senior' ? 9 : profile.nivel === 'pleno' ? 8 : 7);
-          
-        console.log(`📊 Meta efetiva calculada: ${metaEfetiva} (nível: ${profile.nivel}, config: ${nivelConfig.meta_semanal_vendedor})`);
-        
-        // Pré-carregar regras de comissionamento uma única vez
-        const regrasComissionamento = await ComissionamentoService.fetchRegras('vendedor');
-        console.log('💾 Regras pré-carregadas:', regrasComissionamento.length);
-        
-        // Calcular apenas para semanas do mês selecionado
-        for (const numeroSemana of semanasDoMesSelecionado) {
-          const chave = `${selectedYear}-${numeroSemana}`;
-          
-          if (novasComissoes[chave]) continue; // Já tem cache
-          
-          const { start: startSemana, end: endSemana } = getWeekDatesFromNumber(selectedYear, numeroSemana);
-          
-          // Calcular pontos da semana com mesma lógica da tela
-          const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
-            if (venda.vendedor_id !== profile.id) return false;
-            if (venda.status !== 'matriculado') return false;
-            
-            const dataVenda = getDataEfetivaVenda(venda, respostas);
-            const vendaPeriod = getVendaEffectivePeriod(venda, respostas);
-            
-            dataVenda.setHours(0, 0, 0, 0);
-            const startSemanaUTC = new Date(startSemana);
-            startSemanaUTC.setHours(0, 0, 0, 0);
-            const endSemanaUTC = new Date(endSemana);
-            endSemanaUTC.setHours(23, 59, 59, 999);
-            
-            return dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
-          }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
-          
-          // Calcular comissão usando regras pré-carregadas
-          try {
-            const comissaoCalculada = await ComissionamentoService.calcularComissao(
-              pontosDaSemana,
-              metaEfetiva,
-              variabelSemanal,
-              'vendedor',
-              regrasComissionamento // Usar regras pré-carregadas
-            );
-            
-            novasComissoes[chave] = {
-              valor: Math.floor(comissaoCalculada.valor),
-              multiplicador: comissaoCalculada.multiplicador,
-              percentual: comissaoCalculada.percentual
-            };
-            
-            console.log(`🔄 Fallback: ${chave} = ${comissaoCalculada.multiplicador}x / R$ ${comissaoCalculada.valor}`);
-          } catch (error) {
-            console.error(`❌ Erro no cálculo fallback para ${chave}:`, error);
-            
-            // Fallback básico se der erro
-            novasComissoes[chave] = {
-              valor: 0,
-              multiplicador: 0,
-              percentual: 0
-            };
-          }
-        }
-        
-        console.log('✅ Fallback client-side calculado para', Object.keys(novasComissoes).length, 'semanas do mês');
-      };
-      
-      calcularFallbackComissoes();
-      setComissoesPorSemana(novasComissoes);
-    
-  }, [weeklyCommissions, commissionsLoading, vendasWithResponses, profile, niveis, selectedYear, selectedMonth, semanasDoMesSelecionado]);
+    syncCommissions();
+  }, [weeklyCommissions, profile?.id, selectedYear, selectedMonth]);
 
   // Função para exportar PDF do ano inteiro
   const exportarPDFAno = async () => {
