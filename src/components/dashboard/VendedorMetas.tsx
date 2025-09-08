@@ -127,16 +127,33 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     sincronizarMetas();
   }, [profile?.id, selectedMonth, selectedYear, metasSemanaisLoading]);
 
-  // Calcular comissões quando os dados mudarem
+  // Calcular comissões quando os dados mudarem - OTIMIZADO
   useEffect(() => {
     const calcularComissoes = async () => {
-      if (!profile?.id || vendasLoading || metasSemanaisLoading) return;
+      if (!profile?.id || vendasLoading || metasSemanaisLoading || !vendasWithResponses.length) {
+        console.log('⏸️ Pulando cálculo de comissão:', { 
+          profileId: profile?.id, 
+          vendasLoading, 
+          metasSemanaisLoading, 
+          vendasCount: vendasWithResponses.length 
+        });
+        return;
+      }
+      
+      console.log('🚀 Iniciando cálculo de comissão para:', { 
+        vendedor: profile.id, 
+        periodo: `${selectedMonth}/${selectedYear}`,
+        totalVendas: vendasWithResponses.length 
+      });
       
       const vendedorInfo = vendedores.find(v => v.id === profile.id);
       const vendedorNivel = vendedorInfo?.nivel || 'junior';
       const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
       
-      if (!nivelConfig) return;
+      if (!nivelConfig) {
+        console.log('❌ Configuração de nível não encontrada:', { vendedorNivel });
+        return;
+      }
 
       // USAR A MESMA LÓGICA DA TELA PARA DETERMINAR MÊS/ANO
       const semanaAtual = getSemanaAtual();
@@ -149,6 +166,13 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
       
       const semanasDoAno = getSemanasDoAno(selectedYear);
       const novasComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
+      
+      console.log('📊 Calculando para:', { 
+        mesParaExibir, 
+        anoParaExibir, 
+        totalSemanas: semanasDoAno.length,
+        nivelConfig: nivelConfig.nivel
+      });
       
       for (const numeroSemana of semanasDoAno) {
         // Try to get specific meta for this seller and week
@@ -169,23 +193,6 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             const dataVenda = getDataEfetivaVenda(venda, respostas);
             const vendaPeriod = getVendaEffectivePeriod(venda, respostas);
             
-            // Debug específico para Pedro Garbelini
-            if (venda.id === '53af0209-9b2d-4b76-b6a2-2c9d8e4f7a8c' || 
-                (venda.aluno && (venda.aluno.nome === 'Pedro Garbelini' || venda.aluno.nome?.includes('Pedro')))) {
-              console.log(`🚨 PEDRO GARBELINI - VendedorMetas comissão:`, {
-                venda_id: venda.id?.substring(0, 8),
-                aluno: venda.aluno?.nome,
-                data_efetiva: dataVenda.toISOString(),
-                data_efetiva_br: dataVenda.toLocaleDateString('pt-BR'),
-                periodo_calculado: vendaPeriod,
-                data_assinatura_contrato: venda.data_assinatura_contrato,
-                data_enviado: venda.enviado_em,
-                status: venda.status,
-                numero_semana: numeroSemana,
-                usando_periodo: `${mesParaExibir}/${anoParaExibir}`,
-                selectedPeriodo: `${selectedMonth}/${selectedYear}`
-              });
-            }
             // CORREÇÃO: Usar selectedMonth/selectedYear (lógica original)
             const periodoCorreto = vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
             
@@ -208,23 +215,24 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 'vendedor'
               );
               
+              console.log('✅ COMISSÃO CALCULADA:', {
+                semana: numeroSemana,
+                pontos: pontosDaSemana,
+                meta: metaVendas,
+                percentual: Math.round((pontosDaSemana / metaVendas) * 100),
+                multiplicador: comissaoData.multiplicador,
+                valor: comissaoData.valor
+              });
+              
               // Use Math.floor for commission value
               const comissaoCorrigida = {
                 ...comissaoData,
                 valor: Math.floor(comissaoData.valor)
               };
               
-              console.log('🎯 VENDEDOR METAS DEBUG:', {
-                numeroSemana,
-                pontosDaSemana,
-                metaVendas,
-                percentual: (pontosDaSemana / metaVendas) * 100,
-                comissaoData: comissaoCorrigida
-              });
-              
               novasComissoes[`${selectedYear}-${numeroSemana}`] = comissaoCorrigida;
             } catch (error) {
-              console.error('Erro ao calcular comissão:', error);
+              console.error('❌ Erro ao calcular comissão:', error);
               novasComissoes[`${selectedYear}-${numeroSemana}`] = {
                 valor: 0,
                 multiplicador: 0,
@@ -234,11 +242,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         }
       }
       
+      console.log('✅ Comissões calculadas:', Object.keys(novasComissoes).length, 'semanas processadas');
       setComissoesPorSemana(novasComissoes);
     };
     
     calcularComissoes();
-  }, [profile?.id, vendas, metasSemanais, niveis, vendedores, selectedMonth, selectedYear, vendasLoading, metasSemanaisLoading]);
+  }, [profile?.id, vendas, metasSemanais, niveis, vendedores, selectedMonth, selectedYear, vendasWithResponses.length]);
 
   // Função para exportar PDF do ano inteiro
   const exportarPDFAno = async () => {
