@@ -318,8 +318,20 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         const semanasDoAno = getSemanasDoAno(anoParaExibir);
         const semanasDoMes = semanasDoAno.filter(semana => {
           const { start, end } = getWeekDatesFromNumber(anoParaExibir, semana);
-          const weekMonth = start.getMonth() + 1;
-          return weekMonth === mesParaExibir || end.getMonth() + 1 === mesParaExibir;
+          
+          // Contar quantos dias da semana pertencem ao mês selecionado
+          let diasNoMes = 0;
+          const currentDate = new Date(start);
+          
+          while (currentDate <= end) {
+            if (currentDate.getMonth() + 1 === mesParaExibir) {
+              diasNoMes++;
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+          
+          // Incluir a semana apenas se a maioria dos dias (4 ou mais) estiverem no mês
+          return diasNoMes >= 4;
         });
         
         if (semanasDoMes.length === 0) {
@@ -479,8 +491,20 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   const semanasDoAno = getSemanasDoAno(anoParaExibir);
   const semanasDoMes = semanasDoAno.filter(semana => {
     const { start, end } = getWeekDatesFromNumber(anoParaExibir, semana);
-    const weekMonth = start.getMonth() + 1;
-    return weekMonth === mesParaExibir || end.getMonth() + 1 === mesParaExibir;
+    
+    // Contar quantos dias da semana pertencem ao mês selecionado
+    let diasNoMes = 0;
+    const currentDate = new Date(start);
+    
+    while (currentDate <= end) {
+      if (currentDate.getMonth() + 1 === mesParaExibir) {
+        diasNoMes++;
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Incluir a semana apenas se a maioria dos dias (4 ou mais) estiverem no mês
+    return diasNoMes >= 4;
   });
 
   const mesNome = new Date(anoParaExibir, mesParaExibir - 1).toLocaleDateString('pt-BR', { 
