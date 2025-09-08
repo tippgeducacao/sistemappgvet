@@ -318,24 +318,37 @@ async function calcularComissionamentoUsuario(
       }
     }
 
-    // Calcular percentual e encontrar regra
+    // Calcular percentual e encontrar regra (lógica robusta)
     const percentual = meta > 0 ? (pontos / meta) * 100 : 0;
     const percentualFloor = Math.floor(percentual);
     
-    console.log(`📊 Resumo: pontos=${pontos}, meta=${meta}, percentual=${percentual.toFixed(2)}%`);
+    console.log(`📊 Resumo: pontos=${pontos}, meta=${meta}, percentual=${percentual.toFixed(2)}%, floor=${percentualFloor}%`);
     
     console.log(`🔍 Buscando regra para ${userType} com ${percentualFloor}%...`);
     const regrasFiltradas = regras.filter(r => r.tipo_usuario === userType);
     console.log(`📋 Regras disponíveis para ${userType}:`, regrasFiltradas.map(r => 
       `${r.percentual_minimo}-${r.percentual_maximo}% = ${r.multiplicador}x`));
     
-    const regra = regrasFiltradas
-      .find(r => percentualFloor >= r.percentual_minimo && 
-                (r.percentual_maximo >= percentualFloor || r.percentual_maximo >= 999));
+    // Lógica robusta: ordenar por percentual_minimo DESC e encontrar a mais específica
+    const regrasOrdenadas = [...regrasFiltradas].sort((a, b) => b.percentual_minimo - a.percentual_minimo);
+    
+    let regra = null;
+    for (const r of regrasOrdenadas) {
+      // Para percentuais >= 999 (muito altos) - verificar primeiro
+      if (r.percentual_maximo >= 999 && percentualFloor >= r.percentual_minimo) {
+        regra = r;
+        break;
+      }
+      // Para outros percentuais, usar >= minimo e <= maximo
+      else if (percentualFloor >= r.percentual_minimo && percentualFloor <= r.percentual_maximo) {
+        regra = r;
+        break;
+      }
+    }
 
     console.log(`🎯 Regra encontrada:`, regra ? `${regra.percentual_minimo}-${regra.percentual_maximo}% = ${regra.multiplicador}x` : 'nenhuma');
 
-    const multiplicador = regra?.multiplicador || 1;
+    const multiplicador = regra?.multiplicador || 0;
     const valor = variavel * multiplicador;
 
     console.log(`💰 Resultado final: variável=${variavel} x multiplicador=${multiplicador} = valor=${valor}`);

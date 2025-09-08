@@ -52,35 +52,32 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   // Buscar respostas apenas para vendas filtradas
   const { vendasWithResponses, isLoading: isLoadingResponses } = useVendaWithFormResponses(vendasDoMesSelecionado);
   
-  // Estado para armazenar os cálculos de comissão de cada semana (mantido para compatibilidade)
+  // Estado para armazenar os cálculos de comissão (com fallback local sempre garantido)
   const [comissoesPorSemana, setComissoesPorSemana] = useState<{[key: string]: {valor: number, multiplicador: number, percentual: number}}>({});
+  const [regrasComissionamento, setRegrasComissionamento] = useState<any[]>([]);
   
-  // Hook para buscar comissionamentos apenas do mês selecionado
-  const semanasDoMesSelecionado = getSemanasDoAno(selectedYear).filter(semana => {
-    const { end } = getWeekDatesFromNumber(selectedYear, semana);
-    return end.getMonth() + 1 === selectedMonth;
-  });
+  // Carregar regras de comissionamento uma única vez
+  useEffect(() => {
+    const carregarRegras = async () => {
+      try {
+        const regras = await ComissionamentoService.fetchRegras('vendedor');
+        setRegrasComissionamento(regras);
+        console.log('📋 Regras de comissionamento carregadas:', regras.length);
+      } catch (error) {
+        console.error('❌ Erro ao carregar regras:', error);
+      }
+    };
+
+    carregarRegras();
+  }, []);
   
-  console.log('🔍 VendedorMetas - Tentando buscar comissionamentos do mês:', {
-    profileId: profile?.id,
-    selectedMonth,
-    selectedYear,
-    totalSemanasDoMes: semanasDoMesSelecionado.length,
-    profileExists: !!profile?.id
-  });
-  
+  // Hook para buscar comissionamentos (apenas como cache secundário)
   const { data: weeklyCommissions, isLoading: commissionsLoading } = useBatchWeeklyCommissions(
     profile?.id ? [{ id: profile.id, type: 'vendedor' as const }] : [],
     selectedYear,
-    semanasDoMesSelecionado, // Buscar apenas as semanas do mês selecionado
+    0, // Buscar todas as semanas do ano para ter cache completo
     !!profile?.id
   );
-  
-  console.log('📊 VendedorMetas - Status comissionamentos:', {
-    weeklyCommissions: weeklyCommissions?.length || 0,
-    commissionsLoading,
-    sampleData: weeklyCommissions?.slice(0, 2)
-  });
   
   // Estado para controlar exportação de PDF
   const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -169,34 +166,114 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     sincronizarMetas();
   }, [profile?.id, selectedMonth, selectedYear, metasSemanaisLoading]);
 
-  // Sincronizar comissões do cache com estado local + fallback client-side
+  // Sincronizar comissões garantindo sempre fallback local válido
   useEffect(() => {
-    const syncCommissions = async () => {
-      if (commissionsLoading || !profile?.id) return;
+    const syncComissionsWithFallback = async () => {
+      if (commissionsLoading || !profile?.id || regrasComissionamento.length === 0) return;
       
-      console.log('🔄 Sincronizando comissões com estado local...');
+      console.log('🔄 Sincronizando comissões com fallback local garantido...');
       
       const newComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
       
-      // Processar comissões já calculadas
-      weeklyCommissions?.forEach(comm => {
-        if (comm.ano === selectedYear) {
-          const key = `${comm.ano}-${comm.semana}`;
-          newComissoes[key] = {
-            valor: comm.valor,
-            multiplicador: comm.multiplicador,
-            percentual: comm.percentual
-          };
-          console.log(`💾 Comissão semana ${comm.semana}: R$ ${comm.valor} (${comm.multiplicador}x)`);
-        }
-      });
+      // Determinar ano para cache (usar anoParaExibir consistentemente)
+      const { mesAtual, anoAtual } = getSemanaAtual() > 0 ? 
+        (() => {
+          const agora = new Date();
+          return { mesAtual: agora.getMonth() + 1, anoAtual: agora.getFullYear() };
+        })() : 
+        { mesAtual: selectedMonth, anoAtual: selectedYear };
       
-      console.log('✅ Estado de comissões atualizado:', Object.keys(newComissoes).length, 'semanas');
+      const anoParaCache = (selectedMonth === mesAtual && selectedYear === anoAtual) ? anoAtual : selectedYear;
+      
+      // Obter todas as semanas do mês para calcular
+      const semanasDoAno = getSemanasDoAno(anoParaCache);
+      const semanasDoMesAtual = semanasDoAno.filter(semana => {
+        const { end } = getWeekDatesFromNumber(anoParaCache, semana);
+        const endMonth = end.getMonth() + 1;
+        return endMonth === selectedMonth;
+      });
+
+      console.log(`📊 Calculando comissões para ${semanasDoMesAtual.length} semanas do mês ${selectedMonth}/${anoParaCache}`);
+
+      // Processar cada semana, sempre calculando fallback local
+      for (const semana of semanasDoMesAtual) {
+        const cacheKey = `${anoParaCache}-${semana}`;
+        
+        // Tentar usar valor do servidor primeiro
+        const serverComm = weeklyCommissions?.find(c => c.ano === anoParaCache && c.semana === semana);
+        
+        // Calcular pontos da semana usando a mesma lógica da tela
+        const { start: startSemana, end: endSemana } = getWeekDatesFromNumber(anoParaCache, semana);
+        const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
+          if (venda.vendedor_id !== profile.id) return false;
+          if (venda.status !== 'matriculado') return false;
+          
+          const dataVenda = getDataEfetivaVenda(venda, respostas);
+          const vendaPeriod = getVendaEffectivePeriod(venda, respostas);
+          
+          const periodoCorreto = vendaPeriod.mes === selectedMonth && vendaPeriod.ano === anoParaCache;
+          
+          dataVenda.setHours(0, 0, 0, 0);
+          const startSemanaUTC = new Date(startSemana);
+          startSemanaUTC.setHours(0, 0, 0, 0);
+          const endSemanaUTC = new Date(endSemana);
+          endSemanaUTC.setHours(23, 59, 59, 999);
+          const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+          
+          return periodoCorreto && isInRange;
+        }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+
+        // Obter meta semanal
+        const metaSemanal = metasSemanais.find(meta => 
+          meta.vendedor_id === profile.id && 
+          meta.ano === anoParaCache && 
+          meta.semana === semana
+        );
+        
+        const metaVendas = metaSemanal?.meta_vendas || getMetaBaseadaNivel(semana);
+        
+        // Obter variável semanal do nível
+        const nivelUsuario = profile.nivel || 'junior';
+        const nivelConfig = niveis?.find(n => 
+          n.nivel === nivelUsuario && n.tipo_usuario === profile.user_type
+        );
+        const variabelSemanal = nivelConfig?.variavel_semanal || 800;
+
+        // Se servidor tem dados válidos (multiplicador > 0), usar ele
+        if (serverComm && serverComm.multiplicador > 0) {
+          newComissoes[cacheKey] = {
+            valor: serverComm.valor,
+            multiplicador: serverComm.multiplicador,
+            percentual: serverComm.percentual
+          };
+          console.log(`💾 Servidor - Semana ${semana}: R$ ${serverComm.valor} (${serverComm.multiplicador}x)`);
+        } else {
+          // Senão, calcular localmente com regras pré-carregadas
+          try {
+            const fallbackComissao = await ComissionamentoService.calcularComissao(
+              pontosDaSemana,
+              metaVendas,
+              variabelSemanal,
+              'vendedor',
+              regrasComissionamento
+            );
+            
+            newComissoes[cacheKey] = fallbackComissao;
+            console.log(`🔄 Fallback - Semana ${semana}: R$ ${fallbackComissao.valor} (${fallbackComissao.multiplicador}x) - Meta: ${metaVendas}, Pontos: ${pontosDaSemana}`);
+          } catch (error) {
+            console.error(`❌ Erro no fallback semana ${semana}:`, error);
+            // Fallback básico se tudo der errado
+            newComissoes[cacheKey] = { valor: 0, multiplicador: 0, percentual: 0 };
+          }
+        }
+      }
+      
+      console.log('✅ Estado de comissões atualizado com fallback:', Object.keys(newComissoes).length, 'semanas');
       setComissoesPorSemana(newComissoes);
     };
     
-    syncCommissions();
-  }, [weeklyCommissions, profile?.id, selectedYear, selectedMonth]);
+    syncComissionsWithFallback();
+  }, [weeklyCommissions, profile?.id, selectedYear, selectedMonth, regrasComissionamento, vendasWithResponses, metasSemanais, niveis]);
 
   // Função para exportar PDF do ano inteiro
   const exportarPDFAno = async () => {
@@ -309,8 +386,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             return incluirVenda;
           }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
           
-          // Buscar comissão
-          const chaveComissao = `${selectedYear}-${numeroSemana}`;
+          // Buscar comissão usando anoParaExibir consistentemente
+          const chaveComissao = `${anoParaExibir}-${numeroSemana}`;
           const comissaoData = comissoesPorSemana[chaveComissao] || { valor: 0, multiplicador: 0 };
           
           // Formatação das datas
@@ -606,7 +683,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 : 0;
 
               // Buscar dados de comissão calculados using the new key format
-              const chaveComissao = `${selectedYear}-${numeroSemana}`;
+              const chaveComissao = `${anoParaExibir}-${numeroSemana}`;
               const comissaoData = comissoesPorSemana[chaveComissao] || {
                 valor: 0,
                 multiplicador: 0,
@@ -793,14 +870,14 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
                      const variavelSemanal = nivelConfig?.variavel_semanal || 0;
                      
-                       semanasDoMes.forEach(numeroSemana => {
-                         // Use new key format that matches the calculation
-                         const chaveComissao = `${selectedYear}-${numeroSemana}`;
-                         const comissaoData = comissoesPorSemana[chaveComissao];
-                         if (comissaoData) {
-                           totalComissao += comissaoData.valor;
-                         }
-                       });
+                        semanasDoMes.forEach(numeroSemana => {
+                          // Use new key format that matches the calculation
+                          const chaveComissao = `${anoParaExibir}-${numeroSemana}`;
+                          const comissaoData = comissoesPorSemana[chaveComissao];
+                          if (comissaoData) {
+                            totalComissao += comissaoData.valor;
+                          }
+                        });
                      
                      return totalComissao.toFixed(0);
                    })()}
