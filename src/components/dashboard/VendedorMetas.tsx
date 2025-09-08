@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Trophy, DollarSign, FileDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useAuthStore } from '@/stores/AuthStore';
@@ -232,6 +232,16 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   const exportarPDFAno = async () => {
     if (!profile?.id) return;
     
+    // Evitar exportação enquanto dados estão carregando
+    if (vendasLoading || metasSemanaisLoading || isLoadingResponses) {
+      toast({
+        title: "Aguarde",
+        description: "Aguarde o carregamento dos dados antes de exportar.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsExportingPDF(true);
     
     try {
@@ -351,7 +361,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         ]);
         
         // Criar tabela
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: yPosition,
           head: [['Semana', 'Período', 'Meta', 'Pontos', '%', 'Mult.', 'Comissão']],
           body: tableData,
