@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
-import { useAllVendas } from '@/hooks/useVendas';
+import { useAllVendas, useVendas } from '@/hooks/useVendas';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useVendedores } from '@/hooks/useVendedores';
@@ -30,32 +30,49 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   selectedYear
 }) => {
   console.log('🚨 VENDEDOR METAS - Props recebidas:', { selectedMonth, selectedYear });
-  const { metasSemanais, getMetaSemanalVendedor, syncMetasWithNivel, loading: metasSemanaisLoading } = useMetasSemanais();
-  const { vendas, isLoading: vendasLoading } = useAllVendas();
+  const { metasSemanais, getMetaSemanalVendedor, syncMetasWithNivel, loading: metasSemanaisLoading, fetchMetasSemanaisByVendedorMes } = useMetasSemanais();
+  const { vendas, isLoading: vendasLoading } = useVendas(); // Usar vendas do usuário específico em vez de todas
   const { profile } = useAuthStore();
   const { niveis } = useNiveis();
   const { vendedores } = useVendedores();
   
-  // Buscar respostas do formulário para usar data de matrícula
-  const { vendasWithResponses, isLoading: isLoadingResponses } = useVendaWithFormResponses(vendas);
+  // Filtrar vendas apenas do mês selecionado antes de buscar respostas
+  const vendasDoMesSelecionado = vendas.filter(venda => {
+    if (venda.vendedor_id !== profile?.id) return false;
+    if (venda.status !== 'matriculado') return false;
+    
+    // Usar data_aprovacao se disponível, senão usar data_assinatura_contrato
+    const dataVenda = venda.data_aprovacao || venda.data_assinatura_contrato;
+    if (!dataVenda) return false;
+    
+    const data = new Date(dataVenda);
+    return data.getMonth() + 1 === selectedMonth && data.getFullYear() === selectedYear;
+  });
+  
+  // Buscar respostas apenas para vendas filtradas
+  const { vendasWithResponses, isLoading: isLoadingResponses } = useVendaWithFormResponses(vendasDoMesSelecionado);
   
   // Estado para armazenar os cálculos de comissão de cada semana (mantido para compatibilidade)
   const [comissoesPorSemana, setComissoesPorSemana] = useState<{[key: string]: {valor: number, multiplicador: number, percentual: number}}>({});
   
-  // Hook para buscar comissionamentos em cache
-  const allSemanasDoAno = getSemanasDoAno(selectedYear);
+  // Hook para buscar comissionamentos apenas do mês selecionado
+  const semanasDoMesSelecionado = getSemanasDoAno(selectedYear).filter(semana => {
+    const { end } = getWeekDatesFromNumber(selectedYear, semana);
+    return end.getMonth() + 1 === selectedMonth;
+  });
   
-  console.log('🔍 VendedorMetas - Tentando buscar comissionamentos:', {
+  console.log('🔍 VendedorMetas - Tentando buscar comissionamentos do mês:', {
     profileId: profile?.id,
+    selectedMonth,
     selectedYear,
-    totalSemanas: allSemanasDoAno.length,
+    totalSemanasDoMes: semanasDoMesSelecionado.length,
     profileExists: !!profile?.id
   });
   
   const { data: weeklyCommissions, isLoading: commissionsLoading } = useBatchWeeklyCommissions(
     profile?.id ? [{ id: profile.id, type: 'vendedor' as const }] : [],
     selectedYear,
-    0, // Buscar todas as semanas do ano
+    0, // Ainda buscar todas para compatibilidade, mas filtrar no processamento
     !!profile?.id
   );
   
@@ -182,8 +199,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
       console.log('✅ Comissões válidas do cache:', Object.keys(novasComissoes).length);
     }
     
-    // SEMPRE calcular fallback client-side para semanas sem cache válido
-    console.log('🔄 Calculando fallback client-side para semanas sem dados válidos...');
+    // SEMPRE calcular fallback client-side apenas para semanas do mês selecionado
+    console.log('🔄 Calculando fallback client-side apenas para o mês selecionado...');
     const calcularFallbackComissoes = async () => {
         if (!profile?.id || !profile?.nivel || !niveis?.length) return;
         
@@ -202,10 +219,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
           
         console.log(`📊 Meta efetiva calculada: ${metaEfetiva} (nível: ${profile.nivel}, config: ${nivelConfig.meta_semanal_vendedor})`);
         
-        // Calcular para todas as semanas do ano visível
-        const semanasDoAno = getSemanasDoAno(selectedYear);
+        // Pré-carregar regras de comissionamento uma única vez
+        const regrasComissionamento = await ComissionamentoService.fetchRegras('vendedor');
+        console.log('💾 Regras pré-carregadas:', regrasComissionamento.length);
         
-        for (const numeroSemana of semanasDoAno) {
+        // Calcular apenas para semanas do mês selecionado
+        for (const numeroSemana of semanasDoMesSelecionado) {
           const chave = `${selectedYear}-${numeroSemana}`;
           
           if (novasComissoes[chave]) continue; // Já tem cache
@@ -229,13 +248,14 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             return dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
           }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
           
-          // Calcular comissão usando ComissionamentoService com meta efetiva
+          // Calcular comissão usando regras pré-carregadas
           try {
             const comissaoCalculada = await ComissionamentoService.calcularComissao(
               pontosDaSemana,
               metaEfetiva,
               variabelSemanal,
-              'vendedor'
+              'vendedor',
+              regrasComissionamento // Usar regras pré-carregadas
             );
             
             novasComissoes[chave] = {
@@ -257,31 +277,13 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
           }
         }
         
-        console.log('✅ Fallback client-side calculado para', Object.keys(novasComissoes).length, 'semanas');
+        console.log('✅ Fallback client-side calculado para', Object.keys(novasComissoes).length, 'semanas do mês');
       };
       
       calcularFallbackComissoes();
       setComissoesPorSemana(novasComissoes);
-      
-      // Trigger server recalculation for August if needed
-      if (selectedMonth === 8 && selectedYear === 2025 && profile?.id) {
-        console.log('🔄 Trigger de recálculo para agosto 2025...');
-        supabase.functions.invoke('recalc-weekly-commissions', {
-          body: {
-            scope: 'user-month',
-            userId: profile.id,
-            userType: 'vendedor',
-            ano: 2025,
-            mes: 8
-          }
-        }).then(() => {
-          console.log('✅ Recálculo de agosto disparado');
-        }).catch(error => {
-          console.log('⚠️ Erro ao disparar recálculo:', error);
-        });
-      }
     
-  }, [weeklyCommissions, commissionsLoading, vendasWithResponses, profile, niveis, selectedYear]);
+  }, [weeklyCommissions, commissionsLoading, vendasWithResponses, profile, niveis, selectedYear, selectedMonth, semanasDoMesSelecionado]);
 
   // Função para exportar PDF do ano inteiro
   const exportarPDFAno = async () => {

@@ -19,13 +19,29 @@ export const useVendaWithFormResponses = (vendas: any[]) => {
       }
 
       try {
-        console.log('🔍 Buscando respostas do formulário para', vendas.length, 'vendas');
+        // Filtrar apenas vendas que precisam das respostas (sem data_assinatura_contrato)
+        const vendasQueNecessitamRespostas = vendas.filter(v => 
+          !v.data_assinatura_contrato && v.status === 'matriculado'
+        );
         
-        const vendaIds = vendas.map(v => v.id);
+        console.log('🔍 Buscando respostas apenas para', vendasQueNecessitamRespostas.length, 'vendas (de', vendas.length, 'total)');
+        
+        if (vendasQueNecessitamRespostas.length === 0) {
+          // Se não precisa buscar respostas, retornar vendas com arrays vazios
+          const vendasSemNecessidadeRespostas = vendas.map(venda => ({
+            venda,
+            respostas: []
+          }));
+          setVendasWithResponses(vendasSemNecessidadeRespostas);
+          setIsLoading(false);
+          return;
+        }
+        
+        const vendaIds = vendasQueNecessitamRespostas.map(v => v.id);
         
         const { data: respostas, error } = await supabase
           .from('respostas_formulario')
-          .select('*')
+          .select('form_entry_id, campo_nome, valor_informado') // Selecionar apenas campos necessários
           .in('form_entry_id', vendaIds);
 
         if (error) {

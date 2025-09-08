@@ -58,8 +58,8 @@ export const useVendas = () => {
       return vendas;
     },
     enabled: !!currentUser?.id,
-    refetchInterval: 5000, // Recarrega a cada 5 segundos
-    staleTime: 2000 // Considera os dados obsoletos após 2 segundos
+    refetchInterval: 30000, // Recarrega a cada 30 segundos (reduzido de 5s)
+    staleTime: 10000 // Considera os dados obsoletos após 10 segundos (aumentado de 2s)
   });
 
   return {
@@ -84,8 +84,8 @@ export const useAllVendas = () => {
       
       return vendas;
     },
-    refetchInterval: 10000, // Recarrega a cada 10 segundos para pegar novas vendas
-    staleTime: 1000 // Considera os dados obsoletos após 1 segundo
+    refetchInterval: 60000, // Recarrega a cada 60 segundos (reduzido de 10s)
+    staleTime: 30000 // Considera os dados obsoletos após 30 segundos (aumentado de 1s)
   });
 
   return {

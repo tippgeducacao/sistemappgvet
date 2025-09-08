@@ -11,8 +11,25 @@ export interface RegraComissionamento {
   created_by?: string;
 }
 
+// Cache in-memory para regras de comissionamento
+interface CacheEntry {
+  data: RegraComissionamento[];
+  timestamp: number;
+}
+
+const CACHE_TTL = 60 * 60 * 1000; // 1 hora
+const regrasCache = new Map<string, CacheEntry>();
+
 export class ComissionamentoService {
   static async fetchRegras(tipoUsuario = 'vendedor'): Promise<RegraComissionamento[]> {
+    // Verificar cache primeiro
+    const cacheKey = tipoUsuario;
+    const cached = regrasCache.get(cacheKey);
+    
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      console.log(`📋 Cache hit para regras ${tipoUsuario}`);
+      return cached.data;
+    }
     const { data, error } = await supabase
       .from('regras_comissionamento')
       .select('*')
@@ -24,7 +41,17 @@ export class ComissionamentoService {
       throw error;
     }
 
-    return data || [];
+    const regras = data || [];
+    
+    // Salvar no cache
+    regrasCache.set(cacheKey, {
+      data: regras,
+      timestamp: Date.now()
+    });
+    
+    console.log(`💾 Cache saved para regras ${tipoUsuario}: ${regras.length} regras`);
+    
+    return regras;
   }
 
   static async updateRegra(
@@ -46,11 +73,12 @@ export class ComissionamentoService {
     pontosObtidos: number, 
     metaSemanal: number, 
     variabelSemanal: number,
-    tipoUsuario = 'vendedor'
+    tipoUsuario = 'vendedor',
+    regrasPreCarregadas?: RegraComissionamento[]
   ): Promise<{ valor: number; multiplicador: number; percentual: number }> {
     const percentualBruto = (pontosObtidos / metaSemanal) * 100;
     const percentual = Math.floor(percentualBruto); // USAR FLOOR para seleção de regra
-    const regras = await this.fetchRegras(tipoUsuario);
+    const regras = regrasPreCarregadas || await this.fetchRegras(tipoUsuario);
     
     console.log('🔢 DEBUG COMISSIONAMENTO:', {
       pontosObtidos,

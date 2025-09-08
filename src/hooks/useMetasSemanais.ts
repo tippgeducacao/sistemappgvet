@@ -111,6 +111,26 @@ export const useMetasSemanais = () => {
     }
   };
 
+  const fetchMetasSemanaisByVendedorMes = async (vendedorId: string, ano: number, mes: number) => {
+    try {
+      const semanasDoMes = getSemanasDoMes(ano, mes);
+      const { data, error } = await supabase
+        .from('metas_semanais_vendedores')
+        .select('*')
+        .eq('vendedor_id', vendedorId)
+        .eq('ano', ano)
+        .in('semana', semanasDoMes);
+
+      if (error) throw error;
+      
+      console.log(`📋 Metas específicas carregadas: ${data?.length || 0} para ${vendedorId} - ${mes}/${ano}`);
+      return data || [];
+    } catch (error) {
+      console.error('Erro ao buscar metas específicas:', error);
+      return [];
+    }
+  };
+
   const getMetaSemanalVendedor = (vendedorId: string, ano: number, semana: number) => {
     return metasSemanais.find(meta => 
       meta.vendedor_id === vendedorId && 
@@ -289,6 +309,7 @@ export const useMetasSemanais = () => {
     metasSemanais,
     loading,
     fetchMetasSemanais,
+    fetchMetasSemanaisByVendedorMes,
     createMetaSemanal,
     updateMetaSemanal,
     syncMetasWithNivel,
