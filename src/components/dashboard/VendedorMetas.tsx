@@ -317,21 +317,10 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         // Obter semanas do mês (mesma lógica da tela)
         const semanasDoAno = getSemanasDoAno(anoParaExibir);
         const semanasDoMes = semanasDoAno.filter(semana => {
-          const { start, end } = getWeekDatesFromNumber(anoParaExibir, semana);
-          
-          // Contar quantos dias da semana pertencem ao mês selecionado
-          let diasNoMes = 0;
-          const currentDate = new Date(start);
-          
-          while (currentDate <= end) {
-            if (currentDate.getMonth() + 1 === mesParaExibir) {
-              diasNoMes++;
-            }
-            currentDate.setDate(currentDate.getDate() + 1);
-          }
-          
-          // Incluir a semana apenas se a maioria dos dias (4 ou mais) estiverem no mês
-          return diasNoMes >= 4;
+          const { end } = getWeekDatesFromNumber(anoParaExibir, semana);
+          // A semana pertence ao mês onde ela termina (terça-feira)
+          const endMonth = end.getMonth() + 1;
+          return endMonth === mesParaExibir;
         });
         
         if (semanasDoMes.length === 0) {
@@ -490,21 +479,10 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   // Determine weeks to display for the selected month/year
   const semanasDoAno = getSemanasDoAno(anoParaExibir);
   const semanasDoMes = semanasDoAno.filter(semana => {
-    const { start, end } = getWeekDatesFromNumber(anoParaExibir, semana);
-    
-    // Contar quantos dias da semana pertencem ao mês selecionado
-    let diasNoMes = 0;
-    const currentDate = new Date(start);
-    
-    while (currentDate <= end) {
-      if (currentDate.getMonth() + 1 === mesParaExibir) {
-        diasNoMes++;
-      }
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    
-    // Incluir a semana apenas se a maioria dos dias (4 ou mais) estiverem no mês
-    return diasNoMes >= 4;
+    const { end } = getWeekDatesFromNumber(anoParaExibir, semana);
+    // A semana pertence ao mês onde ela termina (terça-feira)
+    const endMonth = end.getMonth() + 1;
+    return endMonth === mesParaExibir;
   });
 
   const mesNome = new Date(anoParaExibir, mesParaExibir - 1).toLocaleDateString('pt-BR', { 
