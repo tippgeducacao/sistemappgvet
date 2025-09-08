@@ -186,8 +186,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 selectedPeriodo: `${selectedMonth}/${selectedYear}`
               });
             }
-            // CORREÇÃO: Usar mesParaExibir/anoParaExibir em vez de selectedMonth/selectedYear
-            const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
+            // CORREÇÃO: Usar selectedMonth/selectedYear (lógica original)
+            const periodoCorreto = vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
             
             // Verificar se está na semana específica
             dataVenda.setHours(0, 0, 0, 0);
