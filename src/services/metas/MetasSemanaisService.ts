@@ -143,10 +143,16 @@ export class MetasSemanaisService {
         .single();
 
       if (metaExistente) {
-        // Atualizar meta existente com a meta atual do nível do vendedor
-        const metaCorreta = perfilVendedor.tipo_usuario === 'vendedor' ? 
-          configNivel.meta_semanal_vendedor : 
-          configNivel.meta_semanal_inbound || 0;
+        // Atualizar meta existente com a meta atual do nível do vendedor com fallback
+        let metaCorreta = 0;
+        if (perfilVendedor.tipo_usuario === 'vendedor') {
+          metaCorreta = configNivel.meta_semanal_vendedor > 0 ? 
+            configNivel.meta_semanal_vendedor : 
+            (perfilVendedor.nivel === 'senior' ? 9 : perfilVendedor.nivel === 'pleno' ? 8 : 7);
+        } else {
+          metaCorreta = configNivel.meta_semanal_inbound > 0 ? 
+            configNivel.meta_semanal_inbound : 7;
+        }
         
         if (metaExistente.meta_vendas !== metaCorreta) {
           console.log(`🔄 Atualizando meta da semana ${semana}/${ano} de ${metaExistente.meta_vendas} para ${metaCorreta}`);
@@ -172,15 +178,25 @@ export class MetasSemanaisService {
         continue;
       }
 
-      // Criar nova meta baseada no tipo de usuário
+      // Criar nova meta baseada no tipo de usuário com fallback se config for 0
+      let metaVendas = 0;
+      if (perfilVendedor.tipo_usuario === 'vendedor') {
+        metaVendas = configNivel.meta_semanal_vendedor > 0 ? 
+          configNivel.meta_semanal_vendedor : 
+          (perfilVendedor.nivel === 'senior' ? 9 : perfilVendedor.nivel === 'pleno' ? 8 : 7);
+      } else {
+        metaVendas = configNivel.meta_semanal_inbound > 0 ? 
+          configNivel.meta_semanal_inbound : 7;
+      }
+      
       const novaMeta = {
         vendedor_id: vendedorId,
         ano,
         semana,
-        meta_vendas: perfilVendedor.tipo_usuario === 'vendedor' ? 
-          configNivel.meta_semanal_vendedor : 
-          configNivel.meta_semanal_inbound || 0,
+        meta_vendas: metaVendas,
       };
+      
+      console.log(`📊 Nova meta calculada: ${metaVendas} (config nível: ${configNivel.meta_semanal_vendedor}, fallback aplicado: ${configNivel.meta_semanal_vendedor <= 0})`);
 
       const { data: metaCriada, error } = await supabase
         .from('metas_semanais_vendedores')

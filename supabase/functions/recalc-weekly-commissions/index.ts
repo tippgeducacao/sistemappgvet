@@ -223,7 +223,13 @@ async function calcularComissionamentoUsuario(
       }
       
       meta = metaData?.meta_vendas || 0;
-      console.log(`🎯 Meta semanal: ${meta}`);
+      console.log(`🎯 Meta semanal do banco: ${meta}`);
+      
+      // Se meta é 0, buscar meta efetiva do nível do usuário
+      let metaEfetiva = meta;
+      if (meta <= 0) {
+        console.log(`⚠️ Meta zero detectada, buscando meta efetiva do nível...`);
+      }
 
       // Buscar variável do nível
       console.log(`📈 Buscando dados do perfil para ${userId}...`);
@@ -240,10 +246,10 @@ async function calcularComissionamentoUsuario(
       }
 
       if (profile?.nivel) {
-        console.log(`📈 Buscando variável para nível ${profile.nivel}...`);
+        console.log(`📈 Buscando configuração completa para nível ${profile.nivel}...`);
         const { data: nivelData, error: nivelError } = await supabase
           .from('niveis_vendedores')
-          .select('variavel_semanal')
+          .select('variavel_semanal, meta_semanal_vendedor')
           .eq('nivel', profile.nivel)
           .eq('tipo_usuario', 'vendedor')
           .single();
@@ -252,10 +258,27 @@ async function calcularComissionamentoUsuario(
           console.error('❌ Erro ao buscar nível:', nivelError);
         } else {
           console.log(`📈 Dados do nível:`, nivelData);
+          
+          // Usar meta efetiva se a meta do banco for 0
+          if (metaEfetiva <= 0) {
+            const metaNivel = nivelData?.meta_semanal_vendedor || 0;
+            if (metaNivel > 0) {
+              metaEfetiva = metaNivel;
+              console.log(`✅ Usando meta do nível: ${metaEfetiva}`);
+            } else {
+              // Fallback baseado no nome do nível
+              metaEfetiva = profile.nivel === 'senior' ? 9 : 
+                           profile.nivel === 'pleno' ? 8 : 7;
+              console.log(`✅ Usando meta padrão do nível ${profile.nivel}: ${metaEfetiva}`);
+            }
+          }
         }
 
         variavel = nivelData?.variavel_semanal || 0;
       }
+      
+      // Atualizar meta para usar a meta efetiva
+      meta = metaEfetiva;
 
     } else if (userType === 'sdr') {
       // Contar reuniões realizadas

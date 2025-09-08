@@ -163,8 +163,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     
     const novasComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
     
-    if (weeklyCommissions && weeklyCommissions.length > 0) {
-      weeklyCommissions.forEach(commission => {
+    // Filtrar apenas dados do cache que têm meta válida (> 0)
+    const cacheComDadosValidos = weeklyCommissions?.filter(commission => 
+      commission.meta > 0 && commission.multiplicador > 0) || [];
+    
+    if (cacheComDadosValidos.length > 0) {
+      cacheComDadosValidos.forEach(commission => {
         const chave = `${commission.ano}-${commission.semana}`;
         novasComissoes[chave] = {
           valor: Math.floor(commission.valor),
@@ -172,15 +176,15 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
           percentual: commission.percentual
         };
         
-        console.log(`✅ Cache: ${chave} = ${commission.multiplicador}x / R$ ${commission.valor}`);
+        console.log(`✅ Cache válido: ${chave} = ${commission.multiplicador}x / R$ ${commission.valor} (meta: ${commission.meta})`);
       });
       
-      console.log('✅ Comissões sincronizadas do cache:', Object.keys(novasComissoes).length);
-    } else {
-      console.log('⚠️ Cache vazio, calculando client-side como fallback...');
-      
-      // FALLBACK CLIENT-SIDE: calcular multiplicadores instantaneamente
-      const calcularFallbackComissoes = async () => {
+      console.log('✅ Comissões válidas do cache:', Object.keys(novasComissoes).length);
+    }
+    
+    // SEMPRE calcular fallback client-side para semanas sem cache válido
+    console.log('🔄 Calculando fallback client-side para semanas sem dados válidos...');
+    const calcularFallbackComissoes = async () => {
         if (!profile?.id || !profile?.nivel || !niveis?.length) return;
         
         const nivelConfig = niveis.find(n => 
@@ -191,7 +195,12 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         if (!nivelConfig) return;
         
         const variabelSemanal = nivelConfig.variavel_semanal || 500;
-        const metaBase = nivelConfig.meta_semanal_vendedor || 8;
+        // Meta efetiva: usar configuração do nível ou padrão baseado no nível
+        const metaEfetiva = nivelConfig.meta_semanal_vendedor > 0 ? 
+          nivelConfig.meta_semanal_vendedor : 
+          (profile.nivel === 'senior' ? 9 : profile.nivel === 'pleno' ? 8 : 7);
+          
+        console.log(`📊 Meta efetiva calculada: ${metaEfetiva} (nível: ${profile.nivel}, config: ${nivelConfig.meta_semanal_vendedor})`);
         
         // Calcular para todas as semanas do ano visível
         const semanasDoAno = getSemanasDoAno(selectedYear);
@@ -220,11 +229,11 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             return dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
           }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
           
-          // Calcular comissão usando ComissionamentoService
+          // Calcular comissão usando ComissionamentoService com meta efetiva
           try {
             const comissaoCalculada = await ComissionamentoService.calcularComissao(
               pontosDaSemana,
-              metaBase,
+              metaEfetiva,
               variabelSemanal,
               'vendedor'
             );
@@ -252,9 +261,25 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
       };
       
       calcularFallbackComissoes();
-    }
-    
-    setComissoesPorSemana(novasComissoes);
+      setComissoesPorSemana(novasComissoes);
+      
+      // Trigger server recalculation for August if needed
+      if (selectedMonth === 8 && selectedYear === 2025 && profile?.id) {
+        console.log('🔄 Trigger de recálculo para agosto 2025...');
+        supabase.functions.invoke('recalc-weekly-commissions', {
+          body: {
+            scope: 'user-month',
+            userId: profile.id,
+            userType: 'vendedor',
+            ano: 2025,
+            mes: 8
+          }
+        }).then(() => {
+          console.log('✅ Recálculo de agosto disparado');
+        }).catch(error => {
+          console.log('⚠️ Erro ao disparar recálculo:', error);
+        });
+      }
     
   }, [weeklyCommissions, commissionsLoading, vendasWithResponses, profile, niveis, selectedYear]);
 
