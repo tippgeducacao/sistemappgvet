@@ -15,7 +15,7 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useVendaWithFormResponses } from '@/hooks/useVendaWithFormResponses';
 import { debugSemanasAgosto2025 } from '@/utils/semanasDebug';
-import { getVendaPeriod, getSemanaAtual, getSemanaFromDate, getSemanasDoAno, getWeekDatesFromNumber } from '@/utils/semanaUtils';
+import { getVendaPeriod, getSemanaAtual, getSemanaFromDate, getSemanasDoAno, getWeekDatesFromNumber, getMesAnoSemanaAtual } from '@/utils/semanaUtils';
 import { getDataEfetivaVenda, getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 
 interface VendedorMetasProps {
@@ -137,6 +137,15 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
       const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
       
       if (!nivelConfig) return;
+
+      // USAR A MESMA LÓGICA DA TELA PARA DETERMINAR MÊS/ANO
+      const semanaAtual = getSemanaAtual();
+      const { mes: mesCorretoSemana, ano: anoCorretoSemana } = getMesAnoSemanaAtual();
+      
+      const { mesParaExibir, anoParaExibir } = 
+        (selectedMonth === mesCorretoSemana && selectedYear === anoCorretoSemana)
+        ? { mesParaExibir: mesCorretoSemana, anoParaExibir: anoCorretoSemana }
+        : { mesParaExibir: selectedMonth, anoParaExibir: selectedYear };
       
       const semanasDoAno = getSemanasDoAno(selectedYear);
       const novasComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
@@ -172,10 +181,13 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 data_assinatura_contrato: venda.data_assinatura_contrato,
                 data_enviado: venda.enviado_em,
                 status: venda.status,
-                numero_semana: numeroSemana
+                numero_semana: numeroSemana,
+                usando_periodo: `${mesParaExibir}/${anoParaExibir}`,
+                selectedPeriodo: `${selectedMonth}/${selectedYear}`
               });
             }
-            const periodoCorreto = vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
+            // CORREÇÃO: Usar mesParaExibir/anoParaExibir em vez de selectedMonth/selectedYear
+            const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
             
             // Verificar se está na semana específica
             dataVenda.setHours(0, 0, 0, 0);
