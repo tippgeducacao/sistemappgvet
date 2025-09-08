@@ -131,3 +131,84 @@ export const getWeekRange = (referenceDate: Date = new Date()): { start: Date; e
   
   return { start: startOfWeek, end: endOfWeek };
 };
+
+/**
+ * Get current week number (1-based, starts from first Tuesday of year)
+ */
+export const getSemanaAtual = (): number => {
+  const now = new Date();
+  return getSemanaFromDate(now);
+};
+
+/**
+ * Get week number from any date (1-based, starts from first Tuesday of year)
+ */
+export const getSemanaFromDate = (date: Date): number => {
+  const year = date.getFullYear();
+  const startOfYear = new Date(year, 0, 1);
+  
+  // Find first Tuesday of the year
+  let firstTuesday = new Date(startOfYear);
+  while (firstTuesday.getDay() !== 2) { // 2 = Tuesday
+    firstTuesday.setDate(firstTuesday.getDate() + 1);
+  }
+  
+  // If first Tuesday is after January 7th, the first week actually starts on the previous Tuesday
+  if (firstTuesday.getDate() > 7) {
+    firstTuesday.setDate(firstTuesday.getDate() - 7);
+  }
+  
+  const diffTime = date.getTime() - firstTuesday.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  return Math.floor(diffDays / 7) + 1;
+};
+
+/**
+ * Get all weeks in a year (returns array of week numbers)
+ */
+export const getSemanasDoAno = (ano: number): number[] => {
+  const startOfYear = new Date(ano, 0, 1);
+  const endOfYear = new Date(ano, 11, 31);
+  
+  const startWeek = getSemanaFromDate(startOfYear);
+  const endWeek = getSemanaFromDate(endOfYear);
+  
+  const weeks = [];
+  for (let week = startWeek; week <= endWeek; week++) {
+    weeks.push(week);
+  }
+  
+  return weeks;
+};
+
+/**
+ * Get week start and end dates for a specific year and week number
+ */
+export const getWeekDatesFromNumber = (ano: number, semana: number): { start: Date; end: Date } => {
+  const year = ano;
+  const startOfYear = new Date(year, 0, 1);
+  
+  // Find first Tuesday of the year
+  let firstTuesday = new Date(startOfYear);
+  while (firstTuesday.getDay() !== 2) {
+    firstTuesday.setDate(firstTuesday.getDate() + 1);
+  }
+  
+  if (firstTuesday.getDate() > 7) {
+    firstTuesday.setDate(firstTuesday.getDate() - 7);
+  }
+  
+  // Calculate the start date of the target week (Wednesday before the Tuesday)
+  const targetTuesday = new Date(firstTuesday);
+  targetTuesday.setDate(firstTuesday.getDate() + ((semana - 1) * 7));
+  
+  const start = new Date(targetTuesday);
+  start.setDate(targetTuesday.getDate() - 6); // Go back 6 days to Wednesday
+  start.setHours(0, 0, 0, 0);
+  
+  const end = new Date(targetTuesday);
+  end.setHours(23, 59, 59, 999);
+  
+  return { start, end };
+};

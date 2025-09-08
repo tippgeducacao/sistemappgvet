@@ -11,7 +11,7 @@ import { useVendedores } from '@/hooks/useVendedores';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useVendaWithFormResponses } from '@/hooks/useVendaWithFormResponses';
 import { debugSemanasAgosto2025 } from '@/utils/semanasDebug';
-import { getVendaPeriod } from '@/utils/semanaUtils';
+import { getVendaPeriod, getSemanaAtual, getSemanaFromDate, getSemanasDoAno, getWeekDatesFromNumber } from '@/utils/semanaUtils';
 import { getDataEfetivaVenda, getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
 
 interface VendedorMetasProps {
@@ -24,7 +24,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
   selectedYear
 }) => {
   console.log('🚨 VENDEDOR METAS - Props recebidas:', { selectedMonth, selectedYear });
-  const { metasSemanais, getSemanaAtual, getMesAnoSemanaAtual, getSemanasDoMes, getDataInicioSemana, getDataFimSemana, syncMetasWithNivel, loading: metasSemanaisLoading } = useMetasSemanais();
+  const { metasSemanais, getMetaSemanalVendedor, syncMetasWithNivel, loading: metasSemanaisLoading } = useMetasSemanais();
   const { vendas, isLoading: vendasLoading } = useAllVendas();
   const { profile } = useAuthStore();
   const { niveis } = useNiveis();
@@ -130,19 +130,18 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
       
       if (!nivelConfig) return;
       
-      const semanasDoMes = getSemanasDoMes(selectedYear, selectedMonth);
+      const semanasDoAno = getSemanasDoAno(selectedYear);
       const novasComissoes: {[key: string]: {valor: number, multiplicador: number, percentual: number}} = {};
       
-      for (const numeroSemana of semanasDoMes) {
-        const metaSemanal = metasSemanais.find(meta => 
-          meta.vendedor_id === profile.id && 
-          meta.ano === selectedYear && 
-          meta.semana === numeroSemana
-        );
+      for (const numeroSemana of semanasDoAno) {
+        // Try to get specific meta for this seller and week
+        const metaSemanal = getMetaSemanalVendedor(profile.id, selectedYear, numeroSemana);
         
-        if (metaSemanal && metaSemanal.meta_vendas > 0) {
-          const startSemana = getDataInicioSemana(selectedYear, selectedMonth, numeroSemana);
-          const endSemana = getDataFimSemana(selectedYear, selectedMonth, numeroSemana);
+        // If no specific meta, use level-based meta
+        const metaVendas = metaSemanal?.meta_vendas || getMetaBaseadaNivel(numeroSemana);
+        
+        if (metaVendas > 0) {
+          const { start: startSemana, end: endSemana } = getWeekDatesFromNumber(selectedYear, numeroSemana);
           
           // UNIFICADO: Usar a mesma lógica do display (vendasWithResponses)
           const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
@@ -181,31 +180,37 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             return periodoCorreto && isInRange;
           }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
           
-          try {
-            const comissaoData = await ComissionamentoService.calcularComissao(
-              pontosDaSemana,
-              metaSemanal.meta_vendas,
-              nivelConfig.variavel_semanal,
-              'vendedor'
-            );
-            
-            console.log('🎯 VENDEDOR METAS DEBUG:', {
-              numeroSemana,
-              pontosDaSemana,
-              metaSemanal: metaSemanal.meta_vendas,
-              percentual: (pontosDaSemana / metaSemanal.meta_vendas) * 100,
-              comissaoData
-            });
-            
-            novasComissoes[`${selectedYear}-${selectedMonth}-${numeroSemana}`] = comissaoData;
-          } catch (error) {
-            console.error('Erro ao calcular comissão:', error);
-            novasComissoes[`${selectedYear}-${selectedMonth}-${numeroSemana}`] = {
-              valor: 0,
-              multiplicador: 0,
-              percentual: 0
-            };
-          }
+            try {
+              const comissaoData = await ComissionamentoService.calcularComissao(
+                pontosDaSemana,
+                metaVendas,
+                nivelConfig.variavel_semanal,
+                'vendedor'
+              );
+              
+              // Use Math.floor for commission value
+              const comissaoCorrigida = {
+                ...comissaoData,
+                valor: Math.floor(comissaoData.valor)
+              };
+              
+              console.log('🎯 VENDEDOR METAS DEBUG:', {
+                numeroSemana,
+                pontosDaSemana,
+                metaVendas,
+                percentual: (pontosDaSemana / metaVendas) * 100,
+                comissaoData: comissaoCorrigida
+              });
+              
+              novasComissoes[`${selectedYear}-${numeroSemana}`] = comissaoCorrigida;
+            } catch (error) {
+              console.error('Erro ao calcular comissão:', error);
+              novasComissoes[`${selectedYear}-${numeroSemana}`] = {
+                valor: 0,
+                multiplicador: 0,
+                percentual: 0
+              };
+            }
         }
       }
       
@@ -225,8 +230,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     );
   }
 
-  // Obter o mês e ano corretos baseados na semana atual
-  const { mes: mesCorretoSemana, ano: anoCorretoSemana } = getMesAnoSemanaAtual();
+  // Get current period based on today's date
+  const { mes: mesCorretoSemana, ano: anoCorretoSemana } = getVendaPeriod(new Date());
   
   // Decidir qual mês/ano usar para exibir - priorizar a semana atual se estiver selecionada
   // Usar diretamente a lógica de semanas, sem usar new Date().getMonth()
@@ -247,8 +252,13 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         isSemanaAtual: false 
       };
 
-  // Usar a mesma lógica do admin para calcular semanas
-  const semanasDoMes = getSemanasDoMes(anoParaExibir, mesParaExibir);
+  // Determine weeks to display for the selected month/year
+  const semanasDoAno = getSemanasDoAno(anoParaExibir);
+  const semanasDoMes = semanasDoAno.filter(semana => {
+    const { start, end } = getWeekDatesFromNumber(anoParaExibir, semana);
+    const weekMonth = start.getMonth() + 1;
+    return weekMonth === mesParaExibir || end.getMonth() + 1 === mesParaExibir;
+  });
 
   const mesNome = new Date(anoParaExibir, mesParaExibir - 1).toLocaleDateString('pt-BR', { 
     month: 'long', 
@@ -330,9 +340,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
               // Verificar se é a semana atual (apenas se estivermos vendo o mês da semana atual)
               const isAtual = isSemanaAtual && numeroSemana === semanaAtual;
               
-              // Usar as funções auxiliares do hook para obter as datas corretas
-              const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
-              const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
+              // Use getWeekDatesFromNumber for week dates
+              const { start: startSemana, end: endSemana } = getWeekDatesFromNumber(anoParaExibir, numeroSemana);
 
               // Formatar datas para exibição (DD/MM)
               const formatDate = (date: Date) => {
@@ -419,8 +428,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 ? (pontosDaSemana / metaSemanal.meta_vendas) * 100 
                 : 0;
 
-              // Buscar dados de comissão calculados
-              const chaveComissao = `${selectedYear}-${selectedMonth}-${numeroSemana}`;
+              // Buscar dados de comissão calculados using the new key format
+              const chaveComissao = `${selectedYear}-${numeroSemana}`;
               const comissaoData = comissoesPorSemana[chaveComissao] || {
                 valor: 0,
                 multiplicador: 0,
@@ -522,8 +531,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 </div>
                 <div className="font-bold text-primary">
                   {semanasDoMes.reduce((total, numeroSemana) => {
-                    const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
-                    const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
+                    const { start: startSemana, end: endSemana } = getWeekDatesFromNumber(anoParaExibir, numeroSemana);
                     
                     const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
                       if (venda.vendedor_id !== profile.id) return false;
@@ -564,8 +572,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                      }, 0);
                      
                      const totalPontos = semanasDoMes.reduce((total, numeroSemana) => {
-                       const startSemana = getDataInicioSemana(anoParaExibir, mesParaExibir, numeroSemana);
-                       const endSemana = getDataFimSemana(anoParaExibir, mesParaExibir, numeroSemana);
+                        const { start: startSemana, end: endSemana } = getWeekDatesFromNumber(anoParaExibir, numeroSemana);
                        
                        const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
                          if (venda.vendedor_id !== profile.id) return false;
@@ -609,14 +616,14 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                      const nivelConfig = niveis.find(n => n.nivel === vendedorNivel && n.tipo_usuario === 'vendedor');
                      const variavelSemanal = nivelConfig?.variavel_semanal || 0;
                      
-                      semanasDoMes.forEach(numeroSemana => {
-                        // CORREÇÃO: Usar apenas comissaoData calculada, sem tratamento especial para 100%
-                        const chaveComissao = `${selectedYear}-${selectedMonth}-${numeroSemana}`;
-                        const comissaoData = comissoesPorSemana[chaveComissao];
-                        if (comissaoData) {
-                          totalComissao += comissaoData.valor;
-                        }
-                      });
+                       semanasDoMes.forEach(numeroSemana => {
+                         // Use new key format that matches the calculation
+                         const chaveComissao = `${selectedYear}-${numeroSemana}`;
+                         const comissaoData = comissoesPorSemana[chaveComissao];
+                         if (comissaoData) {
+                           totalComissao += comissaoData.valor;
+                         }
+                       });
                      
                      return totalComissao.toFixed(0);
                    })()}
