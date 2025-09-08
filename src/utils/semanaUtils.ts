@@ -144,7 +144,20 @@ export const getSemanaAtual = (): number => {
  * Get week number from any date (1-based, starts from first Tuesday of year)
  */
 export const getSemanaFromDate = (date: Date): number => {
-  const year = date.getFullYear();
+  // First, find the closing Tuesday for this date (following week definition)
+  let closingTuesday = new Date(date);
+  
+  if (closingTuesday.getDay() === 2) {
+    // The date is already a Tuesday - this is the closing Tuesday
+  } else {
+    // Find the next Tuesday (which closes the week containing this date)
+    const daysUntilTuesday = (2 - closingTuesday.getDay() + 7) % 7;
+    const daysToAdd = daysUntilTuesday === 0 ? 7 : daysUntilTuesday;
+    closingTuesday.setDate(closingTuesday.getDate() + daysToAdd);
+  }
+  
+  // Now calculate week number based on the closing Tuesday
+  const year = closingTuesday.getFullYear();
   const startOfYear = new Date(year, 0, 1);
   
   // Find first Tuesday of the year
@@ -158,7 +171,7 @@ export const getSemanaFromDate = (date: Date): number => {
     firstTuesday.setDate(firstTuesday.getDate() - 7);
   }
   
-  const diffTime = date.getTime() - firstTuesday.getTime();
+  const diffTime = closingTuesday.getTime() - firstTuesday.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   
   return Math.floor(diffDays / 7) + 1;
