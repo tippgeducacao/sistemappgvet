@@ -99,6 +99,8 @@ export const useBatchWeeklyCommissions = (
   semana: number, // Se for 0, busca todas as semanas do ano
   enabled: boolean = true
 ) => {
+  const queryClient = useQueryClient();
+  
   return useQuery({
     queryKey: ['batch-weekly-commissions', users.map(u => u.id).join(','), ano, semana || 'all'],
     queryFn: async (): Promise<WeeklyCommissionData[]> => {
@@ -130,11 +132,11 @@ export const useBatchWeeklyCommissions = (
       const found = data || [];
       console.log('📊 Comissionamentos encontrados no cache:', found.length);
 
-      // Se não encontrou dados, disparar recálculo
+      // Se não encontrou dados suficientes, disparar recálculo
       if (found.length === 0 && users.length > 0) {
         console.log(`🔄 Cache vazio, iniciando recálculo...`);
         
-        // Para semana específica
+        // Para uma única semana
         if (semana > 0) {
           users.forEach(user => {
             supabase.functions.invoke('recalc-weekly-commissions', {
@@ -147,18 +149,40 @@ export const useBatchWeeklyCommissions = (
               }
             }).then(({ error }) => {
               if (error) console.error('❌ Erro no recálculo:', error);
-              else console.log(`✅ Recálculo iniciado para ${user.id} - ${ano}S${semana}`);
+              else {
+                console.log(`✅ Recálculo iniciado para ${user.id} - ${ano}S${semana}`);
+                // Invalidar e refetch após recálculo
+                setTimeout(() => {
+                  queryClient.invalidateQueries({ 
+                    queryKey: ['batch-weekly-commissions', users.map(u => u.id).join(','), ano, semana || 'all'] 
+                  });
+                }, 2000);
+              }
             });
           });
         } else {
-          // Para todas as semanas do ano
-          supabase.functions.invoke('recalc-weekly-commissions', {
-            body: {
-              scope: 'current-week-all'
-            }
-          }).then(({ error }) => {
-            if (error) console.error('❌ Erro no recálculo geral:', error);
-            else console.log('✅ Recálculo geral iniciado');
+          // Para todas as semanas - usar user-month para cada usuário
+          users.forEach(user => {
+            supabase.functions.invoke('recalc-weekly-commissions', {
+              body: {
+                scope: 'user-month',
+                userId: user.id,
+                userType: user.type,
+                ano,
+                mes: new Date().getMonth() + 1 // Mês atual
+              }
+            }).then(({ error }) => {
+              if (error) console.error('❌ Erro no recálculo mensal:', error);
+              else {
+                console.log(`✅ Recálculo mensal iniciado para ${user.id} - ${ano}`);
+                // Invalidar e refetch após recálculo
+                setTimeout(() => {
+                  queryClient.invalidateQueries({ 
+                    queryKey: ['batch-weekly-commissions', users.map(u => u.id).join(','), ano, semana || 'all'] 
+                  });
+                }, 3000);
+              }
+            });
           });
         }
       }

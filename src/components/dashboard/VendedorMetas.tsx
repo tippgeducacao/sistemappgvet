@@ -152,7 +152,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     sincronizarMetas();
   }, [profile?.id, selectedMonth, selectedYear, metasSemanaisLoading]);
 
-  // Sincronizar comissões do cache com o estado local
+  // Sincronizar comissões do cache com estado local + fallback client-side
   useEffect(() => {
     if (commissionsLoading) return;
     
@@ -176,12 +176,87 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
       });
       
       console.log('✅ Comissões sincronizadas do cache:', Object.keys(novasComissoes).length);
-      setComissoesPorSemana(novasComissoes);
     } else {
-      console.log('⚠️ Nenhuma comissão encontrada no cache, mantendo cálculo fallback');
+      console.log('⚠️ Cache vazio, calculando client-side como fallback...');
+      
+      // FALLBACK CLIENT-SIDE: calcular multiplicadores instantaneamente
+      const calcularFallbackComissoes = async () => {
+        if (!profile?.id || !profile?.nivel || !niveis?.length) return;
+        
+        const nivelConfig = niveis.find(n => 
+          n.nivel === profile.nivel && 
+          n.tipo_usuario === profile.user_type
+        );
+        
+        if (!nivelConfig) return;
+        
+        const variabelSemanal = nivelConfig.variavel_semanal || 500;
+        const metaBase = nivelConfig.meta_semanal_vendedor || 8;
+        
+        // Calcular para todas as semanas do ano visível
+        const semanasDoAno = getSemanasDoAno(selectedYear);
+        
+        for (const numeroSemana of semanasDoAno) {
+          const chave = `${selectedYear}-${numeroSemana}`;
+          
+          if (novasComissoes[chave]) continue; // Já tem cache
+          
+          const { start: startSemana, end: endSemana } = getWeekDatesFromNumber(selectedYear, numeroSemana);
+          
+          // Calcular pontos da semana com mesma lógica da tela
+          const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
+            if (venda.vendedor_id !== profile.id) return false;
+            if (venda.status !== 'matriculado') return false;
+            
+            const dataVenda = getDataEfetivaVenda(venda, respostas);
+            const vendaPeriod = getVendaEffectivePeriod(venda, respostas);
+            
+            dataVenda.setHours(0, 0, 0, 0);
+            const startSemanaUTC = new Date(startSemana);
+            startSemanaUTC.setHours(0, 0, 0, 0);
+            const endSemanaUTC = new Date(endSemana);
+            endSemanaUTC.setHours(23, 59, 59, 999);
+            
+            return dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
+          }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
+          
+          // Calcular comissão usando ComissionamentoService
+          try {
+            const comissaoCalculada = await ComissionamentoService.calcularComissao(
+              pontosDaSemana,
+              metaBase,
+              variabelSemanal,
+              'vendedor'
+            );
+            
+            novasComissoes[chave] = {
+              valor: Math.floor(comissaoCalculada.valor),
+              multiplicador: comissaoCalculada.multiplicador,
+              percentual: comissaoCalculada.percentual
+            };
+            
+            console.log(`🔄 Fallback: ${chave} = ${comissaoCalculada.multiplicador}x / R$ ${comissaoCalculada.valor}`);
+          } catch (error) {
+            console.error(`❌ Erro no cálculo fallback para ${chave}:`, error);
+            
+            // Fallback básico se der erro
+            novasComissoes[chave] = {
+              valor: 0,
+              multiplicador: 0,
+              percentual: 0
+            };
+          }
+        }
+        
+        console.log('✅ Fallback client-side calculado para', Object.keys(novasComissoes).length, 'semanas');
+      };
+      
+      calcularFallbackComissoes();
     }
     
-  }, [weeklyCommissions, commissionsLoading]);
+    setComissoesPorSemana(novasComissoes);
+    
+  }, [weeklyCommissions, commissionsLoading, vendasWithResponses, profile, niveis, selectedYear]);
 
   // Função para exportar PDF do ano inteiro
   const exportarPDFAno = async () => {
@@ -372,96 +447,6 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         <CardContent className="p-6 text-center">
           <div className="space-y-4">
             <p className="text-muted-foreground">Carregando metas...</p>
-            
-            {/* Botões temporários para teste */}
-            <div className="flex gap-2 justify-center">
-              <Button 
-                onClick={async () => {
-                  console.log('🧪 Testando recálculo manual para S32...');
-                  
-                  try {
-                    console.log('👤 Usuario atual:', profile?.id, profile?.user_type);
-                    
-                    const { data, error } = await supabase.functions.invoke('recalc-weekly-commissions', {
-                      body: {
-                        scope: 'user-week',
-                        userId: profile.id,
-                        userType: 'vendedor',
-                        ano: 2025,
-                        semana: 32
-                      }
-                    });
-
-                    if (error) {
-                      console.error('❌ Erro no teste:', error);
-                      toast({
-                        title: "Erro no teste",
-                        description: `Erro: ${error.message}`,
-                        variant: "destructive"
-                      });
-                    } else {
-                      console.log('✅ Resultado do teste:', data);
-                      toast({
-                        title: "Teste executado",
-                        description: "Veja o console para detalhes"
-                      });
-                      window.location.reload();
-                    }
-                  } catch (err: any) {
-                    console.error('❌ Erro na chamada:', err);
-                    toast({
-                      title: "Erro na chamada",
-                      description: `Erro: ${err.message}`,
-                      variant: "destructive"
-                    });
-                  }
-                }}
-                className="bg-red-500 hover:bg-red-600"
-              >
-                🧪 Recalcular S32
-              </Button>
-              
-              <Button 
-                onClick={async () => {
-                  try {
-                    console.log('📋 Buscando cache para usuario:', profile?.id);
-                    
-                    const { data, error } = await supabase
-                      .from('comissionamentos_semanais')
-                      .select('*')
-                      .eq('user_id', profile.id)
-                      .eq('ano', 2025)
-                      .order('semana');
-
-                    if (error) {
-                      console.error('❌ Erro ao buscar cache:', error);
-                      toast({
-                        title: "Erro",
-                        description: `Erro: ${error.message}`,
-                        variant: "destructive"
-                      });
-                    } else {
-                      console.log('📋 Cache atual:', data);
-                      console.table(data);
-                      toast({
-                        title: "Cache consultado",
-                        description: `${data?.length || 0} registros - veja console`
-                      });
-                    }
-                  } catch (err: any) {
-                    console.error('❌ Erro:', err);
-                    toast({
-                      title: "Erro",
-                      description: `Erro: ${err.message}`,
-                      variant: "destructive"
-                    });
-                  }
-                }}
-                className="bg-blue-500 hover:bg-blue-600"
-              >
-                🔍 Ver Cache
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
