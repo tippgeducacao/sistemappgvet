@@ -182,10 +182,18 @@ export const getSemanaFromDate = (date: Date): number => {
  */
 export const getSemanasDoAno = (ano: number): number[] => {
   const startOfYear = new Date(ano, 0, 1);
+  
+  // Find the last Tuesday of the year (not December 31st)
   const endOfYear = new Date(ano, 11, 31);
+  let lastTuesday = new Date(endOfYear);
+  
+  // Go backwards until we find a Tuesday
+  while (lastTuesday.getDay() !== 2) {
+    lastTuesday.setDate(lastTuesday.getDate() - 1);
+  }
   
   const startWeek = getSemanaFromDate(startOfYear);
-  const endWeek = getSemanaFromDate(endOfYear);
+  const endWeek = getSemanaFromDate(lastTuesday);
   
   const weeks = [];
   for (let week = startWeek; week <= endWeek; week++) {
