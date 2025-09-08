@@ -273,12 +273,23 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
         doc.text(`${nomesMeses[mes - 1]} ${selectedYear}`, 20, yPosition);
         yPosition += 10;
         
-        // Obter semanas do mês
-        const semanasDoAno = getSemanasDoAno(selectedYear);
+        // USAR A MESMA LÓGICA DA TELA - calcular mesParaExibir e anoParaExibir
+        const { mesAtual, anoAtual } = getSemanaAtual() > 0 ? 
+          (() => {
+            const agora = new Date();
+            return { mesAtual: agora.getMonth() + 1, anoAtual: agora.getFullYear() };
+          })() : 
+          { mesAtual: selectedMonth, anoAtual: selectedYear };
+        
+        const mesParaExibir = mes;
+        const anoParaExibir = selectedYear;
+        
+        // Obter semanas do mês (mesma lógica da tela)
+        const semanasDoAno = getSemanasDoAno(anoParaExibir);
         const semanasDoMes = semanasDoAno.filter(semana => {
-          const { start, end } = getWeekDatesFromNumber(selectedYear, semana);
+          const { start, end } = getWeekDatesFromNumber(anoParaExibir, semana);
           const weekMonth = start.getMonth() + 1;
-          return weekMonth === mes || end.getMonth() + 1 === mes;
+          return weekMonth === mesParaExibir || end.getMonth() + 1 === mesParaExibir;
         });
         
         if (semanasDoMes.length === 0) {
@@ -303,15 +314,19 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
           
           const { start: startSemana, end: endSemana } = getWeekDatesFromNumber(selectedYear, numeroSemana);
           
-          // Calcular pontos da semana
+          // USAR A MESMA LÓGICA EXATA DA TELA para calcular pontos
           const pontosDaSemana = vendasWithResponses.filter(({ venda, respostas }) => {
             if (venda.vendedor_id !== profile.id) return false;
             if (venda.status !== 'matriculado') return false;
             
+            // PADRONIZADO: Usar função centralizada para obter data efetiva e período
             const dataVenda = getDataEfetivaVenda(venda, respostas);
             const vendaPeriod = getVendaEffectivePeriod(venda, respostas);
-            const periodoCorreto = vendaPeriod.mes === mes && vendaPeriod.ano === selectedYear;
             
+            // MESMA LÓGICA DA TELA
+            const periodoCorreto = vendaPeriod.mes === mesParaExibir && vendaPeriod.ano === anoParaExibir;
+            
+            // Verificar se está na semana específica
             dataVenda.setHours(0, 0, 0, 0);
             const startSemanaUTC = new Date(startSemana);
             startSemanaUTC.setHours(0, 0, 0, 0);
@@ -319,7 +334,8 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             endSemanaUTC.setHours(23, 59, 59, 999);
             const isInRange = dataVenda >= startSemanaUTC && dataVenda <= endSemanaUTC;
             
-            return periodoCorreto && isInRange;
+            const incluirVenda = periodoCorreto && isInRange;
+            return incluirVenda;
           }).reduce((total, { venda }) => total + (venda.pontuacao_validada || venda.pontuacao_esperada || 0), 0);
           
           // Buscar comissão
