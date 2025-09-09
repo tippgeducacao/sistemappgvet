@@ -16,7 +16,7 @@ const getStatusBadge = (status: MeetingDetail['status']) => {
     case 'convertida':
       return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Convertida</Badge>;
     case 'pendente':
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">Pendente</Badge>;
+      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">Pendente (aguardando aprovação)</Badge>;
     case 'compareceu':
       return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Compareceu</Badge>;
     case 'nao_compareceu':
