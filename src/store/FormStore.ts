@@ -33,8 +33,6 @@ export interface FormData {
 
   // Informações da reunião (se aplicável)
   agendamentoId?: string;
-  sdrId?: string;
-  sdrNome?: string;
 
   // Informações de Pontuação
   lotePos: string;
@@ -122,9 +120,13 @@ export const useFormStore = create<FormState>((set) => ({
   })),
 
   setVendedor: (vendedor) => {
-    set((state) => ({
-      formData: { ...state.formData, vendedor }
-    }));
+    console.log('📝 FormStore: setVendedor chamado com:', vendedor);
+    set((state) => {
+      console.log('📝 FormStore: Estado anterior:', state.formData.vendedor);
+      const newState = { ...state.formData, vendedor };
+      console.log('📝 FormStore: Novo estado:', newState.vendedor);
+      return { formData: newState };
+    });
   },
   
   clearForm: () => set({ formData: initialFormData }),

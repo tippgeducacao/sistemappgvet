@@ -13,6 +13,9 @@ const ScoringRulesSection: React.FC = () => {
   const { data: scoringRules = [], isLoading } = useScoringPoints();
   const { isSDR } = useUserRoles();
 
+  console.log('🔧 ScoringRulesSection renderizando...');
+  console.log('📊 Regras carregadas:', scoringRules.length);
+
   const getFieldPoints = (fieldName: string, value: string) => {
     if (!value || isLoading) return null;
     const points = getPointsForFieldValue(scoringRules, fieldName, value);

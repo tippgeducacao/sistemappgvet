@@ -38,12 +38,6 @@ export class VendaAssemblyService {
         }
         
         const vendedor = profiles.find(p => p.id === entry.vendedor_id) || null;
-        
-        // Buscar SDR - primeiro do sdr_id da form_entry, se não existir buscar do agendamento relacionado
-        let sdr = null;
-        if (entry.sdr_id) {
-          sdr = profiles.find(p => p.id === entry.sdr_id) || null;
-        }
 
         // Buscar respostas específicas para esta venda
         const vendaRespostas = respostas?.filter(r => r.form_entry_id === entry.id) || [];
@@ -65,11 +59,9 @@ export class VendaAssemblyService {
           data_assinatura_contrato: entry.data_assinatura_contrato,
           motivo_pendencia: entry.motivo_pendencia,
           documento_comprobatorio: entry.documento_comprobatorio,
-          sdr_id: entry.sdr_id,
           aluno,
           curso,
-          vendedor,
-          sdr
+          vendedor
         };
 
         console.log(`✅ Venda processada: ${venda.id} - Aluno: ${venda.aluno?.nome || 'SEM NOME'} - Status: ${venda.status} - Pontos: ${venda.pontuacao_esperada}`);

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { Agendamento } from '@/hooks/useAgendamentos';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import NovaVendaForm from '@/components/forms/NovaVendaForm';
+import NovaVendaForm from '@/components/NovaVendaForm';
 import { useFormStore } from '@/store/FormStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -39,15 +39,6 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [novaHoraFim, setNovaHoraFim] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const { updateField, clearForm } = useFormStore();
-  
-  // Memoize callback functions to prevent infinite re-renders
-  const handleUpdateField = useCallback((field: any, value: any) => {
-    updateField(field, value);
-  }, [updateField]);
-  
-  const handleClearForm = useCallback(() => {
-    clearForm();
-  }, [clearForm]);
 
   // Separar reuniões em agendadas (sem resultado) e histórico (com resultado) com filtro de pesquisa
   const { reunioesAgendadas, reunioesHistorico } = useMemo(() => {
@@ -145,45 +136,34 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     setDialogAberto(true);
   };
 
-  const abrirNovaVenda = useCallback((agendamento: Agendamento) => {
+  const abrirNovaVenda = (agendamento: Agendamento) => {
     // Limpar formulário primeiro
-    handleClearForm();
+    clearForm();
     
     // Preencher dados do lead
     if (agendamento.lead) {
       if (agendamento.lead.nome) {
-        handleUpdateField('nomeAluno', agendamento.lead.nome);
+        updateField('nomeAluno', agendamento.lead.nome);
       }
       if (agendamento.lead.email) {
-        handleUpdateField('emailAluno', agendamento.lead.email);
+        updateField('emailAluno', agendamento.lead.email);
       }
       if (agendamento.lead.whatsapp) {
-        handleUpdateField('telefone', agendamento.lead.whatsapp);
+        updateField('telefone', agendamento.lead.whatsapp);
       }
-    }
-    
-    // Preencher informações do SDR da reunião
-    if (agendamento.sdr_id) {
-      console.log('🎯 Preenchendo SDR da reunião:', {
-        sdr_id: agendamento.sdr_id,
-        sdr_nome: agendamento.sdr?.name
-      });
-      handleUpdateField('sdrId', agendamento.sdr_id);
-      handleUpdateField('sdrNome', agendamento.sdr?.name || 'SDR Não Identificado');
     }
     
     // Adicionar observação sobre origem da venda
-    const sdrInfo = agendamento.sdr?.name ? ` (SDR: ${agendamento.sdr.name})` : '';
-    const observacaoOrigem = `Venda originada da reunião do dia ${format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}${sdrInfo}`;
-    handleUpdateField('observacoes', observacaoOrigem);
+    const observacaoOrigem = `Venda originada da reunião do dia ${format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`;
+    updateField('observacoes', observacaoOrigem);
     
     // Adicionar ID do agendamento para controle
     console.log('🆔 Definindo agendamentoId no formulário:', agendamento.id);
-    handleUpdateField('agendamentoId', agendamento.id);
+    updateField('agendamentoId', agendamento.id);
     
     setAgendamentoSelecionado(agendamento);
     setNovaVendaAberto(true);
-  }, [handleUpdateField, handleClearForm]);
+  };
 
   const abrirRemarcarDialog = (agendamento: Agendamento, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -718,7 +698,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
             onCancel={() => {
               setNovaVendaAberto(false);
               setAgendamentoSelecionado(null);
-              handleClearForm();
+              clearForm();
             }}
           />
         </div>

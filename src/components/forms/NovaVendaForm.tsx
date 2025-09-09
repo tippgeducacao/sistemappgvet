@@ -1,12 +1,12 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, User } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { useNavigationStore } from '@/stores/NavigationStore';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -15,19 +15,15 @@ import CourseInfoSection from './sections/CourseInfoSection';
 import CourseInfoSectionVendedor from './sections/CourseInfoSectionVendedor';
 import CourseInfoSectionSDR from './sections/CourseInfoSectionSDR';
 
-interface NovaVendaFormProps {
-  onCancel?: () => void;
-}
-
-const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel }) => {
+const NovaVendaForm: React.FC = () => {
   const { hideNovaVendaForm } = useNavigationStore();
   const { toast } = useToast();
   const { isSDR, isVendedor, isAdmin } = useUserRoles();
   const { formData, updateField, clearForm, isSubmitting, setIsSubmitting } = useFormStore();
 
-  const handleInputChange = useCallback((field: string, value: string) => {
+  const handleInputChange = (field: string, value: string) => {
     updateField(field as any, value);
-  }, [updateField]);
+  };
 
   // Renderizar seção de curso baseada no tipo de usuário
   const renderCourseSection = () => {
@@ -70,11 +66,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel }) => {
       // Limpar formulário e voltar
       clearForm();
       
-      if (onCancel) {
-        onCancel();
-      } else {
-        hideNovaVendaForm();
-      }
+      hideNovaVendaForm();
 
     } catch (error) {
       console.error('Erro ao cadastrar venda:', error);
@@ -96,7 +88,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel }) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={onCancel || hideNovaVendaForm}
+              onClick={hideNovaVendaForm}
               className="h-8 w-8 p-0"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -156,22 +148,6 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel }) => {
                 </div>
               </div>
             </div>
-
-            {/* SDR de Origem */}
-            {formData.sdrId && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Origem da Venda</h3>
-                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm font-medium">
-                    <User className="h-4 w-4" />
-                    SDR (origem): {formData.sdrNome || 'SDR Não Identificado'}
-                  </div>
-                  <p className="text-blue-600 dark:text-blue-400 text-xs mt-1">
-                    Esta venda foi criada através de uma reunião agendada por este SDR
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Dados do Curso */}
             <div className="space-y-4">
@@ -257,7 +233,7 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel }) => {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={onCancel || hideNovaVendaForm}
+                onClick={hideNovaVendaForm}
                 disabled={isSubmitting}
               >
                 Cancelar

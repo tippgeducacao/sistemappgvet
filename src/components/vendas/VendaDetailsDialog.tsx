@@ -188,14 +188,6 @@ const VendaDetailsDialog: React.FC<VendaDetailsDialogProps> = ({
                       <td className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300 w-1/3">Email:</td>
                       <td className="px-3 py-2 text-gray-900 dark:text-gray-100">{venda.aluno?.email || 'Não informado'}</td>
                     </tr>
-                    <tr className="border-t dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300 w-1/3">Vendedor:</td>
-                      <td className="px-3 py-2 text-gray-900 dark:text-gray-100">{venda.vendedor?.name || 'Não informado'}</td>
-                    </tr>
-                    <tr className="bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600">
-                      <td className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300 w-1/3">SDR (origem):</td>
-                      <td className="px-3 py-2 text-gray-900 dark:text-gray-100">{venda.sdr?.name || 'Não possui'}</td>
-                    </tr>
                   </tbody>
                 </table>
               </div>

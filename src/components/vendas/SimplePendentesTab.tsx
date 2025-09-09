@@ -126,10 +126,6 @@ const SimplePendentesTab: React.FC<SimplePendentesTabProps> = ({ vendas }) => {
                         <span className="font-medium">Vendedor:</span> 
                         <span className="ml-1 text-gray-600">{venda.vendedor?.name || venda.vendedor_id}</span>
                       </div>
-                      <div>
-                        <span className="font-medium">SDR (origem):</span> 
-                        <span className="ml-1 text-gray-600">{venda.sdr?.name || 'Não possui'}</span>
-                      </div>
                       {venda.observacoes && (
                         <div>
                           <span className="font-medium">Observações:</span> 

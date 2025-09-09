@@ -55,7 +55,24 @@ export const useUserRoles = () => {
   const isSDROutbound = false; // Será determinado por outras características se necessário  
   const isSDRUnified = profile?.user_type === 'sdr' || currentUser?.user_type === 'sdr';
   
-  // Removed console.log that was causing infinite loop
+  console.log('🔐 useUserRoles: Verificando roles do usuário:', {
+    userEmail: profile?.email || currentUser?.email,
+    userType: profile?.user_type || currentUser?.user_type,
+    roles: roles?.map(r => r.role),
+    hasVendedorRole: hasRole('vendedor'),
+    hasSDRRole: isSDR,
+    isSecretariaByProfile,
+    isDiretor,
+    isAdmin,
+    isSecretaria,
+    isVendedor,
+    isSDR,
+    isCoordenador,
+    isSupervisor,
+    isSDRInbound,
+    isSDROutbound,
+    isSDRUnified
+  });
   
   return {
     roles: roles || [],

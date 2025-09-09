@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FormSelectField, FormInputField } from '@/components/ui/form-field';
 import { IES_OPTIONS } from '@/constants/formOptions';
 import { useCourses } from '@/hooks/useCourses';
@@ -17,11 +17,10 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [availableCourses, setAvailableCourses] = useState<any[]>([]);
 
-  // Memoizar pos_graduacoes para evitar re-renders desnecessários
-  const vendedorPosGraduacoes = useMemo(() => 
-    (profile as any)?.pos_graduacoes || [], 
-    [(profile as any)?.pos_graduacoes]
-  );
+  // Auto-definir modalidade como "Pós-Graduação" para vendedores
+  useEffect(() => {
+    updateField('modalidadeCurso', 'Pós-Graduação');
+  }, [updateField]);
 
   useEffect(() => {
     const loadPosGraduacoes = async () => {
@@ -30,6 +29,7 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
         const courses = await fetchCoursesByModalidade('Pós-Graduação');
         
         // Filtrar apenas as pós-graduações que o vendedor é especialista
+        const vendedorPosGraduacoes = (profile as any)?.pos_graduacoes || [];
         const filteredCourses = courses.filter(curso => 
           vendedorPosGraduacoes.includes(curso.id)
         );
@@ -42,7 +42,7 @@ const CourseInfoSectionVendedor: React.FC<CourseInfoSectionVendedorProps> = ({ f
     };
 
     loadPosGraduacoes();
-  }, [fetchCoursesByModalidade, vendedorPosGraduacoes]);
+  }, [fetchCoursesByModalidade, (profile as any)?.pos_graduacoes]);
 
   const courseOptions = availableCourses.map(curso => ({ 
     value: curso.id, 
