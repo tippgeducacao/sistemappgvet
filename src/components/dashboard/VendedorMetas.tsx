@@ -577,7 +577,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
                 </Badge>
               )}
             </div>
-            <Button
+            {/* <Button
               onClick={exportarPDFAno}
               disabled={isExportingPDF}
               variant="outline"
@@ -586,7 +586,7 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
             >
               <FileDown className="h-4 w-4" />
               {isExportingPDF ? 'Exportando...' : `Exportar PDF do Ano ${selectedYear}`}
-            </Button>
+            </Button> */}
           </CardTitle>
         </CardHeader>
         <CardContent>
