@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Eye } from 'lucide-react';
 import { useAgendamentosStatsAdmin } from '@/hooks/useAgendamentosStatsAdmin';
+import { SDRMeetingDetailsModal } from './SDRMeetingDetailsModal';
 import LoadingState from '@/components/ui/loading-state';
 
 interface ReunioesAdminChartProps {
@@ -19,6 +20,7 @@ const COLORS = {
 export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selectedSDR }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const [selectedSDRDetails, setSelectedSDRDetails] = useState<{ name: string; meetings: any[] } | null>(null);
   const { statsData, isLoading } = useAgendamentosStatsAdmin(selectedSDR, selectedWeek);
 
   // Função para calcular início e fim da semana
@@ -84,15 +86,16 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
   // Preparar dados para o gráfico
   const chartData = statsData.map(stats => {
     // Taxa de conversão baseada apenas em reuniões onde houve comparecimento (ignora não comparecidas)
-    const reunioesComComparecimento = stats.convertidas + stats.compareceram;
+    const reunioesComComparecimento = stats.convertidas + stats.compareceram + stats.pendentes;
     return {
       sdr: stats.sdr_name.split(' ')[0], // Apenas primeiro nome
       convertidas: stats.convertidas,
       compareceram: stats.compareceram,
+      pendentes: stats.pendentes,
       naoCompareceram: stats.naoCompareceram,
       total: stats.total,
       taxaConversao: reunioesComComparecimento > 0 ? ((stats.convertidas / reunioesComComparecimento) * 100).toFixed(1) : '0',
-      taxaComparecimento: stats.total > 0 ? (((stats.convertidas + stats.compareceram) / stats.total) * 100).toFixed(1) : '0'
+      taxaComparecimento: stats.total > 0 ? (((stats.convertidas + stats.compareceram + stats.pendentes) / stats.total) * 100).toFixed(1) : '0'
     };
   });
 
@@ -108,6 +111,7 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
             </p>
             <p className="text-sm">
               <span className="text-yellow-600">Compareceram:</span> {data.compareceram}
+              {data.pendentes > 0 && <span className="text-orange-600"> ({data.pendentes} pendentes)</span>}
             </p>
             <p className="text-sm">
               <span className="text-red-600">Não Compareceram:</span> {data.naoCompareceram}
@@ -230,12 +234,18 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
                     fill={COLORS.convertidas}
                     stackId="a"
                   />
-                  <Bar 
-                    dataKey="compareceram" 
-                    name="Compareceram" 
-                    fill={COLORS.compareceram}
-                    stackId="a"
-                  />
+                   <Bar 
+                     dataKey="compareceram" 
+                     name="Compareceram" 
+                     fill={COLORS.compareceram}
+                     stackId="a"
+                   />
+                   <Bar 
+                     dataKey="pendentes" 
+                     name="Pendentes" 
+                     fill="#f97316"
+                     stackId="a"
+                   />
                   <Bar 
                     dataKey="naoCompareceram" 
                     name="Não Compareceram" 
@@ -252,19 +262,34 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
               <div className="grid gap-3">
             {statsData.map((stats) => {
               // Taxa de conversão baseada apenas em reuniões onde houve comparecimento
-              const reunioesComComparecimento = stats.convertidas + stats.compareceram;
+              const reunioesComComparecimento = stats.convertidas + stats.compareceram + stats.pendentes;
+              const compareceuText = stats.pendentes > 0 
+                ? `${stats.compareceram} compareceram (${stats.pendentes} pendentes)`
+                : `${stats.compareceram} compareceram`;
+              
               return (
                 <div key={stats.sdr_id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div className="font-medium">{stats.sdr_name}</div>
+                  <div className="flex items-center gap-3">
+                    <div className="font-medium">{stats.sdr_name}</div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedSDRDetails({ name: stats.sdr_name, meetings: stats.meetings })}
+                      className="h-6 px-2 text-xs"
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      Ver
+                    </Button>
+                  </div>
                   <div className="flex gap-4 text-sm">
                     <span className="text-green-600">{stats.convertidas} convertidas</span>
-                    <span className="text-yellow-600">{stats.compareceram} compareceram</span>
+                    <span className="text-yellow-600">{compareceuText}</span>
                     <span className="text-red-600">{stats.naoCompareceram} não compareceram</span>
                     <span className="font-medium">
                       Conversão: {reunioesComComparecimento > 0 ? ((stats.convertidas / reunioesComComparecimento) * 100).toFixed(1) : 0}%
                     </span>
                     <span className="font-medium text-blue-600">
-                      Comparecimento: {stats.total > 0 ? (((stats.convertidas + stats.compareceram) / stats.total) * 100).toFixed(1) : 0}%
+                      Comparecimento: {stats.total > 0 ? (((stats.convertidas + stats.compareceram + stats.pendentes) / stats.total) * 100).toFixed(1) : 0}%
                     </span>
                   </div>
                 </div>
@@ -275,6 +300,14 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
           </>
         )}
       </CardContent>
+      
+      {/* Modal de Detalhes */}
+      <SDRMeetingDetailsModal
+        open={!!selectedSDRDetails}
+        onOpenChange={(open) => !open && setSelectedSDRDetails(null)}
+        sdrName={selectedSDRDetails?.name || ''}
+        meetings={selectedSDRDetails?.meetings || []}
+      />
     </Card>
   );
 };

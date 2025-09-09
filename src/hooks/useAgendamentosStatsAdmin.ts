@@ -1,13 +1,26 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface MeetingDetail {
+  id: string;
+  data_agendamento: string;
+  resultado_reuniao: string;
+  status: 'convertida' | 'pendente' | 'compareceu' | 'nao_compareceu';
+  lead_name: string;
+  vendedor_name: string;
+  data_assinatura?: string;
+  curso_nome?: string;
+}
+
 export interface AgendamentosStatsAdmin {
   sdr_id: string;
   sdr_name: string;
   convertidas: number;
   compareceram: number;
+  pendentes: number;
   naoCompareceram: number;
   total: number;
+  meetings: MeetingDetail[];
 }
 
 export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date) => {
@@ -32,39 +45,115 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
+
+      console.log('🗓️ Buscando dados da semana:', { 
+        startOfWeek: startOfWeek.toISOString(), 
+        endOfWeek: endOfWeek.toISOString() 
+      });
       
-      let query = supabase
+      // Buscar todos os agendamentos com resultado para SDRs ativos
+      let agendamentosQuery = supabase
         .from('agendamentos')
         .select(`
+          id,
           sdr_id,
+          vendedor_id,
+          lead_id,
           resultado_reuniao,
           data_agendamento,
+          form_entry_id,
           profiles!sdr_id (
             name,
             user_type,
             ativo
+          ),
+          vendedor:profiles!vendedor_id (
+            name
+          ),
+          leads (
+            nome
           )
         `)
-        .not('resultado_reuniao', 'is', null)
-        .gte('data_agendamento', startOfWeek.toISOString())
-        .lte('data_agendamento', endOfWeek.toISOString());
+        .not('resultado_reuniao', 'is', null);
 
       // Se um SDR específico foi selecionado
       if (selectedSDR && selectedSDR !== 'todos') {
-        query = query.eq('sdr_id', selectedSDR);
+        agendamentosQuery = agendamentosQuery.eq('sdr_id', selectedSDR);
       }
 
-      const { data, error } = await query;
+      const { data: agendamentosData, error: agendamentosError } = await agendamentosQuery;
 
-      if (error) {
-        console.error('Erro ao buscar estatísticas admin:', error);
+      if (agendamentosError) {
+        console.error('Erro ao buscar agendamentos:', agendamentosError);
         return;
       }
+
+      // Buscar vendas aprovadas na semana (por data de assinatura)
+      const { data: vendasAprovadas, error: vendasError } = await supabase
+        .from('form_entries')
+        .select(`
+          id,
+          vendedor_id,
+          status,
+          data_assinatura_contrato,
+          curso_id,
+          cursos (
+            nome
+          ),
+          agendamentos!form_entry_id (
+            id,
+            sdr_id,
+            data_agendamento
+          )
+        `)
+        .eq('status', 'matriculado')
+        .not('data_assinatura_contrato', 'is', null)
+        .gte('data_assinatura_contrato', startOfWeek.toISOString().split('T')[0])
+        .lte('data_assinatura_contrato', endOfWeek.toISOString().split('T')[0]);
+
+      if (vendasError) {
+        console.error('Erro ao buscar vendas aprovadas:', vendasError);
+        return;
+      }
+
+      // Buscar vendas pendentes (com form_entry_id)
+      const agendamentosWithSales = agendamentosData?.filter(a => a.form_entry_id) || [];
+      const formEntryIds = agendamentosWithSales.map(a => a.form_entry_id).filter(Boolean);
+      
+      let vendasPendentes: any[] = [];
+      if (formEntryIds.length > 0) {
+        const { data: pendentesData, error: pendentesError } = await supabase
+          .from('form_entries')
+          .select(`
+            id,
+            status,
+            data_assinatura_contrato,
+            curso_id,
+            cursos (
+              nome
+            )
+          `)
+          .in('id', formEntryIds)
+          .eq('status', 'pendente');
+
+        if (pendentesError) {
+          console.error('Erro ao buscar vendas pendentes:', pendentesError);
+        } else {
+          vendasPendentes = pendentesData || [];
+        }
+      }
+      
+      console.log('📊 Dados coletados:', {
+        agendamentos: agendamentosData?.length,
+        vendasAprovadas: vendasAprovadas?.length,
+        vendasPendentes: vendasPendentes?.length
+      });
 
       // Agrupar dados por SDR
       const statsMap = new Map<string, AgendamentosStatsAdmin>();
 
-      data?.forEach((agendamento: any) => {
+      // Processar cada agendamento
+      agendamentosData?.forEach((agendamento: any) => {
         const sdrId = agendamento.sdr_id;
         const profile = agendamento.profiles;
         const sdrName = profile?.name || 'SDR Desconhecido';
@@ -83,28 +172,115 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
             sdr_name: sdrName,
             convertidas: 0,
             compareceram: 0,
+            pendentes: 0,
             naoCompareceram: 0,
-            total: 0
+            total: 0,
+            meetings: []
           });
         }
 
         const stats = statsMap.get(sdrId)!;
+        
+        // Verificar se esta reunião está na semana (data da reunião)
+        const agendamentoDate = new Date(agendamento.data_agendamento);
+        const isInWeek = agendamentoDate >= startOfWeek && agendamentoDate <= endOfWeek;
+        
+        if (!isInWeek) {
+          return; // Só processar reuniões da semana atual
+        }
+
         stats.total++;
 
-        switch (agendamento.resultado_reuniao) {
-          case 'comprou':
-            stats.convertidas++;
-            break;
-          case 'compareceu_nao_comprou':
+        // Criar objeto de detalhe da reunião
+        const meetingDetail: MeetingDetail = {
+          id: agendamento.id,
+          data_agendamento: agendamento.data_agendamento,
+          resultado_reuniao: agendamento.resultado_reuniao,
+          status: 'compareceu', // Default, será ajustado abaixo
+          lead_name: agendamento.leads?.nome || 'Lead desconhecido',
+          vendedor_name: agendamento.vendedor?.name || 'Vendedor desconhecido'
+        };
+
+        // Determinar status e contagem
+        if (agendamento.resultado_reuniao === 'nao_compareceu') {
+          stats.naoCompareceram++;
+          meetingDetail.status = 'nao_compareceu';
+        } else {
+          // Verificar se tem venda associada
+          const vendaPendente = vendasPendentes.find(v => v.id === agendamento.form_entry_id);
+          
+          if (vendaPendente) {
+            stats.pendentes++;
+            meetingDetail.status = 'pendente';
+            meetingDetail.curso_nome = vendaPendente.cursos?.nome;
+          } else {
             stats.compareceram++;
-            break;
-          case 'nao_compareceu':
-            stats.naoCompareceram++;
-            break;
+            meetingDetail.status = 'compareceu';
+          }
+        }
+
+        stats.meetings.push(meetingDetail);
+      });
+
+      // Processar vendas convertidas separadamente (por data de assinatura)
+      vendasAprovadas?.forEach((venda: any) => {
+        // Buscar o agendamento relacionado
+        const agendamento = venda.agendamentos?.[0];
+        if (!agendamento || !agendamento.sdr_id) return;
+
+        const sdrId = agendamento.sdr_id;
+        
+        // Verificar se este SDR já está no map (deve estar se foi ativo)
+        if (!statsMap.has(sdrId)) {
+          // Buscar dados básicos do SDR para vendas convertidas sem reunião na semana
+          return; // Por segurança, não processar SDRs que não tiveram reuniões na semana
+        }
+
+        const stats = statsMap.get(sdrId)!;
+        
+        // Adicionar como convertida
+        stats.convertidas++;
+
+        // Adicionar aos detalhes
+        const meetingDetail: MeetingDetail = {
+          id: agendamento.id,
+          data_agendamento: agendamento.data_agendamento,
+          resultado_reuniao: 'comprou',
+          status: 'convertida',
+          lead_name: 'Cliente convertido',
+          vendedor_name: 'Vendedor',
+          data_assinatura: venda.data_assinatura_contrato,
+          curso_nome: venda.cursos?.nome
+        };
+
+        // Verificar se já não temos esta reunião nos detalhes (pode ter sido processada como pendente antes)
+        const existingIndex = stats.meetings.findIndex(m => m.id === agendamento.id);
+        if (existingIndex >= 0) {
+          // Atualizar a reunião existente
+          stats.meetings[existingIndex] = meetingDetail;
+          // Ajustar contagens (remover de pendentes ou compareceram)
+          if (stats.meetings[existingIndex].status === 'pendente') {
+            stats.pendentes--;
+          } else if (stats.meetings[existingIndex].status === 'compareceu') {
+            stats.compareceram--;
+          }
+        } else {
+          stats.meetings.push(meetingDetail);
         }
       });
 
-      setStatsData(Array.from(statsMap.values()));
+      const finalStats = Array.from(statsMap.values());
+      
+      console.log('📈 Estatísticas finais:', finalStats.map(s => ({
+        sdr: s.sdr_name,
+        total: s.total,
+        convertidas: s.convertidas,
+        pendentes: s.pendentes,
+        compareceram: s.compareceram,
+        naoCompareceram: s.naoCompareceram
+      })));
+      
+      setStatsData(finalStats);
     } catch (error) {
       console.error('Erro ao buscar estatísticas admin:', error);
     } finally {
