@@ -13,8 +13,6 @@ export interface UserRole {
 export class UserRoleService {
   static async getUserRoles(userId: string): Promise<UserRole[]> {
     try {
-      console.log('🔍 UserRoleService: Buscando roles para userId:', userId);
-      
       const { data, error } = await supabase
         .from('user_roles')
         .select('*')
@@ -25,14 +23,10 @@ export class UserRoleService {
         throw error;
       }
 
-      console.log('📊 UserRoleService: Data retornada:', data);
-
       const roles = (data || []).map(role => ({
         ...role,
         role: role.role as AppRole
       }));
-      
-      console.log('📋 UserRoleService: Roles processados:', roles);
       
       return roles;
     } catch (error) {
