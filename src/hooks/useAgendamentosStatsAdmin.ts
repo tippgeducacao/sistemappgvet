@@ -109,6 +109,35 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
         return;
       }
 
+      // Buscar dados dos alunos para matching
+      const { data: alunosData, error: alunosError } = await supabase
+        .from('alunos')
+        .select(`
+          form_entry_id,
+          nome,
+          telefone,
+          email
+        `);
+
+      if (alunosError) {
+        console.error('Erro ao buscar alunos:', alunosError);
+        return;
+      }
+
+      // Buscar dados dos leads para matching
+      const leadIds = agendamentosData?.map(a => a.lead_id).filter(Boolean) || [];
+      let leadsData: any[] = [];
+      if (leadIds.length > 0) {
+        const { data: leads, error: leadsError } = await supabase
+          .from('leads')
+          .select('id, nome, whatsapp, email')
+          .in('id', leadIds);
+        
+        if (!leadsError && leads) {
+          leadsData = leads;
+        }
+      }
+
       // Filtrar vendas aprovadas que pertencem à semana atual baseado na data efetiva
       const vendasAprovadasNaSemana = todasVendasAprovadas?.filter(venda => {
         const dataEfetiva = getDataEfetivaVenda(venda);
@@ -339,22 +368,59 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           stats.naoCompareceram++;
           meetingDetail.status = 'nao_compareceu';
         } else if (agendamento.resultado_reuniao === 'comprou') {
-          // Se marcada como "comprou" mas ainda não foi aprovada, é pendente
-          const vendaPendente = todasVendasPendentes.find(v => 
-            v.id === agendamento.form_entry_id || 
-            v.agendamento_id === agendamento.id
-          );
-          
-          if (vendaPendente) {
-            stats.pendentes++;
-            meetingDetail.status = 'pendente';
-            meetingDetail.curso_nome = vendaPendente.cursos?.nome;
+          // Verificar se existe venda aprovada correspondente (sem form_entry_id)
+          let vendaAprovadaCorrespondente = null;
+          if (!agendamento.form_entry_id && agendamento.lead_id) {
+            // Fazer matching por contato quando não há form_entry_id
+            const leadDoAgendamento = leadsData?.find(lead => lead.id === agendamento.lead_id);
+            if (leadDoAgendamento) {
+              vendaAprovadaCorrespondente = vendasAprovadasNaSemana?.find(venda => {
+                // Buscar aluno correspondente na venda
+                const alunoCorrespondente = alunosData?.find(aluno => aluno.form_entry_id === venda.id);
+                if (alunoCorrespondente) {
+                  // Matching por WhatsApp ou email
+                  const leadWhatsapp = leadDoAgendamento.whatsapp?.replace(/\D/g, '');
+                  const alunoTelefone = alunoCorrespondente.telefone?.replace(/\D/g, '');
+                  
+                  if (leadWhatsapp && alunoTelefone && leadWhatsapp === alunoTelefone) {
+                    return true;
+                  }
+                  if (leadDoAgendamento.email && alunoCorrespondente.email && 
+                      leadDoAgendamento.email.toLowerCase() === alunoCorrespondente.email.toLowerCase()) {
+                    return true;
+                  }
+                }
+                return false;
+              });
+            }
+          }
+
+          if (vendaAprovadaCorrespondente) {
+            // Esta reunião já foi convertida e aprovada, não deveria estar aqui
+            // mas por precaução, vamos marcar como convertida
+            stats.convertidas++;
+            meetingDetail.status = 'convertida';
+            meetingDetail.curso_nome = vendaAprovadaCorrespondente.cursos?.nome;
+            meetingDetail.data_assinatura = vendaAprovadaCorrespondente.data_assinatura_contrato || 
+                                           vendaAprovadaCorrespondente.data_aprovacao?.split('T')[0];
           } else {
-            // Se marcada como "comprou" mas não tem venda pendente nem aprovada, 
-            // ainda é pendente (aguardando aprovação)
-            stats.pendentes++;
-            meetingDetail.status = 'pendente';
-            meetingDetail.curso_nome = 'Aguardando aprovação';
+            // Verificar se existe venda pendente
+            const vendaPendente = todasVendasPendentes.find(v => 
+              v.id === agendamento.form_entry_id || 
+              v.agendamento_id === agendamento.id
+            );
+            
+            if (vendaPendente) {
+              stats.pendentes++;
+              meetingDetail.status = 'pendente';
+              meetingDetail.curso_nome = vendaPendente.cursos?.nome;
+            } else {
+              // Se marcada como "comprou" mas não tem venda pendente nem aprovada, 
+              // ainda é pendente (aguardando aprovação)
+              stats.pendentes++;
+              meetingDetail.status = 'pendente';
+              meetingDetail.curso_nome = 'Aguardando aprovação';
+            }
           }
         } else {
           // Outras respostas (presente, compareceu, etc.)
