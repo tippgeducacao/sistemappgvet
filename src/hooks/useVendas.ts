@@ -17,6 +17,7 @@ export interface VendaCompleta {
   data_assinatura_contrato?: string | null; // Nova propriedade para data de assinatura de contrato
   motivo_pendencia?: string | null;
   documento_comprobatorio?: string | null;
+  sdr_id?: string | null; // ID do SDR que originou a venda
   aluno: {
     id: string;
     nome: string;
@@ -29,6 +30,12 @@ export interface VendaCompleta {
     nome: string;
   } | null;
   vendedor?: {
+    id: string;
+    name: string;
+    email: string;
+    photo_url?: string;
+  } | null;
+  sdr?: {
     id: string;
     name: string;
     email: string;

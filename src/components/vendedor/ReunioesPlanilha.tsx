@@ -161,6 +161,12 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     console.log('🆔 Definindo agendamentoId no formulário:', agendamento.id);
     updateField('agendamentoId', agendamento.id);
     
+    // Adicionar ID do SDR que criou o agendamento
+    if (agendamento.sdr_id) {
+      console.log('🧑‍💼 Definindo sdrId no formulário:', agendamento.sdr_id);
+      updateField('sdrId', agendamento.sdr_id);
+    }
+    
     setAgendamentoSelecionado(agendamento);
     setNovaVendaAberto(true);
   };

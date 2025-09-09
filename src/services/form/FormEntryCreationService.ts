@@ -20,7 +20,8 @@ export class FormEntryCreationService {
         status: 'pendente',
         pontuacao_esperada: pontuacaoEsperada,
         documento_comprobatorio: documentPath,
-        data_assinatura_contrato: null
+        data_assinatura_contrato: null,
+        sdr_id: formData.sdrId || null
       })
       .select()
       .single();

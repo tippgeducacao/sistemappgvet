@@ -101,6 +101,11 @@ const PendentesTab: React.FC<PendentesTabProps> = ({ vendas, showDeleteButton = 
                       <div>
                         <span className="font-medium">Vendedor:</span> {venda.vendedor?.name || 'Não informado'}
                       </div>
+                      {venda.sdr && (
+                        <div>
+                          <span className="font-medium">SDR:</span> {venda.sdr.name}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-6 text-sm">

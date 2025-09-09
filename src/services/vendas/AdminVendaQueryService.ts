@@ -52,10 +52,22 @@ export class AdminVendaQueryService {
           vendedorData = vendedor;
         }
 
+        // Buscar SDR se houver sdr_id
+        let sdrData = null;
+        if (venda.sdr_id) {
+          const { data: sdr } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .eq('id', venda.sdr_id)
+            .single();
+          sdrData = sdr;
+        }
+
         return {
           ...venda,
           aluno: alunoData,
-          vendedor: vendedorData
+          vendedor: vendedorData,
+          sdr: sdrData
         };
       })
     );
@@ -79,7 +91,8 @@ export class AdminVendaQueryService {
         enviado_em,
         atualizado_em,
         motivo_pendencia,
-        aluno_id
+        aluno_id,
+        sdr_id
       `)
       .order('enviado_em', { ascending: false });
 
@@ -127,6 +140,17 @@ export class AdminVendaQueryService {
           vendedorData = vendedor;
         }
 
+        // Buscar SDR
+        let sdrData = null;
+        if (venda.sdr_id) {
+          const { data: sdr } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .eq('id', venda.sdr_id)
+            .single();
+          sdrData = sdr;
+        }
+
         // Se não tem aluno vinculado, tentar buscar pelos dados das respostas
         if (!alunoData) {
           console.log(`🔍 Tentando encontrar dados do aluno para venda ${venda.id.substring(0, 8)}`);
@@ -156,7 +180,8 @@ export class AdminVendaQueryService {
           ...venda,
           aluno: alunoData,
           curso: cursoData,
-          vendedor: vendedorData
+          vendedor: vendedorData,
+          sdr: sdrData
         };
       })
     );

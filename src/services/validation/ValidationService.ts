@@ -59,8 +59,9 @@ export class ValidationService {
     // Observations
     observacoes: { maxLength: 1000 },
     
-    // Meeting ID (optional)
-    agendamentoId: {}
+    // Meeting ID and SDR ID (optional)
+    agendamentoId: {},
+    sdrId: {}
   };
 
   static validateField(fieldName: keyof FormData, value: string | File | null): string | null {
@@ -190,7 +191,8 @@ export class ValidationService {
       detalhesVendaCasada: 'Detalhes da Venda Casada',
       documentoComprobatorio: 'Documento Comprobatório',
       observacoes: 'Observações',
-      agendamentoId: 'ID do Agendamento'
+      agendamentoId: 'ID do Agendamento',
+      sdrId: 'ID do SDR'
     };
 
     return displayNames[fieldName] || fieldName;
