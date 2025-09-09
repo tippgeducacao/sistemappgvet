@@ -107,11 +107,11 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
           <p className="font-semibold mb-2">{label}</p>
           <div className="space-y-1">
             <p className="text-sm">
-              <span className="text-green-600">Convertidas:</span> {data.convertidas}
+              <span className="text-green-600">Convertidas (Aprovadas):</span> {data.convertidas}
             </p>
             <p className="text-sm">
               <span className="text-yellow-600">Compareceram:</span> {data.compareceram}
-              {data.pendentes > 0 && <span className="text-orange-600"> ({data.pendentes} pendentes)</span>}
+              {data.pendentes > 0 && <span className="text-orange-600"> ({data.pendentes} aguardando aprovação)</span>}
             </p>
             <p className="text-sm">
               <span className="text-red-600">Não Compareceram:</span> {data.naoCompareceram}
@@ -242,7 +242,7 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
                    />
                    <Bar 
                      dataKey="pendentes" 
-                     name="Pendentes" 
+                     name="Aguardando Aprovação" 
                      fill="#f97316"
                      stackId="a"
                    />
@@ -264,7 +264,7 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
               // Taxa de conversão baseada apenas em reuniões onde houve comparecimento
               const reunioesComComparecimento = stats.convertidas + stats.compareceram + stats.pendentes;
               const compareceuText = stats.pendentes > 0 
-                ? `${stats.compareceram} compareceram (${stats.pendentes} pendentes)`
+                ? `${stats.compareceram} compareceram (${stats.pendentes} aguardando aprovação)`
                 : `${stats.compareceram} compareceram`;
               
               return (
@@ -276,14 +276,14 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
                       size="sm"
                       onClick={() => setSelectedSDRDetails({ name: stats.sdr_name, meetings: stats.meetings })}
                       className="h-auto px-2 py-1 text-xs whitespace-nowrap"
-                      title={`Ver detalhes: ${stats.convertidas} convertidas, ${stats.compareceram} compareceram, ${stats.pendentes} pendentes, ${stats.naoCompareceram} não compareceram`}
+                      title={`Ver detalhes: ${stats.convertidas} aprovadas, ${stats.compareceram} compareceram, ${stats.pendentes} aguardando aprovação, ${stats.naoCompareceram} não compareceram`}
                     >
                       <Eye className="h-3 w-3 mr-1" />
                       Ver ({stats.convertidas}c / {stats.compareceram}comp / {stats.pendentes}p / {stats.naoCompareceram}nc)
                     </Button>
                   </div>
                   <div className="flex gap-4 text-sm">
-                    <span className="text-green-600">{stats.convertidas} convertidas</span>
+                    <span className="text-green-600">{stats.convertidas} aprovadas</span>
                     <span className="text-yellow-600">{compareceuText}</span>
                     <span className="text-red-600">{stats.naoCompareceram} não compareceram</span>
                     <span className="font-medium">

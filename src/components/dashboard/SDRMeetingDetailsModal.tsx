@@ -15,9 +15,9 @@ interface SDRMeetingDetailsModalProps {
 const getStatusBadge = (status: MeetingDetail['status']) => {
   switch (status) {
     case 'convertida':
-      return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Convertida</Badge>;
+      return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Aprovada</Badge>;
     case 'pendente':
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">Pendente (aguardando aprovação)</Badge>;
+      return <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">Aguardando Aprovação</Badge>;
     case 'compareceu':
       return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Compareceu</Badge>;
     case 'nao_compareceu':
@@ -41,9 +41,9 @@ type StatusFilter = 'todos' | 'convertida' | 'compareceu' | 'pendente' | 'nao_co
 
 const statusFilterOptions = [
   { value: 'todos' as StatusFilter, label: 'Todos', color: 'text-foreground' },
-  { value: 'convertida' as StatusFilter, label: 'Convertidas', color: 'text-green-600' },
+  { value: 'convertida' as StatusFilter, label: 'Aprovadas', color: 'text-green-600' },
   { value: 'compareceu' as StatusFilter, label: 'Compareceram', color: 'text-blue-600' },
-  { value: 'pendente' as StatusFilter, label: 'Pendentes', color: 'text-yellow-600' },
+  { value: 'pendente' as StatusFilter, label: 'Aguardando Aprovação', color: 'text-orange-600' },
   { value: 'nao_compareceu' as StatusFilter, label: 'Não Compareceram', color: 'text-red-600' },
 ];
 

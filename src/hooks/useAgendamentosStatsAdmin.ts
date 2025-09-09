@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { findContactMatches } from '@/utils/contactMatchingUtils';
 import { getWeekRange } from '@/utils/semanaUtils';
+import { getDataEfetivaVenda } from '@/utils/vendaDateUtils';
 
 export interface MeetingDetail {
   id: string;
@@ -79,9 +80,8 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
         return;
       }
 
-      // Buscar vendas aprovadas na semana - usando ambas as datas de assinatura e aprovação
-      // Primeira consulta: por data_assinatura_contrato
-      const { data: vendasAssinatura, error: vendasAssinaturaError } = await supabase
+      // Buscar TODAS as vendas aprovadas (matriculadas) com sdr_id
+      const { data: todasVendasAprovadas, error: vendasError } = await supabase
         .from('form_entries')
         .select(`
           id,
@@ -91,6 +91,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           data_assinatura_contrato,
           data_aprovacao,
           curso_id,
+          enviado_em,
           cursos (
             nome
           ),
@@ -101,48 +102,22 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           )
         `)
         .eq('status', 'matriculado')
-        .not('data_assinatura_contrato', 'is', null)
-        .gte('data_assinatura_contrato', startOfWeek.toISOString().split('T')[0])
-        .lte('data_assinatura_contrato', endOfWeek.toISOString().split('T')[0]);
+        .not('sdr_id', 'is', null);
 
-      // Segunda consulta: por data_aprovacao (apenas se não tem data_assinatura_contrato)
-      const { data: vendasAprovacao, error: vendasAprovacaoError } = await supabase
-        .from('form_entries')
-        .select(`
-          id,
-          vendedor_id,
-          sdr_id,
-          status,
-          data_assinatura_contrato,
-          data_aprovacao,
-          curso_id,
-          cursos (
-            nome
-          ),
-          profiles!sdr_id (
-            name,
-            user_type,
-            ativo
-          )
-        `)
-        .eq('status', 'matriculado')
-        .is('data_assinatura_contrato', null)
-        .not('data_aprovacao', 'is', null)
-        .gte('data_aprovacao', startOfWeek.toISOString())
-        .lte('data_aprovacao', endOfWeek.toISOString());
-
-      if (vendasAssinaturaError || vendasAprovacaoError) {
-        console.error('Erro ao buscar vendas aprovadas:', vendasAssinaturaError || vendasAprovacaoError);
+      if (vendasError) {
+        console.error('Erro ao buscar vendas aprovadas:', vendasError);
         return;
       }
 
-      // Combinar as duas consultas de vendas aprovadas
-      const vendasAprovadas = [...(vendasAssinatura || []), ...(vendasAprovacao || [])];
+      // Filtrar vendas aprovadas que pertencem à semana atual baseado na data efetiva
+      const vendasAprovadasNaSemana = todasVendasAprovadas?.filter(venda => {
+        const dataEfetiva = getDataEfetivaVenda(venda);
+        return dataEfetiva >= startOfWeek && dataEfetiva <= endOfWeek;
+      }) || [];
 
-      console.log('💰 Vendas convertidas encontradas:', {
-        porAssinatura: vendasAssinatura?.length || 0,
-        porAprovacao: vendasAprovacao?.length || 0,
-        total: vendasAprovadas.length
+      console.log('💰 Vendas convertidas na semana:', {
+        total_aprovadas: todasVendasAprovadas?.length || 0,
+        na_semana: vendasAprovadasNaSemana.length
       });
 
       // Buscar vendas pendentes (com form_entry_id direto e por matching de contato)
@@ -190,7 +165,6 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
       // 2. Buscar vendas pendentes via matching de contato (para agendamentos 'comprou' sem form_entry_id)
       let vendasPendentesPorMatching: any[] = [];
       if (agendamentosWithoutSales.length > 0) {
-        // Buscar dados dos leads desses agendamentos
         const leadIds = agendamentosWithoutSales.map(a => a.lead_id).filter(Boolean);
         
         if (leadIds.length > 0) {
@@ -200,7 +174,6 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
             .in('id', leadIds);
           
           if (!leadsError && leadsData) {
-            // Buscar todos os alunos de vendas pendentes
             const { data: alunosData, error: alunosError } = await supabase
               .from('alunos')
               .select(`
@@ -227,7 +200,6 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
                 alunosPendentes: alunosData.length
               });
               
-              // Usar o utilitário de matching
               const matches = findContactMatches(
                 agendamentosWithoutSales.map(a => ({ id: a.id, lead_id: a.lead_id })),
                 leadsData,
@@ -239,18 +211,14 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
                 }))
               );
               
-              // Converter matches em vendas pendentes
-              vendasPendentesPorMatching = Array.from(matches.entries()).map(([agendamentoId, aluno]) => {
-                // Buscar dados completos da form_entry correspondente
-                return {
-                  id: aluno.form_entry_id,
-                  status: 'pendente',
-                  agendamento_id: agendamentoId,
-                  curso_id: null, // Será preenchido depois se necessário
-                  sdr_id: null, // Será preenchido depois se necessário
-                  cursos: null
-                };
-              });
+              vendasPendentesPorMatching = Array.from(matches.entries()).map(([agendamentoId, aluno]) => ({
+                id: aluno.form_entry_id,
+                status: 'pendente',
+                agendamento_id: agendamentoId,
+                curso_id: null,
+                sdr_id: null,
+                cursos: null
+              }));
               
               console.log('📋 PENDENTES - Via matching:', vendasPendentesPorMatching.length);
             }
@@ -260,7 +228,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
       
       console.log('📊 Dados coletados:', {
         agendamentos: agendamentosData?.length,
-        vendasAprovadas: vendasAprovadas?.length,
+        vendasAprovadasNaSemana: vendasAprovadasNaSemana?.length,
         vendasPendentesDiretas: vendasPendentes?.length,
         vendasPendentesMatching: vendasPendentesPorMatching?.length
       });
@@ -268,7 +236,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
       // Combinar todas as vendas pendentes
       const todasVendasPendentes = [...vendasPendentes, ...vendasPendentesPorMatching];
 
-      // Agrupar dados por SDR - incluir SDRs ativos tanto de agendamentos quanto de vendas convertidas
+      // Agrupar dados por SDR
       const statsMap = new Map<string, AgendamentosStatsAdmin>();
 
       // Função auxiliar para garantir que um SDR está no map
@@ -290,51 +258,9 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
         return true;
       };
 
-      // Processar agendamentos convertidos (resultado_reuniao = 'comprou') como vendas convertidas
-      // Isso captura conversões mesmo quando não há form_entry_id ligado
-      const agendamentosConvertidos = agendamentosData?.filter((a: any) => 
-        a.resultado_reuniao === 'comprou' && 
-        a.sdr_id && 
-        // Verificar se está na semana atual
-        new Date(a.data_agendamento) >= startOfWeek && 
-        new Date(a.data_agendamento) <= endOfWeek
-      ) || [];
-
-      agendamentosConvertidos.forEach((agendamento: any) => {
-        const sdrId = agendamento.sdr_id;
-        const profile = agendamento.profiles;
-        const sdrName = profile?.name || 'SDR Desconhecido';
-        
-        // Verificar se é SDR ativo
-        const isActiveSDR = profile?.ativo === true && 
-          ['sdr', 'sdr_inbound', 'sdr_outbound'].includes(profile?.user_type);
-        
-        if (!ensureSDRInMap(sdrId, sdrName, isActiveSDR)) return;
-
-        const stats = statsMap.get(sdrId)!;
-        stats.convertidas++;
-
-        const meetingDetail: MeetingDetail = {
-          id: agendamento.id,
-          data_agendamento: agendamento.data_agendamento,
-          resultado_reuniao: 'comprou',
-          status: 'convertida',
-          lead_name: agendamento.leads?.nome || 'Cliente convertido',
-          vendedor_name: agendamento.vendedor?.name || 'Vendedor',
-          data_assinatura: new Date(agendamento.data_agendamento).toISOString().split('T')[0],
-          curso_nome: 'Conversão via Agendamento'
-        };
-
-        stats.meetings.push(meetingDetail);
-      });
-
-      // Processar vendas aprovadas adicionais (que têm sdr_id e não foram contadas como agendamentos)
-      vendasAprovadas?.forEach((venda: any) => {
+      // 1. PRIMEIRO: Processar vendas convertidas (matriculadas) na semana
+      vendasAprovadasNaSemana?.forEach((venda: any) => {
         if (!venda.sdr_id) return;
-
-        // Verificar se já foi processada como agendamento convertido
-        const jaProcessadaComoAgendamento = agendamentosConvertidos.some(a => a.form_entry_id === venda.id);
-        if (jaProcessadaComoAgendamento) return;
 
         const sdrProfile = venda.profiles;
         const sdrName = sdrProfile?.name || 'SDR Desconhecido';
@@ -365,7 +291,10 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
         stats.meetings.push(meetingDetail);
       });
 
-      // Processar cada agendamento
+      // Mapear IDs de vendas aprovadas para evitar double-counting
+      const vendasAprovadasIds = new Set(vendasAprovadasNaSemana?.map(v => v.id) || []);
+
+      // 2. SEGUNDO: Processar agendamentos da semana
       agendamentosData?.forEach((agendamento: any) => {
         const sdrId = agendamento.sdr_id;
         const profile = agendamento.profiles;
@@ -387,8 +316,8 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           return; // Só processar reuniões da semana atual
         }
 
-        // Verificar se já foi processada como conversão
-        const jaConvertida = stats.meetings.some(m => m.id === agendamento.id && m.status === 'convertida');
+        // Verificar se já foi processada como conversão aprovada
+        const jaConvertida = agendamento.form_entry_id && vendasAprovadasIds.has(agendamento.form_entry_id);
         if (jaConvertida) {
           return; // Já foi processada como convertida, não contar novamente
         }
@@ -405,12 +334,30 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           vendedor_name: agendamento.vendedor?.name || 'Vendedor desconhecido'
         };
 
-        // Determinar status e contagem
+        // Determinar status e contagem baseado no resultado da reunião
         if (agendamento.resultado_reuniao === 'nao_compareceu') {
           stats.naoCompareceram++;
           meetingDetail.status = 'nao_compareceu';
+        } else if (agendamento.resultado_reuniao === 'comprou') {
+          // Se marcada como "comprou" mas ainda não foi aprovada, é pendente
+          const vendaPendente = todasVendasPendentes.find(v => 
+            v.id === agendamento.form_entry_id || 
+            v.agendamento_id === agendamento.id
+          );
+          
+          if (vendaPendente) {
+            stats.pendentes++;
+            meetingDetail.status = 'pendente';
+            meetingDetail.curso_nome = vendaPendente.cursos?.nome;
+          } else {
+            // Se marcada como "comprou" mas não tem venda pendente nem aprovada, 
+            // ainda é pendente (aguardando aprovação)
+            stats.pendentes++;
+            meetingDetail.status = 'pendente';
+            meetingDetail.curso_nome = 'Aguardando aprovação';
+          }
         } else {
-          // Verificar se tem venda associada (direta ou por matching)
+          // Outras respostas (presente, compareceu, etc.)
           const vendaPendente = todasVendasPendentes.find(v => 
             v.id === agendamento.form_entry_id || 
             v.agendamento_id === agendamento.id
