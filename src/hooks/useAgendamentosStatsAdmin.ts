@@ -290,9 +290,51 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
         return true;
       };
 
-      // Processar vendas convertidas primeiro para garantir que SDRs com apenas conversões sejam incluídos
+      // Processar agendamentos convertidos (resultado_reuniao = 'comprou') como vendas convertidas
+      // Isso captura conversões mesmo quando não há form_entry_id ligado
+      const agendamentosConvertidos = agendamentosData?.filter((a: any) => 
+        a.resultado_reuniao === 'comprou' && 
+        a.sdr_id && 
+        // Verificar se está na semana atual
+        new Date(a.data_agendamento) >= startOfWeek && 
+        new Date(a.data_agendamento) <= endOfWeek
+      ) || [];
+
+      agendamentosConvertidos.forEach((agendamento: any) => {
+        const sdrId = agendamento.sdr_id;
+        const profile = agendamento.profiles;
+        const sdrName = profile?.name || 'SDR Desconhecido';
+        
+        // Verificar se é SDR ativo
+        const isActiveSDR = profile?.ativo === true && 
+          ['sdr', 'sdr_inbound', 'sdr_outbound'].includes(profile?.user_type);
+        
+        if (!ensureSDRInMap(sdrId, sdrName, isActiveSDR)) return;
+
+        const stats = statsMap.get(sdrId)!;
+        stats.convertidas++;
+
+        const meetingDetail: MeetingDetail = {
+          id: agendamento.id,
+          data_agendamento: agendamento.data_agendamento,
+          resultado_reuniao: 'comprou',
+          status: 'convertida',
+          lead_name: agendamento.leads?.nome || 'Cliente convertido',
+          vendedor_name: agendamento.vendedor?.name || 'Vendedor',
+          data_assinatura: new Date(agendamento.data_agendamento).toISOString().split('T')[0],
+          curso_nome: 'Conversão via Agendamento'
+        };
+
+        stats.meetings.push(meetingDetail);
+      });
+
+      // Processar vendas aprovadas adicionais (que têm sdr_id e não foram contadas como agendamentos)
       vendasAprovadas?.forEach((venda: any) => {
         if (!venda.sdr_id) return;
+
+        // Verificar se já foi processada como agendamento convertido
+        const jaProcessadaComoAgendamento = agendamentosConvertidos.some(a => a.form_entry_id === venda.id);
+        if (jaProcessadaComoAgendamento) return;
 
         const sdrProfile = venda.profiles;
         const sdrName = sdrProfile?.name || 'SDR Desconhecido';
