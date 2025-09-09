@@ -105,6 +105,9 @@ const AdminVendasList: React.FC = () => {
                           <span className="font-medium">Vendedor:</span> {venda.vendedor?.name || 'Não informado'}
                         </div>
                         <div>
+                          <span className="font-medium">SDR (origem):</span> {venda.sdr?.name || 'Não possui'}
+                        </div>
+                        <div>
                           <span className="font-medium">Enviado:</span> {venda.enviado_em ? DataFormattingService.formatDateTime(venda.enviado_em) : 'Não informada'}
                         </div>
                         {venda.data_assinatura_contrato && (
