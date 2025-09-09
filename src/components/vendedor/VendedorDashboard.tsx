@@ -113,7 +113,7 @@ const VendedorDashboard: React.FC = () => {
       />
 
       {/* Gráfico de Resultados das Reuniões */}
-      <ReunioesVendedoresChart selectedVendedor={profile?.id} />
+      {/* <ReunioesVendedoresChart selectedVendedor={profile?.id} /> */}
 
       {/* Lista de vendas recentes */}
       <Card>
