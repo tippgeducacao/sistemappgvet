@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { findContactMatches } from '@/utils/contactMatchingUtils';
 
 export interface MeetingDetail {
   id: string;
@@ -116,11 +117,24 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
         return;
       }
 
-      // Buscar vendas pendentes (com form_entry_id)
+      // Buscar vendas pendentes (com form_entry_id direto e por matching de contato)
       const agendamentosWithSales = agendamentosData?.filter(a => a.form_entry_id) || [];
+      const agendamentosWithoutSales = agendamentosData?.filter(a => 
+        !a.form_entry_id && a.resultado_reuniao === 'comprou'
+      ) || [];
+      
+      console.log('🔍 PENDENTES - Análise de agendamentos:', {
+        total: agendamentosData?.length,
+        comFormEntry: agendamentosWithSales.length,
+        semFormEntry: agendamentosWithoutSales.length,
+        comprou: agendamentosData?.filter(a => a.resultado_reuniao === 'comprou').length
+      });
+      
       const formEntryIds = agendamentosWithSales.map(a => a.form_entry_id).filter(Boolean);
       
       let vendasPendentes: any[] = [];
+      
+      // 1. Buscar vendas pendentes via form_entry_id direto
       if (formEntryIds.length > 0) {
         const { data: pendentesData, error: pendentesError } = await supabase
           .from('form_entries')
@@ -129,6 +143,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
             status,
             data_assinatura_contrato,
             curso_id,
+            sdr_id,
             cursos (
               nome
             )
@@ -140,14 +155,90 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           console.error('Erro ao buscar vendas pendentes:', pendentesError);
         } else {
           vendasPendentes = pendentesData || [];
+          console.log('📋 PENDENTES - Via form_entry_id:', vendasPendentes.length);
+        }
+      }
+      
+      // 2. Buscar vendas pendentes via matching de contato (para agendamentos 'comprou' sem form_entry_id)
+      let vendasPendentesPorMatching: any[] = [];
+      if (agendamentosWithoutSales.length > 0) {
+        // Buscar dados dos leads desses agendamentos
+        const leadIds = agendamentosWithoutSales.map(a => a.lead_id).filter(Boolean);
+        
+        if (leadIds.length > 0) {
+          const { data: leadsData, error: leadsError } = await supabase
+            .from('leads')
+            .select('id, whatsapp, email')
+            .in('id', leadIds);
+          
+          if (!leadsError && leadsData) {
+            // Buscar todos os alunos de vendas pendentes
+            const { data: alunosData, error: alunosError } = await supabase
+              .from('alunos')
+              .select(`
+                form_entry_id,
+                nome,
+                telefone,
+                email,
+                form_entries (
+                  id,
+                  status,
+                  curso_id,
+                  sdr_id,
+                  cursos (
+                    nome
+                  )
+                )
+              `)
+              .eq('form_entries.status', 'pendente');
+            
+            if (!alunosError && alunosData) {
+              console.log('🔍 MATCHING - Iniciando matching para agendamentos sem form_entry_id:', {
+                agendamentos: agendamentosWithoutSales.length,
+                leads: leadsData.length,
+                alunosPendentes: alunosData.length
+              });
+              
+              // Usar o utilitário de matching
+              const matches = findContactMatches(
+                agendamentosWithoutSales.map(a => ({ id: a.id, lead_id: a.lead_id })),
+                leadsData,
+                alunosData.map(a => ({
+                  form_entry_id: a.form_entry_id,
+                  nome: a.nome,
+                  telefone: a.telefone,
+                  email: a.email
+                }))
+              );
+              
+              // Converter matches em vendas pendentes
+              vendasPendentesPorMatching = Array.from(matches.entries()).map(([agendamentoId, aluno]) => {
+                // Buscar dados completos da form_entry correspondente
+                return {
+                  id: aluno.form_entry_id,
+                  status: 'pendente',
+                  agendamento_id: agendamentoId,
+                  curso_id: null, // Será preenchido depois se necessário
+                  sdr_id: null, // Será preenchido depois se necessário
+                  cursos: null
+                };
+              });
+              
+              console.log('📋 PENDENTES - Via matching:', vendasPendentesPorMatching.length);
+            }
+          }
         }
       }
       
       console.log('📊 Dados coletados:', {
         agendamentos: agendamentosData?.length,
         vendasAprovadas: vendasAprovadas?.length,
-        vendasPendentes: vendasPendentes?.length
+        vendasPendentesDiretas: vendasPendentes?.length,
+        vendasPendentesMatching: vendasPendentesPorMatching?.length
       });
+
+      // Combinar todas as vendas pendentes
+      const todasVendasPendentes = [...vendasPendentes, ...vendasPendentesPorMatching];
 
       // Agrupar dados por SDR
       const statsMap = new Map<string, AgendamentosStatsAdmin>();
@@ -206,8 +297,11 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           stats.naoCompareceram++;
           meetingDetail.status = 'nao_compareceu';
         } else {
-          // Verificar se tem venda associada
-          const vendaPendente = vendasPendentes.find(v => v.id === agendamento.form_entry_id);
+          // Verificar se tem venda associada (direta ou por matching)
+          const vendaPendente = todasVendasPendentes.find(v => 
+            v.id === agendamento.form_entry_id || 
+            v.agendamento_id === agendamento.id
+          );
           
           if (vendaPendente) {
             stats.pendentes++;

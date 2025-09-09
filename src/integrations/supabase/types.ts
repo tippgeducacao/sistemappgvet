@@ -367,6 +367,7 @@ export type Database = {
           observacoes: string | null
           pontuacao_esperada: number | null
           pontuacao_validada: number | null
+          sdr_id: string | null
           status: string | null
           turma: string | null
           vendedor_id: string | null
@@ -386,6 +387,7 @@ export type Database = {
           observacoes?: string | null
           pontuacao_esperada?: number | null
           pontuacao_validada?: number | null
+          sdr_id?: string | null
           status?: string | null
           turma?: string | null
           vendedor_id?: string | null
@@ -405,6 +407,7 @@ export type Database = {
           observacoes?: string | null
           pontuacao_esperada?: number | null
           pontuacao_validada?: number | null
+          sdr_id?: string | null
           status?: string | null
           turma?: string | null
           vendedor_id?: string | null
@@ -422,6 +425,13 @@ export type Database = {
             columns: ["curso_id"]
             isOneToOne: false
             referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_entries_sdr_id_fkey"
+            columns: ["sdr_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
