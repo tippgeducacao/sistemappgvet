@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, User, Building } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, User, Building, Filter } from 'lucide-react';
 import { MeetingDetail } from '@/hooks/useAgendamentosStatsAdmin';
 
 interface SDRMeetingDetailsModalProps {
@@ -36,16 +37,52 @@ const formatDate = (dateString: string) => {
   });
 };
 
+type StatusFilter = 'todos' | 'convertida' | 'compareceu' | 'pendente' | 'nao_compareceu';
+
+const statusFilterOptions = [
+  { value: 'todos' as StatusFilter, label: 'Todos', color: 'text-foreground' },
+  { value: 'convertida' as StatusFilter, label: 'Convertidas', color: 'text-green-600' },
+  { value: 'compareceu' as StatusFilter, label: 'Compareceram', color: 'text-blue-600' },
+  { value: 'pendente' as StatusFilter, label: 'Pendentes', color: 'text-yellow-600' },
+  { value: 'nao_compareceu' as StatusFilter, label: 'Não Compareceram', color: 'text-red-600' },
+];
+
 export const SDRMeetingDetailsModal: React.FC<SDRMeetingDetailsModalProps> = ({
   open,
   onOpenChange,
   sdrName,
   meetings
 }) => {
-  // Ordenar reuniões por data (mais recentes primeiro)
-  const sortedMeetings = [...meetings].sort((a, b) => 
-    new Date(b.data_agendamento).getTime() - new Date(a.data_agendamento).getTime()
-  );
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
+
+  // Reset filter quando modal abre
+  useEffect(() => {
+    if (open) {
+      setStatusFilter('todos');
+    }
+  }, [open]);
+
+  // Calcular contadores por status
+  const statusCounts = useMemo(() => {
+    return {
+      todos: meetings.length,
+      convertida: meetings.filter(m => m.status === 'convertida').length,
+      compareceu: meetings.filter(m => m.status === 'compareceu').length,
+      pendente: meetings.filter(m => m.status === 'pendente').length,
+      nao_compareceu: meetings.filter(m => m.status === 'nao_compareceu').length,
+    };
+  }, [meetings]);
+
+  // Filtrar e ordenar reuniões
+  const filteredAndSortedMeetings = useMemo(() => {
+    const filtered = statusFilter === 'todos' 
+      ? meetings 
+      : meetings.filter(meeting => meeting.status === statusFilter);
+    
+    return [...filtered].sort((a, b) => 
+      new Date(b.data_agendamento).getTime() - new Date(a.data_agendamento).getTime()
+    );
+  }, [meetings, statusFilter]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -58,12 +95,40 @@ export const SDRMeetingDetailsModal: React.FC<SDRMeetingDetailsModalProps> = ({
         </DialogHeader>
         
         <div className="mt-4">
+          {/* Filtros por Status */}
+          <div className="mb-6 space-y-3">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              <span className="font-medium text-sm">Filtrar por status:</span>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              {statusFilterOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  variant={statusFilter === option.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter(option.value)}
+                  className={`h-8 text-xs ${option.color}`}
+                >
+                  {option.label}
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {statusCounts[option.value]}
+                  </Badge>
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <div className="text-sm text-muted-foreground mb-4">
-            Total de {meetings.length} reunião(ões) encontrada(s)
+            {statusFilter === 'todos' 
+              ? `Total de ${meetings.length} reunião(ões) encontrada(s)`
+              : `${filteredAndSortedMeetings.length} reunião(ões) filtrada(s) de ${meetings.length} total`
+            }
           </div>
           
           <div className="space-y-3">
-            {sortedMeetings.map((meeting, index) => (
+            {filteredAndSortedMeetings.map((meeting, index) => (
               <div 
                 key={meeting.id}
                 className="p-4 border rounded-lg bg-card hover:bg-muted/50 transition-colors"
@@ -114,6 +179,13 @@ export const SDRMeetingDetailsModal: React.FC<SDRMeetingDetailsModalProps> = ({
                 )}
               </div>
             ))}
+            
+            {filteredAndSortedMeetings.length === 0 && statusFilter !== 'todos' && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Filter className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Nenhuma reunião encontrada para o filtro "{statusFilterOptions.find(f => f.value === statusFilter)?.label}".</p>
+              </div>
+            )}
             
             {meetings.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">

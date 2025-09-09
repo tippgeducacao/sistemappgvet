@@ -275,10 +275,11 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedSDRDetails({ name: stats.sdr_name, meetings: stats.meetings })}
-                      className="h-6 px-2 text-xs"
+                      className="h-auto px-2 py-1 text-xs whitespace-nowrap"
+                      title={`Ver detalhes: ${stats.convertidas} convertidas, ${stats.compareceram} compareceram, ${stats.pendentes} pendentes, ${stats.naoCompareceram} não compareceram`}
                     >
                       <Eye className="h-3 w-3 mr-1" />
-                      Ver
+                      Ver ({stats.convertidas}c / {stats.compareceram}comp / {stats.pendentes}p / {stats.naoCompareceram}nc)
                     </Button>
                   </div>
                   <div className="flex gap-4 text-sm">
