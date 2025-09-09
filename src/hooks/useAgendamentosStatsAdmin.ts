@@ -40,7 +40,9 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           resultado_reuniao,
           data_agendamento,
           profiles!sdr_id (
-            name
+            name,
+            user_type,
+            ativo
           )
         `)
         .not('resultado_reuniao', 'is', null)
@@ -64,7 +66,16 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
 
       data?.forEach((agendamento: any) => {
         const sdrId = agendamento.sdr_id;
-        const sdrName = agendamento.profiles?.name || 'SDR Desconhecido';
+        const profile = agendamento.profiles;
+        const sdrName = profile?.name || 'SDR Desconhecido';
+        
+        // Filtrar apenas usuários ativos e com tipo SDR
+        const isActiveSDR = profile?.ativo === true && 
+          ['sdr', 'sdr_inbound', 'sdr_outbound'].includes(profile?.user_type);
+        
+        if (!isActiveSDR) {
+          return; // Pular este usuário se não for SDR ativo
+        }
 
         if (!statsMap.has(sdrId)) {
           statsMap.set(sdrId, {

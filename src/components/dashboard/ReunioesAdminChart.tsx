@@ -203,8 +203,8 @@ export const ReunioesAdminChart: React.FC<ReunioesAdminChartProps> = ({ selected
         ) : statsData.length === 0 ? (
           <div className="flex items-center justify-center h-64 text-muted-foreground">
             <div className="text-center">
-              <p className="text-lg mb-2">Nenhuma reunião finalizada ainda</p>
-              <p className="text-sm">Aguarde os vendedores completarem as reuniões agendadas</p>
+              <p className="text-lg mb-2">Sem SDRs ativos para exibir resultados</p>
+              <p className="text-sm">Nenhum SDR ativo possui reuniões finalizadas nesta semana</p>
             </div>
           </div>
         ) : (
