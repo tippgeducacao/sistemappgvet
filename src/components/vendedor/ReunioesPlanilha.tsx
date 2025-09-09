@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,15 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [novaHoraFim, setNovaHoraFim] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const { updateField, clearForm } = useFormStore();
+  
+  // Memoize callback functions to prevent infinite re-renders
+  const handleUpdateField = useCallback((field: any, value: any) => {
+    updateField(field, value);
+  }, [updateField]);
+  
+  const handleClearForm = useCallback(() => {
+    clearForm();
+  }, [clearForm]);
 
   // Separar reuniões em agendadas (sem resultado) e histórico (com resultado) com filtro de pesquisa
   const { reunioesAgendadas, reunioesHistorico } = useMemo(() => {
@@ -136,20 +145,20 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     setDialogAberto(true);
   };
 
-  const abrirNovaVenda = (agendamento: Agendamento) => {
+  const abrirNovaVenda = useCallback((agendamento: Agendamento) => {
     // Limpar formulário primeiro
-    clearForm();
+    handleClearForm();
     
     // Preencher dados do lead
     if (agendamento.lead) {
       if (agendamento.lead.nome) {
-        updateField('nomeAluno', agendamento.lead.nome);
+        handleUpdateField('nomeAluno', agendamento.lead.nome);
       }
       if (agendamento.lead.email) {
-        updateField('emailAluno', agendamento.lead.email);
+        handleUpdateField('emailAluno', agendamento.lead.email);
       }
       if (agendamento.lead.whatsapp) {
-        updateField('telefone', agendamento.lead.whatsapp);
+        handleUpdateField('telefone', agendamento.lead.whatsapp);
       }
     }
     
@@ -159,22 +168,22 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
         sdr_id: agendamento.sdr_id,
         sdr_nome: agendamento.sdr?.name
       });
-      updateField('sdrId', agendamento.sdr_id);
-      updateField('sdrNome', agendamento.sdr?.name || 'SDR Não Identificado');
+      handleUpdateField('sdrId', agendamento.sdr_id);
+      handleUpdateField('sdrNome', agendamento.sdr?.name || 'SDR Não Identificado');
     }
     
     // Adicionar observação sobre origem da venda
     const sdrInfo = agendamento.sdr?.name ? ` (SDR: ${agendamento.sdr.name})` : '';
     const observacaoOrigem = `Venda originada da reunião do dia ${format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}${sdrInfo}`;
-    updateField('observacoes', observacaoOrigem);
+    handleUpdateField('observacoes', observacaoOrigem);
     
     // Adicionar ID do agendamento para controle
     console.log('🆔 Definindo agendamentoId no formulário:', agendamento.id);
-    updateField('agendamentoId', agendamento.id);
+    handleUpdateField('agendamentoId', agendamento.id);
     
     setAgendamentoSelecionado(agendamento);
     setNovaVendaAberto(true);
-  };
+  }, [handleUpdateField, handleClearForm]);
 
   const abrirRemarcarDialog = (agendamento: Agendamento, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -709,7 +718,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
             onCancel={() => {
               setNovaVendaAberto(false);
               setAgendamentoSelecionado(null);
-              clearForm();
+              handleClearForm();
             }}
           />
         </div>

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,9 +25,9 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel }) => {
   const { isSDR, isVendedor, isAdmin } = useUserRoles();
   const { formData, updateField, clearForm, isSubmitting, setIsSubmitting } = useFormStore();
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = useCallback((field: string, value: string) => {
     updateField(field as any, value);
-  };
+  }, [updateField]);
 
   // Renderizar seção de curso baseada no tipo de usuário
   const renderCourseSection = () => {
