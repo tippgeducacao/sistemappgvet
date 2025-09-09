@@ -33,6 +33,8 @@ export interface FormData {
 
   // Informações da reunião (se aplicável)
   agendamentoId?: string;
+  sdrId?: string;
+  sdrNome?: string;
 
   // Informações de Pontuação
   lotePos: string;

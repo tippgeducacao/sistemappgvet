@@ -12,7 +12,7 @@ import { Agendamento } from '@/hooks/useAgendamentos';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import NovaVendaForm from '@/components/NovaVendaForm';
+import NovaVendaForm from '@/components/forms/NovaVendaForm';
 import { useFormStore } from '@/store/FormStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -153,8 +153,19 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       }
     }
     
+    // Preencher informações do SDR da reunião
+    if (agendamento.sdr_id) {
+      console.log('🎯 Preenchendo SDR da reunião:', {
+        sdr_id: agendamento.sdr_id,
+        sdr_nome: agendamento.sdr?.name
+      });
+      updateField('sdrId', agendamento.sdr_id);
+      updateField('sdrNome', agendamento.sdr?.name || 'SDR Não Identificado');
+    }
+    
     // Adicionar observação sobre origem da venda
-    const observacaoOrigem = `Venda originada da reunião do dia ${format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`;
+    const sdrInfo = agendamento.sdr?.name ? ` (SDR: ${agendamento.sdr.name})` : '';
+    const observacaoOrigem = `Venda originada da reunião do dia ${format(new Date(agendamento.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}${sdrInfo}`;
     updateField('observacoes', observacaoOrigem);
     
     // Adicionar ID do agendamento para controle
