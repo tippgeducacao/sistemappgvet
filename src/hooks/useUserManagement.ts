@@ -15,7 +15,6 @@ export const useUserManagement = () => {
 
   useEffect(() => {
     if (profile && user) {
-      console.log('Profile detectado:', profile);
       setCurrentUser({
         user_type: profile.user_type,
         name: profile.name,
@@ -25,7 +24,7 @@ export const useUserManagement = () => {
     } else {
       setCurrentUser(null);
     }
-  }, [profile, user, setCurrentUser]);
+  }, [profile, user]);
 
   return {
     user,

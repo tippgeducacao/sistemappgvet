@@ -122,13 +122,9 @@ export const useFormStore = create<FormState>((set) => ({
   })),
 
   setVendedor: (vendedor) => {
-    console.log('📝 FormStore: setVendedor chamado com:', vendedor);
-    set((state) => {
-      console.log('📝 FormStore: Estado anterior:', state.formData.vendedor);
-      const newState = { ...state.formData, vendedor };
-      console.log('📝 FormStore: Novo estado:', newState.vendedor);
-      return { formData: newState };
-    });
+    set((state) => ({
+      formData: { ...state.formData, vendedor }
+    }));
   },
   
   clearForm: () => set({ formData: initialFormData }),
