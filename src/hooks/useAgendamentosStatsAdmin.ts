@@ -43,7 +43,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
         endOfWeek: endOfWeek.toISOString() 
       });
       
-      // Buscar todos os agendamentos com resultado para SDRs ativos
+      // Buscar todos os agendamentos com resultado OU remarcados para SDRs ativos
       let agendamentosQuery = supabase
         .from('agendamentos')
         .select(`
@@ -54,6 +54,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           resultado_reuniao,
           data_agendamento,
           form_entry_id,
+          status,
           profiles!sdr_id (
             name,
             user_type,
@@ -66,7 +67,7 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
             nome
           )
         `)
-        .not('resultado_reuniao', 'is', null);
+        .or('resultado_reuniao.not.is.null,status.eq.remarcado');
 
       // Se um SDR específico foi selecionado
       if (selectedSDR && selectedSDR !== 'todos') {
@@ -387,8 +388,13 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           vendedor_name: agendamento.vendedor?.name || 'Vendedor desconhecido'
         };
 
-        // Determinar status e contagem baseado no resultado da reunião
-        if (agendamento.resultado_reuniao === 'nao_compareceu') {
+        // Determinar status e contagem baseado no resultado da reunião e status
+        if (agendamento.status === 'remarcado') {
+          // Reuniões remarcadas continuam contando para o SDR
+          stats.compareceram++;
+          meetingDetail.status = 'compareceu';
+          meetingDetail.resultado_reuniao = 'Remarcada pelo vendedor';
+        } else if (agendamento.resultado_reuniao === 'nao_compareceu') {
           stats.naoCompareceram++;
           meetingDetail.status = 'nao_compareceu';
         } else if (agendamento.resultado_reuniao === 'comprou') {
@@ -446,6 +452,10 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
               meetingDetail.curso_nome = 'Aguardando aprovação';
             }
           }
+        } else if (!agendamento.resultado_reuniao && agendamento.status !== 'remarcado') {
+          // Reuniões sem resultado e não remarcadas (provavelmente agendadas/atrasadas)
+          stats.compareceram++;
+          meetingDetail.status = 'compareceu';
         } else {
           // Outras respostas (presente, compareceu, etc.)
           const vendaPendente = todasVendasPendentes.find(v => 
