@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Globe } from 'lucide-react';
+import { normalizePageSlug } from '@/utils/leadUtils';
 import type { Lead } from '@/hooks/useLeads';
 
 interface PaginasLeadsChartProps {
@@ -18,26 +19,6 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
   showDetails = true,
   height = "h-[400px]"
 }) => {
-  // Normalizar nome da página
-  const normalizePaginaNome = (paginaNome?: string) => {
-    if (!paginaNome) return 'Não informado';
-    
-    // Remover protocolo e www
-    let normalized = paginaNome
-      .replace(/^https?:\/\//, '')
-      .replace(/^www\./, '')
-      .replace(/\/$/, ''); // Remove barra final
-    
-    // Se ainda estiver muito longo, pegar apenas o domínio principal
-    if (normalized.length > 50) {
-      const parts = normalized.split('/');
-      normalized = parts[0];
-    }
-    
-    // Capitalizar primeira letra
-    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-  };
-
   // Verificar se temos leads
   if (!leads || leads.length === 0) {
     return (
@@ -64,8 +45,12 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
   const paginasMap = new Map<string, number>();
   
   leads.forEach(lead => {
-    const pagina = normalizePaginaNome(lead.pagina_nome);
-    paginasMap.set(pagina, (paginasMap.get(pagina) || 0) + 1);
+    const slug = normalizePageSlug(lead.pagina_nome);
+    const displayName = slug 
+      ? slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' ')
+      : 'Não informado';
+    
+    paginasMap.set(displayName, (paginasMap.get(displayName) || 0) + 1);
   });
 
   // Cores para o gráfico de pizza - usando tons diferentes das profissões
