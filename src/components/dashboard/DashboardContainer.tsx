@@ -13,8 +13,6 @@ import WeeklyApprovedSalesChart from './WeeklyApprovedSalesChart';
 import GoalsAchievementChart from './GoalsAchievementChart';
 import { ReunioesAdminChart } from './ReunioesAdminChart';
 import { ReunioesVendedoresChart } from './ReunioesVendedoresChart';
-import ProfissoesLeadsChart from '@/components/charts/ProfissoesLeadsChart';
-import PaginasLeadsChart from '@/components/charts/PaginasLeadsChart';
 
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
 import { Button } from '@/components/ui/button';
@@ -24,7 +22,6 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useToast } from '@/hooks/use-toast';
-import { useAllLeads } from '@/hooks/useLeads';
 import type { UserType } from '@/types/user';
 
 interface DashboardContainerProps {
@@ -35,7 +32,6 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
   const { isDiretor, isAdmin, isSecretaria } = useUserRoles();
   const { vendedores } = useVendedores();
   const { toast } = useToast();
-  const { data: allLeads } = useAllLeads();
   
   // Usar lógica de semanas consistente - igual aos SDRs
   const { getMesAnoSemanaAtual } = useMetasSemanais();
@@ -166,22 +162,6 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
         />
-
-        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6">
-          <ProfissoesLeadsChart 
-            leads={allLeads || []}
-            title="Profissões dos Leads"
-            showDetails={true}
-            height="h-[400px]"
-          />
-
-          <PaginasLeadsChart 
-            leads={allLeads || []}
-            title="Páginas de Origem dos Leads"
-            showDetails={true}
-            height="h-[400px]"
-          />
-        </div>
 
         <VendorsRanking
           selectedVendedor={selectedVendedor}
