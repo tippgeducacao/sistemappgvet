@@ -5,6 +5,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { MapPin } from 'lucide-react';
 import ProfissoesLeadsChart from '@/components/charts/ProfissoesLeadsChart';
+import PaginasLeadsChart from '@/components/charts/PaginasLeadsChart';
 import type { Lead } from '@/hooks/useLeads';
 
 interface LeadsDashboardProps {
@@ -19,10 +20,17 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
   if (!leads || leads.length === 0) {
     console.log('⚠️ Nenhum lead disponível para dashboard');
     return (
-      <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 mb-4">
         <ProfissoesLeadsChart 
           leads={[]}
           title="Profissões dos Leads"
+          showDetails={true}
+          height="h-[400px]"
+        />
+
+        <PaginasLeadsChart 
+          leads={[]}
+          title="Páginas dos Leads"
           showDetails={true}
           height="h-[400px]"
         />
@@ -90,11 +98,19 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
   console.log('📈 Dados finais para gráfico de estados:', estadosChartData);
 
   return (
-    <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3 mb-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 mb-4">
       {/* Gráfico de Profissões */}
       <ProfissoesLeadsChart 
         leads={leads}
         title="Profissões dos Leads"
+        showDetails={true}
+        height="h-[400px]"
+      />
+
+      {/* Gráfico de Páginas */}
+      <PaginasLeadsChart 
+        leads={leads}
+        title="Páginas dos Leads"
         showDetails={true}
         height="h-[400px]"
       />
