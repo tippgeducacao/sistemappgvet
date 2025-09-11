@@ -14,6 +14,7 @@ import GoalsAchievementChart from './GoalsAchievementChart';
 import { ReunioesAdminChart } from './ReunioesAdminChart';
 import { ReunioesVendedoresChart } from './ReunioesVendedoresChart';
 import ProfissoesLeadsChart from '@/components/charts/ProfissoesLeadsChart';
+import PaginasLeadsChart from '@/components/charts/PaginasLeadsChart';
 
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
 import { Button } from '@/components/ui/button';
@@ -166,12 +167,21 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
           selectedYear={selectedYear}
         />
 
-        <ProfissoesLeadsChart 
-          leads={allLeads || []}
-          title="Profissões dos Leads"
-          showDetails={true}
-          height="h-[400px]"
-        />
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6">
+          <ProfissoesLeadsChart 
+            leads={allLeads || []}
+            title="Profissões dos Leads"
+            showDetails={true}
+            height="h-[400px]"
+          />
+
+          <PaginasLeadsChart 
+            leads={allLeads || []}
+            title="Páginas de Origem dos Leads"
+            showDetails={true}
+            height="h-[400px]"
+          />
+        </div>
 
         <VendorsRanking
           selectedVendedor={selectedVendedor}
