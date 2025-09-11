@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { MapPin } from 'lucide-react';
+import ProfissoesLeadsChart from '@/components/charts/ProfissoesLeadsChart';
 import type { Lead } from '@/hooks/useLeads';
 
 interface LeadsDashboardProps {
@@ -18,7 +19,14 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
   if (!leads || leads.length === 0) {
     console.log('⚠️ Nenhum lead disponível para dashboard');
     return (
-      <div className="grid grid-cols-1 gap-3 mb-4">
+      <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3 mb-4">
+        <ProfissoesLeadsChart 
+          leads={[]}
+          title="Profissões dos Leads"
+          showDetails={true}
+          height="h-[400px]"
+        />
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -82,7 +90,15 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
   console.log('📈 Dados finais para gráfico de estados:', estadosChartData);
 
   return (
-    <div className="grid grid-cols-1 gap-3 mb-4">
+    <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3 mb-4">
+      {/* Gráfico de Profissões */}
+      <ProfissoesLeadsChart 
+        leads={leads}
+        title="Profissões dos Leads"
+        showDetails={true}
+        height="h-[400px]"
+      />
+
       {/* Gráfico de Estados - Barras Verticais */}
       <Card>
         <CardHeader>
