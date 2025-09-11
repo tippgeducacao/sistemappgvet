@@ -47,11 +47,29 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
   const paginasMap = new Map<string, number>();
   const leadsMap = new Map<string, Lead[]>();
   
+  // Função para identificar se o lead foi criado por agendamento
+  const isAgendamentoLead = (lead: Lead): boolean => {
+    return (
+      lead.fonte_captura?.toLowerCase().includes('agendamento') ||
+      lead.fonte_referencia?.toLowerCase().includes('agendamento') ||
+      lead.pagina_nome?.toLowerCase().includes('agendamento') ||
+      lead.utm_source?.toLowerCase().includes('agendamento') ||
+      lead.utm_campaign?.toLowerCase().includes('agendamento')
+    );
+  };
+  
   leads.forEach(lead => {
-    const slug = normalizePageSlug(lead.pagina_nome);
-    const displayName = slug 
-      ? slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' ')
-      : 'Não informado';
+    let displayName: string;
+    
+    // Verificar se é um lead de agendamento
+    if (isAgendamentoLead(lead)) {
+      displayName = 'Agendamentos';
+    } else {
+      const slug = normalizePageSlug(lead.pagina_nome);
+      displayName = slug 
+        ? slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' ')
+        : 'Não informado';
+    }
     
     paginasMap.set(displayName, (paginasMap.get(displayName) || 0) + 1);
     
