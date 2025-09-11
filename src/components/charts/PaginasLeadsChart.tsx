@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { Globe } from 'lucide-react';
+import { Globe, ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { normalizePageSlug } from '@/utils/leadUtils';
 import type { Lead } from '@/hooks/useLeads';
 
@@ -21,6 +22,8 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
   height = "h-[400px]",
   onPageClick
 }) => {
+  const [showAllPages, setShowAllPages] = useState(false);
+  
   // Verificar se temos leads
   if (!leads || leads.length === 0) {
     return (
@@ -113,6 +116,24 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
     .sort((a, b) => b.value - a.value)
     .slice(0, 10);
 
+  // Dados completos para a lista (quando expandida)
+  const allPaginasData = Array.from(paginasMap.entries())
+    .map(([pagina, count]) => ({
+      name: pagina.length > 30 ? `${pagina.slice(0, 30)}...` : pagina,
+      fullName: pagina,
+      value: count,
+      percentage: ((count / leads.length) * 100).toFixed(1)
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  // Função para lidar com clique na lista
+  const handleListItemClick = (pageName: string) => {
+    if (onPageClick) {
+      const pageLeads = leadsMap.get(pageName) || [];
+      onPageClick(pageName, pageLeads);
+    }
+  };
+
   const chartConfig = {
     paginas: {
       label: "Páginas",
@@ -165,25 +186,59 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
             {/* Lista das páginas */}
             {showDetails && (
               <div className="mt-4 space-y-2">
-                {paginasChartData.map((item, index) => (
-                  <div key={item.fullName} className="flex items-center justify-between text-sm">
+                {/* Dados a serem exibidos: top 10 ou todos */}
+                {(showAllPages ? allPaginasData : paginasChartData).map((item, index) => (
+                  <div 
+                    key={item.fullName} 
+                    className="flex items-center justify-between text-sm hover:bg-accent hover:text-accent-foreground rounded-lg p-2 cursor-pointer transition-colors"
+                    onClick={() => handleListItemClick(item.fullName)}
+                  >
                     <div className="flex items-center space-x-3 min-w-0 flex-1">
                       <div 
                         className="w-3 h-3 rounded-full flex-shrink-0" 
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        style={{ 
+                          backgroundColor: index < 10 
+                            ? COLORS[index % COLORS.length] 
+                            : '#94A3B8' // Cor padrão para páginas além das top 10
+                        }}
                       />
                       <span className="truncate font-medium" title={item.fullName}>
                         {item.fullName}
                       </span>
+                      {index < 10 && <span className="text-xs text-primary font-semibold">#TOP</span>}
                     </div>
-                    <span className="font-bold text-foreground ml-3 flex-shrink-0">
-                      {item.value}
-                    </span>
+                    <div className="flex items-center space-x-2 ml-3 flex-shrink-0">
+                      <span className="text-xs text-muted-foreground">
+                        {item.percentage}%
+                      </span>
+                      <span className="font-bold text-foreground">
+                        {item.value}
+                      </span>
+                    </div>
                   </div>
                 ))}
+                
+                {/* Botão para mostrar/ocultar todas as páginas */}
                 {paginasMap.size > 10 && (
-                  <div className="text-sm text-muted-foreground pt-2 border-t">
-                    +{paginasMap.size - 10} outras páginas
+                  <div className="pt-3 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAllPages(!showAllPages)}
+                      className="w-full"
+                    >
+                      {showAllPages ? (
+                        <>
+                          <ChevronUp className="w-4 h-4 mr-2" />
+                          Mostrar apenas Top 10
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4 mr-2" />
+                          Ver todas as {paginasMap.size} páginas
+                        </>
+                      )}
+                    </Button>
                   </div>
                 )}
               </div>
