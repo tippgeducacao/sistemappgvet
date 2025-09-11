@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { MapPin } from 'lucide-react';
 import ProfissoesLeadsChart from '@/components/charts/ProfissoesLeadsChart';
 import PaginasLeadsChart from '@/components/charts/PaginasLeadsChart';
+import LeadsListModal from '@/components/leads/LeadsListModal';
 import type { Lead } from '@/hooks/useLeads';
 
 interface LeadsDashboardProps {
@@ -15,6 +16,18 @@ interface LeadsDashboardProps {
 const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
   console.log('🔍 LeadsDashboard recebeu leads:', leads?.length || 0);
   console.log('📋 Primera amostra de leads:', leads?.slice(0, 2));
+
+  // Estado para o modal de leads
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPageLeads, setSelectedPageLeads] = useState<Lead[]>([]);
+  const [selectedPageName, setSelectedPageName] = useState('');
+
+  // Função para lidar com clique na página
+  const handlePageClick = (pageName: string, pageLeads: Lead[]) => {
+    setSelectedPageName(pageName);
+    setSelectedPageLeads(pageLeads);
+    setIsModalOpen(true);
+  };
 
   // Verificar se temos leads
   if (!leads || leads.length === 0) {
@@ -33,6 +46,7 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
           title="Páginas dos Leads"
           showDetails={true}
           height="h-[400px]"
+          onPageClick={handlePageClick}
         />
 
         <Card>
@@ -113,6 +127,7 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
         title="Páginas dos Leads"
         showDetails={true}
         height="h-[400px]"
+        onPageClick={handlePageClick}
       />
 
       {/* Gráfico de Estados - Barras Verticais */}
@@ -180,6 +195,14 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal para exibir lista de leads */}
+      <LeadsListModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        leads={selectedPageLeads}
+        pageTitle={selectedPageName}
+      />
     </div>
   );
 };

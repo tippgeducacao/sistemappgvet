@@ -11,13 +11,15 @@ interface PaginasLeadsChartProps {
   title?: string;
   showDetails?: boolean;
   height?: string;
+  onPageClick?: (pageName: string, leads: Lead[]) => void;
 }
 
 const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({ 
   leads, 
   title = "Páginas de Origem dos Leads",
   showDetails = true,
-  height = "h-[400px]"
+  height = "h-[400px]",
+  onPageClick
 }) => {
   // Verificar se temos leads
   if (!leads || leads.length === 0) {
@@ -41,8 +43,9 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
     );
   }
 
-  // Processar dados de páginas
+  // Processar dados de páginas e manter mapeamento de leads
   const paginasMap = new Map<string, number>();
+  const leadsMap = new Map<string, Lead[]>();
   
   leads.forEach(lead => {
     const slug = normalizePageSlug(lead.pagina_nome);
@@ -51,7 +54,22 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
       : 'Não informado';
     
     paginasMap.set(displayName, (paginasMap.get(displayName) || 0) + 1);
+    
+    // Manter lista de leads por página
+    if (!leadsMap.has(displayName)) {
+      leadsMap.set(displayName, []);
+    }
+    leadsMap.get(displayName)!.push(lead);
   });
+
+  // Função para lidar com clique no gráfico
+  const handlePieClick = (data: any) => {
+    if (onPageClick && data?.payload) {
+      const pageName = data.payload.fullName || data.payload.name;
+      const pageLeads = leadsMap.get(pageName) || [];
+      onPageClick(pageName, pageLeads);
+    }
+  };
 
   // Cores para o gráfico de pizza - usando tons diferentes das profissões
   const COLORS = [
@@ -108,6 +126,8 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
                     fill="#8884d8"
                     dataKey="value"
                     label={false}
+                    onClick={handlePieClick}
+                    className="cursor-pointer"
                   >
                     {paginasChartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
