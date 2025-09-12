@@ -19,7 +19,6 @@ interface HistoricoReuniao {
   id: string;
   lead_id: string;
   vendedor_id: string;
-  sdr_id: string;
   data_agendamento: string;
   data_fim_agendamento?: string;
   pos_graduacao_interesse: string;
@@ -36,7 +35,7 @@ interface HistoricoReuniao {
     email?: string;
     whatsapp?: string;
   };
-  sdr?: {
+  vendedor?: {
     name: string;
     email: string;
   };
@@ -75,7 +74,7 @@ const HistoricoReunioes: React.FC = () => {
             email,
             whatsapp
           ),
-          sdr:profiles!agendamentos_sdr_id_fkey (
+          vendedor:profiles!agendamentos_vendedor_id_fkey (
             name,
             email
           )
@@ -540,7 +539,7 @@ const HistoricoReunioes: React.FC = () => {
               {/* Informações adicionais */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">SDR:</span> {reuniao.sdr?.name}
+                  <span className="font-medium">Vendedor:</span> {reuniao.vendedor?.name}
                 </div>
                 <div>
                   <span className="font-medium">Pós-graduação:</span> {reuniao.pos_graduacao_interesse}
