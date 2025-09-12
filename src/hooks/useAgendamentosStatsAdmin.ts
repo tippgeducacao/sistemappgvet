@@ -133,15 +133,15 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
         }
       }
 
-      // Filtrar vendas aprovadas que pertencem à semana atual baseado na data efetiva
+      // Filtrar vendas aprovadas que foram assinadas na semana atual (data efetiva)
       const vendasAprovadasNaSemana = todasVendasAprovadas?.filter(venda => {
         const dataEfetiva = getDataEfetivaVenda(venda);
         return dataEfetiva >= startOfWeek && dataEfetiva <= endOfWeek;
       }) || [];
 
-      console.log('💰 Vendas convertidas na semana:', {
+      console.log('💰 Vendas convertidas na semana (por data de assinatura):', {
         total_aprovadas: todasVendasAprovadas?.length || 0,
-        na_semana: vendasAprovadasNaSemana.length
+        assinadas_na_semana: vendasAprovadasNaSemana.length
       });
 
       // Buscar vendas pendentes (com form_entry_id direto e por matching de contato)
@@ -285,71 +285,9 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
       // Mapear IDs de agendamentos que já foram processados como convertidos
       const agendamentosConvertidosIds = new Set();
 
-      // 1. PRIMEIRO: Fazer matching entre vendas aprovadas na semana e agendamentos dos SDRs
-      vendasAprovadasNaSemana?.forEach((venda: any) => {
-        // Buscar agendamento relacionado através de form_entry_id direto
-        let agendamentoRelacionado = agendamentosData?.find(a => a.form_entry_id === venda.id);
-        
-        // Se não encontrou por form_entry_id, tentar matching por contato
-        if (!agendamentoRelacionado) {
-          const alunoCorrespondente = alunosData?.find(aluno => aluno.form_entry_id === venda.id);
-          if (alunoCorrespondente) {
-            // Buscar agendamento que pode corresponder via contato
-            agendamentoRelacionado = agendamentosData?.find(agendamento => {
-              if (!agendamento.lead_id) return false;
-              
-              const leadDoAgendamento = leadsData?.find(lead => lead.id === agendamento.lead_id);
-              if (!leadDoAgendamento) return false;
-              
-              // Matching por WhatsApp ou email
-              const leadWhatsapp = leadDoAgendamento.whatsapp?.replace(/\D/g, '');
-              const alunoTelefone = alunoCorrespondente.telefone?.replace(/\D/g, '');
-              
-              if (leadWhatsapp && alunoTelefone && leadWhatsapp === alunoTelefone) {
-                return true;
-              }
-              if (leadDoAgendamento.email && alunoCorrespondente.email && 
-                  leadDoAgendamento.email.toLowerCase() === alunoCorrespondente.email.toLowerCase()) {
-                return true;
-              }
-              return false;
-            });
-          }
-        }
-
-        // Se encontrou um agendamento relacionado, atribuir a conversão ao SDR
-        if (agendamentoRelacionado && agendamentoRelacionado.sdr_id) {
-          const sdrProfile = agendamentoRelacionado.profiles;
-          const sdrName = sdrProfile?.name || 'SDR Desconhecido';
-          
-          // Verificar se é SDR ativo
-          const isActiveSDR = sdrProfile?.ativo === true && 
-            ['sdr', 'sdr_inbound', 'sdr_outbound'].includes(sdrProfile?.user_type);
-          
-          if (!ensureSDRInMap(agendamentoRelacionado.sdr_id, sdrName, isActiveSDR)) return;
-
-          const stats = statsMap.get(agendamentoRelacionado.sdr_id)!;
-          stats.convertidas++;
-
-          // Marcar agendamento como já processado
-          agendamentosConvertidosIds.add(agendamentoRelacionado.id);
-
-          const meetingDetail: MeetingDetail = {
-            id: agendamentoRelacionado.id,
-            data_agendamento: agendamentoRelacionado.data_agendamento,
-            resultado_reuniao: 'comprou',
-            status: 'convertida',
-            lead_name: agendamentoRelacionado.leads?.nome || 'Cliente convertido',
-            vendedor_name: agendamentoRelacionado.vendedor?.name || 'Vendedor',
-            data_assinatura: venda.data_assinatura_contrato || venda.data_aprovacao?.split('T')[0],
-            curso_nome: venda.cursos?.nome
-          };
-
-          stats.meetings.push(meetingDetail);
-        }
-      });
-
-      // 2. SEGUNDO: Processar agendamentos da semana
+      // NOVA LÓGICA: Primeiro processar reuniões da semana, depois vendas assinadas na semana
+      
+      // 1. PRIMEIRO: Processar todos os agendamentos da semana atual
       agendamentosData?.forEach((agendamento: any) => {
         const sdrId = agendamento.sdr_id;
         const profile = agendamento.profiles;
@@ -369,11 +307,6 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
         
         if (!isInWeek) {
           return; // Só processar reuniões da semana atual
-        }
-
-        // Verificar se já foi processado como conversão aprovada
-        if (agendamentosConvertidosIds.has(agendamento.id)) {
-          return; // Já foi processado como convertido, não contar novamente
         }
 
         stats.total++;
@@ -398,17 +331,21 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           stats.naoCompareceram++;
           meetingDetail.status = 'nao_compareceu';
         } else if (agendamento.resultado_reuniao === 'comprou') {
-          // Verificar se existe venda aprovada correspondente (sem form_entry_id)
+          // Verificar se existe venda APROVADA correspondente a esta reunião
           let vendaAprovadaCorrespondente = null;
-          if (!agendamento.form_entry_id && agendamento.lead_id) {
-            // Fazer matching por contato quando não há form_entry_id
+          
+          // Primeiro tentar por form_entry_id direto
+          if (agendamento.form_entry_id) {
+            vendaAprovadaCorrespondente = todasVendasAprovadas?.find(v => v.id === agendamento.form_entry_id);
+          }
+          
+          // Se não encontrou por form_entry_id, tentar matching por contato
+          if (!vendaAprovadaCorrespondente && agendamento.lead_id) {
             const leadDoAgendamento = leadsData?.find(lead => lead.id === agendamento.lead_id);
             if (leadDoAgendamento) {
-              vendaAprovadaCorrespondente = vendasAprovadasNaSemana?.find(venda => {
-                // Buscar aluno correspondente na venda
+              vendaAprovadaCorrespondente = todasVendasAprovadas?.find(venda => {
                 const alunoCorrespondente = alunosData?.find(aluno => aluno.form_entry_id === venda.id);
                 if (alunoCorrespondente) {
-                  // Matching por WhatsApp ou email
                   const leadWhatsapp = leadDoAgendamento.whatsapp?.replace(/\D/g, '');
                   const alunoTelefone = alunoCorrespondente.telefone?.replace(/\D/g, '');
                   
@@ -426,13 +363,25 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
           }
 
           if (vendaAprovadaCorrespondente) {
-            // Esta reunião já foi convertida e aprovada, não deveria estar aqui
-            // mas por precaução, vamos marcar como convertida
-            stats.convertidas++;
-            meetingDetail.status = 'convertida';
-            meetingDetail.curso_nome = vendaAprovadaCorrespondente.cursos?.nome;
-            meetingDetail.data_assinatura = vendaAprovadaCorrespondente.data_assinatura_contrato || 
-                                           vendaAprovadaCorrespondente.data_aprovacao?.split('T')[0];
+            // Esta reunião tem uma venda aprovada, mas só conta como convertida se foi assinada nesta semana
+            const dataEfetivaVenda = getDataEfetivaVenda(vendaAprovadaCorrespondente);
+            const foiAssinadaNaSemana = dataEfetivaVenda >= startOfWeek && dataEfetivaVenda <= endOfWeek;
+            
+            if (foiAssinadaNaSemana) {
+              // Venda foi assinada nesta semana - conta como convertida
+              stats.convertidas++;
+              meetingDetail.status = 'convertida';
+              meetingDetail.curso_nome = vendaAprovadaCorrespondente.cursos?.nome;
+              meetingDetail.data_assinatura = vendaAprovadaCorrespondente.data_assinatura_contrato || 
+                                             vendaAprovadaCorrespondente.data_aprovacao?.split('T')[0];
+              agendamentosConvertidosIds.add(agendamento.id);
+            } else {
+              // Venda existe mas foi assinada em outra semana - não conta como convertida nesta semana
+              // Mas também não conta como pendente pois já foi aprovada
+              stats.compareceram++;
+              meetingDetail.status = 'compareceu';
+              meetingDetail.resultado_reuniao = 'Venda aprovada em outra semana';
+            }
           } else {
             // Verificar se existe venda pendente
             const vendaPendente = todasVendasPendentes.find(v => 
@@ -453,27 +402,81 @@ export const useAgendamentosStatsAdmin = (selectedSDR?: string, weekDate?: Date)
             }
           }
         } else if (!agendamento.resultado_reuniao && agendamento.status !== 'remarcado') {
-          // Reuniões sem resultado e não remarcadas (provavelmente agendadas/atrasadas)
+          // Reunião sem resultado definido
           stats.compareceram++;
           meetingDetail.status = 'compareceu';
+          meetingDetail.resultado_reuniao = 'Participou';
         } else {
-          // Outras respostas (presente, compareceu, etc.)
-          const vendaPendente = todasVendasPendentes.find(v => 
-            v.id === agendamento.form_entry_id || 
-            v.agendamento_id === agendamento.id
-          );
-          
-          if (vendaPendente) {
-            stats.pendentes++;
-            meetingDetail.status = 'pendente';
-            meetingDetail.curso_nome = vendaPendente.cursos?.nome;
-          } else {
-            stats.compareceram++;
-            meetingDetail.status = 'compareceu';
-          }
+          // Outros casos (nao_comprou, etc)
+          stats.compareceram++;
+          meetingDetail.status = 'compareceu';
         }
 
         stats.meetings.push(meetingDetail);
+      });
+
+      // 2. SEGUNDO: Processar vendas assinadas nesta semana que não foram processadas acima
+      vendasAprovadasNaSemana?.forEach((venda: any) => {
+        // Buscar agendamento relacionado que NÃO foi processado acima
+        let agendamentoRelacionado = agendamentosData?.find(a => 
+          a.form_entry_id === venda.id && !agendamentosConvertidosIds.has(a.id)
+        );
+        
+        // Se não encontrou por form_entry_id, tentar matching por contato
+        if (!agendamentoRelacionado) {
+          const alunoCorrespondente = alunosData?.find(aluno => aluno.form_entry_id === venda.id);
+          if (alunoCorrespondente) {
+            agendamentoRelacionado = agendamentosData?.find(agendamento => {
+              if (!agendamento.lead_id || agendamentosConvertidosIds.has(agendamento.id)) return false;
+              
+              const leadDoAgendamento = leadsData?.find(lead => lead.id === agendamento.lead_id);
+              if (!leadDoAgendamento) return false;
+              
+              const leadWhatsapp = leadDoAgendamento.whatsapp?.replace(/\D/g, '');
+              const alunoTelefone = alunoCorrespondente.telefone?.replace(/\D/g, '');
+              
+              if (leadWhatsapp && alunoTelefone && leadWhatsapp === alunoTelefone) {
+                return true;
+              }
+              if (leadDoAgendamento.email && alunoCorrespondente.email && 
+                  leadDoAgendamento.email.toLowerCase() === alunoCorrespondente.email.toLowerCase()) {
+                return true;
+              }
+              return false;
+            });
+          }
+        }
+
+        // Se encontrou um agendamento relacionado de uma semana anterior, atribuir a conversão ao SDR
+        if (agendamentoRelacionado && agendamentoRelacionado.sdr_id) {
+          const sdrProfile = agendamentoRelacionado.profiles;
+          const sdrName = sdrProfile?.name || 'SDR Desconhecido';
+          
+          // Verificar se é SDR ativo
+          const isActiveSDR = sdrProfile?.ativo === true && 
+            ['sdr', 'sdr_inbound', 'sdr_outbound'].includes(sdrProfile?.user_type);
+          
+          if (!ensureSDRInMap(agendamentoRelacionado.sdr_id, sdrName, isActiveSDR)) return;
+
+          const stats = statsMap.get(agendamentoRelacionado.sdr_id)!;
+          stats.convertidas++;
+
+          // Marcar agendamento como processado
+          agendamentosConvertidosIds.add(agendamentoRelacionado.id);
+
+          const meetingDetail: MeetingDetail = {
+            id: agendamentoRelacionado.id,
+            data_agendamento: agendamentoRelacionado.data_agendamento,
+            resultado_reuniao: 'comprou',
+            status: 'convertida',
+            lead_name: agendamentoRelacionado.leads?.nome || 'Cliente convertido',
+            vendedor_name: agendamentoRelacionado.vendedor?.name || 'Vendedor',
+            data_assinatura: venda.data_assinatura_contrato || venda.data_aprovacao?.split('T')[0],
+            curso_nome: venda.cursos?.nome
+          };
+
+          stats.meetings.push(meetingDetail);
+        }
       });
 
       const finalStats = Array.from(statsMap.values());
