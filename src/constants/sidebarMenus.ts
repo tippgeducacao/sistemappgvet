@@ -178,6 +178,11 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     title: 'Gerenciar Vendas',
     section: 'gerenciar-vendas',
     icon: 'FileText'
+  },
+  {
+    title: 'Ir para o sistema financeiro',
+    section: 'sistema-financeiro',
+    icon: 'DollarSign'
   }
 ];
 

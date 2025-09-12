@@ -84,6 +84,14 @@ const SidebarMenuComponent: React.FC = () => {
 
   const handleSectionChange = (section: string) => {
     console.log('🔄 SidebarMenuComponent: Navegando para seção:', section);
+    
+    // Caso especial: redirecionar para sistema financeiro
+    if (section === 'sistema-financeiro') {
+      console.log('🔄 SidebarMenuComponent: Redirecionando para sistema financeiro');
+      window.open('https://ppgfinanceiro.lovable.app/auth', '_blank');
+      return;
+    }
+    
     console.log('🔄 SidebarMenuComponent: Função disponível:', typeof navigateToSection);
     
     if (typeof navigateToSection === 'function') {
