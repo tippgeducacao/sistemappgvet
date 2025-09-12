@@ -212,6 +212,14 @@ const SidebarMenuComponent: React.FC = () => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('🔄 Clique no menu item:', item.section, item.title);
+                
+                // Caso especial: redirecionar para sistema financeiro
+                if (item.section === 'sistema-financeiro') {
+                  console.log('🔄 Redirecionando para sistema financeiro');
+                  window.open('https://ppgfinanceiro.lovable.app/auth', '_blank');
+                  return;
+                }
+                
                 console.log('🔄 Estado antes da navegação:', activeSection);
                 handleSectionChange(item.section);
               }}
