@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Eye } from 'lucide-react';
 import { useSDRWeeklyPerformance } from '@/hooks/useSDRWeeklyPerformance';
 import { getWeekRange } from '@/utils/semanaUtils';
 import LoadingState from '@/components/ui/loading-state';
+import { SDRMeetingDetailsModal } from './SDRMeetingDetailsModal';
 
 export const SDRPerformanceTable: React.FC = () => {
   const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const [selectedSDRDetails, setSelectedSDRDetails] = useState<{ name: string; meetings: any[] } | null>(null);
   const { performanceData, isLoading } = useSDRWeeklyPerformance(selectedWeek);
 
   // Função para calcular início e fim da semana
@@ -32,6 +34,13 @@ export const SDRPerformanceTable: React.FC = () => {
 
   const goToCurrentWeek = () => {
     setSelectedWeek(new Date());
+  };
+
+  const handleSDRClick = (sdr: { sdr_name: string; meetings: any[] }) => {
+    setSelectedSDRDetails({
+      name: sdr.sdr_name,
+      meetings: sdr.meetings
+    });
   };
 
   if (isLoading) {
@@ -114,7 +123,15 @@ export const SDRPerformanceTable: React.FC = () => {
                   .sort((a, b) => b.convertidas - a.convertidas) // Ordenar por convertidas (maior primeiro)
                   .map((sdr) => (
                     <tr key={sdr.sdr_id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-medium text-foreground">{sdr.sdr_name}</td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => handleSDRClick(sdr)}
+                          className="font-medium text-foreground hover:text-primary transition-colors flex items-center space-x-2 group"
+                        >
+                          <span>{sdr.sdr_name}</span>
+                          <Eye className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      </td>
                       <td className="text-center p-3">
                         <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
                           {sdr.convertidas}
@@ -175,6 +192,13 @@ export const SDRPerformanceTable: React.FC = () => {
           </div>
         )}
       </CardContent>
+
+      <SDRMeetingDetailsModal
+        open={!!selectedSDRDetails}
+        onOpenChange={(open) => !open && setSelectedSDRDetails(null)}
+        sdrName={selectedSDRDetails?.name || ''}
+        meetings={selectedSDRDetails?.meetings || []}
+      />
     </Card>
   );
 };

@@ -3,6 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { getWeekRange } from '@/utils/semanaUtils';
 import { getDataEfetivaVenda } from '@/utils/vendaDateUtils';
 
+export interface MeetingDetail {
+  id: string;
+  data_agendamento: string;
+  resultado_reuniao: string;
+  status: 'convertida' | 'pendente' | 'compareceu' | 'nao_compareceu';
+  lead_name: string;
+  vendedor_name: string;
+  data_assinatura?: string;
+  curso_nome?: string;
+}
+
 export interface SDRWeeklyPerformance {
   sdr_id: string;
   sdr_name: string;
@@ -11,6 +22,7 @@ export interface SDRWeeklyPerformance {
   naoCompareceram: number;
   taxaConversao: number;
   taxaComparecimento: number;
+  meetings: MeetingDetail[];
 }
 
 export const useSDRWeeklyPerformance = (weekDate?: Date) => {
@@ -134,7 +146,8 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             compareceram: 0,
             naoCompareceram: 0,
             taxaConversao: 0,
-            taxaComparecimento: 0
+            taxaComparecimento: 0,
+            meetings: []
           });
         }
         return true;
@@ -154,9 +167,20 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
 
         const performance = performanceMap.get(sdrId)!;
 
+        // Criar objeto de detalhe da reunião
+        const meetingDetail: MeetingDetail = {
+          id: agendamento.id,
+          data_agendamento: agendamento.data_agendamento,
+          resultado_reuniao: agendamento.resultado_reuniao || 'Sem resultado',
+          status: 'compareceu', // Default, será ajustado abaixo
+          lead_name: agendamento.leads?.nome || 'Lead desconhecido',
+          vendedor_name: agendamento.vendedor?.name || 'Vendedor desconhecido'
+        };
+
         // Categorizar baseado no resultado da reunião
         if (agendamento.resultado_reuniao === 'nao_compareceu') {
           performance.naoCompareceram++;
+          meetingDetail.status = 'nao_compareceu';
         } else if (agendamento.resultado_reuniao === 'comprou') {
           // Verificar se existe venda aprovada correspondente a esta reunião
           let vendaAprovadaCorrespondente = null;
@@ -191,8 +215,13 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
 
           if (vendaAprovadaCorrespondente) {
             performance.convertidas++;
+            meetingDetail.status = 'convertida';
+            meetingDetail.curso_nome = vendaAprovadaCorrespondente.cursos?.nome;
+            meetingDetail.data_assinatura = vendaAprovadaCorrespondente.data_assinatura_contrato || 
+                                           vendaAprovadaCorrespondente.data_aprovacao?.split('T')[0];
           } else {
             performance.compareceram++; // Comprou mas ainda não foi aprovado ou aprovado em outra semana
+            meetingDetail.status = 'pendente';
           }
         } else if (agendamento.status === 'remarcado' || 
                    agendamento.resultado_reuniao === 'nao_comprou' || 
@@ -200,7 +229,10 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
                    agendamento.resultado_reuniao === 'compareceu' ||
                    !agendamento.resultado_reuniao) {
           performance.compareceram++;
+          meetingDetail.status = 'compareceu';
         }
+
+        performance.meetings.push(meetingDetail);
       });
 
       // Calcular taxas para cada SDR
