@@ -325,12 +325,11 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             });
           }
         } else {
-          // Reuniões sem resultado ou com status "remarcado" não são contadas
-          // Elas aparecem na lista mas não afetam as métricas
-          meetingDetail.status = 'pendente';
+          // Reuniões sem resultado (não finalizadas) são completamente desconsideradas
+          // Não incluir na lista de meetings pois a reunião não foi finalizada
           
           if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
-            console.log('⚪ SDR IN - Reunião sem resultado ou remarcada (não conta métricas):', {
+            console.log('⚪ SDR IN - Reunião não finalizada (desconsiderada):', {
               agendamento_id: agendamento.id,
               resultado_reuniao: agendamento.resultado_reuniao,
               status: agendamento.status,
@@ -338,6 +337,9 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
               data_br: new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR')
             });
           }
+          
+          // Não adicionar à lista de meetings - return early
+          return;
         }
 
         performance.meetings.push(meetingDetail);
