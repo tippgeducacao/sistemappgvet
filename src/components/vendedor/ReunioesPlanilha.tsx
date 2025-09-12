@@ -32,13 +32,9 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
 }) => {
   const [dialogAberto, setDialogAberto] = useState(false);
   const [novaVendaAberto, setNovaVendaAberto] = useState(false);
-  const [remarcarDialogAberto, setRemarcarDialogAberto] = useState(false);
   const [editarStatusDialogAberto, setEditarStatusDialogAberto] = useState(false);
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
   const [observacoes, setObservacoes] = useState('');
-  const [novaData, setNovaData] = useState('');
-  const [novaHoraInicio, setNovaHoraInicio] = useState('');
-  const [novaHoraFim, setNovaHoraFim] = useState('');
   const [novoStatus, setNovoStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [dataInicio, setDataInicio] = useState('');
@@ -234,149 +230,6 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     setNovaVendaAberto(true);
   };
 
-  const abrirRemarcarDialog = (agendamento: Agendamento, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setAgendamentoSelecionado(agendamento);
-    
-    // Preencher com valores atuais
-    const dataAtual = format(new Date(agendamento.data_agendamento), "yyyy-MM-dd");
-    const horaInicio = format(new Date(agendamento.data_agendamento), "HH:mm");
-    const horaFim = agendamento.data_fim_agendamento 
-      ? format(new Date(agendamento.data_fim_agendamento), "HH:mm")
-      : '';
-    
-    setNovaData(dataAtual);
-    setNovaHoraInicio(horaInicio);
-    setNovaHoraFim(horaFim);
-    setRemarcarDialogAberto(true);
-  };
-
-  const handleRemarcarReuniao = async () => {
-    if (!agendamentoSelecionado || !novaData || !novaHoraInicio) {
-      toast({
-        title: "Erro",
-        description: "Preencha pelo menos a data e hora de início",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Construir nova data de agendamento
-      const novaDataAgendamento = new Date(`${novaData}T${novaHoraInicio}:00`);
-      let novaDataFim = null;
-      
-      if (novaHoraFim) {
-        novaDataFim = new Date(`${novaData}T${novaHoraFim}:00`);
-      } else {
-        // Se não especificou hora fim, usa 1 hora como padrão
-        novaDataFim = new Date(novaDataAgendamento.getTime() + 60 * 60 * 1000);
-      }
-
-      // Verificar se a nova data/hora é no futuro
-      const agora = new Date();
-      if (novaDataAgendamento <= agora) {
-        toast({
-          title: "Erro",
-          description: "Não é possível remarcar para uma data/hora que já passou",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Importar o serviço de agendamentos dinamicamente
-      const { AgendamentosService } = await import('@/services/agendamentos/AgendamentosService');
-      
-      // Verificar conflitos de agenda (ignorando o próprio agendamento)
-      const temConflito = await AgendamentosService.verificarConflitosAgenda(
-        agendamentoSelecionado.vendedor_id,
-        novaDataAgendamento.toISOString(),
-        novaDataFim.toISOString(),
-        agendamentoSelecionado.id // Ignorar este agendamento na verificação
-      );
-
-      if (temConflito) {
-        toast({
-          title: "Conflito de Agenda",
-          description: "Já existe uma reunião agendada neste horário. Escolha outro horário.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Se chegou até aqui, não há conflitos - pode remarcar
-      // IMPORTANTE: Manter o sdr_id original ao remarcar
-      const { error } = await supabase
-        .from('agendamentos')
-        .update({
-          data_agendamento: novaDataAgendamento.toISOString(),
-          data_fim_agendamento: novaDataFim.toISOString(),
-          status: 'remarcado'
-          // sdr_id é mantido automaticamente (não está sendo alterado)
-        })
-        .eq('id', agendamentoSelecionado.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Reunião remarcada com sucesso!",
-      });
-
-      setRemarcarDialogAberto(false);
-      setAgendamentoSelecionado(null);
-      
-      // Recarregar dados usando callback se disponível
-      if (onRefresh) {
-        onRefresh();
-      }
-      
-    } catch (error) {
-      console.error('Erro ao remarcar reunião:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao remarcar a reunião. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleRemarcarHistorico = async (agendamento: Agendamento, e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    try {
-      // IMPORTANTE: Manter o sdr_id original ao remarcar do histórico
-      const { error } = await supabase
-        .from('agendamentos')
-        .update({
-          status: 'remarcado',
-          resultado_reuniao: null,
-          data_resultado: null,
-          observacoes_resultado: null
-          // sdr_id é mantido automaticamente (não está sendo alterado)
-        })
-        .eq('id', agendamento.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Reunião remarcada e movida para agendadas!",
-      });
-
-      if (onRefresh) {
-        onRefresh();
-      }
-      
-    } catch (error) {
-      console.error('Erro ao remarcar reunião:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao remarcar a reunião. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const abrirEditarStatusDialog = (agendamento: Agendamento, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -585,50 +438,28 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                   {mostrarAcoes && (
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
-                        {isHistorico ? (
-                          <>
-                            <Button 
-                              onClick={(e) => handleRemarcarHistorico(agendamento, e)}
-                              size="sm"
-                              variant="outline"
-                              className="flex items-center gap-1"
-                            >
-                              <Edit className="h-3 w-3" />
-                              Remarcar
-                            </Button>
-                            <Button 
-                              onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
-                              size="sm"
-                              variant="ghost"
-                              className="flex items-center gap-1"
-                            >
-                              <Settings className="h-3 w-3" />
-                              Status
-                            </Button>
-                          </>
-                        ) : !agendamento.resultado_reuniao && (
-                          <>
-                            <Button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                abrirDialog(agendamento);
-                              }}
-                              size="sm"
-                              variant="outline"
-                            >
-                              Marcar Resultado
-                            </Button>
-                            <Button 
-                              onClick={(e) => abrirRemarcarDialog(agendamento, e)}
-                              size="sm"
-                              variant="ghost"
-                              className="flex items-center gap-1"
-                            >
-                              <Edit className="h-3 w-3" />
-                              Remarcar
-                            </Button>
-                          </>
-                        )}
+                         {isHistorico ? (
+                           <Button 
+                             onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
+                             size="sm"
+                             variant="ghost"
+                             className="flex items-center gap-1"
+                           >
+                             <Settings className="h-3 w-3" />
+                             Status
+                           </Button>
+                         ) : !agendamento.resultado_reuniao && (
+                           <Button 
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               abrirDialog(agendamento);
+                             }}
+                             size="sm"
+                             variant="outline"
+                           >
+                             Marcar Resultado
+                           </Button>
+                         )}
                       </div>
                     </TableCell>
                   )}
@@ -889,71 +720,6 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Remarcar Reunião */}
-      <Dialog open={remarcarDialogAberto} onOpenChange={setRemarcarDialogAberto}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Remarcar Reunião</DialogTitle>
-          </DialogHeader>
-          
-          {agendamentoSelecionado && (
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                <strong>Lead:</strong> {agendamentoSelecionado.lead?.nome}
-              </div>
-              
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="nova-data">Nova Data</Label>
-                  <Input
-                    id="nova-data"
-                    type="date"
-                    value={novaData}
-                    onChange={(e) => setNovaData(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="nova-hora-inicio">Hora Início</Label>
-                    <Input
-                      id="nova-hora-inicio"
-                      type="time"
-                      value={novaHoraInicio}
-                      onChange={(e) => setNovaHoraInicio(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="nova-hora-fim">Hora Fim (opcional)</Label>
-                    <Input
-                      id="nova-hora-fim"
-                      type="time"
-                      value={novaHoraFim}
-                      onChange={(e) => setNovaHoraFim(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setRemarcarDialogAberto(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleRemarcarReuniao}>
-                  Remarcar
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Modal de Editar Status */}
       <Dialog open={editarStatusDialogAberto} onOpenChange={setEditarStatusDialogAberto}>
