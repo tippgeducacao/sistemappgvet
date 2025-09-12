@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, Settings } from 'lucide-react';
+import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, Settings, ChevronUp, ChevronDown } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
@@ -41,26 +41,86 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [novaHoraFim, setNovaHoraFim] = useState('');
   const [novoStatus, setNovoStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const [sortBy, setSortBy] = useState<string>('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const { updateField, clearForm } = useFormStore();
 
-  // Separar reuniões em agendadas (sem resultado) e histórico (com resultado) com filtro de pesquisa
+  // Separar reuniões em agendadas (sem resultado) e histórico (com resultado) com filtros
   const { reunioesAgendadas, reunioesHistorico } = useMemo(() => {
-    const filteredAgendamentos = agendamentos.filter(agendamento => {
+    let filteredAgendamentos = agendamentos.filter(agendamento => {
+      // Filtro por nome
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        return agendamento.lead?.nome?.toLowerCase().includes(searchLower);
+        if (!agendamento.lead?.nome?.toLowerCase().includes(searchLower)) {
+          return false;
+        }
       }
+      
+      // Filtro por data (apenas para histórico)
+      if (agendamento.resultado_reuniao && (dataInicio || dataFim)) {
+        const dataAgendamento = new Date(agendamento.data_agendamento);
+        
+        if (dataInicio) {
+          const inicio = new Date(dataInicio);
+          if (dataAgendamento < inicio) return false;
+        }
+        
+        if (dataFim) {
+          const fim = new Date(dataFim);
+          fim.setHours(23, 59, 59, 999); // Incluir todo o dia
+          if (dataAgendamento > fim) return false;
+        }
+      }
+      
       return true;
     });
 
     const agendadas = filteredAgendamentos.filter(agendamento => !agendamento.resultado_reuniao);
-    const historico = filteredAgendamentos.filter(agendamento => agendamento.resultado_reuniao);
+    let historico = filteredAgendamentos.filter(agendamento => agendamento.resultado_reuniao);
+    
+    // Aplicar ordenação apenas no histórico
+    if (sortBy && historico.length > 0) {
+      historico = historico.sort((a, b) => {
+        let valueA, valueB;
+        
+        switch (sortBy) {
+          case 'data_criacao':
+            valueA = new Date(a.created_at);
+            valueB = new Date(b.created_at);
+            break;
+          case 'data_agendamento':
+            valueA = new Date(a.data_agendamento);
+            valueB = new Date(b.data_agendamento);
+            break;
+          case 'vendedor':
+            valueA = a.vendedor?.name || '';
+            valueB = b.vendedor?.name || '';
+            break;
+          case 'interesse':
+            valueA = a.pos_graduacao_interesse || '';
+            valueB = b.pos_graduacao_interesse || '';
+            break;
+          case 'status':
+            valueA = a.resultado_reuniao || a.status || '';
+            valueB = b.resultado_reuniao || b.status || '';
+            break;
+          default:
+            return 0;
+        }
+        
+        if (valueA < valueB) return sortOrder === 'asc' ? -1 : 1;
+        if (valueA > valueB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
     
     return {
       reunioesAgendadas: agendadas,
       reunioesHistorico: historico
     };
-  }, [agendamentos, searchTerm]);
+  }, [agendamentos, searchTerm, dataInicio, dataFim, sortBy, sortOrder]);
 
   const getStatusBadge = (agendamento: Agendamento) => {
     if (agendamento.resultado_reuniao) {
@@ -370,6 +430,20 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     }
   };
 
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const renderSortIcon = (field: string) => {
+    if (sortBy !== field) return null;
+    return sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
+  };
+
   const renderTabela = (listaAgendamentos: Agendamento[], mostrarAcoes: boolean = true, isHistorico: boolean = false) => (
     listaAgendamentos.length === 0 ? (
       <Card>
@@ -385,9 +459,61 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead>Status</TableHead>
+                {isHistorico ? (
+                  <>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('data_criacao')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Data de Criação
+                        {renderSortIcon('data_criacao')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('data_agendamento')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Data de Agendamento
+                        {renderSortIcon('data_agendamento')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('vendedor')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Vendedor
+                        {renderSortIcon('vendedor')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('interesse')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Interesse
+                        {renderSortIcon('interesse')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('status')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Status
+                        {renderSortIcon('status')}
+                      </div>
+                    </TableHead>
+                  </>
+                ) : (
+                  <>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Horário</TableHead>
+                    <TableHead>Status</TableHead>
+                  </>
+                )}
                 <TableHead>Reunião</TableHead>
                 {mostrarAcoes && <TableHead className="text-right">Ações</TableHead>}
               </TableRow>
@@ -404,15 +530,37 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                   <TableCell className="font-medium">
                     {agendamento.lead?.nome}
                   </TableCell>
-                  <TableCell>
-                    {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
-                  </TableCell>
-                  <TableCell>
-                    {formatarHorario(agendamento)}
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(agendamento)}
-                  </TableCell>
+                  {isHistorico ? (
+                    <>
+                      <TableCell>
+                        {format(new Date(agendamento.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        {agendamento.vendedor?.name || 'Não atribuído'}
+                      </TableCell>
+                      <TableCell>
+                        {agendamento.pos_graduacao_interesse || 'Não informado'}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(agendamento)}
+                      </TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell>
+                        {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        {formatarHorario(agendamento)}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(agendamento)}
+                      </TableCell>
+                    </>
+                  )}
                   <TableCell>
                     {agendamento.link_reuniao && (
                       <Button
@@ -495,15 +643,55 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Filtro de pesquisa */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          placeholder="Buscar por nome do lead..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Filtros */}
+      <div className="grid gap-4 md:grid-cols-4">
+        {/* Filtro de pesquisa por nome */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar por nome do lead..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        {/* Filtro de data início */}
+        <div>
+          <Input
+            type="date"
+            placeholder="Data início"
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+          />
+        </div>
+        
+        {/* Filtro de data fim */}
+        <div>
+          <Input
+            type="date"
+            placeholder="Data fim"
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+          />
+        </div>
+        
+        {/* Botão limpar filtros */}
+        <div>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setSearchTerm('');
+              setDataInicio('');
+              setDataFim('');
+              setSortBy('');
+              setSortOrder('desc');
+            }}
+            className="w-full"
+          >
+            Limpar Filtros
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="agendadas" className="w-full">
