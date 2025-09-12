@@ -314,15 +314,5 @@ export const SDR_MENU_ITEMS: MenuItem[] = [
     section: 'nova-venda',
     icon: 'Plus'
   },
-  {
-    title: 'Minhas Vendas',
-    section: 'minhas-vendas',
-    icon: 'ShoppingCart'
-  },
-  {
-    title: 'Relatório Diário',
-    section: 'relatorio-diario',
-    icon: 'FileText'
-  },
 ];
 
