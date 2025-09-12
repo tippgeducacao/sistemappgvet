@@ -306,14 +306,13 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             }
           }
         } else if (
-                   agendamento.status === 'remarcado' || 
                    agendamento.resultado_reuniao === 'nao_comprou' || 
                    agendamento.resultado_reuniao === 'compareceu_nao_comprou' ||
                    agendamento.resultado_reuniao === 'presente' ||
                    agendamento.resultado_reuniao === 'realizado' ||
-                   agendamento.resultado_reuniao === 'compareceu' || 
-                   !agendamento.resultado_reuniao
+                   agendamento.resultado_reuniao === 'compareceu'
                  ) {
+          // Só conta como compareceu se há um resultado específico confirmando comparecimento
           performance.compareceram++;
           meetingDetail.status = 'compareceu';
           
@@ -321,6 +320,20 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             console.log('🟡 SDR IN - Contando comparecimento:', {
               agendamento_id: agendamento.id,
               resultado_reuniao: agendamento.resultado_reuniao,
+              data: agendamento.data_agendamento,
+              data_br: new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR')
+            });
+          }
+        } else {
+          // Reuniões sem resultado ou com status "remarcado" não são contadas
+          // Elas aparecem na lista mas não afetam as métricas
+          meetingDetail.status = 'pendente';
+          
+          if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
+            console.log('⚪ SDR IN - Reunião sem resultado ou remarcada (não conta métricas):', {
+              agendamento_id: agendamento.id,
+              resultado_reuniao: agendamento.resultado_reuniao,
+              status: agendamento.status,
               data: agendamento.data_agendamento,
               data_br: new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR')
             });
