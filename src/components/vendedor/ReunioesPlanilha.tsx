@@ -237,8 +237,12 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     try {
       let venda = null;
 
+      console.log('🔍 Buscando venda para agendamento:', agendamento.id);
+      console.log('📝 Lead info:', { nome: agendamento.lead?.nome, email: agendamento.lead?.email });
+
       // Primeiro, tentar buscar pela venda diretamente vinculada
       if (agendamento.form_entry_id) {
+        console.log('🔗 Buscando pela vinculação direta:', agendamento.form_entry_id);
         const { data: vendaVinculada, error: errorVinculada } = await supabase
           .from('form_entries')
           .select(`
@@ -248,45 +252,107 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
             profiles!form_entries_vendedor_id_fkey (name)
           `)
           .eq('id', agendamento.form_entry_id)
-          .single();
+          .maybeSingle();
 
-        if (!errorVinculada) {
+        if (!errorVinculada && vendaVinculada) {
+          console.log('✅ Venda encontrada pela vinculação direta');
           venda = vendaVinculada;
+        } else {
+          console.log('❌ Erro na busca direta:', errorVinculada);
         }
       }
 
       // Se não encontrou pela vinculação direta, buscar por lead
-      if (!venda && agendamento.lead) {
-        const { data: vendasPorLead, error: errorLead } = await supabase
-          .from('form_entries')
-          .select(`
-            *,
-            alunos!inner (*),
-            cursos (nome),
-            profiles!form_entries_vendedor_id_fkey (name)
-          `)
-          .eq('alunos.email', agendamento.lead.email)
-          .order('created_at', { ascending: false })
-          .limit(1);
+      if (!venda && agendamento.lead?.email) {
+        console.log('🔍 Buscando venda por email do lead:', agendamento.lead.email);
+        
+        // Primeiro buscar alunos com esse email
+        const { data: alunosEncontrados, error: errorAlunos } = await supabase
+          .from('alunos')
+          .select('id, form_entry_id')
+          .eq('email', agendamento.lead.email);
 
-        if (!errorLead && vendasPorLead && vendasPorLead.length > 0) {
-          venda = vendasPorLead[0];
+        if (!errorAlunos && alunosEncontrados && alunosEncontrados.length > 0) {
+          console.log('👤 Alunos encontrados:', alunosEncontrados.length);
+          
+          // Buscar vendas desses alunos
+          const formEntryIds = alunosEncontrados
+            .map(aluno => aluno.form_entry_id)
+            .filter(id => id !== null);
+
+          if (formEntryIds.length > 0) {
+            const { data: vendasPorAluno, error: errorVendas } = await supabase
+              .from('form_entries')
+              .select(`
+                *,
+                alunos (*),
+                cursos (nome),
+                profiles!form_entries_vendedor_id_fkey (name)
+              `)
+              .in('id', formEntryIds)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (!errorVendas && vendasPorAluno && vendasPorAluno.length > 0) {
+              console.log('✅ Venda encontrada por email do lead');
+              venda = vendasPorAluno[0];
+            }
+          }
+        }
+      }
+
+      // Se ainda não encontrou, buscar por nome similar
+      if (!venda && agendamento.lead?.nome) {
+        console.log('🔍 Buscando venda por nome do lead:', agendamento.lead.nome);
+        
+        const { data: alunosPorNome, error: errorNome } = await supabase
+          .from('alunos')
+          .select('id, form_entry_id')
+          .ilike('nome', `%${agendamento.lead.nome}%`);
+
+        if (!errorNome && alunosPorNome && alunosPorNome.length > 0) {
+          console.log('👤 Alunos encontrados por nome:', alunosPorNome.length);
+          
+          const formEntryIds = alunosPorNome
+            .map(aluno => aluno.form_entry_id)
+            .filter(id => id !== null);
+
+          if (formEntryIds.length > 0) {
+            const { data: vendasPorNome, error: errorVendasNome } = await supabase
+              .from('form_entries')
+              .select(`
+                *,
+                alunos (*),
+                cursos (nome),
+                profiles!form_entries_vendedor_id_fkey (name)
+              `)
+              .in('id', formEntryIds)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (!errorVendasNome && vendasPorNome && vendasPorNome.length > 0) {
+              console.log('✅ Venda encontrada por nome do lead');
+              venda = vendasPorNome[0];
+            }
+          }
         }
       }
 
       if (!venda) {
+        console.log('❌ Nenhuma venda encontrada');
         toast({
-          title: "Erro",
-          description: "Não foi encontrada nenhuma venda para este lead",
+          title: "Venda não encontrada",
+          description: "Não foi possível encontrar uma venda vinculada a este lead. Verifique se a venda foi criada corretamente.",
           variant: "destructive",
         });
         return;
       }
 
+      console.log('✅ Venda encontrada, abrindo modal');
       setVendaSelecionada(venda);
       setVerVendaDialogAberto(true);
     } catch (error) {
-      console.error('Erro ao buscar venda:', error);
+      console.error('❌ Erro ao buscar venda:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar dados da venda",
