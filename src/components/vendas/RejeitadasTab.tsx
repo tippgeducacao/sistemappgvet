@@ -87,6 +87,11 @@ const RejeitadasTab: React.FC<RejeitadasTabProps> = ({ vendas, showDeleteButton 
                         <p><strong>Curso:</strong> {venda.curso?.nome || 'Não informado'}</p>
                         <p><strong>Pontuação:</strong> {venda.pontuacao_esperada || 0} pts</p>
                         <p><strong>Vendedor:</strong> {venda.vendedor?.name || venda.vendedor_id}</p>
+                        {venda.sdr && (
+                          <p className="text-xs text-muted-foreground">
+                            <strong>SDR:</strong> {venda.sdr.name}
+                          </p>
+                        )}
                         {venda.motivo_pendencia && (
                           <div className="mt-2 p-2 bg-red-100 dark:bg-red-900/50 rounded border-l-4 border-red-500">
                             <p className="text-red-800 dark:text-red-200"><strong>Motivo da rejeição:</strong></p>

@@ -135,6 +135,11 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas, showDeleteButto
                       </div>
                       <div>
                         <span className="font-medium">Vendedor:</span> {venda.vendedor?.name || 'Não informado'}
+                        {venda.sdr && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            <span className="font-medium">SDR:</span> {venda.sdr.name}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <span className="font-medium">Enviado:</span> {venda.enviado_em ? DataFormattingService.formatDateTime(venda.enviado_em) : 'Não informada'}

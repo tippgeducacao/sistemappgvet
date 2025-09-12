@@ -158,6 +158,11 @@ const MatriculadasTab: React.FC<MatriculadasTabProps> = ({ vendas, showDeleteBut
                           </div>
                           <div>
                             <span className="font-medium">Vendedor:</span> {venda.vendedor?.name || 'Não informado'}
+                            {venda.sdr && (
+                              <div className="text-xs text-muted-foreground">
+                                <span className="font-medium">SDR:</span> {venda.sdr.name}
+                              </div>
+                            )}
                           </div>
                         </div>
 
