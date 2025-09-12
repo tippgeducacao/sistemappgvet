@@ -542,19 +542,34 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                                   Nova Venda
                                 </Button>
                               )}
-                              {agendamento.resultado_reuniao === 'comprou' && agendamento.form_entry_id && (
-                                <Button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    abrirVerVenda(agendamento);
-                                  }}
-                                  size="sm"
-                                  variant="outline"
-                                  className="flex items-center gap-1"
-                                >
-                                  <Eye className="h-3 w-3" />
-                                  Ver Venda
-                                </Button>
+                              {agendamento.resultado_reuniao === 'comprou' && (
+                                agendamento.form_entry_id ? (
+                                  <Button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      abrirVerVenda(agendamento);
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                    Ver Venda
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      abrirNovaVenda(agendamento);
+                                    }}
+                                    size="sm"
+                                    variant="default"
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                    Criar Venda
+                                  </Button>
+                                )
                               )}
                               <Button 
                                 onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
