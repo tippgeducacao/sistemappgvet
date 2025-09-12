@@ -20,6 +20,7 @@ interface HistoricoReuniao {
   id: string;
   lead_id: string;
   vendedor_id: string;
+  sdr_id: string;
   data_agendamento: string;
   data_fim_agendamento?: string;
   pos_graduacao_interesse: string;
@@ -36,7 +37,7 @@ interface HistoricoReuniao {
     email?: string;
     whatsapp?: string;
   };
-  vendedor?: {
+  sdr?: {
     name: string;
     email: string;
   };
@@ -79,7 +80,7 @@ const HistoricoReunioes: React.FC = () => {
             email,
             whatsapp
           ),
-          vendedor:profiles!agendamentos_vendedor_id_fkey (
+          sdr:profiles!agendamentos_sdr_id_fkey (
             name,
             email
           )
@@ -520,97 +521,171 @@ const HistoricoReunioes: React.FC = () => {
             <p className="text-sm">Selecione outro período ou aguarde novas reuniões</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {reunioesFiltradas.map((reuniao) => (
-            <div key={reuniao.id} className="border rounded-lg p-4 space-y-3">
-              {/* Header da reunião */}
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">
-                      {reuniao.lead?.nome}
-                      {reuniao.created_at && (
-                        <span className="text-xs text-muted-foreground ml-2 font-normal">
-                          • criado em {format(new Date(reuniao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                     <CalendarIcon className="h-4 w-4" />
-                     {format(new Date(reuniao.data_agendamento), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    {format(new Date(reuniao.data_agendamento), 'HH:mm')}
-                    {reuniao.data_fim_agendamento && 
-                      ` - ${format(new Date(reuniao.data_fim_agendamento), 'HH:mm')}`
-                    }
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  {getStatusBadge(reuniao.status)}
-                  {getResultadoBadge(reuniao.resultado_reuniao)}
-                </div>
-              </div>
-
-              {/* Informações adicionais */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Vendedor:</span> {reuniao.vendedor?.name}
-                </div>
-                <div>
-                  <span className="font-medium">Pós-graduação:</span> {reuniao.pos_graduacao_interesse}
-                </div>
-                {reuniao.lead?.email && (
-                  <div>
-                    <span className="font-medium">Email:</span> {reuniao.lead.email}
-                  </div>
-                )}
-                {reuniao.lead?.whatsapp && (
-                  <div>
-                    <span className="font-medium">WhatsApp:</span> {reuniao.lead.whatsapp}
-                  </div>
-                )}
-              </div>
-
-              {/* Observações */}
-              {reuniao.observacoes && (
-                <div className="text-sm">
-                  <span className="font-medium">Observações:</span>
-                  <p className="text-muted-foreground mt-1">{reuniao.observacoes}</p>
-                </div>
-              )}
-
-              {/* Resultado da reunião */}
-              {reuniao.observacoes_resultado && (
-                <div className="text-sm">
-                  <span className="font-medium">Resultado:</span>
-                  <p className="text-muted-foreground mt-1">{reuniao.observacoes_resultado}</p>
-                </div>
-              )}
-
-              {/* Ações */}
-              <div className="flex items-center gap-2 pt-2 border-t">
-                {reuniao.link_reuniao && (
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={reuniao.link_reuniao} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Link da Reunião
-                    </a>
-                  </Button>
-                )}
-                {reuniao.data_resultado && (
-                  <div className="text-xs text-muted-foreground ml-auto">
-                    Finalizada em {format(new Date(reuniao.data_resultado), "dd/MM/yyyy 'às' HH:mm")}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Horário</TableHead>
+                  <TableHead>Lead</TableHead>
+                  <TableHead>SDR</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reunioesOrdenadas.map((reuniao) => (
+                  <TableRow key={reuniao.id}>
+                    <TableCell>
+                      {format(new Date(reuniao.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(reuniao.data_agendamento), 'HH:mm')}
+                      {reuniao.data_fim_agendamento && 
+                        ` - ${format(new Date(reuniao.data_fim_agendamento), 'HH:mm')}`
+                      }
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {reuniao.lead?.nome || 'Lead não encontrado'}
+                    </TableCell>
+                    <TableCell>
+                      {reuniao.sdr?.name || 'SDR não encontrado'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {getStatusBadge(reuniao.status)}
+                        {getResultadoBadge(reuniao.resultado_reuniao)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedReuniao(reuniao);
+                            setDetailsOpen(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Visualizar
+                        </Button>
+                        {reuniao.link_reuniao && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={reuniao.link_reuniao} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
+
+        {/* Modal de Detalhes */}
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Detalhes da Reunião</DialogTitle>
+            </DialogHeader>
+            {selectedReuniao && (
+              <div className="space-y-4">
+                {/* Informações básicas */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-medium">Data:</span>
+                    <p>{format(new Date(selectedReuniao.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Horário:</span>
+                    <p>
+                      {format(new Date(selectedReuniao.data_agendamento), 'HH:mm')}
+                      {selectedReuniao.data_fim_agendamento && 
+                        ` - ${format(new Date(selectedReuniao.data_fim_agendamento), 'HH:mm')}`
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Lead:</span>
+                    <p>{selectedReuniao.lead?.nome}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">SDR:</span>
+                    <p>{selectedReuniao.sdr?.name}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Pós-graduação:</span>
+                    <p>{selectedReuniao.pos_graduacao_interesse}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Status:</span>
+                    <div className="flex gap-2">
+                      {getStatusBadge(selectedReuniao.status)}
+                      {getResultadoBadge(selectedReuniao.resultado_reuniao)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informações de contato */}
+                {(selectedReuniao.lead?.email || selectedReuniao.lead?.whatsapp) && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Contato</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedReuniao.lead?.email && (
+                        <div>
+                          <span className="text-sm font-medium">Email:</span>
+                          <p className="text-sm">{selectedReuniao.lead.email}</p>
+                        </div>
+                      )}
+                      {selectedReuniao.lead?.whatsapp && (
+                        <div>
+                          <span className="text-sm font-medium">WhatsApp:</span>
+                          <p className="text-sm">{selectedReuniao.lead.whatsapp}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Observações */}
+                {selectedReuniao.observacoes && (
+                  <div>
+                    <span className="font-medium">Observações:</span>
+                    <p className="text-sm text-muted-foreground mt-1">{selectedReuniao.observacoes}</p>
+                  </div>
+                )}
+
+                {/* Resultado da reunião */}
+                {selectedReuniao.observacoes_resultado && (
+                  <div>
+                    <span className="font-medium">Resultado:</span>
+                    <p className="text-sm text-muted-foreground mt-1">{selectedReuniao.observacoes_resultado}</p>
+                  </div>
+                )}
+
+                {/* Informações de data */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+                  {selectedReuniao.created_at && (
+                    <div>
+                      <span className="font-medium">Criado em:</span>
+                      <p>{format(new Date(selectedReuniao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                    </div>
+                  )}
+                  {selectedReuniao.data_resultado && (
+                    <div>
+                      <span className="font-medium">Finalizada em:</span>
+                      <p>{format(new Date(selectedReuniao.data_resultado), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
