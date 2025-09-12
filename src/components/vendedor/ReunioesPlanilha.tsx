@@ -234,29 +234,54 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   };
 
   const abrirVerVenda = async (agendamento: Agendamento) => {
-    if (!agendamento.form_entry_id) {
-      toast({
-        title: "Erro",
-        description: "Esta reunião não possui venda vinculada",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      // Buscar a venda completa
-      const { data: venda, error } = await supabase
-        .from('form_entries')
-        .select(`
-          *,
-          alunos (*),
-          cursos (nome),
-          profiles!form_entries_vendedor_id_fkey (name)
-        `)
-        .eq('id', agendamento.form_entry_id)
-        .single();
+      let venda = null;
 
-      if (error) throw error;
+      // Primeiro, tentar buscar pela venda diretamente vinculada
+      if (agendamento.form_entry_id) {
+        const { data: vendaVinculada, error: errorVinculada } = await supabase
+          .from('form_entries')
+          .select(`
+            *,
+            alunos (*),
+            cursos (nome),
+            profiles!form_entries_vendedor_id_fkey (name)
+          `)
+          .eq('id', agendamento.form_entry_id)
+          .single();
+
+        if (!errorVinculada) {
+          venda = vendaVinculada;
+        }
+      }
+
+      // Se não encontrou pela vinculação direta, buscar por lead
+      if (!venda && agendamento.lead) {
+        const { data: vendasPorLead, error: errorLead } = await supabase
+          .from('form_entries')
+          .select(`
+            *,
+            alunos!inner (*),
+            cursos (nome),
+            profiles!form_entries_vendedor_id_fkey (name)
+          `)
+          .eq('alunos.email', agendamento.lead.email)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (!errorLead && vendasPorLead && vendasPorLead.length > 0) {
+          venda = vendasPorLead[0];
+        }
+      }
+
+      if (!venda) {
+        toast({
+          title: "Erro",
+          description: "Não foi encontrada nenhuma venda para este lead",
+          variant: "destructive",
+        });
+        return;
+      }
 
       setVendaSelecionada(venda);
       setVerVendaDialogAberto(true);
@@ -543,33 +568,18 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                                 </Button>
                               )}
                               {agendamento.resultado_reuniao === 'comprou' && (
-                                agendamento.form_entry_id ? (
-                                  <Button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      abrirVerVenda(agendamento);
-                                    }}
-                                    size="sm"
-                                    variant="outline"
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Eye className="h-3 w-3" />
-                                    Ver Venda
-                                  </Button>
-                                ) : (
-                                  <Button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      abrirNovaVenda(agendamento);
-                                    }}
-                                    size="sm"
-                                    variant="default"
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                    Criar Venda
-                                  </Button>
-                                )
+                                <Button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    abrirVerVenda(agendamento);
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex items-center gap-1"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  Ver Venda
+                                </Button>
                               )}
                               <Button 
                                 onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
