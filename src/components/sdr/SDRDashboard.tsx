@@ -10,7 +10,7 @@ import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import ReunioesCanceladasSDR from './ReunioesCanceladasSDR';
 import HistoricoReunioes from './HistoricoReunioes';
 import { SDRMetasSemanais } from './SDRMetasSemanais';
-import SemanasConsecutivasCard from '@/components/dashboard/SemanasConsecutivasCard';
+
 import { ReunioesVendedoresChart } from '@/components/dashboard/ReunioesVendedoresChart';
 import SDRAgendamentosComparativo from './SDRAgendamentosComparativo';
 import { SDRComissionamentoSemanal } from './SDRComissionamentoSemanal';
@@ -64,12 +64,6 @@ const SDRDashboard: React.FC = () => {
           <p className="text-muted-foreground mt-2">
             Gerencie seus leads, agendamentos e vendas de cursos
           </p>
-        </div>
-        <div className="flex-shrink-0">
-          <SemanasConsecutivasCard 
-            vendedorId={profile?.id} 
-            title="Semanas Consecutivas"
-          />
         </div>
       </div>
 
