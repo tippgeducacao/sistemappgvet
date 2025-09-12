@@ -238,6 +238,43 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     setEditarStatusDialogAberto(true);
   };
 
+  const handleRemarcarHistorico = async (agendamento: Agendamento, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      // IMPORTANTE: Manter o sdr_id original ao remarcar do histórico
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({
+          status: 'remarcado',
+          resultado_reuniao: null,
+          data_resultado: null,
+          observacoes_resultado: null
+          // sdr_id é mantido automaticamente (não está sendo alterado)
+        })
+        .eq('id', agendamento.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Reunião remarcada e movida para agendadas!",
+      });
+
+      if (onRefresh) {
+        onRefresh();
+      }
+      
+    } catch (error) {
+      console.error('Erro ao remarcar reunião:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remarcar a reunião. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleEditarStatus = async () => {
     if (!agendamentoSelecionado || !novoStatus) {
       toast({
@@ -439,15 +476,28 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                          {isHistorico ? (
-                           <Button 
-                             onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
-                             size="sm"
-                             variant="ghost"
-                             className="flex items-center gap-1"
-                           >
-                             <Settings className="h-3 w-3" />
-                             Status
-                           </Button>
+                           <>
+                             {agendamento.resultado_reuniao === 'nao_compareceu' && (
+                               <Button 
+                                 onClick={(e) => handleRemarcarHistorico(agendamento, e)}
+                                 size="sm"
+                                 variant="outline"
+                                 className="flex items-center gap-1"
+                               >
+                                 <Edit className="h-3 w-3" />
+                                 Remarcar
+                               </Button>
+                             )}
+                             <Button 
+                               onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
+                               size="sm"
+                               variant="ghost"
+                               className="flex items-center gap-1"
+                             >
+                               <Settings className="h-3 w-3" />
+                               Status
+                             </Button>
+                           </>
                          ) : !agendamento.resultado_reuniao && (
                            <Button 
                              onClick={(e) => {
