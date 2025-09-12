@@ -12,6 +12,7 @@ import VendedorMetas from './VendedorMetas';
 import WeeklyApprovedSalesChart from './WeeklyApprovedSalesChart';
 import GoalsAchievementChart from './GoalsAchievementChart';
 import { ReunioesAdminChart } from './ReunioesAdminChart';
+import { SDRPerformanceTable } from './SDRPerformanceTable';
 import { ReunioesVendedoresChart } from './ReunioesVendedoresChart';
 
 import PendingVendasAlert from '@/components/alerts/PendingVendasAlert';
@@ -149,6 +150,8 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
         />
 
         <ReunioesAdminChart selectedSDR={selectedVendedor} />
+
+        <SDRPerformanceTable />
 
         {/* <ReunioesVendedoresChart selectedVendedor={selectedVendedor} /> */}
 
