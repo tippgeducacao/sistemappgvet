@@ -75,62 +75,6 @@ const SDRDashboard: React.FC = () => {
         onYearChange={setSelectedYear}
       />
 
-      {/* Cards de métricas SDR */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Leads Captados</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{leadsDoMes.length}</div>
-            <p className="text-xs text-muted-foreground">
-              No período selecionado
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Agendamentos</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{agendamentosDoMes.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {agendamentosRealizados} realizados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vendas de Cursos</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{vendasDoMes.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {vendasMatriculadas} matriculadas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {leadsDoMes.length > 0 ? Math.round((vendasMatriculadas / leadsDoMes.length) * 100) : 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Leads para vendas
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
 
       {/* Meta de Agendamentos e Comparativo */}
