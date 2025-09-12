@@ -438,15 +438,26 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                         {isHistorico ? (
-                          <Button 
-                            onClick={(e) => handleRemarcarHistorico(agendamento, e)}
-                            size="sm"
-                            variant="outline"
-                            className="flex items-center gap-1"
-                          >
-                            <Edit className="h-3 w-3" />
-                            Remarcar
-                          </Button>
+                          <>
+                            <Button 
+                              onClick={(e) => handleRemarcarHistorico(agendamento, e)}
+                              size="sm"
+                              variant="outline"
+                              className="flex items-center gap-1"
+                            >
+                              <Edit className="h-3 w-3" />
+                              Remarcar
+                            </Button>
+                            <Button 
+                              onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
+                              size="sm"
+                              variant="ghost"
+                              className="flex items-center gap-1"
+                            >
+                              <Settings className="h-3 w-3" />
+                              Status
+                            </Button>
+                          </>
                         ) : !agendamento.resultado_reuniao && (
                           <>
                             <Button 
@@ -467,15 +478,6 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                             >
                               <Edit className="h-3 w-3" />
                               Remarcar
-                            </Button>
-                            <Button 
-                              onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
-                              size="sm"
-                              variant="ghost"
-                              className="flex items-center gap-1"
-                            >
-                              <Settings className="h-3 w-3" />
-                              Status
                             </Button>
                           </>
                         )}
