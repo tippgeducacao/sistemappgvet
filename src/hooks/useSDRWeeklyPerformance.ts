@@ -39,7 +39,9 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
 
       console.log('🗓️ Buscando performance SDR da semana:', { 
         startOfWeek: startOfWeek.toISOString(), 
-        endOfWeek: endOfWeek.toISOString() 
+        endOfWeek: endOfWeek.toISOString(),
+        startOfWeek_br: startOfWeek.toLocaleDateString('pt-BR'),
+        endOfWeek_br: endOfWeek.toLocaleDateString('pt-BR')
       });
       
       // Buscar todos os agendamentos da semana para SDRs ativos
@@ -74,6 +76,25 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
         return;
       }
 
+      console.log('📊 Agendamentos encontrados:', agendamentosData?.length);
+      
+      // Log específico para SDR IN
+      const sdrInAgendamentos = agendamentosData?.filter(a => 
+        a.profiles?.name?.toLowerCase()?.includes('sdr in') || 
+        a.profiles?.name === 'SDR IN'
+      );
+      if (sdrInAgendamentos && sdrInAgendamentos.length > 0) {
+        console.log('🔍 SDR IN - Agendamentos encontrados:', sdrInAgendamentos.map(a => ({
+          id: a.id,
+          data_agendamento: a.data_agendamento,
+          data_agendamento_br: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
+          resultado_reuniao: a.resultado_reuniao,
+          status: a.status,
+          lead_nome: a.leads?.nome,
+          sdr_name: a.profiles?.name
+        })));
+      }
+
       // Buscar todas as vendas aprovadas para verificar conversões
       const { data: vendasAprovadas, error: vendasError } = await supabase
         .from('form_entries')
@@ -88,6 +109,9 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           enviado_em,
           cursos (
             nome
+          ),
+          sdr:profiles!sdr_id (
+            name
           )
         `)
         .eq('status', 'matriculado');
@@ -129,8 +153,26 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
       // Filtrar vendas aprovadas que foram assinadas na semana atual
       const vendasAprovadasNaSemana = vendasAprovadas?.filter(venda => {
         const dataEfetiva = getDataEfetivaVenda(venda);
-        return dataEfetiva >= startOfWeek && dataEfetiva <= endOfWeek;
+        const isInWeek = dataEfetiva >= startOfWeek && dataEfetiva <= endOfWeek;
+        
+        // Log para debug de datas
+        if (venda.sdr_id && venda.sdr?.name?.toLowerCase()?.includes('sdr in')) {
+          console.log('📅 SDR IN - Checando venda:', {
+            venda_id: venda.id?.substring(0, 8),
+            data_efetiva: dataEfetiva.toISOString(),
+            data_efetiva_br: dataEfetiva.toLocaleDateString('pt-BR'),
+            startOfWeek_br: startOfWeek.toLocaleDateString('pt-BR'),
+            endOfWeek_br: endOfWeek.toLocaleDateString('pt-BR'),
+            isInWeek,
+            sdr_name: venda.sdr?.name,
+            data_assinatura_contrato: venda.data_assinatura_contrato
+          });
+        }
+        
+        return isInWeek;
       }) || [];
+      
+      console.log('📈 Vendas aprovadas na semana:', vendasAprovadasNaSemana?.length);
 
       // Agrupar dados por SDR
       const performanceMap = new Map<string, SDRWeeklyPerformance>();
@@ -159,6 +201,19 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
         const sdrId = agendamento.sdr_id;
         const profile = agendamento.profiles;
         const sdrName = profile?.name || 'SDR Desconhecido';
+        
+        // Log específico para SDR IN
+        if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
+          console.log('🔍 SDR IN - Processando agendamento:', {
+            id: agendamento.id,
+            data_agendamento: agendamento.data_agendamento,
+            data_br: new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR'),
+            resultado_reuniao: agendamento.resultado_reuniao,
+            status: agendamento.status,
+            lead_nome: agendamento.leads?.nome,
+            form_entry_id: agendamento.form_entry_id
+          });
+        }
         
         // Filtrar apenas usuários ativos e com tipo SDR
         const isActiveSDR = profile?.ativo === true && 
@@ -221,9 +276,34 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             meetingDetail.curso_nome = vendaAprovadaCorrespondente.cursos?.nome;
             meetingDetail.data_assinatura = vendaAprovadaCorrespondente.data_assinatura_contrato || 
                                            vendaAprovadaCorrespondente.data_aprovacao?.split('T')[0];
+                                           
+            // Log específico para SDR IN
+            if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
+              console.log('✅ SDR IN - Venda convertida encontrada:', {
+                agendamento_id: agendamento.id,
+                venda_id: vendaAprovadaCorrespondente.id,
+                data_assinatura: vendaAprovadaCorrespondente.data_assinatura_contrato,
+                curso: vendaAprovadaCorrespondente.cursos?.nome
+              });
+            }
           } else {
             performance.compareceram++; // Comprou mas ainda não foi aprovado ou aprovado em outra semana
             meetingDetail.status = 'pendente';
+            
+            // Log específico para SDR IN - problema aqui!
+            if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
+              console.log('❌ SDR IN - Reunião "comprou" mas VENDA NÃO ENCONTRADA na semana:', {
+                agendamento_id: agendamento.id,
+                form_entry_id: agendamento.form_entry_id,
+                data_agendamento: agendamento.data_agendamento,
+                data_br: new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR'),
+                lead_id: agendamento.lead_id,
+                lead_nome: agendamento.leads?.nome,
+                vendasAprovadasNaSemana_count: vendasAprovadasNaSemana.length,
+                startOfWeek_br: startOfWeek.toLocaleDateString('pt-BR'),
+                endOfWeek_br: endOfWeek.toLocaleDateString('pt-BR')
+              });
+            }
           }
         } else if (agendamento.status === 'remarcado' || 
                    agendamento.resultado_reuniao === 'nao_comprou' || 
