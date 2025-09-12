@@ -10,6 +10,7 @@ export interface MeetingDetail {
   status: 'convertida' | 'pendente' | 'compareceu' | 'nao_compareceu';
   lead_name: string;
   vendedor_name: string;
+  sdr_name: string;
   data_assinatura?: string;
   curso_nome?: string;
 }
@@ -174,7 +175,8 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           resultado_reuniao: agendamento.resultado_reuniao || 'Sem resultado',
           status: 'compareceu', // Default, será ajustado abaixo
           lead_name: agendamento.leads?.nome || 'Lead desconhecido',
-          vendedor_name: agendamento.vendedor?.name || 'Vendedor desconhecido'
+          vendedor_name: agendamento.vendedor?.name || 'Vendedor desconhecido',
+          sdr_name: sdrName
         };
 
         // Categorizar baseado no resultado da reunião

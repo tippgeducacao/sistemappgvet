@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, User, Building, Filter } from 'lucide-react';
-import { MeetingDetail } from '@/hooks/useAgendamentosStatsAdmin';
+import { MeetingDetail } from '@/hooks/useSDRWeeklyPerformance';
 
 interface SDRMeetingDetailsModalProps {
   open: boolean;
@@ -143,10 +143,15 @@ export const SDRMeetingDetailsModal: React.FC<SDRMeetingDetailsModalProps> = ({
                   {getStatusBadge(meeting.status)}
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                   <div>
                     <span className="text-muted-foreground">Lead:</span>
                     <span className="ml-2 font-medium">{meeting.lead_name}</span>
+                  </div>
+                  
+                  <div>
+                    <span className="text-muted-foreground">SDR:</span>
+                    <span className="ml-2 font-medium">{meeting.sdr_name}</span>
                   </div>
                   
                   <div>
