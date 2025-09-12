@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye, Filter, X } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye, Filter, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAuthStore } from '@/stores/AuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingState from '@/components/ui/loading-state';
@@ -13,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import type { DateRange } from 'react-day-picker';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface HistoricoReuniao {
   id: string;
@@ -49,6 +51,11 @@ const HistoricoReunioes: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedCreationDate, setSelectedCreationDate] = useState<Date | undefined>();
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+
+  // Estado para ordenação e detalhes
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [selectedReuniao, setSelectedReuniao] = useState<HistoricoReuniao | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   // Opções de status de resultado
   const statusOptions = [
@@ -171,6 +178,15 @@ const HistoricoReunioes: React.FC = () => {
         return null;
     }
   };
+
+  // Ordenação por horário de agendamento
+  const reunioesOrdenadas = [...reunioesFiltradas].sort((a, b) => {
+    const aTime = new Date(a.data_agendamento).getTime();
+    const bTime = new Date(b.data_agendamento).getTime();
+    return sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
+  });
+
+  const toggleSortOrder = () => setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
 
   if (isLoading) {
     return (
@@ -317,6 +333,13 @@ const HistoricoReunioes: React.FC = () => {
                 </div>
               </PopoverContent>
             </Popover>
+
+            {/* Ordenar por horário */}
+            <Button variant="outline" className="w-full sm:w-auto whitespace-nowrap" onClick={toggleSortOrder} title={`Ordenar por horário ${sortOrder === 'asc' ? 'crescente' : 'decrescente'}`}>
+              <Clock className="mr-2 h-4 w-4" />
+              Horário
+              {sortOrder === 'asc' ? <ArrowUp className="ml-1 h-4 w-4" /> : <ArrowDown className="ml-1 h-4 w-4" />}
+            </Button>
 
             {/* Botão para limpar todos os filtros */}
             {hasActiveFilters && (
