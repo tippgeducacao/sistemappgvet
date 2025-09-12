@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, Settings } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
@@ -32,11 +33,13 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [dialogAberto, setDialogAberto] = useState(false);
   const [novaVendaAberto, setNovaVendaAberto] = useState(false);
   const [remarcarDialogAberto, setRemarcarDialogAberto] = useState(false);
+  const [editarStatusDialogAberto, setEditarStatusDialogAberto] = useState(false);
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
   const [observacoes, setObservacoes] = useState('');
   const [novaData, setNovaData] = useState('');
   const [novaHoraInicio, setNovaHoraInicio] = useState('');
   const [novaHoraFim, setNovaHoraFim] = useState('');
+  const [novoStatus, setNovoStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const { updateField, clearForm } = useFormStore();
 
@@ -242,12 +245,14 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       }
 
       // Se chegou até aqui, não há conflitos - pode remarcar
+      // IMPORTANTE: Manter o sdr_id original ao remarcar
       const { error } = await supabase
         .from('agendamentos')
         .update({
           data_agendamento: novaDataAgendamento.toISOString(),
           data_fim_agendamento: novaDataFim.toISOString(),
           status: 'remarcado'
+          // sdr_id é mantido automaticamente (não está sendo alterado)
         })
         .eq('id', agendamentoSelecionado.id);
 
@@ -280,6 +285,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     e.stopPropagation();
     
     try {
+      // IMPORTANTE: Manter o sdr_id original ao remarcar do histórico
       const { error } = await supabase
         .from('agendamentos')
         .update({
@@ -287,6 +293,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
           resultado_reuniao: null,
           data_resultado: null,
           observacoes_resultado: null
+          // sdr_id é mantido automaticamente (não está sendo alterado)
         })
         .eq('id', agendamento.id);
 
@@ -306,6 +313,58 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       toast({
         title: "Erro",
         description: "Erro ao remarcar a reunião. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const abrirEditarStatusDialog = (agendamento: Agendamento, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAgendamentoSelecionado(agendamento);
+    setNovoStatus(agendamento.status || 'agendado');
+    setEditarStatusDialogAberto(true);
+  };
+
+  const handleEditarStatus = async () => {
+    if (!agendamentoSelecionado || !novoStatus) {
+      toast({
+        title: "Erro",
+        description: "Selecione um status válido",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // IMPORTANTE: Manter o sdr_id original ao editar status
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({
+          status: novoStatus
+          // sdr_id é mantido automaticamente (não está sendo alterado)
+        })
+        .eq('id', agendamentoSelecionado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Status da reunião atualizado com sucesso!",
+      });
+
+      setEditarStatusDialogAberto(false);
+      setAgendamentoSelecionado(null);
+      setNovoStatus('');
+      
+      if (onRefresh) {
+        onRefresh();
+      }
+      
+    } catch (error) {
+      console.error('Erro ao editar status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar o status da reunião. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -408,6 +467,15 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                             >
                               <Edit className="h-3 w-3" />
                               Remarcar
+                            </Button>
+                            <Button 
+                              onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
+                              size="sm"
+                              variant="ghost"
+                              className="flex items-center gap-1"
+                            >
+                              <Settings className="h-3 w-3" />
+                              Status
                             </Button>
                           </>
                         )}
@@ -690,6 +758,56 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                 </Button>
                 <Button onClick={handleRemarcarReuniao}>
                   Remarcar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Editar Status */}
+      <Dialog open={editarStatusDialogAberto} onOpenChange={setEditarStatusDialogAberto}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Status da Reunião</DialogTitle>
+          </DialogHeader>
+          
+          {agendamentoSelecionado && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                <strong>Lead:</strong> {agendamentoSelecionado.lead?.nome}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <strong>Data:</strong> {format(new Date(agendamentoSelecionado.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <strong>SDR Responsável:</strong> {agendamentoSelecionado.sdr?.name || 'Não informado'}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="novo-status">Novo Status</Label>
+                <Select value={novoStatus} onValueChange={setNovoStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="agendado">Agendado</SelectItem>
+                    <SelectItem value="remarcado">Remarcado</SelectItem>
+                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                    <SelectItem value="realizado">Realizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditarStatusDialogAberto(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={handleEditarStatus}>
+                  Salvar Status
                 </Button>
               </div>
             </div>
