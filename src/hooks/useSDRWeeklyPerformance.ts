@@ -305,13 +305,26 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
               });
             }
           }
-        } else if (agendamento.status === 'remarcado' || 
+        } else if (
+                   agendamento.status === 'remarcado' || 
                    agendamento.resultado_reuniao === 'nao_comprou' || 
+                   agendamento.resultado_reuniao === 'compareceu_nao_comprou' ||
                    agendamento.resultado_reuniao === 'presente' ||
-                   agendamento.resultado_reuniao === 'compareceu' ||
-                   !agendamento.resultado_reuniao) {
+                   agendamento.resultado_reuniao === 'realizado' ||
+                   agendamento.resultado_reuniao === 'compareceu' || 
+                   !agendamento.resultado_reuniao
+                 ) {
           performance.compareceram++;
           meetingDetail.status = 'compareceu';
+          
+          if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
+            console.log('🟡 SDR IN - Contando comparecimento:', {
+              agendamento_id: agendamento.id,
+              resultado_reuniao: agendamento.resultado_reuniao,
+              data: agendamento.data_agendamento,
+              data_br: new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR')
+            });
+          }
         }
 
         performance.meetings.push(meetingDetail);
