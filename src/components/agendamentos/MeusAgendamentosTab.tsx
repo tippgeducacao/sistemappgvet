@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw, List, History, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw, List, History, ChevronUp, ChevronDown, ChevronsUpDown, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -32,6 +33,9 @@ const [modalOpen, setModalOpen] = useState(false);
   // Estado para ordenação
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Estado para filtro de pesquisa
+  const [searchName, setSearchName] = useState<string>('');
 
   // Função para alternar ordenação
   const handleSort = (column: string) => {
@@ -98,11 +102,26 @@ const [modalOpen, setModalOpen] = useState(false);
 
 
   // Filtrar agendamentos do SDR logado - apenas os que ainda estão agendados
-  const agendamentosAgendados = sortData(
-    agendamentos
-      .filter(ag => ag.sdr_id === profile?.id && ['agendado', 'remarcado'].includes(ag.status))
-      .sort((a, b) => new Date(b.data_agendamento).getTime() - new Date(a.data_agendamento).getTime())
-  );
+  const agendamentosFiltered = agendamentos
+    .filter(ag => {
+      // Filtro base: SDR logado e status agendado
+      if (ag.sdr_id !== profile?.id || !['agendado', 'remarcado'].includes(ag.status)) {
+        return false;
+      }
+      
+      // Filtro por nome se houver pesquisa
+      if (searchName.trim()) {
+        const nome = ag.lead?.nome?.toLowerCase() || '';
+        if (!nome.includes(searchName.toLowerCase().trim())) {
+          return false;
+        }
+      }
+      
+      return true;
+    })
+    .sort((a, b) => new Date(b.data_agendamento).getTime() - new Date(a.data_agendamento).getTime());
+
+  const agendamentosAgendados = sortData(agendamentosFiltered);
 
   const cancelarAgendamento = async (agendamentoId: string) => {
     try {
@@ -336,6 +355,20 @@ const [modalOpen, setModalOpen] = useState(false);
           <Badge variant="outline">
             {agendamentosAgendados.length} agendamento(s) ativo(s)
           </Badge>
+        </div>
+      </div>
+
+      {/* Campo de pesquisa */}
+      <div className="mb-4">
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            type="text"
+            placeholder="Pesquisar por nome..."
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+            className="pl-10"
+          />
         </div>
       </div>
 

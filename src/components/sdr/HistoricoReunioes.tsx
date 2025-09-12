@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye, Filter, X, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye, Filter, X, ChevronUp, ChevronDown, ChevronsUpDown, Search } from 'lucide-react';
 import { useAuthStore } from '@/stores/AuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingState from '@/components/ui/loading-state';
@@ -50,6 +51,7 @@ const HistoricoReunioes: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedCreationDate, setSelectedCreationDate] = useState<Date | undefined>();
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+  const [searchName, setSearchName] = useState<string>('');
 
   // Estado para ordenação
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -192,6 +194,14 @@ const HistoricoReunioes: React.FC = () => {
         return false;
       }
     }
+
+    // Filtro por nome
+    if (searchName.trim()) {
+      const nome = reuniao.lead?.nome?.toLowerCase() || '';
+      if (!nome.includes(searchName.toLowerCase().trim())) {
+        return false;
+      }
+    }
     
     return true;
   });
@@ -211,9 +221,10 @@ const HistoricoReunioes: React.FC = () => {
     setDateRange(undefined);
     setSelectedCreationDate(undefined);
     setSelectedStatus([]);
+    setSearchName('');
   };
 
-  const hasActiveFilters = dateRange?.from || dateRange?.to || selectedCreationDate || selectedStatus.length > 0;
+  const hasActiveFilters = dateRange?.from || dateRange?.to || selectedCreationDate || selectedStatus.length > 0 || searchName.trim().length > 0;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -267,6 +278,18 @@ const HistoricoReunioes: React.FC = () => {
         <CardContent>
           {/* Área de Filtros */}
           <div className="flex flex-wrap gap-3 mb-6">
+            {/* Campo de pesquisa por nome */}
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Pesquisar por nome..."
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
             {/* Filtro por período de agendamento */}
             <Popover>
               <PopoverTrigger asChild>
@@ -430,6 +453,18 @@ const HistoricoReunioes: React.FC = () => {
       <CardContent>
         {/* Área de Filtros */}
         <div className="flex flex-wrap gap-3 mb-6">
+          {/* Campo de pesquisa por nome */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              type="text"
+              placeholder="Pesquisar por nome..."
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
           {/* Filtro por período de agendamento */}
           <Popover>
             <PopoverTrigger asChild>
