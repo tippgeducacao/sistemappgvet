@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, Settings, ChevronUp, ChevronDown } from 'lucide-react';
+import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, Settings, ChevronUp, ChevronDown, Eye, ShoppingCart } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import NovaVendaForm from '@/components/NovaVendaForm';
+import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import { useFormStore } from '@/store/FormStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -33,7 +34,9 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [dialogAberto, setDialogAberto] = useState(false);
   const [novaVendaAberto, setNovaVendaAberto] = useState(false);
   const [editarStatusDialogAberto, setEditarStatusDialogAberto] = useState(false);
+  const [verVendaDialogAberto, setVerVendaDialogAberto] = useState(false);
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
+  const [vendaSelecionada, setVendaSelecionada] = useState<any | null>(null);
   const [observacoes, setObservacoes] = useState('');
   const [novoStatus, setNovoStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -228,6 +231,43 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     
     setAgendamentoSelecionado(agendamento);
     setNovaVendaAberto(true);
+  };
+
+  const abrirVerVenda = async (agendamento: Agendamento) => {
+    if (!agendamento.form_entry_id) {
+      toast({
+        title: "Erro",
+        description: "Esta reunião não possui venda vinculada",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Buscar a venda completa
+      const { data: venda, error } = await supabase
+        .from('form_entries')
+        .select(`
+          *,
+          alunos (*),
+          cursos (nome),
+          profiles!form_entries_vendedor_id_fkey (name)
+        `)
+        .eq('id', agendamento.form_entry_id)
+        .single();
+
+      if (error) throw error;
+
+      setVendaSelecionada(venda);
+      setVerVendaDialogAberto(true);
+    } catch (error) {
+      console.error('Erro ao buscar venda:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados da venda",
+        variant: "destructive",
+      });
+    }
   };
 
 
@@ -475,41 +515,69 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                   {mostrarAcoes && (
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
-                         {isHistorico ? (
-                           <>
-                             {agendamento.resultado_reuniao === 'nao_compareceu' && (
-                               <Button 
-                                 onClick={(e) => handleRemarcarHistorico(agendamento, e)}
-                                 size="sm"
-                                 variant="outline"
-                                 className="flex items-center gap-1"
-                               >
-                                 <Edit className="h-3 w-3" />
-                                 Remarcar
-                               </Button>
-                             )}
-                             <Button 
-                               onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
-                               size="sm"
-                               variant="ghost"
-                               className="flex items-center gap-1"
-                             >
-                               <Settings className="h-3 w-3" />
-                               Status
-                             </Button>
-                           </>
-                         ) : !agendamento.resultado_reuniao && (
-                           <Button 
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               abrirDialog(agendamento);
-                             }}
-                             size="sm"
-                             variant="outline"
-                           >
-                             Marcar Resultado
-                           </Button>
-                         )}
+                          {isHistorico ? (
+                            <>
+                              {agendamento.resultado_reuniao === 'nao_compareceu' && (
+                                <Button 
+                                  onClick={(e) => handleRemarcarHistorico(agendamento, e)}
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex items-center gap-1"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                  Remarcar
+                                </Button>
+                              )}
+                              {agendamento.resultado_reuniao === 'compareceu_nao_comprou' && (
+                                <Button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    abrirNovaVenda(agendamento);
+                                  }}
+                                  size="sm"
+                                  variant="default"
+                                  className="flex items-center gap-1"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                  Nova Venda
+                                </Button>
+                              )}
+                              {agendamento.resultado_reuniao === 'comprou' && agendamento.form_entry_id && (
+                                <Button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    abrirVerVenda(agendamento);
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex items-center gap-1"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  Ver Venda
+                                </Button>
+                              )}
+                              <Button 
+                                onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
+                                size="sm"
+                                variant="ghost"
+                                className="flex items-center gap-1"
+                              >
+                                <Settings className="h-3 w-3" />
+                                Status
+                              </Button>
+                            </>
+                          ) : !agendamento.resultado_reuniao && (
+                            <Button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                abrirDialog(agendamento);
+                              }}
+                              size="sm"
+                              variant="outline"
+                            >
+                              Marcar Resultado
+                            </Button>
+                          )}
                       </div>
                     </TableCell>
                   )}
@@ -830,8 +898,56 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
               setAgendamentoSelecionado(null);
               clearForm();
             }}
+            onSuccess={async (vendaId: string) => {
+              // Atualizar status da reunião para "comprou" e vincular com a venda
+              if (agendamentoSelecionado) {
+                try {
+                  const { error } = await supabase
+                    .from('agendamentos')
+                    .update({
+                      resultado_reuniao: 'comprou',
+                      form_entry_id: vendaId,
+                      data_resultado: new Date().toISOString(),
+                      observacoes_resultado: 'Venda criada através da reunião'
+                    })
+                    .eq('id', agendamentoSelecionado.id);
+
+                  if (error) throw error;
+
+                  toast({
+                    title: "Sucesso",
+                    description: "Venda criada e reunião atualizada com sucesso!",
+                  });
+
+                  // Recarregar dados
+                  if (onRefresh) {
+                    onRefresh();
+                  }
+                } catch (error) {
+                  console.error('Erro ao atualizar reunião:', error);
+                  toast({
+                    title: "Aviso",
+                    description: "Venda criada, mas houve erro ao atualizar a reunião",
+                    variant: "destructive",
+                  });
+                }
+              }
+              
+              setNovaVendaAberto(false);
+              setAgendamentoSelecionado(null);
+              clearForm();
+            }}
           />
         </div>
+      )}
+
+      {/* Modal de Ver Venda */}
+      {verVendaDialogAberto && vendaSelecionada && (
+        <VendaDetailsDialog
+          venda={vendaSelecionada}
+          open={verVendaDialogAberto}
+          onOpenChange={setVerVendaDialogAberto}
+        />
       )}
     </div>
   );

@@ -20,9 +20,10 @@ import FormProgressBar from './forms/FormProgressBar';
 interface NovaVendaFormProps {
   onCancel: () => void;
   editId?: string | null;
+  onSuccess?: (vendaId: string) => void;
 }
 
-const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
+const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId, onSuccess }) => {
   const { toast } = useToast();
   const { 
     formData, 
@@ -285,8 +286,13 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId }) => {
           : "Os dados foram salvos e a pontuação foi calculada automaticamente."
       });
       
-      clearForm();
-      onCancel();
+      // Chamar callback de sucesso se fornecido
+      if (onSuccess && formEntryId) {
+        onSuccess(formEntryId);
+      } else {
+        clearForm();
+        onCancel();
+      }
       
     } catch (error) {
       console.error('❌ Erro ao salvar venda:', error);
