@@ -624,15 +624,7 @@ const HistoricoReunioes: React.FC = () => {
                     {renderSortIcon('data_agendamento')}
                   </div>
                 </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('nome')}
-                >
-                  <div className="flex items-center gap-1">
-                    Nome
-                    {renderSortIcon('nome')}
-                  </div>
-                </TableHead>
+                <TableHead>Nome</TableHead>
                 <TableHead 
                   className="cursor-pointer hover:bg-muted/50 select-none"
                   onClick={() => handleSort('vendedor')}
