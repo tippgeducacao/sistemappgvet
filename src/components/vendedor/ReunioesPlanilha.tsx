@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, Settings } from 'lucide-react';
+import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, Settings, Clock, ArrowUp, ArrowDown } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
@@ -41,6 +41,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [novaHoraFim, setNovaHoraFim] = useState('');
   const [novoStatus, setNovoStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const { updateField, clearForm } = useFormStore();
 
   // Separar reuniões em agendadas (sem resultado) e histórico (com resultado) com filtro de pesquisa
@@ -53,14 +54,23 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       return true;
     });
 
-    const agendadas = filteredAgendamentos.filter(agendamento => !agendamento.resultado_reuniao);
-    const historico = filteredAgendamentos.filter(agendamento => agendamento.resultado_reuniao);
+    // Função para ordenar por horário
+    const sortByTime = (list: Agendamento[]) => {
+      return [...list].sort((a, b) => {
+        const dateA = new Date(a.data_agendamento);
+        const dateB = new Date(b.data_agendamento);
+        return sortOrder === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
+      });
+    };
+
+    const agendadas = sortByTime(filteredAgendamentos.filter(agendamento => !agendamento.resultado_reuniao));
+    const historico = sortByTime(filteredAgendamentos.filter(agendamento => agendamento.resultado_reuniao));
     
     return {
       reunioesAgendadas: agendadas,
       reunioesHistorico: historico
     };
-  }, [agendamentos, searchTerm]);
+  }, [agendamentos, searchTerm, sortOrder]);
 
   const getStatusBadge = (agendamento: Agendamento) => {
     if (agendamento.resultado_reuniao) {
@@ -493,17 +503,39 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     )
   );
 
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+  };
+
+  const getSortIcon = () => {
+    if (sortOrder === 'asc') return <ArrowUp className="h-4 w-4" />;
+    return <ArrowDown className="h-4 w-4" />;
+  };
+
   return (
     <div className="space-y-4">
-      {/* Filtro de pesquisa */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          placeholder="Buscar por nome do lead..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Filtros e controles */}
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar por nome do lead..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button
+          variant="outline"
+          size="default"
+          onClick={toggleSortOrder}
+          className="flex items-center gap-2 whitespace-nowrap"
+          title={`Ordenar por horário ${sortOrder === 'asc' ? 'crescente' : 'decrescente'}`}
+        >
+          <Clock className="h-4 w-4" />
+          Horário
+          {getSortIcon()}
+        </Button>
       </div>
 
       <Tabs defaultValue="agendadas" className="w-full">
