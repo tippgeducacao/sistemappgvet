@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw, List, History } from 'lucide-react';
+import { Calendar, Trash2, Clock, Users, MapPin, Eye, Edit, RefreshCw, List, History, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -29,11 +29,80 @@ const [modalOpen, setModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingAgendamento, setEditingAgendamento] = useState<AgendamentoSDR | null>(null);
 
+  // Estado para ordenação
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Função para alternar ordenação
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Função para ordenar os dados
+  const sortData = (data: AgendamentoSDR[]) => {
+    if (!sortColumn) return data;
+
+    return [...data].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case 'created_at':
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+          break;
+        case 'data_agendamento':
+          aValue = new Date(a.data_agendamento);
+          bValue = new Date(b.data_agendamento);
+          break;
+        case 'nome':
+          aValue = a.lead?.nome || '';
+          bValue = b.lead?.nome || '';
+          break;
+        case 'vendedor':
+          aValue = a.vendedor?.name || '';
+          bValue = b.vendedor?.name || '';
+          break;
+        case 'interesse':
+          aValue = a.pos_graduacao_interesse || '';
+          bValue = b.pos_graduacao_interesse || '';
+          break;
+        case 'status':
+          aValue = a.status || '';
+          bValue = b.status || '';
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  // Renderizar ícone de ordenação
+  const renderSortIcon = (column: string) => {
+    if (sortColumn !== column) {
+      return <ChevronsUpDown className="h-4 w-4" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ChevronUp className="h-4 w-4" />
+      : <ChevronDown className="h-4 w-4" />;
+  };
+
 
   // Filtrar agendamentos do SDR logado - apenas os que ainda estão agendados
-  const agendamentosAgendados = agendamentos
-    .filter(ag => ag.sdr_id === profile?.id && ['agendado', 'remarcado'].includes(ag.status))
-    .sort((a, b) => new Date(b.data_agendamento).getTime() - new Date(a.data_agendamento).getTime());
+  const agendamentosAgendados = sortData(
+    agendamentos
+      .filter(ag => ag.sdr_id === profile?.id && ['agendado', 'remarcado'].includes(ag.status))
+      .sort((a, b) => new Date(b.data_agendamento).getTime() - new Date(a.data_agendamento).getTime())
+  );
 
   const cancelarAgendamento = async (agendamentoId: string) => {
     try {
@@ -97,12 +166,60 @@ const [modalOpen, setModalOpen] = useState(false);
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Data de Criação</TableHead>
-            <TableHead>Data de Agendamento</TableHead>
-            <TableHead>Nome</TableHead>
-            <TableHead>Vendedor</TableHead>
-            <TableHead>Interesse</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('created_at')}
+            >
+              <div className="flex items-center gap-1">
+                Data de Criação
+                {renderSortIcon('created_at')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('data_agendamento')}
+            >
+              <div className="flex items-center gap-1">
+                Data de Agendamento
+                {renderSortIcon('data_agendamento')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('nome')}
+            >
+              <div className="flex items-center gap-1">
+                Nome
+                {renderSortIcon('nome')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('vendedor')}
+            >
+              <div className="flex items-center gap-1">
+                Vendedor
+                {renderSortIcon('vendedor')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('interesse')}
+            >
+              <div className="flex items-center gap-1">
+                Interesse
+                {renderSortIcon('interesse')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('status')}
+            >
+              <div className="flex items-center gap-1">
+                Status
+                {renderSortIcon('status')}
+              </div>
+            </TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>

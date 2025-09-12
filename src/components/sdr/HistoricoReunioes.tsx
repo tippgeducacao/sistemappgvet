@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye, Filter, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye, Filter, X, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { useAuthStore } from '@/stores/AuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingState from '@/components/ui/loading-state';
@@ -50,6 +50,10 @@ const HistoricoReunioes: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedCreationDate, setSelectedCreationDate] = useState<Date | undefined>();
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+
+  // Estado para ordenação
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Opções de status de resultado
   const statusOptions = [
@@ -98,6 +102,69 @@ const HistoricoReunioes: React.FC = () => {
     fetchHistoricoReunioes();
   }, [profile?.id]);
 
+  // Função para alternar ordenação
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Função para ordenar os dados
+  const sortData = (data: HistoricoReuniao[]) => {
+    if (!sortColumn) return data;
+
+    return [...data].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case 'created_at':
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+          break;
+        case 'data_agendamento':
+          aValue = new Date(a.data_agendamento);
+          bValue = new Date(b.data_agendamento);
+          break;
+        case 'nome':
+          aValue = a.lead?.nome || '';
+          bValue = b.lead?.nome || '';
+          break;
+        case 'vendedor':
+          aValue = a.vendedor?.name || '';
+          bValue = b.vendedor?.name || '';
+          break;
+        case 'interesse':
+          aValue = a.pos_graduacao_interesse || '';
+          bValue = b.pos_graduacao_interesse || '';
+          break;
+        case 'status':
+          aValue = a.status || '';
+          bValue = b.status || '';
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  // Renderizar ícone de ordenação
+  const renderSortIcon = (column: string) => {
+    if (sortColumn !== column) {
+      return <ChevronsUpDown className="h-4 w-4" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ChevronUp className="h-4 w-4" />
+      : <ChevronDown className="h-4 w-4" />;
+  };
+
   // Filtrar reuniões pelo período e status selecionados
   const reunioesFiltradas = reunioes.filter(reuniao => {
     // Filtro por período de agendamento (inclusivo dos dias de início e fim)
@@ -128,6 +195,9 @@ const HistoricoReunioes: React.FC = () => {
     
     return true;
   });
+
+  // Aplicar ordenação
+  const reunioesOrdenadas = sortData(reunioesFiltradas);
 
   const handleStatusToggle = (status: string) => {
     setSelectedStatus(prev => 
@@ -501,17 +571,65 @@ const HistoricoReunioes: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Data de Criação</TableHead>
-                <TableHead>Data de Agendamento</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Vendedor</TableHead>
-                <TableHead>Interesse</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 select-none"
+                  onClick={() => handleSort('created_at')}
+                >
+                  <div className="flex items-center gap-1">
+                    Data de Criação
+                    {renderSortIcon('created_at')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 select-none"
+                  onClick={() => handleSort('data_agendamento')}
+                >
+                  <div className="flex items-center gap-1">
+                    Data de Agendamento
+                    {renderSortIcon('data_agendamento')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 select-none"
+                  onClick={() => handleSort('nome')}
+                >
+                  <div className="flex items-center gap-1">
+                    Nome
+                    {renderSortIcon('nome')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 select-none"
+                  onClick={() => handleSort('vendedor')}
+                >
+                  <div className="flex items-center gap-1">
+                    Vendedor
+                    {renderSortIcon('vendedor')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 select-none"
+                  onClick={() => handleSort('interesse')}
+                >
+                  <div className="flex items-center gap-1">
+                    Interesse
+                    {renderSortIcon('interesse')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 select-none"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center gap-1">
+                    Status
+                    {renderSortIcon('status')}
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {reunioesFiltradas.map((reuniao) => (
+              {reunioesOrdenadas.map((reuniao) => (
                 <TableRow key={reuniao.id}>
                   <TableCell className="font-medium">
                     {format(new Date(reuniao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
