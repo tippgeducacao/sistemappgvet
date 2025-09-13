@@ -82,7 +82,8 @@ export class AgendamentoLinkingService {
         vendedor_id,
         lead:leads!agendamentos_lead_id_fkey (
           nome,
-          email
+          email,
+          whatsapp
         )
       `)
       .eq('id', agendamentoId)
@@ -97,8 +98,13 @@ export class AgendamentoLinkingService {
       return [];
     }
 
-    // Buscar vendas do mesmo vendedor
-    const { data: vendas, error: vendasError } = await supabase
+    const leadEmail = agendamento.lead.email?.toLowerCase().trim();
+    const leadNome = agendamento.lead.nome?.toLowerCase().trim();
+    const leadPhone = (agendamento.lead.whatsapp || '').replace(/\D/g, '');
+    const phoneTail = leadPhone.length >= 8 ? leadPhone.slice(-8) : undefined;
+
+    // 1) Buscar vendas do mesmo vendedor (mais provável e respeita RLS do vendedor)
+    const { data: vendasMesmoVendedor, error: vendasError } = await supabase
       .from('form_entries')
       .select(`
         id,
@@ -119,38 +125,104 @@ export class AgendamentoLinkingService {
       .eq('vendedor_id', agendamento.vendedor_id)
       .in('status', ['matriculado', 'pendente'])
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(20);
 
     if (vendasError) {
-      console.error('❌ Erro ao buscar vendas candidatas:', vendasError);
-      throw vendasError;
+      console.error('❌ Erro ao buscar vendas do vendedor:', vendasError);
     }
 
-    console.log(`📊 Encontradas ${vendas?.length || 0} vendas candidatas`);
-
-    // Filtrar vendas que podem corresponder ao lead
-    const candidatas = vendas?.filter(venda => {
+    let candidatas: any[] = (vendasMesmoVendedor || []).filter((venda) => {
       if (!venda.alunos) return false;
-      
-      const leadEmail = agendamento.lead.email?.toLowerCase().trim();
-      const leadNome = agendamento.lead.nome?.toLowerCase().trim();
       const alunoEmail = venda.alunos.email?.toLowerCase().trim();
       const alunoNome = venda.alunos.nome?.toLowerCase().trim();
+      const alunoPhone = (venda.alunos.telefone || '').replace(/\D/g, '');
 
-      // Correspondência por email (mais confiável)
-      if (leadEmail && alunoEmail && leadEmail === alunoEmail) {
-        return true;
-      }
-
-      // Correspondência por nome (menos confiável)
-      if (leadNome && alunoNome && leadNome === alunoNome) {
-        return true;
-      }
-
+      if (leadEmail && alunoEmail && leadEmail === alunoEmail) return true;
+      if (leadNome && alunoNome && leadNome === alunoNome) return true;
+      if (phoneTail && alunoPhone && alunoPhone.endsWith(phoneTail)) return true;
       return false;
-    }) || [];
+    });
 
-    console.log(`🎯 ${candidatas.length} vendas correspondem ao lead`);
+    if (candidatas.length > 0) {
+      console.log(`🎯 ${candidatas.length} vendas correspondem ao lead (mesmo vendedor)`);
+      return candidatas;
+    }
+
+    // 2) Fallback: procurar por ALUNO (email/nome/telefone) sem restringir por vendedor
+    //    A tabela alunos possui SELECT público para ranking, então conseguimos achar o form_entry_id
+    let alunosQuery = supabase
+      .from('alunos')
+      .select('id, nome, email, telefone, form_entry_id, vendedor_id, created_at')
+      .order('created_at', { ascending: false })
+      .limit(40);
+
+    const orFilters: string[] = [];
+    if (leadEmail) orFilters.push(`email.ilike.${leadEmail}`);
+    if (leadNome) orFilters.push(`nome.ilike.${leadNome}`);
+    if (phoneTail) orFilters.push(`telefone.ilike.%${phoneTail}`);
+
+    if (orFilters.length > 0) {
+      alunosQuery = alunosQuery.or(orFilters.join(','));
+    }
+
+    const { data: alunosEncontrados, error: alunosError } = await alunosQuery;
+    if (alunosError) {
+      console.error('❌ Erro ao buscar alunos por dados do lead:', alunosError);
+    }
+
+    const formEntryIds = (alunosEncontrados || [])
+      .map((a: any) => a.form_entry_id)
+      .filter((id: string | null | undefined): id is string => !!id);
+
+    if (formEntryIds.length === 0) {
+      console.log('⚠️ Nenhum aluno com form_entry_id correspondente encontrado.');
+      return [];
+    }
+
+    // 3) Trazer as vendas pelos IDs coletados (sem filtrar por vendedor)
+    const { data: vendasPorAluno, error: vendasPorAlunoError } = await supabase
+      .from('form_entries')
+      .select(`
+        id,
+        created_at,
+        status,
+        pontuacao_esperada,
+        pontuacao_validada,
+        curso_id,
+        alunos (
+          nome,
+          email,
+          telefone
+        ),
+        cursos (
+          nome
+        )
+      `)
+      .in('id', formEntryIds)
+      .in('status', ['matriculado', 'pendente'])
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (vendasPorAlunoError) {
+      console.error('❌ Erro ao buscar vendas pelos IDs de alunos:', vendasPorAlunoError);
+      // Mesmo que falhe por RLS, retornamos vazio
+      return [];
+    }
+
+    // Fazer novamente a checagem de correspondência (proteção)
+    candidatas = (vendasPorAluno || []).filter((venda) => {
+      if (!venda.alunos) return false;
+      const alunoEmail = venda.alunos.email?.toLowerCase().trim();
+      const alunoNome = venda.alunos.nome?.toLowerCase().trim();
+      const alunoPhone = (venda.alunos.telefone || '').replace(/\D/g, '');
+
+      if (leadEmail && alunoEmail && leadEmail === alunoEmail) return true;
+      if (leadNome && alunoNome && leadNome === alunoNome) return true;
+      if (phoneTail && alunoPhone && alunoPhone.endsWith(phoneTail)) return true;
+      return false;
+    });
+
+    console.log(`🎯 ${candidatas.length} vendas correspondem ao lead (fallback por aluno)`);
     return candidatas;
   }
 
