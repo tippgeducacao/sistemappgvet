@@ -235,30 +235,48 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
 
   const abrirVerVenda = async (agendamento: Agendamento) => {
     try {
-      if (!agendamento.form_entry_id) {
-        toast({
-          title: "Venda não vinculada",
-          description: "Esta reunião não possui uma venda vinculada.",
-          variant: "destructive",
-        });
-        return;
+      let venda = null;
+      
+      // Primeiro, tentar buscar pela form_entry_id direta
+      if (agendamento.form_entry_id) {
+        const { data } = await supabase
+          .from('form_entries')
+          .select(`
+            *,
+            alunos (*),
+            cursos (nome),
+            profiles!form_entries_vendedor_id_fkey (name)
+          `)
+          .eq('id', agendamento.form_entry_id)
+          .maybeSingle();
+        
+        if (data) venda = data;
+      }
+      
+      // Se não encontrou pela form_entry_id, buscar pela reunião ou lead
+      if (!venda && agendamento.lead?.email) {
+        const { data } = await supabase
+          .from('form_entries')
+          .select(`
+            *,
+            alunos (*),
+            cursos (nome),
+            profiles!form_entries_vendedor_id_fkey (name)
+          `)
+          .eq('vendedor_id', agendamento.vendedor_id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        // Procurar venda com aluno que tenha o mesmo email do lead
+        if (data) {
+          venda = data.find(v => v.alunos?.email === agendamento.lead?.email);
+        }
       }
 
-      const { data: venda, error } = await supabase
-        .from('form_entries')
-        .select(`
-          *,
-          alunos (*),
-          cursos (nome),
-          profiles!form_entries_vendedor_id_fkey (name)
-        `)
-        .eq('id', agendamento.form_entry_id)
-        .maybeSingle();
-
-      if (error || !venda) {
+      if (!venda) {
         toast({
           title: "Venda não encontrada",
-          description: "Não foi possível carregar a venda vinculada a esta reunião.",
+          description: "Não foi possível encontrar a venda vinculada a esta reunião. Verifique se a venda foi criada corretamente.",
           variant: "destructive",
         });
         return;
@@ -534,8 +552,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                                   Remarcar
                                 </Button>
                               )}
-                              {(agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
-                                (agendamento.resultado_reuniao === 'comprou' && !agendamento.form_entry_id)) && (
+                              {agendamento.resultado_reuniao === 'compareceu_nao_comprou' && (
                                 <Button 
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -549,7 +566,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                                   Nova Venda
                                 </Button>
                               )}
-                              {agendamento.resultado_reuniao === 'comprou' && agendamento.form_entry_id && (
+                              {agendamento.resultado_reuniao === 'comprou' && (
                                 <Button 
                                   onClick={(e) => {
                                     e.stopPropagation();
