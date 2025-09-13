@@ -534,7 +534,8 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                                   Remarcar
                                 </Button>
                               )}
-                              {agendamento.resultado_reuniao === 'compareceu_nao_comprou' && (
+                              {(agendamento.resultado_reuniao === 'compareceu_nao_comprou' || 
+                                (agendamento.resultado_reuniao === 'comprou' && !agendamento.form_entry_id)) && (
                                 <Button 
                                   onClick={(e) => {
                                     e.stopPropagation();
