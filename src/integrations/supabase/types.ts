@@ -1200,6 +1200,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      buscar_vendas_candidatas_para_agendamento: {
+        Args: { p_agendamento_id: string }
+        Returns: {
+          aluno_email: string
+          aluno_nome: string
+          aluno_telefone: string
+          curso_nome: string
+          data_aprovacao: string
+          form_entry_id: string
+          pontuacao_validada: number
+          status: string
+          vendedor_nome: string
+        }[]
+      }
       calcular_avaliacao_semanal_vendedor: {
         Args: { p_ano: number; p_semana: number; p_vendedor_id: string }
         Returns: undefined
