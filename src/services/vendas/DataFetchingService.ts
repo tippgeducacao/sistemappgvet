@@ -27,7 +27,7 @@ export class DataFetchingService {
       alunoIds.length > 0 
         ? supabase.from('alunos').select('*').in('id', alunoIds)
         : Promise.resolve({ data: [] }),
-      supabase.from('cursos').select('*').eq('ativo', true), // Buscar cursos ativos para resolver vendas existentes
+      supabase.from('cursos').select('*'), // Buscar todos os cursos - RLS já filtra ativos
       supabase.from('profiles').select('*').eq('ativo', true), // CORREÇÃO: Filtrar apenas usuários ativos
       this.fetchScoringRules()
     ]);
