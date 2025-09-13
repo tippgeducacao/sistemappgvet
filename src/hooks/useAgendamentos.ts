@@ -61,7 +61,7 @@ export const useAgendamentos = () => {
           )
         `)
         .eq('vendedor_id', profile.id)
-        .in('status', ['agendado', 'atrasado', 'realizado', 'remarcado']) // Incluir todos os status relevantes
+        .in('status', ['agendado', 'atrasado', 'realizado', 'remarcado', 'finalizado', 'finalizado_venda']) // Incluir todos os status relevantes
         .order('data_agendamento', { ascending: false });
 
       if (error) {
