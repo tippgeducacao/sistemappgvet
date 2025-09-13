@@ -13,6 +13,8 @@ export interface SaveFormDataParams {
   formData: FormData;
   vendedorId: string;
   editId?: string | null;
+  agendamentoId?: string | null;
+  sdrId?: string | null;
 }
 
 export class FormPersistenceService {
@@ -58,7 +60,8 @@ export class FormPersistenceService {
         data.vendedorId,
         data.formData,
         pontuacaoEsperada,
-        null // documento será enviado após criar o form_entry
+        null, // documento será enviado após criar o form_entry
+        data.sdrId
       );
 
       // 4. Upload do documento se fornecido
@@ -103,6 +106,30 @@ export class FormPersistenceService {
 
       // 7. Salvar respostas do formulário
       await FormResponsesService.saveFormResponses(formEntry.id, data.formData);
+
+      // 8. Vincular agendamento à venda se fornecido
+      if (data.agendamentoId) {
+        console.log('🔗 Vinculando agendamento à venda:', data.agendamentoId, '→', formEntry.id);
+        try {
+          const { error: linkError } = await supabase
+            .from('agendamentos')
+            .update({ 
+              form_entry_id: formEntry.id,
+              resultado_reuniao: 'comprou',
+              status: 'finalizado_venda',
+              data_resultado: new Date().toISOString()
+            })
+            .eq('id', data.agendamentoId);
+
+          if (linkError) {
+            console.error('❌ Erro ao vincular agendamento:', linkError);
+          } else {
+            console.log('✅ Agendamento vinculado com sucesso');
+          }
+        } catch (error) {
+          console.error('❌ Erro ao vincular agendamento:', error);
+        }
+      }
 
       console.log('✅ FORMULÁRIO SALVO COM SUCESSO!');
       return formEntry.id;

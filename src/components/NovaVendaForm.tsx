@@ -232,7 +232,9 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId, onSucce
       const formEntryId = await FormPersistenceService.saveFormData({
         formData,
         vendedorId: currentUser.id,
-        editId: editId // Passar o ID para edição se existir
+        editId: editId, // Passar o ID para edição se existir
+        agendamentoId: formData.agendamentoId, // Vincular agendamento se fornecido
+        sdrId: formData.sdrId // Passar SDR ID se fornecido
       });
 
       console.log('✅ Formulário salvo com sucesso:', formEntryId);

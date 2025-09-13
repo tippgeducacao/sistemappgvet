@@ -7,7 +7,8 @@ export class FormEntryCreationService {
     vendedorId: string, 
     formData: FormData, 
     pontuacaoEsperada: number, 
-    documentPath: string | null
+    documentPath: string | null,
+    sdrId?: string | null
   ) {
     console.log('💾 Criando form_entry...');
     
@@ -21,7 +22,7 @@ export class FormEntryCreationService {
         pontuacao_esperada: pontuacaoEsperada,
         documento_comprobatorio: documentPath,
         data_assinatura_contrato: null,
-        sdr_id: formData.sdrId || null
+        sdr_id: sdrId || formData.sdrId || null
       })
       .select()
       .single();
