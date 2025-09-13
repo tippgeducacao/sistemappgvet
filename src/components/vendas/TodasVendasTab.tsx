@@ -3,11 +3,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Settings, Trash2 } from 'lucide-react';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeleteVenda } from '@/hooks/useDeleteVenda';
 import { useAuthStore } from '@/stores/AuthStore';
-import AdminVendaActionsDialog from '@/components/admin/AdminVendaActionsDialog';
 import DeleteVendaDialog from '@/components/vendas/dialogs/DeleteVendaDialog';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
@@ -23,7 +22,6 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas, showDeleteButto
   const { deleteVenda, isDeleting } = useDeleteVenda();
   const { currentUser, profile } = useAuthStore();
   const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
-  const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [vendaToDelete, setVendaToDelete] = useState<VendaCompleta | null>(null);
@@ -45,11 +43,6 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas, showDeleteButto
 
   const handleEditVenda = (venda: VendaCompleta) => {
     navigate(`/nova-venda?edit=${venda.id}`);
-  };
-
-  const handleManageVenda = (venda: VendaCompleta) => {
-    setSelectedVenda(venda);
-    setActionsDialogOpen(true);
   };
 
   const handleDeleteVenda = (venda: VendaCompleta) => {
@@ -183,15 +176,6 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas, showDeleteButto
                       <Eye className="h-4 w-4" />
                     </Button>
 
-                    {/* Botão Gerenciar */}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleManageVenda(venda)}
-                      title="Gerenciar status e pontuação"
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
 
                     {/* Botão Excluir - apenas para o admin específico */}
                     {canDeleteVendas && (
@@ -214,12 +198,6 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas, showDeleteButto
       </Card>
 
       {/* Diálogos */}
-      <AdminVendaActionsDialog
-        venda={selectedVenda}
-        open={actionsDialogOpen}
-        onOpenChange={setActionsDialogOpen}
-      />
-
       <VendaDetailsDialog
         venda={selectedVenda}
         open={detailsDialogOpen}
