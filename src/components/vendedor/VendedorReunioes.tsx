@@ -49,8 +49,7 @@ const VendedorReunioes: React.FC = () => {
         .from('form_entries')
         .select('id, status, data_assinatura_contrato')
         .in('id', formEntryIds)
-        .eq('status', 'matriculado')
-        .not('data_assinatura_contrato', 'is', null);
+        .in('status', ['matriculado', 'desistiu']);
       
       console.log('🔍 VendedorReunioes: Vendas convertidas globalmente:', {
         vendasEncontradas: vendasGlobal?.length || 0,
@@ -61,7 +60,11 @@ const VendedorReunioes: React.FC = () => {
         }))
       });
       
-      vendasGlobal?.forEach(v => convertidasGlobal.add(v.id));
+      vendasGlobal?.forEach((v: any) => {
+        if ((v.status === 'matriculado' && v.data_assinatura_contrato) || v.status === 'desistiu') {
+          convertidasGlobal.add(v.id);
+        }
+      });
     }
 
     // 5. Fazer matching por contato de lead para reuniões "comprou" sem form_entry_id
@@ -76,7 +79,7 @@ const VendedorReunioes: React.FC = () => {
           .in('id', leadIds);
           
         if (leadsData && leadsData.length > 0) {
-          const { data: vendasMatriculadas } = await supabase
+          const { data: vendasConcluidas } = await supabase
             .from('form_entries')
             .select(`
               id,
@@ -84,17 +87,16 @@ const VendedorReunioes: React.FC = () => {
               data_assinatura_contrato,
               alunos!inner(telefone, email)
             `)
-            .eq('status', 'matriculado')
-            .not('data_assinatura_contrato', 'is', null);
+            .in('status', ['matriculado', 'desistiu']);
           
-          if (vendasMatriculadas && vendasMatriculadas.length > 0) {
+          if (vendasConcluidas && vendasConcluidas.length > 0) {
             const contactMatches = leadsData.reduce((acc, lead) => {
               const leadWhatsapp = lead.whatsapp?.replace(/\D/g, '');
               const leadEmail = lead.email?.toLowerCase();
               
-              const matchingVenda = vendasMatriculadas.find(venda => {
-                const alunoTelefone = venda.alunos?.telefone?.replace(/\D/g, '');
-                const alunoEmail = venda.alunos?.email?.toLowerCase();
+              const matchingVenda = vendasConcluidas.find((venda: any) => {
+                const alunoTelefone = (venda as any).alunos?.telefone?.replace(/\D/g, '');
+                const alunoEmail = (venda as any).alunos?.email?.toLowerCase();
                 
                 return (leadWhatsapp && alunoTelefone && leadWhatsapp === alunoTelefone) ||
                        (leadEmail && alunoEmail && leadEmail === alunoEmail);
