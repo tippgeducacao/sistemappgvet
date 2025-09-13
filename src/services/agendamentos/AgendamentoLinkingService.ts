@@ -123,7 +123,7 @@ export class AgendamentoLinkingService {
         )
       `)
       .eq('vendedor_id', agendamento.vendedor_id)
-      .in('status', ['matriculado', 'pendente'])
+      .in('status', ['matriculado', 'pendente', 'desistiu'])
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -199,7 +199,7 @@ export class AgendamentoLinkingService {
         )
       `)
       .in('id', formEntryIds)
-      .in('status', ['matriculado', 'pendente'])
+      .in('status', ['matriculado', 'pendente', 'desistiu'])
       .order('created_at', { ascending: false })
       .limit(20);
 
