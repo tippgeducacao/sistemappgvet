@@ -1340,6 +1340,10 @@ export type Database = {
         Args: { data_fim_agendamento: string; data_inicio_agendamento: string }
         Returns: boolean
       }
+      vincular_agendamento_especifico: {
+        Args: { p_agendamento_id: string; p_form_entry_id: string }
+        Returns: boolean
+      }
       vincular_agendamentos_vendas: {
         Args: Record<PropertyKey, never>
         Returns: {
