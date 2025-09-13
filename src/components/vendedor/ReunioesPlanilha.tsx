@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +49,36 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [diagnosticoAberto, setDiagnosticoAberto] = useState(false);
   const { updateField, clearForm } = useFormStore();
   const { isAdmin, isDiretor, isSecretaria } = useUserRoles();
+
+  // Mapa de status das vendas vinculadas (para sobrescrever badge "Comprou" quando for rejeitada)
+  const [vendasStatusMap, setVendasStatusMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    // Buscar status das vendas vinculadas às reuniões com resultado "comprou"
+    const ids = Array.from(new Set(
+      agendamentos
+        .filter(a => a.resultado_reuniao === 'comprou' && a.form_entry_id)
+        .map(a => a.form_entry_id as string)
+    ));
+
+    if (ids.length === 0) {
+      setVendasStatusMap({});
+      return;
+    }
+
+    supabase
+      .from('form_entries')
+      .select('id, status')
+      .in('id', ids)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Erro ao carregar status das vendas vinculadas:', error);
+          return;
+        }
+        const map = Object.fromEntries((data || []).map((v: any) => [v.id, v.status]));
+        setVendasStatusMap(map);
+      });
+  }, [agendamentos]);
 
   // Separar reuniões em agendadas (sem resultado) e histórico (com resultado) com filtros
   const { reunioesAgendadas, reunioesHistorico } = useMemo(() => {
@@ -133,6 +163,11 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
         case 'compareceu_nao_comprou':
           return <Badge variant="secondary">Compareceu - Não Comprou</Badge>;
         case 'comprou':
+          if (agendamento.form_entry_id && vendasStatusMap[agendamento.form_entry_id]) {
+            const st = vendasStatusMap[agendamento.form_entry_id];
+            if (st === 'desistiu') return <Badge variant="destructive">Rejeitada</Badge>;
+            if (st === 'matriculado') return <Badge variant="default">Matriculado</Badge>;
+          }
           return <Badge variant="default">Comprou</Badge>;
       }
     }
