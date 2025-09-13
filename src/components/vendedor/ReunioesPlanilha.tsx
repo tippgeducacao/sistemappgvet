@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, Settings, ChevronUp, ChevronDown, Eye, ShoppingCart } from 'lucide-react';
+import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, Settings, ChevronUp, ChevronDown, Eye, ShoppingCart, Link } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
@@ -15,7 +15,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import NovaVendaForm from '@/components/NovaVendaForm';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
+import { DiagnosticoVinculacaoDialog } from '@/components/agendamentos/DiagnosticoVinculacaoDialog';
 import { useFormStore } from '@/store/FormStore';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -44,7 +46,9 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [dataFim, setDataFim] = useState('');
   const [sortBy, setSortBy] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [diagnosticoAberto, setDiagnosticoAberto] = useState(false);
   const { updateField, clearForm } = useFormStore();
+  const { isAdmin, isDiretor, isSecretaria } = useUserRoles();
 
   // Separar reuniões em agendadas (sem resultado) e histórico (com resultado) com filtros
   const { reunioesAgendadas, reunioesHistorico } = useMemo(() => {
@@ -573,8 +577,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                                     abrirVerVenda(agendamento);
                                   }}
                                   size="sm"
-                                  variant="outline"
-                                  className="flex items-center gap-1"
+                                  className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
                                 >
                                   <Eye className="h-3 w-3" />
                                   Ver Venda
@@ -617,7 +620,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   return (
     <div className="space-y-4">
       {/* Filtros */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         {/* Filtro de pesquisa por nome */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -665,6 +668,20 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
             Limpar Filtros
           </Button>
         </div>
+
+        {/* Botão de diagnóstico de vinculação - apenas para admins */}
+        {(isAdmin || isDiretor || isSecretaria) && (
+          <div>
+            <Button
+              variant="outline"
+              onClick={() => setDiagnosticoAberto(true)}
+              className="w-full flex items-center gap-2"
+            >
+              <Link className="h-4 w-4" />
+              Diagnóstico
+            </Button>
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="agendadas" className="w-full">
@@ -973,6 +990,12 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
           onOpenChange={setVerVendaDialogAberto}
         />
       )}
+
+      {/* Modal de Diagnóstico de Vinculação */}
+      <DiagnosticoVinculacaoDialog
+        isOpen={diagnosticoAberto}
+        onClose={() => setDiagnosticoAberto(false)}
+      />
     </div>
   );
 };

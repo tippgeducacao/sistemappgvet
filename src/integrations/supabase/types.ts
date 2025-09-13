@@ -1340,6 +1340,17 @@ export type Database = {
         Args: { data_fim_agendamento: string; data_inicio_agendamento: string }
         Returns: boolean
       }
+      vincular_agendamentos_vendas: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          agendamento_id: string
+          form_entry_id: string
+          lead_email: string
+          message: string
+          success: boolean
+          vendedor_nome: string
+        }[]
+      }
     }
     Enums: {
       app_role:
