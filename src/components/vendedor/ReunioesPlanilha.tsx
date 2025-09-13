@@ -243,7 +243,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       
       // Primeiro, tentar buscar pela form_entry_id direta
       if (agendamento.form_entry_id) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('form_entries')
           .select(`
             *,
@@ -254,12 +254,24 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
           .eq('id', agendamento.form_entry_id)
           .maybeSingle();
         
+        if (error) {
+          console.error('❌ Erro RLS ao buscar venda por form_entry_id:', error);
+          if (error.code === 'PGRST116' || error.message.includes('permission')) {
+            toast({
+              title: "Permissão insuficiente",
+              description: "Você não tem permissão para visualizar esta venda.",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+        
         if (data) venda = data;
       }
       
-      // Se não encontrou pela form_entry_id, buscar pela reunião ou lead
-      if (!venda && agendamento.lead?.email) {
-        const { data } = await supabase
+      // Se não encontrou pela form_entry_id, buscar por correspondência robusta
+      if (!venda && agendamento.lead) {
+        const { data, error } = await supabase
           .from('form_entries')
           .select(`
             *,
@@ -268,19 +280,42 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
             profiles!form_entries_vendedor_id_fkey (name)
           `)
           .eq('vendedor_id', agendamento.vendedor_id)
+          .in('status', ['matriculado', 'pendente'])
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(20);
         
-        // Procurar venda com aluno que tenha o mesmo email do lead
-        if (data) {
-          venda = data.find(v => v.alunos?.email === agendamento.lead?.email);
+        if (error) {
+          console.error('❌ Erro ao buscar vendas do vendedor:', error);
+        } else if (data) {
+          // Buscar por email (case-insensitive)
+          if (agendamento.lead.email) {
+            const emailLead = agendamento.lead.email.toLowerCase().trim();
+            venda = data.find(v => 
+              v.alunos?.email?.toLowerCase().trim() === emailLead
+            );
+          }
+          
+          // Se não encontrou por email, buscar por telefone normalizado
+          if (!venda && agendamento.lead.whatsapp) {
+            const phoneLead = agendamento.lead.whatsapp.replace(/\D/g, '');
+            if (phoneLead.length >= 10) {
+              venda = data.find(v => {
+                const phoneAluno = v.alunos?.telefone?.replace(/\D/g, '') || '';
+                return phoneAluno.length >= 10 && phoneLead.endsWith(phoneAluno.slice(-10));
+              });
+            }
+          }
         }
       }
 
       if (!venda) {
+        // Abrir diagnóstico automaticamente para ajudar na vinculação manual
+        setAgendamentoSelecionado(agendamento);
+        setDiagnosticoAberto(true);
+        
         toast({
           title: "Venda não encontrada",
-          description: "Não foi possível encontrar a venda vinculada a esta reunião. Verifique se a venda foi criada corretamente.",
+          description: "Não foi encontrada uma venda vinculada. Use o diagnóstico para vincular manualmente.",
           variant: "destructive",
         });
         return;
