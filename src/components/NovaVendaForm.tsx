@@ -11,7 +11,6 @@ import { FormPersistenceService } from '@/services/form/FormPersistenceService';
 import { supabase } from '@/integrations/supabase/client';
 import { VendasDataService } from '@/services/vendas/VendasDataService';
 import { useFormDetails } from '@/hooks/useFormDetails';
-import { useAgendamentos } from '@/hooks/useAgendamentos';
 import LeadInfoSection from './forms/LeadInfoSection';
 import ScoringRulesSection from './forms/ScoringRulesSection';
 import ObservationsSection from './forms/ObservationsSection';
@@ -34,7 +33,6 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId, onSucce
     setVendedor
   } = useFormStore();
   const { currentUser } = useAuthStore();
-  const { marcarReuniaoComoComprou } = useAgendamentos();
   
   // Buscar detalhes do formulário para edição
   const { data: formDetails } = useFormDetails(editId);
@@ -239,12 +237,8 @@ const NovaVendaForm: React.FC<NovaVendaFormProps> = ({ onCancel, editId, onSucce
 
       console.log('✅ Formulário salvo com sucesso:', formEntryId);
 
-      // Se a venda veio de uma reunião, marcar como "comprou"
-      console.log('🔍 Verificando agendamentoId:', formData.agendamentoId, 'editId:', editId);
-      if (formData.agendamentoId && !editId) {
-        console.log('🔄 Agendamento já vinculado pelo FormPersistenceService');
-        // A vinculação já foi feita no FormPersistenceService
-      }
+      // Vinculação do agendamento é feita automaticamente pelo FormPersistenceService
+      console.log('✅ Venda salva - vinculação automática de agendamento gerenciada pelo serviço');
 
       const isEdit = !!editId;
       toast({
