@@ -1206,6 +1206,7 @@ export type Database = {
           aluno_email: string
           aluno_nome: string
           aluno_telefone: string
+          created_at: string
           curso_nome: string
           data_aprovacao: string
           form_entry_id: string
