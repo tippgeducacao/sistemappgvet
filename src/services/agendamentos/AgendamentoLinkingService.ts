@@ -137,9 +137,37 @@ export class AgendamentoLinkingService {
       const alunoNome = venda.alunos.nome?.toLowerCase().trim();
       const alunoPhone = (venda.alunos.telefone || '').replace(/\D/g, '');
 
+      // Match exato por email (mais confiável)
       if (leadEmail && alunoEmail && leadEmail === alunoEmail) return true;
+      
+      // Match parcial por email
+      if (leadEmail && alunoEmail && (
+        alunoEmail.includes(leadEmail) || leadEmail.includes(alunoEmail)
+      )) return true;
+
+      // Match exato por nome
       if (leadNome && alunoNome && leadNome === alunoNome) return true;
+      
+      // Match por tokens de nome (palavras)
+      if (leadNome && alunoNome) {
+        const leadTokens = leadNome.split(/\s+/).filter(token => token.length > 2);
+        const alunoTokens = alunoNome.split(/\s+/).filter(token => token.length > 2);
+        
+        if (leadTokens.length > 0 && alunoTokens.length > 0) {
+          const matches = leadTokens.filter(token => 
+            alunoTokens.some(alunoToken => 
+              alunoToken.includes(token) || token.includes(alunoToken)
+            )
+          ).length;
+          
+          const similarity = matches / Math.max(leadTokens.length, alunoTokens.length);
+          if (similarity >= 0.6) return true; // 60% de similaridade
+        }
+      }
+
+      // Match por telefone
       if (phoneTail && alunoPhone && alunoPhone.endsWith(phoneTail)) return true;
+      
       return false;
     });
 
@@ -157,8 +185,8 @@ export class AgendamentoLinkingService {
       .limit(40);
 
     const orFilters: string[] = [];
-    if (leadEmail) orFilters.push(`email.ilike.${leadEmail}`);
-    if (leadNome) orFilters.push(`nome.ilike.${leadNome}`);
+    if (leadEmail) orFilters.push(`email.ilike.%${leadEmail}%`);
+    if (leadNome) orFilters.push(`nome.ilike.%${leadNome}%`);
     if (phoneTail) orFilters.push(`telefone.ilike.%${phoneTail}`);
 
     if (orFilters.length > 0) {
@@ -209,16 +237,44 @@ export class AgendamentoLinkingService {
       return [];
     }
 
-    // Fazer novamente a checagem de correspondência (proteção)
+    // Fazer novamente a checagem de correspondência com busca flexível
     candidatas = (vendasPorAluno || []).filter((venda) => {
       if (!venda.alunos) return false;
       const alunoEmail = venda.alunos.email?.toLowerCase().trim();
       const alunoNome = venda.alunos.nome?.toLowerCase().trim();
       const alunoPhone = (venda.alunos.telefone || '').replace(/\D/g, '');
 
+      // Match exato por email (mais confiável)
       if (leadEmail && alunoEmail && leadEmail === alunoEmail) return true;
+      
+      // Match parcial por email
+      if (leadEmail && alunoEmail && (
+        alunoEmail.includes(leadEmail) || leadEmail.includes(alunoEmail)
+      )) return true;
+
+      // Match exato por nome
       if (leadNome && alunoNome && leadNome === alunoNome) return true;
+      
+      // Match por tokens de nome (palavras)
+      if (leadNome && alunoNome) {
+        const leadTokens = leadNome.split(/\s+/).filter(token => token.length > 2);
+        const alunoTokens = alunoNome.split(/\s+/).filter(token => token.length > 2);
+        
+        if (leadTokens.length > 0 && alunoTokens.length > 0) {
+          const matches = leadTokens.filter(token => 
+            alunoTokens.some(alunoToken => 
+              alunoToken.includes(token) || token.includes(alunoToken)
+            )
+          ).length;
+          
+          const similarity = matches / Math.max(leadTokens.length, alunoTokens.length);
+          if (similarity >= 0.6) return true; // 60% de similaridade
+        }
+      }
+
+      // Match por telefone
       if (phoneTail && alunoPhone && alunoPhone.endsWith(phoneTail)) return true;
+      
       return false;
     });
 
@@ -227,22 +283,24 @@ export class AgendamentoLinkingService {
   }
 
   /**
-   * Vincula manualmente um agendamento a uma venda específica
+   * Vincula manualmente um agendamento a uma venda específica usando RPC para garantir permissões
    */
   static async vincularManualmente(agendamentoId: string, formEntryId: string): Promise<void> {
     console.log('🔗 Vinculando manualmente agendamento à venda:', { agendamentoId, formEntryId });
 
-    const { error } = await supabase
-      .from('agendamentos')
-      .update({ 
-        form_entry_id: formEntryId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', agendamentoId);
+    const { data, error } = await supabase
+      .rpc('vincular_agendamento_especifico', {
+        p_agendamento_id: agendamentoId,
+        p_form_entry_id: formEntryId
+      });
 
     if (error) {
       console.error('❌ Erro ao vincular manualmente:', error);
-      throw error;
+      throw new Error(`Erro ao vincular agendamento: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('Sem permissão para vincular agendamento ou IDs inválidos');
     }
 
     console.log('✅ Vinculação manual realizada com sucesso');

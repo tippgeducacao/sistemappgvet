@@ -216,7 +216,12 @@ export const DiagnosticoVinculacaoDialog: React.FC<DiagnosticoVinculacaoDialogPr
                               <User className="h-4 w-4 text-muted-foreground" />
                               <span className="font-medium">{venda.alunos?.nome}</span>
                               <Badge variant="outline">
-                                {venda.status === 'matriculado' ? 'Matriculado' : 'Pendente'}
+                                {venda.status === 'matriculado' 
+                                  ? 'Matriculado' 
+                                  : venda.status === 'desistiu' 
+                                    ? 'Rejeitada' 
+                                    : 'Pendente'
+                                }
                               </Badge>
                             </div>
                             
