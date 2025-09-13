@@ -147,7 +147,8 @@ const NovaVenda: React.FC = () => {
   }, [agendamentoId, currentUser?.id, updateField, toast]);
 
   const handleCancel = () => {
-    navigate('/');
+    // Se veio de um agendamento, volta para reuniões, senão vai para home
+    navigate(agendamentoId ? '/reunioes' : '/');
   };
 
   if (!currentUser) {
