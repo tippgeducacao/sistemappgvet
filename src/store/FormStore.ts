@@ -9,6 +9,7 @@ interface FormState {
   updateField: <T extends keyof FormData>(field: T, value: FormData[T]) => void;
   setFormData: (data: Partial<FormData>) => void;
   setVendedor: (vendedor: string) => void;
+  setAgendamentoData: (agendamentoId: string, sdrId?: string) => void;
   clearForm: () => void;
   setIsSubmitting: (value: boolean) => void;
 }
@@ -128,6 +129,17 @@ export const useFormStore = create<FormState>((set) => ({
       console.log('📝 FormStore: Novo estado:', newState.vendedor);
       return { formData: newState };
     });
+  },
+
+  setAgendamentoData: (agendamentoId, sdrId) => {
+    console.log('📝 FormStore: setAgendamentoData chamado com:', { agendamentoId, sdrId });
+    set((state) => ({
+      formData: { 
+        ...state.formData, 
+        agendamentoId,
+        ...(sdrId && { sdrId })
+      }
+    }));
   },
   
   clearForm: () => set({ formData: initialFormData }),

@@ -5,6 +5,8 @@ import { useToast } from '@/hooks/use-toast';
 import NovaVendaForm from '@/components/NovaVendaForm';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useFormStore } from '@/store/FormStore';
+import { supabase } from '@/integrations/supabase/client';
 
 const NovaVenda: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -13,10 +15,14 @@ const NovaVenda: React.FC = () => {
   const { currentUser } = useAuthStore();
   const { isAdmin, isVendedor, isSDR } = useUserRoles();
   const editId = searchParams.get('edit');
+  const agendamentoId = searchParams.get('agendamentoId');
+
+  const { updateField } = useFormStore();
 
   console.log('🔍 NovaVenda: Estado atual:', {
     currentUser: currentUser?.email,
     editId,
+    agendamentoId,
     isAdmin,
     isVendedor,
     isSDR,
@@ -61,6 +67,84 @@ const NovaVenda: React.FC = () => {
 
     console.log('✅ NovaVenda: Acesso permitido');
   }, [currentUser, isAdmin, isVendedor, navigate, toast, editId]);
+
+  // Effect para carregar dados do agendamento quando fornecido via URL
+  useEffect(() => {
+    const loadAgendamentoData = async () => {
+      if (!agendamentoId || !currentUser?.id) return;
+
+      try {
+        console.log('🔍 Carregando dados do agendamento:', agendamentoId);
+        
+        const { data: agendamento, error } = await supabase
+          .from('agendamentos')
+          .select(`
+            id,
+            sdr_id,
+            vendedor_id,
+            leads (
+              nome,
+              email,
+              whatsapp
+            )
+          `)
+          .eq('id', agendamentoId)
+          .single();
+
+        if (error) {
+          console.error('❌ Erro ao buscar agendamento:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar agendamento",
+            description: "Não foi possível carregar os dados da reunião."
+          });
+          return;
+        }
+
+        if (!agendamento) {
+          console.warn('⚠️ Agendamento não encontrado:', agendamentoId);
+          return;
+        }
+
+        console.log('✅ Agendamento carregado:', agendamento);
+
+        // Atualizar FormStore com os dados
+        updateField('agendamentoId', agendamentoId);
+        
+        if (agendamento.sdr_id) {
+          updateField('sdrId', agendamento.sdr_id);
+        }
+
+        // Pre-preencher dados do lead se disponível
+        if (agendamento.leads) {
+          if (agendamento.leads.nome) {
+            updateField('nomeAluno', agendamento.leads.nome);
+          }
+          if (agendamento.leads.email) {
+            updateField('emailAluno', agendamento.leads.email);
+          }
+          if (agendamento.leads.whatsapp) {
+            updateField('telefone', agendamento.leads.whatsapp);
+          }
+        }
+
+        toast({
+          title: "Dados da reunião carregados",
+          description: "As informações do lead foram pré-preenchidas automaticamente."
+        });
+
+      } catch (error) {
+        console.error('❌ Erro ao carregar agendamento:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Erro inesperado ao carregar dados da reunião."
+        });
+      }
+    };
+
+    loadAgendamentoData();
+  }, [agendamentoId, currentUser?.id, updateField, toast]);
 
   const handleCancel = () => {
     navigate('/');
