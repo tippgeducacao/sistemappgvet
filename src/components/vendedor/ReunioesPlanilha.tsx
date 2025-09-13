@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, Settings, ChevronUp, ChevronDown, Eye, ShoppingCart, Link } from 'lucide-react';
+import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, ChevronUp, ChevronDown, Eye, ShoppingCart, Link } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
@@ -618,15 +618,6 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                                   Ver Venda
                                 </Button>
                               )}
-                              <Button 
-                                onClick={(e) => abrirEditarStatusDialog(agendamento, e)}
-                                size="sm"
-                                variant="ghost"
-                                className="flex items-center gap-1"
-                              >
-                                <Settings className="h-3 w-3" />
-                                Status
-                              </Button>
                             </>
                           ) : !agendamento.resultado_reuniao && (
                             <Button 
