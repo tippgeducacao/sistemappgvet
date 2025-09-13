@@ -113,7 +113,7 @@ export class AgendamentoLinkingService {
         pontuacao_esperada,
         pontuacao_validada,
         curso_id,
-        alunos (
+        alunos!aluno_id (
           nome,
           email,
           telefone
@@ -189,7 +189,7 @@ export class AgendamentoLinkingService {
         pontuacao_esperada,
         pontuacao_validada,
         curso_id,
-        alunos (
+        alunos!aluno_id (
           nome,
           email,
           telefone

@@ -247,7 +247,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
           .from('form_entries')
           .select(`
             *,
-            alunos (*),
+            alunos!aluno_id (*),
             cursos (nome),
             profiles!form_entries_vendedor_id_fkey (name)
           `)
@@ -275,7 +275,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
           .from('form_entries')
           .select(`
             *,
-            alunos (*),
+            alunos!aluno_id (*),
             cursos (nome),
             profiles!form_entries_vendedor_id_fkey (name)
           `)
