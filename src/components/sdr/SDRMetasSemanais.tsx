@@ -7,6 +7,7 @@ import { useMetasSemanaisSDR } from '@/hooks/useMetasSemanaisSDR';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useVendas } from '@/hooks/useVendas';
 import { useComissionamento } from '@/hooks/useComissionamento';
+import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useNiveis } from '@/hooks/useNiveis';
 import { useSDRAgendamentosSemanaCompleto } from '@/hooks/useSDRAgendamentosSemanaCompleto';
 import { supabase } from '@/integrations/supabase/client';

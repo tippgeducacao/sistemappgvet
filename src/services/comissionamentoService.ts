@@ -76,17 +76,100 @@ export class ComissionamentoService {
     tipoUsuario = 'vendedor',
     regrasPreCarregadas?: RegraComissionamento[]
   ): Promise<{ valor: number; multiplicador: number; percentual: number }> {
+    // Proteger contra divisão por zero
+    if (metaSemanal === 0) {
+      console.warn('⚠️ Meta semanal é zero, retornando comissão zero');
+      return { valor: 0, multiplicador: 0, percentual: 0 };
+    }
+    
     const percentualBruto = (pontosObtidos / metaSemanal) * 100;
     const percentual = Math.floor(percentualBruto); // USAR FLOOR para seleção de regra
     const regras = regrasPreCarregadas || await this.fetchRegras(tipoUsuario);
     
     console.log('🔢 DEBUG COMISSIONAMENTO:', {
+      tipoUsuario,
       pontosObtidos,
       metaSemanal, 
+      variabelSemanal,
       percentualBruto,
       percentualArredondado: percentual,
-      regras: regras.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
+      regras: regras.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`),
+      totalRegras: regras.length
     });
+    
+    // Se não há regras, criar regras padrão para SDR
+    if (regras.length === 0 && tipoUsuario === 'sdr') {
+      console.warn('⚠️ Nenhuma regra de comissionamento encontrada para SDR, usando regras padrão');
+      const regrasPadrao: RegraComissionamento[] = [
+        {
+          id: 'default-sdr-1',
+          tipo_usuario: 'sdr',
+          percentual_minimo: 0,
+          percentual_maximo: 59,
+          multiplicador: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 'default-sdr-2',
+          tipo_usuario: 'sdr',
+          percentual_minimo: 60,
+          percentual_maximo: 84,
+          multiplicador: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 'default-sdr-3',
+          tipo_usuario: 'sdr',
+          percentual_minimo: 85,
+          percentual_maximo: 999,
+          multiplicador: 1.5,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+      
+      console.log('📋 Usando regras padrão SDR:', regrasPadrao.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`));
+      
+      // Usar as regras padrão para o cálculo
+      const regrasOrdenadas = [...regrasPadrao].sort((a, b) => b.percentual_minimo - a.percentual_minimo);
+      
+      let regraAplicavel = null;
+      for (const regra of regrasOrdenadas) {
+        if (regra.percentual_maximo >= 999 && percentual >= regra.percentual_minimo) {
+          regraAplicavel = regra;
+          break;
+        }
+        else if (percentual >= regra.percentual_minimo && percentual <= regra.percentual_maximo) {
+          regraAplicavel = regra;
+          break;
+        }
+      }
+      
+      console.log('✅ REGRA PADRÃO SELECIONADA:', {
+        percentual,
+        regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
+      });
+
+      const multiplicador = regraAplicavel?.multiplicador || 0;
+      const valor = variabelSemanal * multiplicador;
+
+      console.log('💰 RESULTADO COMISSIONAMENTO PADRÃO:', {
+        tipoUsuario,
+        percentual: Math.round(percentualBruto * 100) / 100,
+        multiplicador,
+        variabelSemanal,
+        valor,
+        regraUsada: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}` : 'nenhuma'
+      });
+
+      return {
+        valor,
+        multiplicador,
+        percentual: Math.round(percentualBruto * 100) / 100
+      };
+    }
     
     // LÓGICA CORRIGIDA: encontrar a regra mais específica aplicável
     let regraAplicavel = null;
@@ -114,6 +197,15 @@ export class ComissionamentoService {
 
     const multiplicador = regraAplicavel?.multiplicador || 0;
     const valor = variabelSemanal * multiplicador;
+
+    console.log('💰 RESULTADO COMISSIONAMENTO:', {
+      tipoUsuario,
+      percentual: Math.round(percentualBruto * 100) / 100,
+      multiplicador,
+      variabelSemanal,
+      valor,
+      regraUsada: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}` : 'nenhuma'
+    });
 
     return {
       valor,
