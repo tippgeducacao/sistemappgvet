@@ -52,7 +52,10 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
     const fetchData = async () => {
       setLoading(true);
       try {
+        console.log(`🔄 AgendamentosRow: Iniciando busca dados semana ${semana}`);
+        
         const agendamentosResult = await getAgendamentosNaSemana(semana);
+        console.log(`📅 AgendamentosRow: Resultado agendamentos semana ${semana}:`, agendamentosResult);
         
         // Para SDRs, calcular comissão baseada nos agendamentos realizados vs meta de agendamentos
         const comissaoResult = await calcularComissaoSemana(
@@ -60,10 +63,12 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
           agendamentosResult.meta
         );
         
+        console.log(`💰 AgendamentosRow: Resultado comissão semana ${semana}:`, comissaoResult);
+        
         setAgendamentosData(agendamentosResult);
         setComissaoData(comissaoResult);
       } catch (error) {
-        console.error('Erro ao buscar dados da semana:', error);
+        console.error('❌ Erro ao buscar dados da semana:', error);
         setAgendamentosData({ realizados: 0, meta: 0, percentual: 0 });
         setComissaoData({ valor: 0, multiplicador: 0, percentual: 0 });
       }

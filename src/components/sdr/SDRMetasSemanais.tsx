@@ -161,20 +161,36 @@ export const SDRMetasSemanais = () => {
   const calcularComissaoSemana = async (agendamentosRealizados: number, metaAgendamentos: number) => {
     if (!profile) return { valor: 0, multiplicador: 0, percentual: 0 };
     
-    // Fallback para cálculo direto se não houver cache
+    // Buscar dados do nível diretamente para SDR
     const nivelSDR = niveis.find(nivel => 
       nivel.nivel === profile.nivel && nivel.tipo_usuario === 'sdr'
     );
     
-    if (!nivelSDR) return { valor: 0, multiplicador: 0, percentual: 0 };
+    if (!nivelSDR) {
+      console.warn('❌ Nível SDR não encontrado:', { nivel: profile.nivel, niveis });
+      return { valor: 0, multiplicador: 0, percentual: 0 };
+    }
     
-    const comissao = await calcularComissao(
-      agendamentosRealizados, 
-      metaAgendamentos, 
-      nivelSDR.variavel_semanal
-    );
+    console.log('📊 Calculando comissão SDR:', {
+      agendamentosRealizados,
+      metaAgendamentos,
+      variavel: nivelSDR.variavel_semanal,
+      nivel: nivelSDR.nivel
+    });
     
-    return comissao;
+    try {
+      const comissao = await calcularComissao(
+        agendamentosRealizados, 
+        metaAgendamentos, 
+        nivelSDR.variavel_semanal
+      );
+      
+      console.log('✅ Resultado comissão SDR:', comissao);
+      return comissao;
+    } catch (error) {
+      console.error('❌ Erro ao calcular comissão:', error);
+      return { valor: 0, multiplicador: 0, percentual: 0 };
+    }
   };
 
   const formatPeriodo = (semana: number) => {
