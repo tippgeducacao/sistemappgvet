@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +62,7 @@ export const SDRMetasSemanais = () => {
   };
 
   // Criar função contextualizada para agendamentos
-  const getAgendamentosNaSemanaContexto = (targetYear: number, targetMonth: number) => {
+  const getAgendamentosNaSemanaContexto = useCallback((targetYear: number, targetMonth: number) => {
     return async (semana: number) => {
       const startDate = getDataInicioSemana(targetYear, targetMonth, semana);
       const endDate = getDataFimSemana(targetYear, targetMonth, semana);
@@ -157,9 +157,9 @@ export const SDRMetasSemanais = () => {
         return { realizados: 0, meta: 0, percentual: 0 };
       }
     };
-  };
+  }, [profile?.id, profile?.nivel]);
 
-  const calcularComissaoSemana = async (agendamentosRealizados: number, metaAgendamentos: number) => {
+  const calcularComissaoSemana = useCallback(async (agendamentosRealizados: number, metaAgendamentos: number) => {
     if (!profile) return { valor: 0, multiplicador: 0, percentual: 0 };
     
     // Buscar dados do nível diretamente para SDR
@@ -192,7 +192,7 @@ export const SDRMetasSemanais = () => {
       console.error('❌ Erro ao calcular comissão:', error);
       return { valor: 0, multiplicador: 0, percentual: 0 };
     }
-  };
+  }, [profile, niveis, calcularComissao]);
 
   const formatPeriodo = (semana: number) => {
     const startDate = getDataInicioSemana(selectedYear, selectedMonth, semana);

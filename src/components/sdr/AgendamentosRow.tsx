@@ -76,7 +76,7 @@ const AgendamentosRow: React.FC<AgendamentosRowProps> = ({
     };
     
     fetchData();
-  }, [semana]);
+  }, [semana, getAgendamentosNaSemana, calcularComissaoSemana]);
 
   return (
     <tr 
