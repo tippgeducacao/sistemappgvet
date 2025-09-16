@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getWeekRange } from '@/utils/semanaUtils';
 import { getDataEfetivaVenda, isVendaInWeek } from '@/utils/vendaDateUtils';
+import { findContactMatches, isContactMatch, type LeadContact, type AlunoContact } from '@/utils/contactMatchingUtils';
 
 export interface MeetingDetail {
   id: string;
@@ -65,7 +66,10 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             name
           ),
           leads (
-            nome
+            id,
+            nome,
+            whatsapp,
+            email
           )
         `)
         .gte('data_agendamento', startOfWeek.toISOString())
@@ -112,6 +116,14 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           ),
           sdr:profiles!sdr_id (
             name
+          ),
+          vendedor:profiles!vendedor_id (
+            name
+          ),
+          alunos (
+            nome,
+            telefone,
+            email
           )
         `)
         .eq('status', 'matriculado');
@@ -292,28 +304,118 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
 
       // NOVA LÓGICA: Processar vendas aprovadas com data de assinatura na semana como conversões separadas
       vendasAprovadasNaSemana?.forEach((venda: any) => {
-        // Verifica se a venda tem vinculação com algum SDR
-        const sdrId = venda.sdr_id || venda.vendedor?.id;
+        console.log('🔍 MATCHING - Processando venda:', {
+          venda_id: venda.id?.substring(0, 8),
+          sdr_id: venda.sdr_id,
+          sdr_name: venda.sdr?.name,
+          aluno_nome: venda.alunos?.[0]?.nome,
+          aluno_telefone: venda.alunos?.[0]?.telefone,
+          aluno_email: venda.alunos?.[0]?.email
+        });
+
+        let sdrId = venda.sdr_id;
+        let sdrName = venda.sdr?.name || 'SDR Desconhecido';
+        
+        // Se não tem sdr_id, tentar encontrar através de matching por contato
+        if (!sdrId && venda.alunos?.[0]) {
+          const alunoData = venda.alunos[0];
+          
+          console.log('🔍 MATCHING - Venda sem SDR, buscando por matching:', {
+            venda_id: venda.id?.substring(0, 8),
+            aluno_telefone: alunoData.telefone,
+            aluno_email: alunoData.email
+          });
+          
+          // Procurar agendamento com o mesmo vendedor que tenha contato matching
+          const agendamentoMatching = agendamentosData?.find((ag: any) => {
+            if (ag.vendedor_id !== venda.vendedor_id || !ag.sdr_id) return false;
+            
+            const leadData: LeadContact = {
+              id: ag.leads?.id || '',
+              whatsapp: ag.leads?.whatsapp,
+              email: ag.leads?.email
+            };
+            
+            const alunoContact: AlunoContact = {
+              form_entry_id: venda.id,
+              nome: alunoData.nome,
+              telefone: alunoData.telefone,
+              email: alunoData.email
+            };
+            
+            const isMatch = isContactMatch(leadData, alunoContact);
+            
+            if (isMatch) {
+              console.log('✅ MATCHING - Match encontrado:', {
+                agendamento_id: ag.id,
+                lead_whatsapp: ag.leads?.whatsapp,
+                lead_email: ag.leads?.email,
+                aluno_telefone: alunoData.telefone,
+                aluno_email: alunoData.email,
+                sdr_id: ag.sdr_id,
+                sdr_name: ag.profiles?.name
+              });
+            }
+            
+            return isMatch;
+          });
+          
+          if (agendamentoMatching) {
+            sdrId = agendamentoMatching.sdr_id;
+            sdrName = agendamentoMatching.profiles?.name || 'SDR via Matching';
+            
+            // Atualizar a venda com o sdr_id encontrado (opcional, para futuras consultas)
+            supabase
+              .from('form_entries')
+              .update({ sdr_id: sdrId })
+              .eq('id', venda.id)
+              .then(() => {
+                console.log('✅ MATCHING - SDR atualizado na venda:', {
+                  venda_id: venda.id?.substring(0, 8),
+                  sdr_id: sdrId
+                });
+              });
+          } else {
+            console.log('❌ MATCHING - Nenhum agendamento matching encontrado para venda:', venda.id?.substring(0, 8));
+          }
+        }
         
         if (sdrId) {
-          const sdrName = venda.sdr?.name || venda.vendedor?.name || 'SDR Desconhecido';
-          
-          // Verificar se é uma venda vinculada a agendamento e com data de assinatura na semana
+          // Verificar se é uma venda com data de assinatura na semana
           const isInWeek = isVendaInWeek(venda, startOfWeek, endOfWeek);
           
           if (isInWeek && ensureSDRInMap(sdrId, sdrName, true)) {
             const performance = performanceMap.get(sdrId)!;
             
-            // Verificar se a venda está vinculada a uma reunião
-            const isVinculada = venda.form_entry_id || 
-                               venda.observacoes?.includes('reunião') ||
-                               agendamentosData?.some((ag: any) => 
-                                 ag.form_entry_id === venda.id ||
-                                 (ag.leads?.whatsapp === venda.aluno?.telefone && venda.aluno?.telefone) ||
-                                 (ag.leads?.email === venda.aluno?.email && venda.aluno?.email)
-                               );
+            // Verificar se a venda está vinculada a uma reunião através de:
+            // 1. form_entry_id direto no agendamento
+            // 2. Matching por contato entre lead e aluno
+            const agendamentoVinculado = agendamentosData?.find((ag: any) => {
+              // Vinculação direta
+              if (ag.form_entry_id === venda.id) return true;
+              
+              // Vinculação por matching de contato
+              if (ag.sdr_id === sdrId && venda.alunos?.[0]) {
+                const leadData: LeadContact = {
+                  id: ag.leads?.id || '',
+                  whatsapp: ag.leads?.whatsapp,
+                  email: ag.leads?.email
+                };
+                
+                const alunoContact: AlunoContact = {
+                  form_entry_id: venda.id,
+                  nome: venda.alunos[0].nome,
+                  telefone: venda.alunos[0].telefone,
+                  email: venda.alunos[0].email
+                };
+                
+                return isContactMatch(leadData, alunoContact);
+              }
+              
+              return false;
+            });
             
-            if (isVinculada) {
+            if (agendamentoVinculado) {
               performance.convertidas++;
               
               // Adicionar como meeting detail para exibição
@@ -322,7 +424,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
                 data_agendamento: getDataEfetivaVenda(venda).toISOString(),
                 resultado_reuniao: 'Venda Aprovada',
                 status: 'convertida',
-                lead_name: venda.aluno?.nome || 'Aluno matriculado',
+                lead_name: venda.alunos?.[0]?.nome || 'Aluno matriculado',
                 vendedor_name: venda.vendedor?.name || 'Sistema',
                 sdr_name: sdrName,
                 data_assinatura: venda.data_assinatura_contrato || venda.data_aprovacao?.split('T')[0],
@@ -331,15 +433,26 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
               
               performance.meetings.push(conversionDetail);
               
-              if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
-                console.log('💰 SDR IN - Venda aprovada adicionada como conversão:', {
-                  venda_id: venda.id,
-                  data_assinatura: venda.data_assinatura_contrato,
-                  curso: venda.cursos?.nome
-                });
-              }
+              console.log('✅ CONVERSÃO - Venda adicionada como conversão:', {
+                venda_id: venda.id?.substring(0, 8),
+                sdr_name: sdrName,
+                data_assinatura: venda.data_assinatura_contrato,
+                curso: venda.cursos?.nome,
+                tipo_vinculacao: agendamentoVinculado.form_entry_id === venda.id ? 'direta' : 'matching'
+              });
+            } else {
+              console.log('⚠️ CONVERSÃO - Venda não vinculada a agendamento:', {
+                venda_id: venda.id?.substring(0, 8),
+                sdr_name: sdrName,
+                tem_aluno: !!venda.alunos?.[0]
+              });
             }
           }
+        } else {
+          console.log('❌ CONVERSÃO - Venda sem SDR identificado:', {
+            venda_id: venda.id?.substring(0, 8),
+            vendedor_id: venda.vendedor_id
+          });
         }
       });
 
