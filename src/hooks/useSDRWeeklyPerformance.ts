@@ -60,21 +60,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           resultado_reuniao,
           data_agendamento,
           form_entry_id,
-          status,
-          profiles!sdr_id (
-            name,
-            user_type,
-            ativo
-          ),
-          vendedor:profiles!vendedor_id (
-            name
-          ),
-          leads (
-            id,
-            nome,
-            whatsapp,
-            email
-          )
+          status
         `)
         .gte('data_agendamento', startOfWeek.toISOString())
         .lte('data_agendamento', endOfWeek.toISOString());
@@ -93,21 +79,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           resultado_reuniao,
           data_agendamento,
           form_entry_id,
-          status,
-          profiles!sdr_id (
-            name,
-            user_type,
-            ativo
-          ),
-          vendedor:profiles!vendedor_id (
-            name
-          ),
-          leads (
-            id,
-            nome,
-            whatsapp,
-            email
-          )
+          status
         `)
         .gte('data_agendamento', poolStart.toISOString())
         .lte('data_agendamento', endOfWeek.toISOString());
@@ -125,6 +97,39 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
         semana: agendamentosData?.length || 0,
         pool: agendamentosPool?.length || 0
       });
+
+      // Carregar perfis e leads via consultas separadas (evita dependência de FKs)
+      const allAgs = [...(agendamentosData || []), ...(agendamentosPool || [])];
+      const sdrIds = Array.from(new Set(allAgs.map(a => a.sdr_id).filter(Boolean)));
+      const vendedorIds = Array.from(new Set(allAgs.map(a => a.vendedor_id).filter(Boolean)));
+      const leadIdsAll = Array.from(new Set(allAgs.map(a => a.lead_id).filter(Boolean)));
+      const profileIds = Array.from(new Set([...(sdrIds as string[]), ...(vendedorIds as string[])]));
+
+      const profilesMap = new Map<string, { id: string; name?: string; user_type?: string; ativo?: boolean }>();
+      if (profileIds.length > 0) {
+        const { data: perfis, error: perfisError } = await supabase
+          .from('profiles')
+          .select('id, name, user_type, ativo')
+          .in('id', profileIds);
+        if (perfisError) {
+          console.warn('Aviso: erro ao carregar perfis (seguiremos sem nomes):', perfisError);
+        } else if (perfis) {
+          perfis.forEach(p => profilesMap.set(p.id, p));
+        }
+      }
+
+      const leadsMap = new Map<string, { id: string; nome?: string; whatsapp?: string; email?: string }>();
+      if (leadIdsAll.length > 0) {
+        const { data: leadsList, error: leadsError } = await supabase
+          .from('leads')
+          .select('id, nome, whatsapp, email')
+          .in('id', leadIdsAll as string[]);
+        if (leadsError) {
+          console.warn('Aviso: erro ao carregar leads para matching:', leadsError);
+        } else if (leadsList) {
+          leadsList.forEach(l => leadsMap.set(l.id, l));
+        }
+      }
 
       // Buscar todas as vendas aprovadas para verificar conversões
       const { data: vendasAprovadas, error: vendasError } = await supabase
@@ -238,8 +243,8 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
       // Processar agendamentos da semana
       agendamentosData?.forEach((agendamento: any) => {
         const sdrId = agendamento.sdr_id;
-        const sdrProfile = getFirst(agendamento.profiles);
-        const vendedorProfile = getFirst(agendamento.vendedor);
+        const sdrProfile = profilesMap.get(sdrId);
+        const vendedorProfile = agendamento.vendedor_id ? profilesMap.get(agendamento.vendedor_id) : undefined;
         const sdrName = sdrProfile?.name || 'SDR Desconhecido';
         
         // Log específico para SDR IN
