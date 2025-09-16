@@ -158,17 +158,15 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas }) => {
                       <Eye className="h-4 w-4" />
                     </Button>
 
-                    {/* Botão Gerenciar - para todas as vendas se o usuário tiver permissão */}
-                    {canManageVendas && (
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        onClick={() => handleManageVenda(venda)}
-                        title="Aprovar, rejeitar ou validar"
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    )}
+                    {/* Botão Gerenciar - exibido para todas as vendas */}
+                    <Button 
+                      variant="default" 
+                      size="sm"
+                      onClick={() => handleManageVenda(venda)}
+                      title="Configurar venda"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </div>

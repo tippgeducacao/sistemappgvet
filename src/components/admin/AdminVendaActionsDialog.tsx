@@ -460,19 +460,7 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
               )}
             </div>
 
-            {/* Seção de Exclusão */}
-            {canDeleteVendas && <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium text-red-800">🚨 Zona de Perigo</h4>
-                    <p className="text-xs text-red-600">Exclusão PERMANENTE desta venda</p>
-                  </div>
-                  <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)} disabled={isUpdating || isDeleting}>
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    {isDeleting ? 'Excluindo...' : 'Excluir'}
-                  </Button>
-                </div>
-              </div>}
+            {/* Seção de Exclusão ocultada por solicitação: botão de excluir não deve existir */}
           </div>
 
           <DialogFooter className="gap-2 flex-shrink-0 border-t pt-4">
@@ -505,7 +493,7 @@ const AdminVendaActionsDialog: React.FC<AdminVendaActionsDialogProps> = ({
       {/* Diálogos */}
       <RejectVendaDialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen} onConfirm={handleConfirmReject} isLoading={isUpdating} vendaNome={venda.aluno?.nome} />
 
-      <DeleteVendaDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={handleDeleteConfirm} isLoading={isDeleting} vendaId={venda.id} vendaNome={venda.aluno?.nome} />
+      {/* DeleteVendaDialog ocultado: exclusão desativada */}
     </>;
 };
 export default AdminVendaActionsDialog;
