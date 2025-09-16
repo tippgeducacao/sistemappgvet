@@ -75,30 +75,52 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
         .gte('data_agendamento', startOfWeek.toISOString())
         .lte('data_agendamento', endOfWeek.toISOString());
 
+      // Criar um pool amplo de agendamentos recentes para matching (últimos 90 dias)
+      const poolStart = new Date(endOfWeek);
+      poolStart.setDate(poolStart.getDate() - 90);
+
+      const { data: agendamentosPool, error: agendamentosPoolError } = await supabase
+        .from('agendamentos')
+        .select(`
+          id,
+          sdr_id,
+          vendedor_id,
+          lead_id,
+          resultado_reuniao,
+          data_agendamento,
+          form_entry_id,
+          status,
+          profiles!sdr_id (
+            name,
+            user_type,
+            ativo
+          ),
+          vendedor:profiles!vendedor_id (
+            name
+          ),
+          leads (
+            id,
+            nome,
+            whatsapp,
+            email
+          )
+        `)
+        .gte('data_agendamento', poolStart.toISOString())
+        .lte('data_agendamento', endOfWeek.toISOString());
+
+      if (agendamentosPoolError) {
+        console.error('Erro ao buscar agendamentos pool:', agendamentosPoolError);
+      }
 
       if (agendamentosError) {
         console.error('Erro ao buscar agendamentos:', agendamentosError);
         return;
       }
 
-      console.log('📊 Agendamentos encontrados:', agendamentosData?.length);
-      
-      // Log específico para SDR IN
-      const sdrInAgendamentos = agendamentosData?.filter(a => 
-        a.profiles?.name?.toLowerCase()?.includes('sdr in') || 
-        a.profiles?.name === 'SDR IN'
-      );
-      if (sdrInAgendamentos && sdrInAgendamentos.length > 0) {
-        console.log('🔍 SDR IN - Agendamentos encontrados:', sdrInAgendamentos.map(a => ({
-          id: a.id,
-          data_agendamento: a.data_agendamento,
-          data_agendamento_br: new Date(a.data_agendamento).toLocaleDateString('pt-BR'),
-          resultado_reuniao: a.resultado_reuniao,
-          status: a.status,
-          lead_nome: a.leads?.nome,
-          sdr_name: a.profiles?.name
-        })));
-      }
+      console.log('📊 Agendamentos semana/pool:', {
+        semana: agendamentosData?.length || 0,
+        pool: agendamentosPool?.length || 0
+      });
 
       // Buscar todas as vendas aprovadas para verificar conversões
       const { data: vendasAprovadas, error: vendasError } = await supabase
@@ -332,7 +354,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           });
           
           // Procurar agendamento com o mesmo vendedor que tenha contato matching
-          const agendamentoMatching = agendamentosData?.find((ag: any) => {
+          const agendamentoMatching = agendamentosPool?.find((ag: any) => {
             if (ag.vendedor_id !== venda.vendedor_id || !ag.sdr_id) return false;
             
             const leadData: LeadContact = {
@@ -395,7 +417,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             // Verificar se a venda está vinculada a uma reunião através de:
             // 1. form_entry_id direto no agendamento
             // 2. Matching por contato entre lead e aluno
-            const agendamentoVinculado = agendamentosData?.find((ag: any) => {
+            const agendamentoVinculado = agendamentosPool?.find((ag: any) => {
               // Vinculação direta
               if (ag.form_entry_id === venda.id) return true;
               
