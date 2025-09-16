@@ -255,7 +255,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             data_br: new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR'),
             resultado_reuniao: agendamento.resultado_reuniao,
             status: agendamento.status,
-            lead_nome: agendamento.leads?.nome,
+            lead_nome: leadsMap.get(agendamento.lead_id)?.nome,
             form_entry_id: agendamento.form_entry_id
           });
         }
@@ -273,7 +273,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           data_agendamento: agendamento.data_agendamento,
           resultado_reuniao: agendamento.resultado_reuniao || 'Sem resultado',
           status: 'compareceu', // Default, será ajustado abaixo
-          lead_name: agendamento.leads?.nome || 'Lead desconhecido',
+          lead_name: (leadsMap.get(agendamento.lead_id)?.nome) || 'Lead desconhecido',
           vendedor_name: vendedorProfile?.name || 'Vendedor desconhecido',
           sdr_name: sdrName
         };
@@ -362,10 +362,11 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           const agendamentoMatching = agendamentosPool?.find((ag: any) => {
             if (ag.vendedor_id !== venda.vendedor_id || !ag.sdr_id) return false;
             
+            const leadFromMap = leadsMap.get(ag.lead_id);
             const leadData: LeadContact = {
-              id: ag.leads?.id || '',
-              whatsapp: ag.leads?.whatsapp,
-              email: ag.leads?.email
+              id: ag.lead_id,
+              whatsapp: leadFromMap?.whatsapp,
+              email: leadFromMap?.email
             };
             
             const alunoContact: AlunoContact = {
@@ -380,12 +381,12 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             if (isMatch) {
               console.log('✅ MATCHING - Match encontrado:', {
                 agendamento_id: ag.id,
-                lead_whatsapp: ag.leads?.whatsapp,
-                lead_email: ag.leads?.email,
+                lead_whatsapp: leadFromMap?.whatsapp,
+                lead_email: leadFromMap?.email,
                 aluno_telefone: alunoData.telefone,
                 aluno_email: alunoData.email,
                 sdr_id: ag.sdr_id,
-                sdr_name: ag.profiles?.name
+                sdr_name: profilesMap.get(ag.sdr_id)?.name
               });
             }
             
@@ -394,7 +395,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           
           if (agendamentoMatching) {
             sdrId = agendamentoMatching.sdr_id;
-            sdrName = agendamentoMatching.profiles?.name || 'SDR via Matching';
+            sdrName = profilesMap.get(agendamentoMatching.sdr_id)?.name || 'SDR via Matching';
             
             // Atualizar a venda com o sdr_id encontrado (opcional, para futuras consultas)
             supabase
@@ -428,10 +429,11 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
               
               // Vinculação por matching de contato
               if (ag.sdr_id === sdrId && venda.alunos?.[0]) {
+                const leadFromMap2 = leadsMap.get(ag.lead_id);
                 const leadData: LeadContact = {
-                  id: ag.leads?.id || '',
-                  whatsapp: ag.leads?.whatsapp,
-                  email: ag.leads?.email
+                  id: ag.lead_id,
+                  whatsapp: leadFromMap2?.whatsapp,
+                  email: leadFromMap2?.email
                 };
                 
                 const alunoContact: AlunoContact = {
@@ -457,7 +459,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
                 resultado_reuniao: 'Venda Aprovada',
                 status: 'convertida',
                 lead_name: venda.alunos?.[0]?.nome || 'Aluno matriculado',
-                vendedor_name: venda.vendedor?.name || 'Sistema',
+                vendedor_name: vendaVendedor?.name || 'Sistema',
                 sdr_name: sdrName,
                 data_assinatura: venda.data_assinatura_contrato || venda.data_aprovacao?.split('T')[0],
                 curso_nome: venda.cursos?.nome
