@@ -22,7 +22,7 @@ export interface SDRWeeklyConversionData {
 
 export class SDRConversionService {
   /**
-   * Calcula taxa de conversão semanal de um SDR (quarta a terça)
+   * Calcula taxa de conversão semanal de um SDR (quarta a terça) - NOVA LÓGICA
    */
   static async calcularTaxaConversaoSDRSemanal(sdrId: string, ano: number, semana: number): Promise<SDRWeeklyConversionData> {
     // Calcular datas da semana (quarta a terça)
@@ -60,37 +60,52 @@ export class SDRConversionService {
 
     const totalReunioes = agendamentos?.length || 0;
     
-    // Contar reuniões com comparecimento
+    // NOVA LÓGICA: Contar reuniões com comparecimento (incluindo "comprou")
     const reunioesComComparecimento = agendamentos?.filter(ag => 
-      ag.resultado_reuniao && ['presente', 'compareceu', 'realizada'].includes(ag.resultado_reuniao.toLowerCase())
+      ag.resultado_reuniao && [
+        'presente', 'compareceu', 'realizada', 'comprou', 
+        'compareceu_nao_comprou', 'nao_comprou'
+      ].includes(ag.resultado_reuniao.toLowerCase())
     ).length || 0;
 
-    // Para cada agendamento com comparecimento, verificar se houve venda pelo vendedor na mesma semana
-    let reunioesComVenda = 0;
-    
-    if (reunioesComComparecimento > 0) {
-      const agendamentosComComparecimento = agendamentos?.filter(ag => 
-        ag.resultado_reuniao && ['presente', 'compareceu', 'realizada'].includes(ag.resultado_reuniao.toLowerCase())
-      ) || [];
+    // NOVA LÓGICA: Buscar vendas aprovadas com assinatura na semana (independente da data da reunião)
+    const { data: vendasAprovadas, error: vendasError } = await supabase
+      .from('form_entries')
+      .select(`
+        id, 
+        sdr_id, 
+        status, 
+        data_assinatura_contrato, 
+        data_aprovacao,
+        enviado_em
+      `)
+      .eq('sdr_id', sdrId)
+      .eq('status', 'matriculado');
 
-      for (const agendamento of agendamentosComComparecimento) {
-        // Verificar se há venda do vendedor do agendamento na mesma semana
-        const { data: vendas, error: vendasError } = await supabase
-          .from('form_entries')
-          .select('id, status, vendedor_id, created_at')
-          .eq('vendedor_id', agendamento.vendedor_id)
-          .gte('created_at', dataInicioSemana.toISOString())
-          .lte('created_at', dataFimSemana.toISOString())
-          .eq('status', 'matriculado');
-
-        if (!vendasError && vendas && vendas.length > 0) {
-          reunioesComVenda++;
-        }
-      }
+    if (vendasError) {
+      console.error('❌ Erro ao buscar vendas aprovadas:', vendasError);
+      throw vendasError;
     }
 
+    // Contar vendas com assinatura na semana atual
+    let reunioesComVenda = 0;
+    vendasAprovadas?.forEach(venda => {
+      // Usar data de assinatura ou data de aprovação como fallback
+      const dataEfetiva = venda.data_assinatura_contrato 
+        ? new Date(venda.data_assinatura_contrato) 
+        : venda.data_aprovacao 
+          ? new Date(venda.data_aprovacao)
+          : new Date(venda.enviado_em);
+      
+      if (dataEfetiva >= dataInicioSemana && dataEfetiva <= dataFimSemana) {
+        reunioesComVenda++;
+      }
+    });
+
     const taxaComparecimento = totalReunioes > 0 ? (reunioesComComparecimento / totalReunioes) * 100 : 0;
-    const taxaConversao = reunioesComComparecimento > 0 ? (reunioesComVenda / reunioesComComparecimento) * 100 : 0;
+    const taxaConversao = (reunioesComComparecimento + reunioesComVenda) > 0 
+      ? (reunioesComVenda / (reunioesComComparecimento + reunioesComVenda)) * 100 
+      : 0;
 
     return {
       sdrId,

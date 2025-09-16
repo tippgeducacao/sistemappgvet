@@ -234,76 +234,21 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           sdr_name: sdrName
         };
 
-        // Categorizar baseado no resultado da reunião
+        // NOVA LÓGICA: Reuniões "comprou" sempre contam como comparecimento na data da reunião
         if (agendamento.resultado_reuniao === 'nao_compareceu') {
           performance.naoCompareceram++;
           meetingDetail.status = 'nao_compareceu';
         } else if (agendamento.resultado_reuniao === 'comprou') {
-          // Verificar se existe venda aprovada correspondente a esta reunião
-          let vendaAprovadaCorrespondente = null;
+          // Reunião "comprou" sempre conta como comparecimento (nova lógica)
+          performance.compareceram++;
+          meetingDetail.status = 'compareceu';
           
-          // Primeiro tentar por form_entry_id direto
-          if (agendamento.form_entry_id) {
-            vendaAprovadaCorrespondente = vendasAprovadasNaSemana.find(v => v.id === agendamento.form_entry_id);
-          }
-          
-          // Se não encontrou por form_entry_id, tentar matching por contato
-          if (!vendaAprovadaCorrespondente && agendamento.lead_id) {
-            const leadDoAgendamento = leadsData?.find(lead => lead.id === agendamento.lead_id);
-            if (leadDoAgendamento) {
-              vendaAprovadaCorrespondente = vendasAprovadasNaSemana?.find(venda => {
-                const alunoCorrespondente = alunosData?.find(aluno => aluno.form_entry_id === venda.id);
-                if (alunoCorrespondente) {
-                  const leadWhatsapp = leadDoAgendamento.whatsapp?.replace(/\D/g, '');
-                  const alunoTelefone = alunoCorrespondente.telefone?.replace(/\D/g, '');
-                  
-                  if (leadWhatsapp && alunoTelefone && leadWhatsapp === alunoTelefone) {
-                    return true;
-                  }
-                  if (leadDoAgendamento.email && alunoCorrespondente.email && 
-                      leadDoAgendamento.email.toLowerCase() === alunoCorrespondente.email.toLowerCase()) {
-                    return true;
-                  }
-                }
-                return false;
-              });
-            }
-          }
-
-          if (vendaAprovadaCorrespondente) {
-            performance.convertidas++;
-            meetingDetail.status = 'convertida';
-            meetingDetail.curso_nome = vendaAprovadaCorrespondente.cursos?.nome;
-            meetingDetail.data_assinatura = vendaAprovadaCorrespondente.data_assinatura_contrato || 
-                                           vendaAprovadaCorrespondente.data_aprovacao?.split('T')[0];
-                                           
-            // Log específico para SDR IN
-            if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
-              console.log('✅ SDR IN - Venda convertida encontrada:', {
-                agendamento_id: agendamento.id,
-                venda_id: vendaAprovadaCorrespondente.id,
-                data_assinatura: vendaAprovadaCorrespondente.data_assinatura_contrato,
-                curso: vendaAprovadaCorrespondente.cursos?.nome
-              });
-            }
-          } else {
-            performance.compareceram++; // Comprou mas ainda não foi aprovado ou aprovado em outra semana
-            meetingDetail.status = 'pendente';
-            
-            // Log específico para SDR IN - problema aqui!
-            if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
-              console.log('❌ SDR IN - Reunião "comprou" mas VENDA NÃO ENCONTRADA na semana:', {
-                agendamento_id: agendamento.id,
-                form_entry_id: agendamento.form_entry_id,
-                data_agendamento: agendamento.data_agendamento,
-                data_br: new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR'),
-                lead_id: agendamento.lead_id,
-                lead_nome: agendamento.leads?.nome,
-                vendasAprovadasNaSemana_count: vendasAprovadasNaSemana.length,
-                startOfWeek_br: startOfWeek.toLocaleDateString('pt-BR'),
-                endOfWeek_br: endOfWeek.toLocaleDateString('pt-BR')
-              });
-            }
+          if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
+            console.log('🟢 SDR IN - Reunião "comprou" conta como comparecimento:', {
+              agendamento_id: agendamento.id,
+              data: agendamento.data_agendamento,
+              data_br: new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR')
+            });
           }
         } else if (
                    agendamento.resultado_reuniao === 'nao_comprou' || 
@@ -343,6 +288,41 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
         }
 
         performance.meetings.push(meetingDetail);
+      });
+
+      // NOVA LÓGICA: Processar vendas aprovadas com assinatura na semana como conversões separadas
+      vendasAprovadasNaSemana?.forEach((venda: any) => {
+        if (venda.sdr_id) {
+          const sdrName = venda.sdr?.name || 'SDR Desconhecido';
+          
+          if (ensureSDRInMap(venda.sdr_id, sdrName, true)) {
+            const performance = performanceMap.get(venda.sdr_id)!;
+            performance.convertidas++;
+            
+            // Adicionar como meeting detail para exibição
+            const conversionDetail: MeetingDetail = {
+              id: venda.id,
+              data_agendamento: getDataEfetivaVenda(venda).toISOString(),
+              resultado_reuniao: 'Venda Aprovada',
+              status: 'convertida',
+              lead_name: 'Aluno matriculado',
+              vendedor_name: 'Sistema',
+              sdr_name: sdrName,
+              data_assinatura: venda.data_assinatura_contrato || venda.data_aprovacao?.split('T')[0],
+              curso_nome: venda.cursos?.nome
+            };
+            
+            performance.meetings.push(conversionDetail);
+            
+            if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
+              console.log('💰 SDR IN - Venda aprovada adicionada como conversão:', {
+                venda_id: venda.id,
+                data_assinatura: venda.data_assinatura_contrato,
+                curso: venda.cursos?.nome
+              });
+            }
+          }
+        }
       });
 
       // Calcular taxas para cada SDR

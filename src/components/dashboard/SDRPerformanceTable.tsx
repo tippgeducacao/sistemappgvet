@@ -186,8 +186,10 @@ export const SDRPerformanceTable: React.FC = () => {
                 <strong>Taxa de Comparecimento:</strong> (Convertidas + Compareceram) ÷ Total Agendadas × 100
               </div>
             </div>
-            <div className="mt-2">
-              <strong>Observação:</strong> Reuniões que não compareceram não são incluídas no cálculo da taxa de conversão
+            <div className="mt-2 space-y-1">
+              <div><strong>Compareceram:</strong> Reuniões finalizadas (incluindo "comprou") na data da reunião</div>
+              <div><strong>Convertidas:</strong> Vendas aprovadas com assinatura de contrato na semana atual</div>
+              <div><strong>Observação:</strong> Conversões são contadas na data de assinatura, não na data da reunião</div>
             </div>
           </div>
         )}
