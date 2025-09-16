@@ -26,9 +26,9 @@ const PendentesTab: React.FC<PendentesTabProps> = ({ vendas, showDeleteButton = 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [vendaToDelete, setVendaToDelete] = useState<VendaCompleta | null>(null);
 
-  // Verificar se o usuário atual pode excluir vendas (apenas o admin específico)
+  // Verificar se o usuário atual pode excluir vendas (admin e diretor)
   const userEmail = profile?.email || currentUser?.email || '';
-  const canDeleteVendas = userEmail === 'wallasmonteiro019@gmail.com' && showDeleteButton;
+  const canDeleteVendas = (userEmail === 'wallasmonteiro019@gmail.com' || userEmail === 'admin@ppgvet.com') && showDeleteButton;
 
   const handleViewVenda = (venda: VendaCompleta) => {
     setSelectedVenda(venda);

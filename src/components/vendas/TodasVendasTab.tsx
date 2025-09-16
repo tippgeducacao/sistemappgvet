@@ -1,12 +1,13 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Eye, Edit, Trash2, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeleteVenda } from '@/hooks/useDeleteVenda';
 import { useAuthStore } from '@/stores/AuthStore';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import AdminVendaActionsDialog from '@/components/admin/AdminVendaActionsDialog';
 import DeleteVendaDialog from '@/components/vendas/dialogs/DeleteVendaDialog';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
@@ -21,24 +22,35 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas, showDeleteButto
   const navigate = useNavigate();
   const { deleteVenda, isDeleting } = useDeleteVenda();
   const { currentUser, profile } = useAuthStore();
+  const { isAdmin, isDiretor } = useUserRoles();
   const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [vendaToDelete, setVendaToDelete] = useState<VendaCompleta | null>(null);
 
-  // Verificar se o usuário atual pode excluir vendas (apenas o admin específico)
+  // Verificar se o usuário atual pode excluir vendas (admin e diretor)
   const userEmail = profile?.email || currentUser?.email || '';
-  const canDeleteVendas = userEmail === 'wallasmonteiro019@gmail.com' && showDeleteButton;
+  const canDeleteVendas = (userEmail === 'wallasmonteiro019@gmail.com' || userEmail === 'admin@ppgvet.com') && showDeleteButton;
 
-  console.log('🔐 TodasVendasTab: Verificando permissão de exclusão:', {
+  // Verificar se pode gerenciar vendas (aprovar/rejeitar)
+  const canManageVendas = isAdmin || isDiretor;
+
+  console.log('🔐 TodasVendasTab: Verificando permissões:', {
     userEmail,
     canDeleteVendas,
+    canManageVendas,
     showDeleteButton
   });
 
   const handleViewVenda = (venda: VendaCompleta) => {
     setSelectedVenda(venda);
     setDetailsDialogOpen(true);
+  };
+
+  const handleManageVenda = (venda: VendaCompleta) => {
+    setSelectedVenda(venda);
+    setActionsDialogOpen(true);
   };
 
   const handleEditVenda = (venda: VendaCompleta) => {
@@ -176,8 +188,19 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas, showDeleteButto
                       <Eye className="h-4 w-4" />
                     </Button>
 
+                    {/* Botão Gerenciar - apenas para vendas pendentes e usuários autorizados */}
+                    {venda.status === 'pendente' && canManageVendas && (
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        onClick={() => handleManageVenda(venda)}
+                        title="Aprovar, rejeitar ou validar"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    )}
 
-                    {/* Botão Excluir - apenas para o admin específico */}
+                    {/* Botão Excluir - apenas para admin específicos */}
                     {canDeleteVendas && (
                       <Button 
                         variant="destructive" 
@@ -202,6 +225,12 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas, showDeleteButto
         venda={selectedVenda}
         open={detailsDialogOpen}
         onOpenChange={setDetailsDialogOpen}
+      />
+
+      <AdminVendaActionsDialog
+        venda={selectedVenda}
+        open={actionsDialogOpen}
+        onOpenChange={setActionsDialogOpen}
       />
 
       <DeleteVendaDialog

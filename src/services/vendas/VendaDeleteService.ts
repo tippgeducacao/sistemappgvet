@@ -2,8 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { ErrorService } from '@/services/error/ErrorService';
 
 export class VendaDeleteService {
-  // Email autorizado para excluir vendas
-  private static readonly AUTHORIZED_EMAIL = 'wallasmonteiro019@gmail.com';
+  // Emails autorizados para excluir vendas (admin e o email específico)
+  private static readonly AUTHORIZED_EMAILS = ['wallasmonteiro019@gmail.com', 'admin@ppgvet.com'];
 
   static async deleteVenda(vendaId: string, currentUserEmail: string): Promise<boolean> {
     try {
@@ -228,16 +228,16 @@ export class VendaDeleteService {
   }
 
   static hasDeletePermission(userEmail: string): boolean {
-    const hasPermission = userEmail === this.AUTHORIZED_EMAIL;
+    const hasPermission = this.AUTHORIZED_EMAILS.includes(userEmail);
     console.log('🔐 Verificando permissão de exclusão:', {
       userEmail,
       authorized: hasPermission,
-      requiredEmail: this.AUTHORIZED_EMAIL
+      requiredEmails: this.AUTHORIZED_EMAILS
     });
     return hasPermission;
   }
 
   static getAuthorizedEmail(): string {
-    return this.AUTHORIZED_EMAIL;
+    return this.AUTHORIZED_EMAILS.join(', ');
   }
 }
