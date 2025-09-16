@@ -175,11 +175,11 @@ const SecretariaGerenciarVendas: React.FC = () => {
 
         {/* Conteúdo das abas */}
         <TabsContent value="todas" className="mt-6">
-          <TodasVendasTab vendas={vendasFiltradas} showDeleteButton={true} />
+          <TodasVendasTab vendas={vendasFiltradas} />
         </TabsContent>
 
         <TabsContent value="pendentes" className="mt-6">
-          <PendentesTab vendas={vendasPendentes} showDeleteButton={true} />
+          <PendentesTab vendas={vendasPendentes} />
         </TabsContent>
 
         <TabsContent value="matriculadas" className="mt-6">

@@ -3,32 +3,20 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Settings, Clock, Trash2 } from 'lucide-react';
-import { useDeleteVenda } from '@/hooks/useDeleteVenda';
-import { useAuthStore } from '@/stores/AuthStore';
+import { Eye, Settings, Clock } from 'lucide-react';
 import AdminVendaActionsDialog from '@/components/admin/AdminVendaActionsDialog';
-import DeleteVendaDialog from '@/components/vendas/dialogs/DeleteVendaDialog';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 interface PendentesTabProps {
   vendas: VendaCompleta[];
-  showDeleteButton?: boolean;
 }
 
-const PendentesTab: React.FC<PendentesTabProps> = ({ vendas, showDeleteButton = false }) => {
-  const { deleteVenda, isDeleting } = useDeleteVenda();
-  const { currentUser, profile } = useAuthStore();
+const PendentesTab: React.FC<PendentesTabProps> = ({ vendas }) => {
   const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
   const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [vendaToDelete, setVendaToDelete] = useState<VendaCompleta | null>(null);
-
-  // Verificar se o usuário atual pode excluir vendas (admin e diretor)
-  const userEmail = profile?.email || currentUser?.email || '';
-  const canDeleteVendas = (userEmail === 'wallasmonteiro019@gmail.com' || userEmail === 'admin@ppgvet.com') && showDeleteButton;
 
   const handleViewVenda = (venda: VendaCompleta) => {
     setSelectedVenda(venda);
@@ -38,19 +26,6 @@ const PendentesTab: React.FC<PendentesTabProps> = ({ vendas, showDeleteButton = 
   const handleManageVenda = (venda: VendaCompleta) => {
     setSelectedVenda(venda);
     setActionsDialogOpen(true);
-  };
-
-  const handleDeleteVenda = (venda: VendaCompleta) => {
-    setVendaToDelete(venda);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (vendaToDelete) {
-      await deleteVenda(vendaToDelete.id);
-      setDeleteDialogOpen(false);
-      setVendaToDelete(null);
-    }
   };
 
   if (vendas.length === 0) {
@@ -150,18 +125,6 @@ const PendentesTab: React.FC<PendentesTabProps> = ({ vendas, showDeleteButton = 
                       <Settings className="h-4 w-4" />
                     </Button>
 
-                    {/* Botão Excluir - apenas para o admin específico */}
-                    {canDeleteVendas && (
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => handleDeleteVenda(venda)}
-                        title="Excluir venda permanentemente"
-                        disabled={isDeleting}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -181,15 +144,6 @@ const PendentesTab: React.FC<PendentesTabProps> = ({ vendas, showDeleteButton = 
         venda={selectedVenda}
         open={detailsDialogOpen}
         onOpenChange={setDetailsDialogOpen}
-      />
-
-      <DeleteVendaDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeleteConfirm}
-        isLoading={isDeleting}
-        vendaId={vendaToDelete?.id || ''}
-        vendaNome={vendaToDelete?.aluno?.nome}
       />
     </>
   );
