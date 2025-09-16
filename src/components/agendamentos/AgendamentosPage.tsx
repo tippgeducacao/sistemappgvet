@@ -28,6 +28,8 @@ import { useOverdueAppointments } from '@/hooks/useOverdueAppointments';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgendamentosSDR } from '@/hooks/useAgendamentosSDR';
 import { useAllAgendamentos } from '@/hooks/useAllAgendamentos';
+import { VendedorSelectionService } from '@/services/vendedores/VendedorSelectionService';
+import VendedorSelectionDebug from '@/components/debug/VendedorSelectionDebug';
 
 import { EditarAgendamentoDiretor } from './EditarAgendamentoDiretor';
 import ForcarNovoAgendamento from './ForcarNovoAgendamento';
@@ -82,6 +84,9 @@ const AgendamentosPage: React.FC = () => {
   // Estado para edição de agendamento (Diretor)
   const [showEditarAgendamentoDiretor, setShowEditarAgendamentoDiretor] = useState(false);
   const [agendamentoEditando, setAgendamentoEditando] = useState<any>(null);
+  
+  // Estado para debug da seleção automática
+  const [showVendedorSelectionDebug, setShowVendedorSelectionDebug] = useState(false);
   
   // Calendar state for main page
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
@@ -269,11 +274,53 @@ const AgendamentosPage: React.FC = () => {
     }
   };
 
-  // Função para selecionar vendedor automaticamente
-  const selecionarVendedorAutomatico = async (vendedoresList: any[], dataHora: string, dataHoraFim?: string) => {
-    console.log('🎯 selecionarVendedorAutomatico chamada:', { vendedoresList: vendedoresList.length, dataHora });
+  // NOVA FUNÇÃO para seleção determinística com banco + debug
+  const selecionarVendedorAutomaticoDeterministico = async (vendedoresList: any[], dataHora: string, dataHoraFim?: string) => {
+    console.log('🎯 DETERMINÍSTICO: Nova função chamada:', { vendedoresList: vendedoresList.length, dataHora });
     
-    // Contadores para diagnóstico
+    try {
+      // Usar o novo serviço determinístico
+      const resultado = await VendedorSelectionService.selecionarVendedorDeterministico(
+        vendedoresList,
+        dataHora,
+        dataHoraFim || new Date(new Date(dataHora).getTime() + 60 * 60 * 1000).toISOString()
+      );
+
+      console.log('🎯 DETERMINÍSTICO: Resultado da função do banco:', resultado);
+
+      // Transformar resultado para compatibilidade com código existente
+      const resultadoCompativel = {
+        vendedor: resultado.vendedor_id ? {
+          id: resultado.vendedor_id,
+          name: resultado.vendedor_nome,
+          email: resultado.vendedor_email
+        } : null,
+        diagnostico: {
+          totalVendedores: resultado.diagnostico.total_vendedores,
+          vendedoresForaHorario: resultado.diagnostico.vendedores_fora_horario,
+          vendedoresComConflito: resultado.diagnostico.vendedores_com_conflito,
+          vendedoresDisponiveis: resultado.diagnostico.vendedores_disponiveis,
+          todosForaHorario: resultado.diagnostico.todos_fora_horario,
+          todoComConflito: resultado.diagnostico.todos_com_conflito,
+          agendamentosDetalhes: resultado.diagnostico.agendamentos_por_vendedor
+        }
+      };
+
+      console.log('🎯 DETERMINÍSTICO: Resultado transformado:', resultadoCompativel);
+      return resultadoCompativel;
+
+    } catch (error) {
+      console.error('❌ DETERMINÍSTICO: Erro na seleção determinística:', error);
+      
+      // Fallback para função original em caso de erro
+      console.log('🔄 DETERMINÍSTICO: Usando fallback para função original');
+      toast.error('Erro na seleção determinística, usando método tradicional');
+      return await selecionarVendedorAutomatico(vendedoresList, dataHora, dataHoraFim);
+    }
+  };
+
+  // Função original para seleção automática (mantida como fallback)
+  const selecionarVendedorAutomatico = async (vendedoresList: any[], dataHora: string, dataHoraFim?: string) => {
     let vendedoresForaHorario = 0;
     let vendedoresComConflito = 0;
     
@@ -503,10 +550,10 @@ const AgendamentosPage: React.FC = () => {
       setLoading(true);
       console.log('🚀 Iniciando processo de criação de agendamento...');
       
-      // Selecionar vendedor automaticamente (NUNCA manual)
-      console.log('🎯 CRIAÇÃO: Chamando selecionarVendedorAutomatico para CRIAR AGENDAMENTO');
+      // Selecionar vendedor automaticamente usando NOVA FUNÇÃO DETERMINÍSTICA
+      console.log('🎯 CRIAÇÃO: Chamando selecionarVendedorAutomaticoDeterministico para CRIAR AGENDAMENTO');
       console.log('🎯 CRIAÇÃO: DataHora sendo usada:', dataHoraAgendamento);
-      const resultado = await selecionarVendedorAutomatico(vendedores, dataHoraAgendamento, dataHoraFim);
+      const resultado = await selecionarVendedorAutomaticoDeterministico(vendedores, dataHoraAgendamento, dataHoraFim);
       
       console.log('👤 CRIAÇÃO: RESULTADO SELEÇÃO:', resultado);
       
@@ -954,6 +1001,13 @@ const AgendamentosPage: React.FC = () => {
               <Plus className="h-4 w-4" />
               Forçar Novo Agendamento
             </Button>
+          )}
+          {/* Debug da Seleção Automática - Apenas para Admins/Diretores */}
+          {(isAdmin || isDiretor) && (
+            <VendedorSelectionDebug 
+              isOpen={showVendedorSelectionDebug}
+              onOpenChange={setShowVendedorSelectionDebug}
+            />
           )}
         </div>
       </div>

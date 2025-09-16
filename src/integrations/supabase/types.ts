@@ -1329,6 +1329,22 @@ export type Database = {
         Args: { venda_id: string }
         Returns: undefined
       }
+      selecionar_vendedor_automatico: {
+        Args: {
+          p_data_agendamento: string
+          p_data_fim_agendamento: string
+          p_pos_graduacao_id?: string
+          p_vendedores_ids: string[]
+        }
+        Returns: {
+          agendamentos_ativos: number
+          diagnostico: Json
+          taxa_conversao: number
+          vendedor_email: string
+          vendedor_id: string
+          vendedor_nome: string
+        }[]
+      }
       update_overdue_appointments: {
         Args: Record<PropertyKey, never>
         Returns: undefined
