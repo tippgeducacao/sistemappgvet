@@ -75,6 +75,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
         .gte('data_agendamento', startOfWeek.toISOString())
         .lte('data_agendamento', endOfWeek.toISOString());
 
+
       if (agendamentosError) {
         console.error('Erro ao buscar agendamentos:', agendamentosError);
         return;
