@@ -1,10 +1,12 @@
 
 import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, CheckCircle, XCircle, Users, Search, UserCheck } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Users, Search, UserCheck, Calendar } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
-import { useVendedores } from '@/hooks/useVendedores';
+import { useVendedoresOnly } from '@/hooks/useVendedoresOnly';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 import TodasVendasTab from '@/components/vendas/TodasVendasTab';
 import PendentesTab from '@/components/vendas/PendentesTab';
@@ -13,6 +15,10 @@ import RejeitadasTab from '@/components/vendas/RejeitadasTab';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { getDataEfetivaVenda } from '@/utils/vendaDateUtils';
 
 const SecretariaGerenciarVendas: React.FC = () => {
   const { 
@@ -21,12 +27,14 @@ const SecretariaGerenciarVendas: React.FC = () => {
     refetch
   } = useAllVendas();
   
-  const { vendedores } = useVendedores();
+  const { vendedores } = useVendedoresOnly();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendedor, setSelectedVendedor] = useState<string>('');
+  const [dataInicio, setDataInicio] = useState<Date | undefined>();
+  const [dataFim, setDataFim] = useState<Date | undefined>();
   
-  // Filtrar vendas por termo de pesquisa e vendedor
+  // Filtrar vendas por termo de pesquisa, vendedor e data de assinatura
   const vendasFiltradas = useMemo(() => {
     let filtered = vendas;
     
@@ -45,8 +53,30 @@ const SecretariaGerenciarVendas: React.FC = () => {
       });
     }
     
+    // Filtrar por data de assinatura
+    if (dataInicio || dataFim) {
+      filtered = filtered.filter(venda => {
+        const dataEfetiva = getDataEfetivaVenda(venda);
+        
+        if (dataInicio && dataEfetiva < dataInicio) {
+          return false;
+        }
+        
+        if (dataFim) {
+          // Adicionar 23:59:59 à data fim para incluir todo o dia
+          const dataFimComHora = new Date(dataFim);
+          dataFimComHora.setHours(23, 59, 59, 999);
+          if (dataEfetiva > dataFimComHora) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+    }
+    
     return filtered;
-  }, [vendas, searchTerm, selectedVendedor]);
+  }, [vendas, searchTerm, selectedVendedor, dataInicio, dataFim]);
   
   // Filtrar vendas por status
   const vendasPendentes = useMemo(() => {
@@ -81,7 +111,7 @@ const SecretariaGerenciarVendas: React.FC = () => {
       </div>
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Campo de pesquisa */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -111,7 +141,90 @@ const SecretariaGerenciarVendas: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Filtro de data início */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "justify-start text-left font-normal",
+                !dataInicio && "text-muted-foreground"
+              )}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              {dataInicio ? format(dataInicio, "dd/MM/yyyy") : "Data início"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dataInicio}
+              onSelect={setDataInicio}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+
+        {/* Filtro de data fim */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "justify-start text-left font-normal",
+                !dataFim && "text-muted-foreground"
+              )}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              {dataFim ? format(dataFim, "dd/MM/yyyy") : "Data fim"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dataFim}
+              onSelect={setDataFim}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
+
+      {/* Botões para limpar filtros */}
+      {(dataInicio || dataFim) && (
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setDataInicio(undefined)}
+            disabled={!dataInicio}
+          >
+            Limpar Data Início
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setDataFim(undefined)}
+            disabled={!dataFim}
+          >
+            Limpar Data Fim
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setDataInicio(undefined);
+              setDataFim(undefined);
+            }}
+            disabled={!dataInicio && !dataFim}
+          >
+            Limpar Todas as Datas
+          </Button>
+        </div>
+      )}
 
       {/* Tabs de navegação */}
       <Tabs defaultValue="todas" className="w-full">
