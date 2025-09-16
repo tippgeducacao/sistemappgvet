@@ -6,6 +6,7 @@ import MainContent from '@/components/MainContent';
 import UserGuard from '@/components/ui/user-guard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useUserManagement } from '@/hooks/useUserManagement';
+import { useAutoAgendamentoVinculacao } from '@/hooks/useAutoAgendamentoVinculacao';
 
 const Index = () => {
   const {
@@ -13,6 +14,9 @@ const Index = () => {
     currentUser,
     loading
   } = useUserManagement();
+
+  // Executa vinculação automática (throttled) ao abrir o dashboard
+  useAutoAgendamentoVinculacao();
 
   return (
     <UserGuard user={user || currentUser} loading={loading}>
