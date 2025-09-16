@@ -27,6 +27,10 @@ export interface SDRWeeklyPerformance {
   meetings: MeetingDetail[];
 }
 
+// Helper para lidar com retornos que podem vir como array ou objeto
+const getFirst = <T,>(value: T | T[] | null | undefined): T | undefined =>
+  Array.isArray(value) ? value[0] : (value || undefined);
+
 export const useSDRWeeklyPerformance = (weekDate?: Date) => {
   const [performanceData, setPerformanceData] = useState<SDRWeeklyPerformance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -234,8 +238,9 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
       // Processar agendamentos da semana
       agendamentosData?.forEach((agendamento: any) => {
         const sdrId = agendamento.sdr_id;
-        const profile = agendamento.profiles;
-        const sdrName = profile?.name || 'SDR Desconhecido';
+        const sdrProfile = getFirst(agendamento.profiles);
+        const vendedorProfile = getFirst(agendamento.vendedor);
+        const sdrName = sdrProfile?.name || 'SDR Desconhecido';
         
         // Log específico para SDR IN
         if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
@@ -250,13 +255,8 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           });
         }
         
-        // Filtrar apenas usuários ativos e com tipo SDR
-        // Incluir SDR mesmo se o join de profiles falhar por RLS.
-        // Considera ativo por padrão quando não há perfil visível.
-        const shouldIncludeSDR = !!sdrId && (
-          profile ? (profile.ativo !== false && ['sdr', 'sdr_inbound', 'sdr_outbound'].includes(profile.user_type)) : true
-        );
-        
+        // Incluir SDR se tem sdr_id e (perfil ativo ou perfil indisponível por RLS)
+        const shouldIncludeSDR = !!(sdrId) && (sdrProfile ? sdrProfile.ativo !== false : true);
         if (!shouldIncludeSDR) return;
         if (!ensureSDRInMap(sdrId, sdrName, true)) return;
 
@@ -269,15 +269,18 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           resultado_reuniao: agendamento.resultado_reuniao || 'Sem resultado',
           status: 'compareceu', // Default, será ajustado abaixo
           lead_name: agendamento.leads?.nome || 'Lead desconhecido',
-          vendedor_name: agendamento.vendedor?.name || 'Vendedor desconhecido',
+          vendedor_name: vendedorProfile?.name || 'Vendedor desconhecido',
           sdr_name: sdrName
         };
 
-        // NOVA LÓGICA: Reuniões "comprou" sempre contam como comparecimento na data da reunião
-        if (agendamento.resultado_reuniao === 'nao_compareceu') {
+        // Normalizar resultado para comparação robusta (suporta 'realizado' e 'realizada')
+        const resultado = (agendamento.resultado_reuniao || '').toLowerCase();
+
+        // Contabilização de presença
+        if (resultado === 'nao_compareceu') {
           performance.naoCompareceram++;
           meetingDetail.status = 'nao_compareceu';
-        } else if (agendamento.resultado_reuniao === 'comprou') {
+        } else if (resultado === 'comprou') {
           // Reunião "comprou" sempre conta como comparecimento (nova lógica)
           performance.compareceram++;
           meetingDetail.status = 'compareceu';
@@ -290,13 +293,12 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             });
           }
         } else if (
-                   agendamento.resultado_reuniao === 'nao_comprou' || 
-                   agendamento.resultado_reuniao === 'compareceu_nao_comprou' ||
-                   agendamento.resultado_reuniao === 'presente' ||
-                   agendamento.resultado_reuniao === 'realizado' ||
-                   agendamento.resultado_reuniao === 'compareceu'
-                 ) {
-          // Só conta como compareceu se há um resultado específico confirmando comparecimento
+          resultado === 'nao_comprou' ||
+          resultado === 'compareceu_nao_comprou' ||
+          resultado === 'presente' ||
+          resultado === 'compareceu' ||
+          resultado.startsWith('realizad') // cobre 'realizado' e 'realizada'
+        ) {
           performance.compareceram++;
           meetingDetail.status = 'compareceu';
           
@@ -309,9 +311,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
             });
           }
         } else {
-          // Reuniões sem resultado (não finalizadas) são completamente desconsideradas
-          // Não incluir na lista de meetings pois a reunião não foi finalizada
-          
+          // Reuniões sem resultado (não finalizadas) são desconsideradas
           if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
             console.log('⚪ SDR IN - Reunião não finalizada (desconsiderada):', {
               agendamento_id: agendamento.id,
@@ -321,9 +321,7 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
               data_br: new Date(agendamento.data_agendamento).toLocaleDateString('pt-BR')
             });
           }
-          
-          // Não adicionar à lista de meetings - return early
-          return;
+          return; // não adiciona em meetings
         }
 
         performance.meetings.push(meetingDetail);
@@ -340,8 +338,10 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
           aluno_email: venda.alunos?.[0]?.email
         });
 
+        const vendaSdr = getFirst(venda.sdr);
+        const vendaVendedor = getFirst(venda.vendedor);
         let sdrId = venda.sdr_id;
-        let sdrName = venda.sdr?.name || 'SDR Desconhecido';
+        let sdrName = vendaSdr?.name || 'SDR Desconhecido';
         
         // Se não tem sdr_id, tentar encontrar através de matching por contato
         if (!sdrId && venda.alunos?.[0]) {
