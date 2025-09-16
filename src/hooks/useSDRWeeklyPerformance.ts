@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getWeekRange } from '@/utils/semanaUtils';
-import { getDataEfetivaVenda } from '@/utils/vendaDateUtils';
+import { getDataEfetivaVenda, isVendaInWeek } from '@/utils/vendaDateUtils';
 
 export interface MeetingDetail {
   id: string;
@@ -290,36 +290,54 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
         performance.meetings.push(meetingDetail);
       });
 
-      // NOVA LÓGICA: Processar vendas aprovadas com assinatura na semana como conversões separadas
+      // NOVA LÓGICA: Processar vendas aprovadas com data de assinatura na semana como conversões separadas
       vendasAprovadasNaSemana?.forEach((venda: any) => {
-        if (venda.sdr_id) {
-          const sdrName = venda.sdr?.name || 'SDR Desconhecido';
+        // Verifica se a venda tem vinculação com algum SDR
+        const sdrId = venda.sdr_id || venda.vendedor?.id;
+        
+        if (sdrId) {
+          const sdrName = venda.sdr?.name || venda.vendedor?.name || 'SDR Desconhecido';
           
-          if (ensureSDRInMap(venda.sdr_id, sdrName, true)) {
-            const performance = performanceMap.get(venda.sdr_id)!;
-            performance.convertidas++;
+          // Verificar se é uma venda vinculada a agendamento e com data de assinatura na semana
+          const isInWeek = isVendaInWeek(venda, startOfWeek, endOfWeek);
+          
+          if (isInWeek && ensureSDRInMap(sdrId, sdrName, true)) {
+            const performance = performanceMap.get(sdrId)!;
             
-            // Adicionar como meeting detail para exibição
-            const conversionDetail: MeetingDetail = {
-              id: venda.id,
-              data_agendamento: getDataEfetivaVenda(venda).toISOString(),
-              resultado_reuniao: 'Venda Aprovada',
-              status: 'convertida',
-              lead_name: 'Aluno matriculado',
-              vendedor_name: 'Sistema',
-              sdr_name: sdrName,
-              data_assinatura: venda.data_assinatura_contrato || venda.data_aprovacao?.split('T')[0],
-              curso_nome: venda.cursos?.nome
-            };
+            // Verificar se a venda está vinculada a uma reunião
+            const isVinculada = venda.form_entry_id || 
+                               venda.observacoes?.includes('reunião') ||
+                               agendamentosData?.some((ag: any) => 
+                                 ag.form_entry_id === venda.id ||
+                                 (ag.leads?.whatsapp === venda.aluno?.telefone && venda.aluno?.telefone) ||
+                                 (ag.leads?.email === venda.aluno?.email && venda.aluno?.email)
+                               );
             
-            performance.meetings.push(conversionDetail);
-            
-            if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
-              console.log('💰 SDR IN - Venda aprovada adicionada como conversão:', {
-                venda_id: venda.id,
-                data_assinatura: venda.data_assinatura_contrato,
-                curso: venda.cursos?.nome
-              });
+            if (isVinculada) {
+              performance.convertidas++;
+              
+              // Adicionar como meeting detail para exibição
+              const conversionDetail: MeetingDetail = {
+                id: venda.id,
+                data_agendamento: getDataEfetivaVenda(venda).toISOString(),
+                resultado_reuniao: 'Venda Aprovada',
+                status: 'convertida',
+                lead_name: venda.aluno?.nome || 'Aluno matriculado',
+                vendedor_name: venda.vendedor?.name || 'Sistema',
+                sdr_name: sdrName,
+                data_assinatura: venda.data_assinatura_contrato || venda.data_aprovacao?.split('T')[0],
+                curso_nome: venda.cursos?.nome
+              };
+              
+              performance.meetings.push(conversionDetail);
+              
+              if (sdrName?.toLowerCase()?.includes('sdr in') || sdrName === 'SDR IN') {
+                console.log('💰 SDR IN - Venda aprovada adicionada como conversão:', {
+                  venda_id: venda.id,
+                  data_assinatura: venda.data_assinatura_contrato,
+                  curso: venda.cursos?.nome
+                });
+              }
             }
           }
         }
