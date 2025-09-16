@@ -228,10 +228,14 @@ export const useSDRWeeklyPerformance = (weekDate?: Date) => {
         }
         
         // Filtrar apenas usuários ativos e com tipo SDR
-        const isActiveSDR = profile?.ativo === true && 
-          ['sdr', 'sdr_inbound', 'sdr_outbound'].includes(profile?.user_type);
+        // Incluir SDR mesmo se o join de profiles falhar por RLS.
+        // Considera ativo por padrão quando não há perfil visível.
+        const shouldIncludeSDR = !!sdrId && (
+          profile ? (profile.ativo !== false && ['sdr', 'sdr_inbound', 'sdr_outbound'].includes(profile.user_type)) : true
+        );
         
-        if (!ensureSDRInMap(sdrId, sdrName, isActiveSDR)) return;
+        if (!shouldIncludeSDR) return;
+        if (!ensureSDRInMap(sdrId, sdrName, true)) return;
 
         const performance = performanceMap.get(sdrId)!;
 
