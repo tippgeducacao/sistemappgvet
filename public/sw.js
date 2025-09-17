@@ -1,5 +1,5 @@
 // Service Worker for caching assets
-const CACHE_NAME = 'ppgvet-cache-v2';
+const CACHE_NAME = 'ppgvet-cache-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/src/main.tsx',
