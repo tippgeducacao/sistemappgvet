@@ -870,23 +870,20 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         // Priorizar data_assinatura_contrato e tratar como horário local
         let dataVenda: Date;
         if (venda.data_assinatura_contrato) {
-          // CORREÇÃO: Adicionar horário para evitar problemas de fuso horário
           dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
         } else {
           dataVenda = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
         }
         dataVenda.setHours(0, 0, 0, 0);
         
-        console.log(`🐛 TVRankingDisplay - Vendedor ${vendedor.name} - Venda hoje:`, {
-          vendaId: venda.id,
-          dataOriginal: venda.data_assinatura_contrato || venda.data_aprovacao || venda.enviado_em,
-          dataProcessada: dataVenda.toISOString(),
-          dataProcessadaBR: dataVenda.toLocaleDateString('pt-BR'),
-          hojeComparacao: hoje.toISOString(),
-          isToday: dataVenda.getTime() === hoje.getTime()
-        });
+        // Garantir que "hoje" também respeita o range da semana atual
+        const normalizedStartOfWeek = new Date(startOfWeek);
+        normalizedStartOfWeek.setHours(0, 0, 0, 0);
+        const normalizedEndOfWeek = new Date(endOfWeek);
+        normalizedEndOfWeek.setHours(23, 59, 59, 999);
+        const dentroDaSemana = dataVenda >= normalizedStartOfWeek && dataVenda <= normalizedEndOfWeek;
         
-        return dataVenda.getTime() === hoje.getTime();
+        return dentroDaSemana && dataVenda.getTime() === hoje.getTime();
       });
       
       // Calcular vendas de ontem
@@ -900,23 +897,20 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
         // Priorizar data_assinatura_contrato e tratar como horário local
         let dataVenda: Date;
         if (venda.data_assinatura_contrato) {
-          // CORREÇÃO: Adicionar horário para evitar problemas de fuso horário
           dataVenda = new Date(venda.data_assinatura_contrato + 'T12:00:00');
         } else {
           dataVenda = venda.data_aprovacao ? new Date(venda.data_aprovacao) : new Date(venda.enviado_em || venda.atualizado_em);
         }
         dataVenda.setHours(0, 0, 0, 0);
         
-        console.log(`🐛 TVRankingDisplay - Vendedor ${vendedor.name} - Venda ontem:`, {
-          vendaId: venda.id,
-          dataOriginal: venda.data_assinatura_contrato || venda.data_aprovacao || venda.enviado_em,
-          dataProcessada: dataVenda.toISOString(),
-          dataProcessadaBR: dataVenda.toLocaleDateString('pt-BR'),
-          ontemComparacao: ontem.toISOString(),
-          isYesterday: dataVenda.getTime() === ontem.getTime()
-        });
+        // Não contar "ontem" se ele pertence à semana anterior (ex.: hoje é quarta)
+        const normalizedStartOfWeek = new Date(startOfWeek);
+        normalizedStartOfWeek.setHours(0, 0, 0, 0);
+        const normalizedEndOfWeek = new Date(endOfWeek);
+        normalizedEndOfWeek.setHours(23, 59, 59, 999);
+        const dentroDaSemana = dataVenda >= normalizedStartOfWeek && dataVenda <= normalizedEndOfWeek;
         
-        return dataVenda.getTime() === ontem.getTime();
+        return dentroDaSemana && dataVenda.getTime() === ontem.getTime();
       });
       
       // Buscar meta semanal baseada no nível do vendedor (da tabela niveis_vendedores)
