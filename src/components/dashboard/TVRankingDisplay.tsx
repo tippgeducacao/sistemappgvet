@@ -501,20 +501,31 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     const vendaDate = getDataEfetivaVenda(venda, respostasVenda?.respostas);
     vendaDate.setHours(0, 0, 0, 0);
     
-    // Debug para detectar problema do dia 13
-    if (venda.data_assinatura_contrato === '2025-08-13') {
-      console.log(`🚨 DEBUG TVRanking - Venda dia 13:`, {
-        venda_id: venda.id?.substring(0, 8),
-        data_assinatura_contrato: venda.data_assinatura_contrato,
-        vendaDate: vendaDate.toISOString(),
-        vendaDate_br: vendaDate.toLocaleDateString('pt-BR'),
-        startOfWeek: startOfWeek.toLocaleDateString('pt-BR'),
-        endOfWeek: endOfWeek.toLocaleDateString('pt-BR'),
-        esta_na_semana: vendaDate >= startOfWeek && vendaDate <= endOfWeek
-      });
-    }
+    // CORREÇÃO: Normalizar datas para comparação correta
+    const normalizedStartOfWeek = new Date(startOfWeek);
+    normalizedStartOfWeek.setHours(0, 0, 0, 0);
+    const normalizedEndOfWeek = new Date(endOfWeek);  
+    normalizedEndOfWeek.setHours(23, 59, 59, 999);
     
-    return vendaDate >= startOfWeek && vendaDate <= endOfWeek;
+    const isInWeek = vendaDate >= normalizedStartOfWeek && vendaDate <= normalizedEndOfWeek;
+    
+    // Debug detalhado para entender o problema
+    console.log(`🔍 TVRankingDisplay - Filtro vendas semana:`, {
+      venda_id: venda.id?.substring(0, 8),
+      vendedor: venda.vendedor?.name || 'N/A',
+      data_assinatura_contrato: venda.data_assinatura_contrato,
+      data_enviado: venda.enviado_em,
+      pontuacao_validada: venda.pontuacao_validada,
+      pontuacao_esperada: venda.pontuacao_esperada,
+      vendaDate_iso: vendaDate.toISOString(),
+      vendaDate_br: vendaDate.toLocaleDateString('pt-BR'),
+      startOfWeek_br: normalizedStartOfWeek.toLocaleDateString('pt-BR'),
+      endOfWeek_br: normalizedEndOfWeek.toLocaleDateString('pt-BR'),
+      esta_na_semana: isInWeek,
+      status: venda.status
+    });
+    
+    return isInWeek;
   });
 
   // Filtrar vendas do mês atual usando a regra de semana
@@ -669,6 +680,26 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     });
   };
 
+  console.log('📊 TVRankingDisplay - Diagnóstico completo:', {
+    totalVendas: vendas.length,
+    vendasMatriculadas: vendas.filter(v => v.status === 'matriculado').length,
+    vendasComPontos: vendas.filter(v => v.status === 'matriculado' && (v.pontuacao_validada > 0 || v.pontuacao_esperada > 0)).length,
+    periodoSemana: {
+      inicio: startOfWeek.toLocaleDateString('pt-BR'),
+      fim: endOfWeek.toLocaleDateString('pt-BR')
+    },
+    amostraVendasComPontos: vendas
+      .filter(v => v.status === 'matriculado' && (v.pontuacao_validada > 0 || v.pontuacao_esperada > 0))
+      .slice(0, 3)
+      .map(v => ({
+        id: v.id?.substring(0, 8),
+        vendedor: v.vendedor?.name,
+        pontos: v.pontuacao_validada || v.pontuacao_esperada,
+        data_assinatura: v.data_assinatura_contrato,
+        data_envio: v.enviado_em
+      }))
+  });
+
   // Debug das estatísticas
   console.log('📊 TVRankingDisplay - Estatísticas:', {
     vendasMatriculadas: vendas.filter(v => v.status === 'matriculado').length,
@@ -808,7 +839,22 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
       };
     } else {
       // Para vendedores - usar pontuação em vez de número de vendas
-      const vendasVendedorSemana = vendasSemanaAtual.filter(v => v.vendedor_id === vendedor.id);
+      // CORREÇÃO: Usar mesma lógica de filtro de data para consistência
+      const vendasVendedorSemana = vendas.filter(v => {
+        if (v.vendedor_id !== vendedor.id || v.status !== 'matriculado') return false;
+        
+        const respostasVenda = vendasWithResponses.find(({ venda: venda }) => venda.id === v.id);
+        const vendaDate = getDataEfetivaVenda(v, respostasVenda?.respostas);
+        vendaDate.setHours(0, 0, 0, 0);
+        
+        const normalizedStartOfWeek = new Date(startOfWeek);
+        normalizedStartOfWeek.setHours(0, 0, 0, 0);
+        const normalizedEndOfWeek = new Date(endOfWeek);
+        normalizedEndOfWeek.setHours(23, 59, 59, 999);
+        
+        return vendaDate >= normalizedStartOfWeek && vendaDate <= normalizedEndOfWeek;
+      });
+      
       const vendasVendedorMes = vendasMesAtual.filter(v => v.vendedor_id === vendedor.id);
       
       // Calcular vendas de hoje
@@ -1036,46 +1082,50 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const remainingVendedores = vendedoresOnly.slice(3);
 
   // Calcular totais de vendas da semana e mês atual
+  // CORREÇÃO: Usar mesma lógica de filtro para consistência com pontuação
   const totalVendasSemana = vendas.filter(v => {
     if (v.status !== 'matriculado') return false;
-    // CORREÇÃO: Priorizar data_assinatura_contrato e tratar fuso horário
-    let dataVenda: Date;
-    if (v.data_assinatura_contrato) {
-      // CORREÇÃO: Adicionar horário para evitar problemas de fuso horário
-      dataVenda = new Date(v.data_assinatura_contrato + 'T12:00:00');
-    } else {
-      dataVenda = v.data_aprovacao ? new Date(v.data_aprovacao) : new Date(v.enviado_em || v.atualizado_em);
-    }
     
-    console.log(`🐛 totalVendasSemana - Venda:`, {
-      vendaId: v.id,
+    const respostasVenda = vendasWithResponses.find(({ venda }) => venda.id === v.id);
+    const dataVenda = getDataEfetivaVenda(v, respostasVenda?.respostas);
+    dataVenda.setHours(0, 0, 0, 0);
+    
+    const normalizedStartOfWeek = new Date(startOfWeek);
+    normalizedStartOfWeek.setHours(0, 0, 0, 0);
+    const normalizedEndOfWeek = new Date(endOfWeek);
+    normalizedEndOfWeek.setHours(23, 59, 59, 999);
+    
+    const isInWeek = dataVenda >= normalizedStartOfWeek && dataVenda <= normalizedEndOfWeek;
+    
+    console.log(`🐛 totalVendasSemana - Venda (CORRIGIDO):`, {
+      vendaId: v.id?.substring(0, 8),
       vendedor: v.vendedor?.name,
       dataOriginal: v.data_assinatura_contrato || v.data_aprovacao || v.enviado_em,
       dataProcessada: dataVenda.toISOString(),
       dataProcessadaBR: dataVenda.toLocaleDateString('pt-BR'),
-      startOfWeek: startOfWeek.toISOString(),
-      endOfWeek: endOfWeek.toISOString(),
-      isInRange: dataVenda >= startOfWeek && dataVenda <= endOfWeek,
+      startOfWeek_br: normalizedStartOfWeek.toLocaleDateString('pt-BR'),
+      endOfWeek_br: normalizedEndOfWeek.toLocaleDateString('pt-BR'),
+      isInRange: isInWeek,
+      pontos: v.pontuacao_validada || v.pontuacao_esperada || 0,
       status: v.status
     });
     
-    return dataVenda >= startOfWeek && dataVenda <= endOfWeek;
+    return isInWeek;
   }).length;
   
-  // Mês atual
+  // CORREÇÃO: Usar mesma lógica para o mês também
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  endOfMonth.setHours(23, 59, 59, 999);
   
   const totalVendasMes = vendas.filter(v => {
     if (v.status !== 'matriculado') return false;
-    // CORREÇÃO: Priorizar data_assinatura_contrato e tratar fuso horário
-    let dataVenda: Date;
-    if (v.data_assinatura_contrato) {
-      // CORREÇÃO: Adicionar horário para evitar problemas de fuso horário
-      dataVenda = new Date(v.data_assinatura_contrato + 'T12:00:00');
-    } else {
-      dataVenda = v.data_aprovacao ? new Date(v.data_aprovacao) : new Date(v.enviado_em || v.atualizado_em);
-    }
+    
+    const respostasVenda = vendasWithResponses.find(({ venda }) => venda.id === v.id);
+    const dataVenda = getDataEfetivaVenda(v, respostasVenda?.respostas);
+    dataVenda.setHours(0, 0, 0, 0);
+    
     return dataVenda >= startOfMonth && dataVenda <= endOfMonth;
   }).length;
 
