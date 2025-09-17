@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut, FileText, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Target, Calendar, X, Users, ZoomIn, ZoomOut, FileText, FileSpreadsheet, ChevronLeft, ChevronRight, Wifi } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useVendaWithFormResponses } from '@/hooks/useVendaWithFormResponses';
+import { useRealtimeTVRanking } from '@/hooks/useRealtimeTVRanking';
 
 interface VendedorData {
   id: string;
@@ -329,6 +330,10 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [semanaOffset, setSemanaOffset] = useState(0); // 0 = semana atual, -1 = semana anterior, etc.
+  
+  // Hook para realtime
+  const { forceRefresh } = useRealtimeTVRanking();
+  
   const { vendas } = useAllVendas();
   const { vendedores } = useVendedores();
   const { metasSemanais, getSemanaAtual } = useMetasSemanais();
@@ -362,17 +367,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
     enabled: isOpen, // Só buscar quando o modal estiver aberto
   });
 
-  // Auto-refresh a cada 30 segundos
-  useEffect(() => {
-    if (!isOpen) return;
-    
-    const interval = setInterval(() => {
-      // Atualizar dados sem recarregar a página
-      window.location.hash = window.location.hash; // Força re-render
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [isOpen]);
+  // Dados da conversão SDR removidos - agora usando realtime
+  // (Hook de realtime já configurado acima)
 
   console.log('🔍 TVRankingDisplay - Dados carregados:', {
     vendas: vendas?.length || 0,
@@ -1525,6 +1521,13 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
           >
             <ZoomIn className="h-4 w-4" />
           </Button>
+          
+          {/* Indicador de Tempo Real */}
+          <div className="flex items-center gap-1 px-2 py-1 bg-green-500/10 border border-green-500/20 rounded-md">
+            <Wifi className="h-3 w-3 text-green-500 animate-pulse" />
+            <span className="text-xs text-green-600 font-medium">AO VIVO</span>
+          </div>
+          
           <Button onClick={toggleFullscreen} variant="outline" size="sm">
             {isFullscreen ? 'Sair Tela Cheia' : 'Tela Cheia'}
           </Button>

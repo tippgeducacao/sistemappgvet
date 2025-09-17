@@ -53,6 +53,32 @@ export const useAllAgendamentos = () => {
 
   useEffect(() => {
     fetchAllAgendamentos();
+
+    // Configurar realtime para agendamentos
+    console.log('🔵 Configurando realtime para agendamentos');
+    
+    const channel = supabase
+      .channel('agendamentos-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'agendamentos'
+        },
+        (payload) => {
+          console.log('🔵 Mudança em agendamentos detectada:', payload);
+          
+          // Recarregar dados quando houver mudanças
+          fetchAllAgendamentos();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔵 Desconectando realtime agendamentos');
+      supabase.removeChannel(channel);
+    };
   }, [profile?.id]);
 
   return {

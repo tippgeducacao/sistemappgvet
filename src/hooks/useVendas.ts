@@ -91,8 +91,11 @@ export const useAllVendas = () => {
       
       return vendas;
     },
-    refetchInterval: 60000, // Recarrega a cada 60 segundos (reduzido de 10s)
-    staleTime: 30000 // Considera os dados obsoletos após 30 segundos (aumentado de 1s)
+    // Reduzido drasticamente para realtime
+    refetchInterval: false, // Desabilitado - usar realtime
+    staleTime: 5000, // 5 segundos apenas
+    refetchOnWindowFocus: true, // Recarregar ao focar na janela
+    refetchOnReconnect: true // Recarregar ao reconectar
   });
 
   return {
