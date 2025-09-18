@@ -173,9 +173,21 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                       {metaSemanal}
                     </td>
                     {dadosMembroPorSemana.map((dados, weekIndex) => {
-                      const reunioesRealizadas = dados?.reunioesRealizadas || 0;
-                      const percentual = dados?.percentualAtingimento || 0;
                       const isCurrentWeek = weekIndex === 3;
+
+                      // Se não há dados para este membro nesta semana, significa que não estava no grupo
+                      if (!dados) {
+                        return (
+                          <td key={weekIndex} className={`p-3 text-center border-r bg-muted/20 ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
+                            <div className="italic text-muted-foreground/70 text-sm">
+                              Fora do grupo
+                            </div>
+                          </td>
+                        );
+                      }
+
+                      const reunioesRealizadas = dados.reunioesRealizadas || 0;
+                      const percentual = dados.percentualAtingimento || 0;
 
                       return (
                         <td key={weekIndex} className={`p-3 text-center border-r ${isCurrentWeek ? 'bg-primary/10' : ''}`}>
@@ -205,6 +217,15 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
               </tr>
             </tfoot>
           </table>
+        </div>
+        
+        {/* Legenda explicativa */}
+        <div className="mt-4 p-3 bg-muted/30 rounded-lg text-xs text-muted-foreground">
+          <div className="font-semibold mb-2">Legenda:</div>
+          <div className="flex flex-wrap gap-4">
+            <div><span className="italic">Fora do grupo:</span> O membro não estava no grupo do supervisor nesta semana</div>
+            <div>A média semanal é calculada apenas considerando os membros ativos em cada semana</div>
+          </div>
         </div>
       </CardContent>
     </Card>

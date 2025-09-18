@@ -32,7 +32,7 @@ import VendedorProfileModal from './VendedorProfileModal';
 import VendedoresTableRow from './VendedoresTableRow';
 import VendedorExportTableRow from './VendedorExportTableRow';
 import SDRTableRow from './SDRTableRow';
-import SupervisorTableRow from './SupervisorTableRow';
+import SupervisorTableRow, { SupervisorTableLegend } from './SupervisorTableRow';
 import SupervisorMetaColetiva from './SupervisorMetaColetiva';
 // Importação removida - fechamento automático por data
 import { useMesFechado } from '@/hooks/useHistoricoMensal';
@@ -1190,8 +1190,11 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                         );
                       })}
                     </tbody>
-                  </table>
-                </div>
+                   </table>
+                   
+                   {/* Legenda para supervisores */}
+                   {supervisores.length > 0 && <SupervisorTableLegend />}
+                 </div>
               </div>
             );
           })()}

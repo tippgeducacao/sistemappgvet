@@ -123,11 +123,11 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
         const attainment = weeklyAttainments[weekIndex];
         const weeklyCommission = weeklyCommissions[weekIndex];
         
-        // Se não há dados (supervisor não estava ativo), mostrar célula vazia
+        // Se não há dados (supervisor não estava ativo), mostrar "Fora do grupo"
         if (attainment === undefined || attainment === null || weeklyCommission === undefined || weeklyCommission === null) {
           return (
             <td key={weekIndex} className="p-2 text-xs text-muted-foreground">
-              <div>-</div>
+              <div className="italic text-muted-foreground/70">Fora do grupo</div>
               <div className="opacity-70">-</div>
             </td>
           );
@@ -145,5 +145,16 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
     </tr>
   );
 };
+
+// Legenda para explicar os termos usados
+export const SupervisorTableLegend: React.FC = () => (
+  <div className="mt-4 p-3 bg-muted/30 rounded-lg text-xs text-muted-foreground">
+    <div className="font-semibold mb-2">Legenda:</div>
+    <div className="flex flex-wrap gap-4">
+      <div><span className="italic">Fora do grupo:</span> O supervisor não possuía equipe ativa nesta semana</div>
+      <div>As médias são calculadas apenas considerando as semanas com equipe ativa</div>
+    </div>
+  </div>
+);
 
 export default SupervisorTableRow;
