@@ -438,9 +438,11 @@ export class SupervisorComissionamentoService {
         
         const estaValido = foiCriadoAteOFimDaSemana && naoSaiuAntesDaSemana;
         
-        console.log(`🔍 FILTRO - ${membro.usuario?.name}:`, {
+        console.log(`🔍 SEMANA ${semana} FILTRO - ${membro.usuario?.name}:`, {
           criado: criadoEm.toLocaleDateString('pt-BR'),
           saiu: saídaEm?.toLocaleDateString('pt-BR') || 'nunca',
+          inicioSemana: inicioSemana.toLocaleDateString('pt-BR'),
+          fimSemana: fimSemana.toLocaleDateString('pt-BR'),
           criadoAteOFim: foiCriadoAteOFimDaSemana,
           naoSaiuAntes: naoSaiuAntesDaSemana,
           resultado: estaValido ? '✅ INCLUIR' : '❌ EXCLUIR'
@@ -448,15 +450,15 @@ export class SupervisorComissionamentoService {
         
         return estaValido;
       });
-      
-      console.log(`🚨 PERÍODO CALCULADO: ${inicioSemana.toLocaleDateString('pt-BR')} até ${fimSemana.toLocaleDateString('pt-BR')}`);
-      console.log('👥 Membros válidos após filtro:', membrosValidosParaPeriodo.length);
+      console.log(`🚨 SEMANA ${semana} - PERÍODO CALCULADO: ${inicioSemana.toLocaleDateString('pt-BR')} até ${fimSemana.toLocaleDateString('pt-BR')}`);
+      console.log(`👥 SEMANA ${semana} - Membros válidos após filtro:`, membrosValidosParaPeriodo.length);
 
       if (membrosValidosParaPeriodo.length === 0) {
-        console.warn('⚠️ Nenhum membro válido encontrado para o período');
+        console.warn(`⚠️ SEMANA ${semana} - Nenhum membro válido encontrado para o período`);
+        console.log(`🔍 SEMANA ${semana} - Verificando se devemos usar membros atuais como fallback...`);
         
-        // Mesmo sem membros válidos no período, vamos buscar todos os membros atuais 
-        // para mostrar suas metas (0/55, 0/7, etc.)
+        // Para evitar erro na Semana 1, vamos usar uma abordagem mais flexível:
+        // Se não há membros válidos no período mas há membros ativos no grupo, usar os membros atuais
         const { data: todosMembrosDados } = await supabase
           .from('membros_grupos_supervisores')
           .select(`
@@ -482,58 +484,106 @@ export class SupervisorComissionamentoService {
            membro.usuario?.user_type === 'vendedor')
         ) || [];
         
-        console.log(`📊 Encontrados ${membrosAtuaisAtivos.length} membros atuais para mostrar metas`);
+        console.log(`📊 SEMANA ${semana} - Encontrados ${membrosAtuaisAtivos.length} membros atuais ativos`);
         
-        // Criar SDRDetalhes com metas zeradas para todos os membros atuais
-        const sdrsDetalhesZerados: SDRResumo[] = [];
-        
-        for (const membro of membrosAtuaisAtivos) {
-          const membroId = membro.usuario_id;
-          const membroNome = membro.usuario?.name || 'Membro';
-          const membroNivel = membro.usuario?.nivel || 'junior';
-          const membroTipo = membro.usuario?.user_type;
+        // Se há membros atuais, mas nenhum era válido no período, ainda assim processar com 0 pontos
+        // mas manter as metas para calcular % correto
+        if (membrosAtuaisAtivos.length > 0) {
+          console.log(`🔄 SEMANA ${semana} - Processando membros atuais com 0 pontos/reuniões para o período`);
           
-          // Buscar meta baseada no tipo e nível do membro
-          const { data: nivelData } = await supabase
+          const sdrsDetalhes: SDRResumo[] = [];
+          let somaPercentuais = 0;
+
+          for (const membro of membrosAtuaisAtivos) {
+            const membroId = membro.usuario_id;
+            const membroNome = membro.usuario?.name || 'Membro';
+            const membroNivel = membro.usuario?.nivel || 'junior';
+            const membroTipo = membro.usuario?.user_type;
+
+            // Buscar meta baseada no tipo e nível do membro
+            const { data: nivelData } = await supabase
+              .from('niveis_vendedores')
+              .select('meta_semanal_inbound, meta_semanal_outbound, meta_semanal_vendedor')
+              .eq('nivel', membroNivel)
+              .eq('tipo_usuario', membroTipo === 'vendedor' ? 'vendedor' : 'sdr')
+              .maybeSingle();
+
+            // Definir metas padrão baseadas no nível e tipo
+            let metaPadrao = 0;
+            if (membroTipo === 'vendedor') {
+              metaPadrao = membroNivel === 'junior' ? 7 : membroNivel === 'pleno' ? 8 : membroNivel === 'senior' ? 10 : 7;
+            } else {
+              metaPadrao = membroNivel === 'junior' ? 55 : membroNivel === 'pleno' ? 70 : membroNivel === 'senior' ? 85 : 55;
+            }
+            
+            let metaSemanal = 0;
+            if (membroTipo === 'vendedor') {
+              metaSemanal = nivelData?.meta_semanal_vendedor || metaPadrao;
+            } else if (membroTipo === 'sdr_inbound') {
+              metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
+            } else if (membroTipo === 'sdr_outbound') {
+              metaSemanal = nivelData?.meta_semanal_outbound || metaPadrao;
+            } else if (membroTipo === 'sdr') {
+              metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
+            } else {
+              metaSemanal = metaPadrao;
+            }
+
+            console.log(`📊 SEMANA ${semana} - ${membroNome}: Meta ${metaSemanal}, Realizado 0 (período anterior à entrada)`);
+
+            const percentualAtingimento = 0; // 0% pois não estava ativo no período
+
+            sdrsDetalhes.push({
+              id: membroId,
+              nome: membroNome,
+              percentualAtingimento: 0,
+              reunioesRealizadas: 0,
+              metaSemanal
+            });
+
+            somaPercentuais += percentualAtingimento;
+          }
+
+          // Calcular média das porcentagens (Meta Coletiva)
+          const mediaPercentualAtingimento = membrosAtuaisAtivos.length > 0 ? somaPercentuais / membrosAtuaisAtivos.length : 0;
+
+          console.log(`🎯 SEMANA ${semana} - Meta Coletiva (fallback): ${mediaPercentualAtingimento.toFixed(1)}% (média de ${membrosAtuaisAtivos.length} membros atuais)`);
+
+          // Buscar variável semanal do supervisor
+          const { data: nivelSupervisorData } = await supabase
             .from('niveis_vendedores')
-            .select('meta_semanal_inbound, meta_semanal_outbound, meta_semanal_vendedor')
-            .eq('nivel', membroNivel)
-            .eq('tipo_usuario', membroTipo === 'vendedor' ? 'vendedor' : 'sdr')
+            .select('variavel_semanal')
+            .eq('nivel', supervisorData.nivel)
+            .eq('tipo_usuario', 'supervisor')
             .maybeSingle();
-          
-          // Definir metas padrão baseadas no nível e tipo
-          let metaPadrao = 0;
-          if (membroTipo === 'vendedor') {
-            metaPadrao = membroNivel === 'junior' ? 7 : membroNivel === 'pleno' ? 8 : membroNivel === 'senior' ? 10 : 7;
-          } else {
-            // Para SDRs (todos os tipos)
-            metaPadrao = membroNivel === 'junior' ? 55 : membroNivel === 'pleno' ? 70 : membroNivel === 'senior' ? 85 : 55;
-          }
-          
-          let metaSemanal = 0;
-          if (membroTipo === 'vendedor') {
-            metaSemanal = nivelData?.meta_semanal_vendedor || metaPadrao;
-          } else if (membroTipo === 'sdr_inbound') {
-            metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
-          } else if (membroTipo === 'sdr_outbound') {
-            metaSemanal = nivelData?.meta_semanal_outbound || metaPadrao;
-          } else if (membroTipo === 'sdr') {
-            metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
-          } else {
-            metaSemanal = metaPadrao;
-          }
-          
-          console.log(`📊 Meta zerada para ${membroNome} (${membroTipo}, ${membroNivel}): 0/${metaSemanal}`);
-          
-          sdrsDetalhesZerados.push({
-            id: membroId,
-            nome: membroNome,
-            percentualAtingimento: 0,
-            reunioesRealizadas: 0,
-            metaSemanal
-          });
+
+          const variabelSemanal = nivelSupervisorData?.variavel_semanal || 0;
+
+          // Calcular comissão baseada na média percentual
+          const { multiplicador, valor } = await ComissionamentoService.calcularComissao(
+            mediaPercentualAtingimento,
+            100,
+            variabelSemanal,
+            'supervisor'
+          );
+
+          return {
+            supervisorId,
+            nome: supervisorData.name,
+            grupoId: grupoData.id,
+            nomeGrupo: grupoData.nome_grupo,
+            ano,
+            semana,
+            totalSDRs: membrosAtuaisAtivos.length,
+            mediaPercentualAtingimento: Math.round(mediaPercentualAtingimento * 100) / 100,
+            variabelSemanal,
+            multiplicador,
+            valorComissao: valor,
+            sdrsDetalhes
+          };
         }
         
+        // Se realmente não há membros, retornar dados zerados
         return {
           supervisorId,
           nome: supervisorData.name,
@@ -541,12 +591,12 @@ export class SupervisorComissionamentoService {
           nomeGrupo: grupoData.nome_grupo,
           ano,
           semana,
-          totalSDRs: sdrsDetalhesZerados.length,
+          totalSDRs: 0,
           mediaPercentualAtingimento: 0,
           variabelSemanal: 0,
           multiplicador: 0,
           valorComissao: 0,
-          sdrsDetalhes: sdrsDetalhesZerados
+          sdrsDetalhes: []
         };
       }
 
@@ -559,7 +609,26 @@ export class SupervisorComissionamentoService {
          membro.usuario?.user_type === 'vendedor')
       );
 
-      console.log(`✅ ${membrosAtivos.length} membros ativos válidos para o período`);
+      console.log(`✅ SEMANA ${semana} - ${membrosAtivos.length} membros ativos válidos para o período`);
+      
+      // Se após todos os filtros não há membros ativos, usar fallback
+      if (membrosAtivos.length === 0) {
+        console.warn(`⚠️ SEMANA ${semana} - Após filtros, nenhum membro ativo encontrado`);
+        return {
+          supervisorId,
+          nome: supervisorData.name,
+          grupoId: grupoData.id,
+          nomeGrupo: grupoData.nome_grupo,
+          ano,
+          semana,
+          totalSDRs: 0,
+          mediaPercentualAtingimento: 0,
+          variabelSemanal: 0,
+          multiplicador: 0,
+          valorComissao: 0,
+          sdrsDetalhes: []
+        };
+      }
 
       if (membrosAtivos.length === 0) {
         console.warn('⚠️ Nenhum membro ativo encontrado no grupo para o período');
@@ -786,10 +855,10 @@ export class SupervisorComissionamentoService {
         somaPercentuais += percentualAtingimento;
       }
 
-      // Calcular média das porcentagens
-      const mediaPercentualAtingimento = somaPercentuais / membrosAtivos.length;
+      // Calcular média das porcentagens (evitar divisão por zero)
+      const mediaPercentualAtingimento = membrosAtivos.length > 0 ? somaPercentuais / membrosAtivos.length : 0;
 
-      console.log(`🎯 Resultado final: ${sdrsDetalhes.length} membros processados, média: ${mediaPercentualAtingimento.toFixed(1)}%`);
+      console.log(`🎯 SEMANA ${semana} - Resultado final: ${sdrsDetalhes.length} membros processados, média: ${mediaPercentualAtingimento.toFixed(1)}%`);
 
       // Buscar variável semanal do supervisor
       const { data: nivelSupervisorData, error: nivelSupervisorError } = await supabase
