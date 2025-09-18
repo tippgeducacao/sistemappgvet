@@ -81,6 +81,18 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
       // Calcular total apenas das semanas com dados válidos (ignorar null/undefined)
       const total = commissions.reduce((sum, c) => sum + (c !== null && c !== undefined ? c : 0), 0);
       
+      console.log(`💰 COMISSÃO DEBUG - ${supervisor.name}:`, {
+        semanas: weeklyData.map((d, i) => ({
+          semana: i + 1,
+          taxa: d.taxaAtingimento,
+          comissao: d.comissao,
+          variavelSemanal: variavelSemanal
+        })),
+        comissionsArray: commissions,
+        total,
+        variavelSemanal
+      });
+      
       console.log(`✅ ${supervisor.name} - Resultado final:`, {
         attainments,
         commissions,
