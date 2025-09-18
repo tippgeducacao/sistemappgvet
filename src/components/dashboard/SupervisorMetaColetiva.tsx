@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { SupervisorComissionamentoService, type SupervisorComissionamentoData } from '@/services/supervisor/SupervisorComissionamentoService';
+import SupervisorDebugInfo from './SupervisorDebugInfo';
 
 interface SupervisorMetaColetivaProps {
   supervisorId: string;
@@ -36,8 +37,23 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
       setLoading(true);
       const data: SupervisorComissionamentoData[] = [];
 
+      console.log('🔍 SupervisorMetaColetiva - Iniciando busca de dados semanais para:', {
+        supervisorId,
+        supervisorName,
+        currentYear,
+        currentMonth,
+        totalWeeks: weeks.length
+      });
+
       for (let weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
         const weekNumber = weekIndex + 1;
+        
+        console.log(`📅 SupervisorMetaColetiva - Buscando SEMANA ${weekNumber}:`, {
+          week: weeks[weekIndex],
+          supervisorId,
+          currentYear,
+          currentMonth
+        });
         
         try {
           const comissionamentoData = await SupervisorComissionamentoService.calcularComissionamentoSupervisor(
@@ -47,13 +63,66 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
             weekNumber
           );
 
+          console.log(`📊 SupervisorMetaColetiva - SEMANA ${weekNumber} resultado:`, {
+            temDados: !!comissionamentoData,
+            totalMembros: comissionamentoData?.sdrsDetalhes?.length || 0,
+            membros: comissionamentoData?.sdrsDetalhes?.map(sdr => ({
+              nome: sdr.nome,
+              id: sdr.id,
+              reunioes: sdr.reunioesRealizadas,
+              meta: sdr.metaSemanal,
+              percentual: sdr.percentualAtingimento
+            })) || []
+          });
+
           if (comissionamentoData) {
             data.push(comissionamentoData);
+          } else {
+            console.log(`⚠️ SupervisorMetaColetiva - SEMANA ${weekNumber}: Sem dados (supervisor sem equipe)`);
+            // Adicionar um objeto vazio para manter o índice da semana
+            data.push({
+              supervisorId,
+              nome: supervisorName,
+              grupoId: '',
+              nomeGrupo: '',
+              ano: currentYear,
+              semana: weekNumber,
+              totalSDRs: 0,
+              mediaPercentualAtingimento: 0,
+              variabelSemanal: 0,
+              multiplicador: 0,
+              valorComissao: 0,
+              sdrsDetalhes: []
+            });
           }
         } catch (error) {
-          console.error(`Erro ao buscar dados da semana ${weekNumber}:`, error);
+          console.error(`❌ SupervisorMetaColetiva - Erro ao buscar dados da semana ${weekNumber}:`, error);
+          // Adicionar um objeto vazio para manter o índice da semana
+          data.push({
+            supervisorId,
+            nome: supervisorName,
+            grupoId: '',
+            nomeGrupo: '',
+            ano: currentYear,
+            semana: weekNumber,
+            totalSDRs: 0,
+            mediaPercentualAtingimento: 0,
+            variabelSemanal: 0,
+            multiplicador: 0,
+            valorComissao: 0,
+            sdrsDetalhes: []
+          });
         }
       }
+
+      console.log('📋 SupervisorMetaColetiva - Dados semanais completos:', {
+        totalSemanas: data.length,
+        resumo: data.map((d, i) => ({
+          semana: i + 1,
+          temMembros: d.sdrsDetalhes?.length > 0,
+          membros: d.sdrsDetalhes?.length || 0
+        }))
+      });
 
       setWeeklyData(data);
       setLoading(false);
@@ -83,6 +152,11 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
     return membros;
   }, [] as Array<{id: string, nome: string}>);
 
+  console.log('📊 SupervisorMetaColetiva - Membros únicos encontrados:', {
+    totalMembrosUnicos: todosMembros.length,
+    nomes: todosMembros.map(m => m.nome)
+  });
+
   if (loading) {
     return (
       <Card className="mt-8">
@@ -99,7 +173,16 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
   }
 
   return (
-    <Card className="mt-8">
+    <>
+      {/* Componente de Debug */}
+      <SupervisorDebugInfo
+        supervisorId={supervisorId}
+        supervisorName={supervisorName}
+        selectedMonth={selectedMonth}
+        getWeeksOfMonth={getWeeksOfMonth}
+      />
+      
+      <Card className="mt-8">
       <CardHeader>
         <CardTitle className="text-xl">Meta coletiva - Supervisor {supervisorName}</CardTitle>
         <div className="text-base text-muted-foreground">
@@ -138,15 +221,32 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
             </thead>
             <tbody>
               {todosMembros.map((membro, membroIndex) => {
+                console.log(`🔍 SupervisorMetaColetiva - Processando linha do membro: ${membro.nome}`);
+                
                 // Buscar dados deste membro em cada semana
                 const dadosMembroPorSemana = weeks.map((_, weekIndex) => {
                   const semanaData = weeklyData[weekIndex];
-                  return semanaData?.sdrsDetalhes?.find(sdr => sdr.id === membro.id);
+                  const dadosMembro = semanaData?.sdrsDetalhes?.find(sdr => sdr.id === membro.id);
+                  
+                  console.log(`📅 SupervisorMetaColetiva - ${membro.nome} SEMANA ${weekIndex + 1}:`, {
+                    temDados: !!dadosMembro,
+                    reunioes: dadosMembro?.reunioesRealizadas || 'N/A',
+                    meta: dadosMembro?.metaSemanal || 'N/A',
+                    percentual: dadosMembro?.percentualAtingimento || 'N/A'
+                  });
+                  
+                  return dadosMembro;
                 });
 
                 // Pegar dados da primeira semana para informações base
                 const primeirosDados = dadosMembroPorSemana.find(d => d);
                 const metaSemanal = primeirosDados?.metaSemanal || 0;
+
+                console.log(`📊 SupervisorMetaColetiva - ${membro.nome} resumo:`, {
+                  metaSemanal,
+                  semanasComDados: dadosMembroPorSemana.filter(d => d).length,
+                  semanasSemDados: dadosMembroPorSemana.filter(d => !d).length
+                });
 
                 return (
                   <tr key={membro.id} className={membroIndex % 2 === 0 ? "bg-background/50" : "bg-muted/10"}>
@@ -179,8 +279,8 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                       if (!dados) {
                         return (
                           <td key={weekIndex} className={`p-3 text-center border-r bg-muted/20 ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
-                            <div className="italic text-muted-foreground/70 text-sm">
-                              Fora do grupo
+                            <div className="flex items-center justify-center gap-1 italic text-muted-foreground/70 text-sm">
+                              <span>Fora do grupo</span>
                             </div>
                           </td>
                         );
@@ -229,6 +329,7 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
         </div>
       </CardContent>
     </Card>
+    </>
   );
 };
 
