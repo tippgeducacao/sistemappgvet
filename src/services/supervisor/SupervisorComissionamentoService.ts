@@ -354,10 +354,32 @@ export class SupervisorComissionamentoService {
       console.log(`🚀🚀🚀 INICIANDO CÁLCULO SUPERVISOR COMISSIONAMENTO SEMANA ${semana} 🚀🚀🚀`);
       console.log(`🔍 CALCULANDO COMISSIONAMENTO: Supervisor ${supervisorId}, Ano ${ano}, Mês ${mes}, Semana ${semana}`);
       
+      // LOGS ESPECIAIS PARA SEMANA 1
+      if (semana === 1) {
+        console.log(`🔥 SEMANA 1 DETECTADA - LOGS ESPECIAIS ATIVADOS 🔥`);
+        console.log(`📊 Parâmetros recebidos:`, { supervisorId, ano, mes, semana });
+      }
+      
       // IMPORTANTE: Usar o mês passado como parâmetro para o cálculo das semanas
       const { inicioSemana, fimSemana } = this.calcularDatasSemanaDoMes(ano, mes, semana);
       
       console.log(`📅 SEMANA ${semana} - Período calculado: ${inicioSemana.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}`);
+
+      // LOGS ESPECIAIS PARA SEMANA 1 - DATAS
+      if (semana === 1) {
+        console.log(`🔥 SEMANA 1 - DATAS DETALHADAS:`, {
+          inicioSemana: {
+            iso: inicioSemana.toISOString(),
+            local: inicioSemana.toLocaleDateString('pt-BR'),
+            dia_semana: inicioSemana.getDay() // 0=domingo, 3=quarta
+          },
+          fimSemana: {
+            iso: fimSemana.toISOString(),
+            local: fimSemana.toLocaleDateString('pt-BR'),
+            dia_semana: fimSemana.getDay() // 2=terça
+          }
+        });
+      }
 
       // Buscar dados do supervisor
       const { data: supervisorData, error: supervisorError } = await supabase
@@ -370,10 +392,12 @@ export class SupervisorComissionamentoService {
 
       if (supervisorError || !supervisorData) {
         console.error('❌ Erro ao buscar dados do supervisor:', supervisorError);
+        if (semana === 1) console.log(`🔥 SEMANA 1 - ERRO NO SUPERVISOR`);
         return null;
       }
 
       console.log('✅ Supervisor encontrado:', supervisorData.name);
+      if (semana === 1) console.log(`🔥 SEMANA 1 - SUPERVISOR OK:`, supervisorData);
 
       // Buscar grupo do supervisor
       const { data: grupoData, error: grupoError } = await supabase
@@ -384,10 +408,12 @@ export class SupervisorComissionamentoService {
 
       if (grupoError || !grupoData) {
         console.error('❌ Erro ao buscar grupo do supervisor:', grupoError);
+        if (semana === 1) console.log(`🔥 SEMANA 1 - ERRO NO GRUPO`);
         return null;
       }
 
       console.log('✅ Grupo encontrado:', grupoData.nome_grupo);
+      if (semana === 1) console.log(`🔥 SEMANA 1 - GRUPO OK:`, grupoData);
 
       // Buscar TODOS os membros do grupo sem filtro de data
       console.log('🔍 DEBUG: Buscando TODOS os membros do grupo (sem filtro SQL):', {
@@ -396,6 +422,11 @@ export class SupervisorComissionamentoService {
         fimSemana: fimSemana.toISOString(),
         ano, mes, semana
       });
+
+      // LOGS ESPECIAIS PARA SEMANA 1 - BUSCA DE MEMBROS
+      if (semana === 1) {
+        console.log(`🔥 SEMANA 1 - INICIANDO BUSCA DE MEMBROS DO GRUPO ${grupoData.id}`);
+      }
 
       const { data: membrosData, error: membrosError } = await supabase
         .from('membros_grupos_supervisores')
@@ -421,14 +452,40 @@ export class SupervisorComissionamentoService {
         ativo: m.usuario?.ativo
       })));
 
+      // LOGS ESPECIAIS PARA SEMANA 1 - MEMBROS BRUTOS
+      if (semana === 1) {
+        console.log(`🔥 SEMANA 1 - MEMBROS BRUTOS ENCONTRADOS: ${membrosData?.length || 0}`);
+        console.log(`🔥 SEMANA 1 - DETALHES COMPLETOS DOS MEMBROS:`, membrosData?.map(m => ({
+          usuario_id: m.usuario_id,
+          nome: m.usuario?.name,
+          tipo: m.usuario?.user_type,
+          ativo: m.usuario?.ativo,
+          created_at: m.created_at,
+          left_at: m.left_at
+        })));
+      }
+
       if (membrosError || !membrosData) {
         console.error('❌ Erro ao buscar membros do grupo:', membrosError);
+        if (semana === 1) console.log(`🔥 SEMANA 1 - ERRO AO BUSCAR MEMBROS:`, membrosError);
         return null;
       }
 
       // FILTRO CORRETO: Membro estava ativo na semana se:
       // 1. Foi criado ANTES OU DURANTE a semana (created_at <= fim da semana)
       // 2. E não saiu DURANTE a semana (left_at é null OU left_at > início da semana)
+      
+      // LOGS ESPECIAIS PARA SEMANA 1 - INÍCIO DA FILTRAGEM
+      if (semana === 1) {
+        console.log(`🔥 SEMANA 1 - INICIANDO FILTRAGEM DOS MEMBROS VÁLIDOS PARA O PERÍODO`);
+        console.log(`🔥 SEMANA 1 - CRITÉRIOS DE FILTRAGEM:`, {
+          criterio1: 'Foi criado ANTES OU DURANTE a semana (created_at <= fim da semana)',
+          criterio2: 'E não saiu DURANTE a semana (left_at é null OU left_at > início da semana)',
+          inicioSemana: inicioSemana.toISOString(),
+          fimSemana: fimSemana.toISOString()
+        });
+      }
+      
       const membrosValidosParaPeriodo = membrosData.filter(membro => {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
@@ -448,14 +505,70 @@ export class SupervisorComissionamentoService {
           resultado: estaValido ? '✅ INCLUIR' : '❌ EXCLUIR'
         });
         
+        // LOGS ESPECIAIS PARA SEMANA 1 - FILTRAGEM INDIVIDUAL
+        if (semana === 1) {
+          console.log(`🔥 SEMANA 1 - FILTRO DETALHADO ${membro.usuario?.name}:`, {
+            created_at_original: membro.created_at,
+            criadoEm_objeto: criadoEm,
+            criadoEm_iso: criadoEm.toISOString(),
+            criadoEm_local: criadoEm.toLocaleDateString('pt-BR'),
+            fimSemana_iso: fimSemana.toISOString(),
+            fimSemana_local: fimSemana.toLocaleDateString('pt-BR'),
+            comparacao_criado_vs_fim: `${criadoEm.toISOString()} <= ${fimSemana.toISOString()} = ${foiCriadoAteOFimDaSemana}`,
+            left_at_original: membro.left_at,
+            saídaEm_objeto: saídaEm,
+            saídaEm_iso: saídaEm?.toISOString() || 'null',
+            inicioSemana_iso: inicioSemana.toISOString(),
+            comparacao_saida_vs_inicio: saídaEm ? `${saídaEm.toISOString()} > ${inicioSemana.toISOString()} = ${saídaEm > inicioSemana}` : 'sem data de saída',
+            naoSaiuAntesDaSemana,
+            resultado_final: estaValido ? '✅ VÁLIDO' : '❌ INVÁLIDO'
+          });
+        }
+        
         return estaValido;
       });
+      
       console.log(`🚨 SEMANA ${semana} - PERÍODO CALCULADO: ${inicioSemana.toLocaleDateString('pt-BR')} até ${fimSemana.toLocaleDateString('pt-BR')}`);
       console.log(`👥 SEMANA ${semana} - Membros válidos após filtro:`, membrosValidosParaPeriodo.length);
+      
+      // LOGS ESPECIAIS PARA SEMANA 1 - RESULTADO DA FILTRAGEM
+      if (semana === 1) {
+        console.log(`🔥 SEMANA 1 - RESULTADO DA FILTRAGEM:`, {
+          total_membros_brutos: membrosData.length,
+          membros_validos_periodo: membrosValidosParaPeriodo.length,
+          nomes_membros_validos: membrosValidosParaPeriodo.map(m => m.usuario?.name)
+        });
+        
+        if (membrosValidosParaPeriodo.length === 0) {
+          console.log(`🔥 SEMANA 1 - ⚠️⚠️⚠️ NENHUM MEMBRO VÁLIDO ENCONTRADO! ⚠️⚠️⚠️`);
+          console.log(`🔥 SEMANA 1 - INVESTIGAÇÃO DOS MOTIVOS:`);
+          membrosData.forEach(membro => {
+            const criadoEm = new Date(membro.created_at);
+            const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
+            const foiCriadoAteOFimDaSemana = criadoEm <= fimSemana;
+            const naoSaiuAntesDaSemana = !saídaEm || saídaEm > inicioSemana;
+            
+            console.log(`🔥 ANÁLISE ${membro.usuario?.name}:`, {
+              motivo_exclusao: !foiCriadoAteOFimDaSemana ? 'Criado APÓS fim da semana' : !naoSaiuAntesDaSemana ? 'Saiu ANTES do início da semana' : 'Outro motivo',
+              created_at: membro.created_at,
+              left_at: membro.left_at || 'nunca saiu',
+              periodo_semana: `${inicioSemana.toISOString()} a ${fimSemana.toISOString()}`
+            });
+          });
+        }
+      }
 
       if (membrosValidosParaPeriodo.length === 0) {
         console.log(`⚠️ SEMANA ${semana}: Nenhum membro válido encontrado para o período`);
         console.log(`❌ SEMANA ${semana}: Retornando null - supervisor não tinha equipe ativa nesta semana`);
+        
+        // LOGS ESPECIAIS PARA SEMANA 1 - RETORNO NULL POR FALTA DE MEMBROS
+        if (semana === 1) {
+          console.log(`🔥 SEMANA 1 - ❌❌❌ RETORNANDO NULL - NENHUM MEMBRO VÁLIDO! ❌❌❌`);
+          console.log(`🔥 SEMANA 1 - CAUSA: membrosValidosParaPeriodo.length === 0`);
+          console.log(`🔥 SEMANA 1 - ISSO SIGNIFICA QUE TODOS OS MEMBROS FORAM EXCLUÍDOS NO FILTRO DE PERÍODO`);
+        }
+        
         return null;
       }
 
@@ -474,6 +587,18 @@ export class SupervisorComissionamentoService {
       if (membrosAtivos.length === 0) {
         console.warn(`⚠️ SEMANA ${semana} - Após filtros, nenhum membro ativo encontrado`);
         console.log(`❌ SEMANA ${semana}: Retornando null - supervisor não tinha membros ativos nesta semana`);
+        
+        // LOGS ESPECIAIS PARA SEMANA 1 - SEGUNDO RETORNO NULL
+        if (semana === 1) {
+          console.log(`🔥 SEMANA 1 - ❌❌❌ RETORNANDO NULL - NENHUM MEMBRO ATIVO! ❌❌❌`);
+          console.log(`🔥 SEMANA 1 - CAUSA: membrosAtivos.length === 0 após filtro de ativo/tipo`);
+          console.log(`🔥 SEMANA 1 - MEMBROS VÁLIDOS ANTES DO FILTRO:`, membrosValidosParaPeriodo.map(m => ({
+            nome: m.usuario?.name,
+            ativo: m.usuario?.ativo,
+            tipo: m.usuario?.user_type
+          })));
+        }
+        
         return null;
       }
 
@@ -754,14 +879,27 @@ export class SupervisorComissionamentoService {
   private static calcularDatasSemanaDoMes(ano: number, mes: number, numeroSemana: number): { inicioSemana: Date; fimSemana: Date } {
     console.log(`📅 CALCULANDO SEMANA ${numeroSemana} de ${mes}/${ano}`);
     
+    // LOGS ESPECIAIS PARA SEMANA 1 - CÁLCULO DE DATAS
+    if (numeroSemana === 1) {
+      console.log(`🔥 SEMANA 1 - INICIANDO CÁLCULO DE DATAS DETALHADO`);
+      console.log(`🔥 SEMANA 1 - PARÂMETROS: ano=${ano}, mês=${mes}, semana=${numeroSemana}`);
+    }
+    
     // Encontrar todas as terças-feiras do mês
     const tercasFeiras: Date[] = [];
     const ultimoDiaDoMes = new Date(ano, mes, 0).getDate();
+    
+    if (numeroSemana === 1) {
+      console.log(`🔥 SEMANA 1 - ÚLTIMO DIA DO MÊS: ${ultimoDiaDoMes}`);
+    }
     
     for (let dia = 1; dia <= ultimoDiaDoMes; dia++) {
       const data = new Date(ano, mes - 1, dia);
       if (data.getDay() === 2) { // Terça-feira
         tercasFeiras.push(new Date(data));
+        if (numeroSemana === 1) {
+          console.log(`🔥 SEMANA 1 - TERÇA ENCONTRADA: ${data.toLocaleDateString('pt-BR')} (dia ${dia})`);
+        }
       }
     }
     
@@ -772,13 +910,33 @@ export class SupervisorComissionamentoService {
       const tercaAnterior = new Date(primeiraTercaDoMes);
       tercaAnterior.setDate(tercaAnterior.getDate() - 7);
       tercasFeiras.unshift(tercaAnterior);
+      
+      if (numeroSemana === 1) {
+        console.log(`🔥 SEMANA 1 - TERÇA ANTERIOR ADICIONADA: ${tercaAnterior.toLocaleDateString('pt-BR')} (pois primeira terça é dia ${primeiraTercaDoMes.getDate()} > 7)`);
+      }
     }
     
     console.log(`🗓️ Terças-feiras encontradas para ${mes}/${ano}:`, tercasFeiras.map(t => t.toLocaleDateString('pt-BR')));
     
+    if (numeroSemana === 1) {
+      console.log(`🔥 SEMANA 1 - TOTAL DE TERÇAS ENCONTRADAS: ${tercasFeiras.length}`);
+      console.log(`🔥 SEMANA 1 - LISTA COMPLETA DAS TERÇAS:`, tercasFeiras.map((t, i) => `Semana ${i + 1}: ${t.toLocaleDateString('pt-BR')}`));
+    }
+    
     // Verificar se a semana existe
     if (numeroSemana < 1 || numeroSemana > tercasFeiras.length) {
       console.error(`❌ Semana ${numeroSemana} não existe no mês ${mes}/${ano}. Temos ${tercasFeiras.length} semanas.`);
+      
+      if (numeroSemana === 1) {
+        console.log(`🔥 SEMANA 1 - ❌❌❌ ERRO: SEMANA 1 NÃO EXISTE! ❌❌❌`);
+        console.log(`🔥 SEMANA 1 - DIAGNÓSTICO:`, {
+          numeroSemana_solicitado: numeroSemana,
+          total_semanas_encontradas: tercasFeiras.length,
+          condicao_falhou: numeroSemana < 1 ? 'numeroSemana < 1' : 'numeroSemana > tercasFeiras.length',
+          mes_ano: `${mes}/${ano}`
+        });
+      }
+      
       return { 
         inicioSemana: new Date(ano, mes - 1, 1), 
         fimSemana: new Date(ano, mes - 1, 1) 
@@ -786,6 +944,10 @@ export class SupervisorComissionamentoService {
     }
     
     const tercaDaSemana = tercasFeiras[numeroSemana - 1];
+    
+    if (numeroSemana === 1) {
+      console.log(`🔥 SEMANA 1 - TERÇA DA SEMANA SELECIONADA: ${tercaDaSemana.toLocaleDateString('pt-BR')}`);
+    }
     
     // O início da semana é na quarta-feira ANTERIOR à terça (6 dias antes)
     const inicioSemana = new Date(tercaDaSemana);
@@ -797,6 +959,23 @@ export class SupervisorComissionamentoService {
     fimSemana.setHours(23, 59, 59, 999);
     
     console.log(`📊 SEMANA ${numeroSemana} FINAL: ${inicioSemana.toLocaleDateString('pt-BR')} (quarta) até ${fimSemana.toLocaleDateString('pt-BR')} (terça)`);
+    
+    if (numeroSemana === 1) {
+      console.log(`🔥 SEMANA 1 - RESULTADO FINAL DETALHADO:`, {
+        tercaDaSemana: tercaDaSemana.toLocaleDateString('pt-BR'),
+        inicioSemana: {
+          data: inicioSemana.toLocaleDateString('pt-BR'),
+          iso: inicioSemana.toISOString(),
+          dia_semana: inicioSemana.getDay() // deve ser 3 (quarta)
+        },
+        fimSemana: {
+          data: fimSemana.toLocaleDateString('pt-BR'),
+          iso: fimSemana.toISOString(),
+          dia_semana: fimSemana.getDay() // deve ser 2 (terça)
+        },
+        calculo_inicio: `${tercaDaSemana.toLocaleDateString('pt-BR')} - 6 dias = ${inicioSemana.toLocaleDateString('pt-BR')}`
+      });
+    }
     
     return { inicioSemana, fimSemana };
   }
