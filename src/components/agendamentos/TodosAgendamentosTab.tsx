@@ -410,22 +410,7 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
                   </div>
                 </TableCell>
                 <TableCell className="font-medium">
-                  <div className="space-y-1">
-                    <div>{agendamento.lead?.nome}</div>
-                    {agendamento.resultado_reuniao && (
-                      <Badge 
-                        variant={
-                          agendamento.resultado_reuniao === 'comprou' ? 'default' :
-                          agendamento.resultado_reuniao === 'nao_compareceu' ? 'destructive' : 'secondary'
-                        }
-                        className="text-xs"
-                      >
-                        {agendamento.resultado_reuniao === 'comprou' ? 'Comprou' :
-                         agendamento.resultado_reuniao === 'nao_compareceu' ? 'Não Compareceu' :
-                         'Compareceu e não comprou'}
-                      </Badge>
-                    )}
-                  </div>
+                  <div>{agendamento.lead?.nome}</div>
                 </TableCell>
                 <TableCell>{getSdrName(agendamento.sdr_id)}</TableCell>
                 <TableCell>{agendamento.vendedor?.name || '-'}</TableCell>
@@ -435,9 +420,24 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge className={getStatusColor(agendamento.status)}>
-                    {getStatusText(agendamento.status)}
-                  </Badge>
+                  <div className="space-y-1">
+                    {agendamento.resultado_reuniao ? (
+                      <Badge 
+                        variant={
+                          agendamento.resultado_reuniao === 'comprou' ? 'default' :
+                          agendamento.resultado_reuniao === 'nao_compareceu' ? 'destructive' : 'secondary'
+                        }
+                      >
+                        {agendamento.resultado_reuniao === 'comprou' ? 'Comprou' :
+                         agendamento.resultado_reuniao === 'nao_compareceu' ? 'Não Compareceu' :
+                         'Compareceu e não comprou'}
+                      </Badge>
+                    ) : (
+                      <Badge className={getStatusColor(agendamento.status)}>
+                        {getStatusText(agendamento.status)}
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
