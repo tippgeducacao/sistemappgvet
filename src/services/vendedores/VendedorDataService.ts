@@ -1,16 +1,16 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import type { Vendedor } from '../vendedoresService';
+import { filterUsersByInactivationDate } from '@/utils/userInactivationUtils';
 
 export class VendedorDataService {
-  static async fetchVendedores(): Promise<Vendedor[]> {
-    console.log('🔍 Buscando vendedores ativos...');
+  static async fetchVendedores(referenceDate?: Date): Promise<Vendedor[]> {
+    console.log('🔍 Buscando vendedores considerando data de inativação...');
     
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .in('user_type', ['vendedor', 'sdr'])
-      .eq('ativo', true)
       .order('name');
 
     if (error) {
@@ -18,12 +18,16 @@ export class VendedorDataService {
       throw error;
     }
     
-    console.log('✅ Vendedores encontrados:', data?.length);
-    console.log('📸 Vendedores com fotos:', data?.filter(v => v.photo_url).length);
+    // Filtrar usuários baseado na data de inativação
+    const filteredData = filterUsersByInactivationDate(data || [], referenceDate);
     
-    return (data || []).map(item => ({
+    console.log('✅ Vendedores encontrados (antes do filtro):', data?.length);
+    console.log('✅ Vendedores válidos (após filtro de inativação):', filteredData.length);
+    console.log('📸 Vendedores com fotos:', filteredData.filter(v => v.photo_url).length);
+    
+    return filteredData.map(item => ({
       ...item,
       nivel: item.nivel as 'junior' | 'pleno' | 'senior'
-    }));
+    })) as Vendedor[];
   }
 }

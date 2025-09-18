@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { filterUsersByInactivationDate, type UserProfile } from '@/utils/userInactivationUtils';
 
-export interface VendedorOnly {
-  id: string;
+export interface VendedorOnly extends UserProfile {
   name: string;
   email: string;
   user_type: string;
   photo_url?: string;
   created_at: string;
   updated_at: string;
-  ativo: boolean;
   nivel?: string;
 }
 
@@ -19,16 +18,15 @@ export const useVendedoresOnly = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchVendedores = async () => {
+  const fetchVendedores = async (referenceDate?: Date) => {
     try {
       setLoading(true);
-      console.log('🔄 Buscando apenas vendedores ativos...');
+      console.log('🔄 Buscando vendedores considerando data de inativação...');
       
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_type', 'vendedor')
-        .eq('ativo', true)
         .order('name');
 
       if (error) {
@@ -36,8 +34,12 @@ export const useVendedoresOnly = () => {
         throw new Error(`Erro ao buscar vendedores: ${error.message}`);
       }
 
-      console.log('✅ Vendedores encontrados:', data?.length || 0);
-      setVendedores(data || []);
+      // Filtrar usuários baseado na data de inativação
+      const filteredData = filterUsersByInactivationDate(data || [], referenceDate);
+
+      console.log('✅ Vendedores encontrados (antes do filtro):', data?.length || 0);
+      console.log('✅ Vendedores válidos (após filtro de inativação):', filteredData.length);
+      setVendedores(filteredData as VendedorOnly[]);
       
     } catch (error) {
       console.error('❌ Erro ao buscar vendedores:', error);

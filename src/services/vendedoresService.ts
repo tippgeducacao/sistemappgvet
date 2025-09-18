@@ -1,31 +1,29 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { VendedorCadastroService } from './vendedores/VendedorCadastroService';
+import { filterUsersByInactivationDate, type UserProfile } from '@/utils/userInactivationUtils';
 
-export interface Vendedor {
-  id: string;
+export interface Vendedor extends UserProfile {
   name: string;
   email: string;
   user_type: string;
   photo_url?: string;
   created_at: string;
   updated_at: string;
-  ativo: boolean;
   nivel?: string;
   pos_graduacoes?: string[] | null;
   horario_trabalho?: any;
 }
 
 export class VendedoresService {
-  static async fetchVendedores(): Promise<Vendedor[]> {
+  static async fetchVendedores(referenceDate?: Date): Promise<Vendedor[]> {
     try {
-      console.log('🔍 Buscando usuários...');
+      console.log('🔍 Buscando usuários considerando data de inativação...');
       
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .in('user_type', ['vendedor', 'admin', 'sdr', 'supervisor'])
-        .eq('ativo', true)
         .order('name');
 
       if (error) {
@@ -33,11 +31,15 @@ export class VendedoresService {
         throw new Error(`Erro ao buscar usuários: ${error.message}`);
       }
 
-      console.log('✅ Usuários encontrados:', data?.length || 0);
-      return (data || []).map(item => ({
+      // Filtrar usuários baseado na data de inativação
+      const filteredData = filterUsersByInactivationDate(data || [], referenceDate);
+
+      console.log('✅ Usuários encontrados (antes do filtro):', data?.length || 0);
+      console.log('✅ Usuários válidos (após filtro de inativação):', filteredData.length);
+      return filteredData.map(item => ({
         ...item,
         nivel: item.nivel as 'junior' | 'pleno' | 'senior'
-      }));
+      })) as Vendedor[];
       
     } catch (error) {
       console.error('❌ Erro inesperado ao buscar usuários:', error);

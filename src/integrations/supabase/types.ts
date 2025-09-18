@@ -1002,6 +1002,7 @@ export type Database = {
           email: string
           horario_trabalho: Json | null
           id: string
+          inativado_em: string | null
           name: string
           nivel: string | null
           photo_url: string | null
@@ -1017,6 +1018,7 @@ export type Database = {
           email: string
           horario_trabalho?: Json | null
           id: string
+          inativado_em?: string | null
           name: string
           nivel?: string | null
           photo_url?: string | null
@@ -1032,6 +1034,7 @@ export type Database = {
           email?: string
           horario_trabalho?: Json | null
           id?: string
+          inativado_em?: string | null
           name?: string
           nivel?: string | null
           photo_url?: string | null
