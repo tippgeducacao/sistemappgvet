@@ -52,24 +52,15 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
             );
             
             if (comissionamentoData) {
-              // Taxa de atingimento média da equipe
-              const taxaAtingimentoMedia = comissionamentoData.sdrsDetalhes?.length > 0
-                ? comissionamentoData.sdrsDetalhes.reduce((sum, sdr) => sum + sdr.percentualAtingimento, 0) / comissionamentoData.sdrsDetalhes.length
-                : 0;
+              // Usar diretamente os dados calculados pelo serviço
+              const taxaAtingimentoMedia = comissionamentoData.mediaPercentualAtingimento;
+              const comissaoValor = comissionamentoData.valorComissao;
               
-              console.log(`📊 ${supervisor.name} - Semana ${weekNumber}: Taxa média ${taxaAtingimentoMedia.toFixed(1)}%`);
-              
-              // Calcular comissão baseada na taxa de atingimento e variável semanal
-              const comissao = await ComissionamentoService.calcularComissao(
-                taxaAtingimentoMedia, 
-                100, // Meta é 100% (atingimento ideal)
-                variavelSemanal, 
-                'supervisor'
-              );
+              console.log(`📊 ${supervisor.name} - Semana ${weekNumber}: Taxa média ${taxaAtingimentoMedia.toFixed(1)}%, Comissão R$ ${comissaoValor.toFixed(2)}`);
               
               return {
                 taxaAtingimento: taxaAtingimentoMedia,
-                comissao: comissao.valor
+                comissao: comissaoValor
               };
             }
             

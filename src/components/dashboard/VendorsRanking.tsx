@@ -33,6 +33,7 @@ import VendedoresTableRow from './VendedoresTableRow';
 import VendedorExportTableRow from './VendedorExportTableRow';
 import SDRTableRow from './SDRTableRow';
 import SupervisorTableRow from './SupervisorTableRow';
+import SupervisorMetaColetiva from './SupervisorMetaColetiva';
 // Importação removida - fechamento automático por data
 import { useMesFechado } from '@/hooks/useHistoricoMensal';
 import { Archive, Calendar } from 'lucide-react';
@@ -1167,6 +1168,19 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                 </table>
               </div>
             </div>
+          )}
+
+          {/* Meta Coletiva - Supervisor */}
+          {vendedores.filter(v => v.user_type === 'supervisor').length > 0 && (
+            vendedores.filter(v => v.user_type === 'supervisor').map(supervisor => (
+              <SupervisorMetaColetiva
+                key={supervisor.id}
+                supervisorId={supervisor.id}
+                supervisorName={supervisor.name}
+                selectedMonth={selectedMonth}
+                getWeeksOfMonth={getWeeksOfMonth}
+              />
+            ))
           )}
         </div>
 
