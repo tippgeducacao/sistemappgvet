@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Users, MapPin, Filter, Eye, Edit2, Search, CalendarIcon } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Calendar, Users, MapPin, Filter, Eye, Edit2, Search, CalendarIcon, ChevronUp, ChevronDown, ChevronsUpDown, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -31,8 +32,79 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
   const [modalOpen, setModalOpen] = useState(false);
   const { isDiretor } = useUserRoles();
 
-  // Aplicar filtros
-  const agendamentosFiltrados = agendamentos.filter(agendamento => {
+  // Estado para ordenação
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Função para alternar ordenação
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Função para ordenar os dados
+  const sortData = (data: AgendamentoSDR[]) => {
+    if (!sortColumn) return data;
+
+    return [...data].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case 'created_at':
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+          break;
+        case 'data_agendamento':
+          aValue = new Date(a.data_agendamento);
+          bValue = new Date(b.data_agendamento);
+          break;
+        case 'nome':
+          aValue = a.lead?.nome || '';
+          bValue = b.lead?.nome || '';
+          break;
+        case 'vendedor':
+          aValue = a.vendedor?.name || '';
+          bValue = b.vendedor?.name || '';
+          break;
+        case 'sdr':
+          aValue = getSdrName(a.sdr_id);
+          bValue = getSdrName(b.sdr_id);
+          break;
+        case 'interesse':
+          aValue = a.pos_graduacao_interesse || '';
+          bValue = b.pos_graduacao_interesse || '';
+          break;
+        case 'status':
+          aValue = a.status || '';
+          bValue = b.status || '';
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  // Renderizar ícone de ordenação
+  const renderSortIcon = (column: string) => {
+    if (sortColumn !== column) {
+      return <ChevronsUpDown className="h-4 w-4" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ChevronUp className="h-4 w-4" />
+      : <ChevronDown className="h-4 w-4" />;
+  };
+
+  // Aplicar filtros e ordenação
+  const agendamentosFiltrados = sortData(agendamentos.filter(agendamento => {
     if (filtroSDR !== 'todos' && agendamento.sdr_id !== filtroSDR) return false;
     if (filtroStatus !== 'todos' && agendamento.status !== filtroStatus) return false;
     if (filtroResultado !== 'todos' && agendamento.resultado_reuniao !== filtroResultado) return false;
@@ -57,7 +129,7 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
     }
     
     return true;
-  });
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -246,112 +318,129 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {agendamentosFiltrados.map((agendamento) => (
-            <Card key={agendamento.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge className={getStatusColor(agendamento.status)}>
-                          {getStatusText(agendamento.status)}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          Agendado para {format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })} das {format(new Date(agendamento.data_agendamento), "HH:mm", { locale: ptBR })}
-                          {agendamento.data_fim_agendamento && 
-                            ` às ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm', { locale: ptBR })}`
-                          }
-                        </span>
-                      </div>
-                      
-                      {/* Data e hora de finalização */}
-                      {agendamento.data_resultado && (
-                        <div className="text-sm text-muted-foreground">
-                          <span className="font-medium">Finalizado em:</span>{' '}
-                          {format(new Date(agendamento.data_resultado), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </div>
-                      )}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort('created_at')}
+              >
+                <div className="flex items-center gap-1">
+                  Data de Criação
+                  {renderSortIcon('created_at')}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort('data_agendamento')}
+              >
+                <div className="flex items-center gap-1">
+                  Data de Agendamento
+                  {renderSortIcon('data_agendamento')}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort('nome')}
+              >
+                <div className="flex items-center gap-1">
+                  Nome
+                  {renderSortIcon('nome')}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort('sdr')}
+              >
+                <div className="flex items-center gap-1">
+                  SDR
+                  {renderSortIcon('sdr')}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort('vendedor')}
+              >
+                <div className="flex items-center gap-1">
+                  Vendedor
+                  {renderSortIcon('vendedor')}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort('interesse')}
+              >
+                <div className="flex items-center gap-1">
+                  Interesse
+                  {renderSortIcon('interesse')}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort('status')}
+              >
+                <div className="flex items-center gap-1">
+                  Status
+                  {renderSortIcon('status')}
+                </div>
+              </TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {agendamentosFiltrados.map((agendamento) => (
+              <TableRow key={agendamento.id} className="hover:bg-muted/50">
+                <TableCell className="font-medium">
+                  {agendamento.created_at && format(new Date(agendamento.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div>{format(new Date(agendamento.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(agendamento.data_agendamento), 'HH:mm')}
+                      {agendamento.data_fim_agendamento && 
+                        ` - ${format(new Date(agendamento.data_fim_agendamento), 'HH:mm')}`
+                      }
                     </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
-                          {agendamento.lead?.nome}
-                          {agendamento.created_at && (
-                            <span className="text-xs text-muted-foreground ml-2 font-normal">
-                              • criado em {format(new Date(agendamento.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                            </span>
-                          )}
-                        </span>
+                    {agendamento.data_resultado && (
+                      <div className="text-xs text-green-600 dark:text-green-400">
+                        Finalizado: {format(new Date(agendamento.data_resultado), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                       </div>
-
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{agendamento.pos_graduacao_interesse}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">SDR: {getSdrName(agendamento.sdr_id)}</span>
-                      </div>
-
-                      {agendamento.vendedor?.name && (
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">Vendedor: {agendamento.vendedor.name}</span>
-                        </div>
-                      )}
-
-
-                      {agendamento.observacoes && (
-                        <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
-                          {agendamento.observacoes}
-                        </div>
-                      )}
-
-                      {agendamento.resultado_reuniao && (
-                        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border">
-                          <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
-                            Resultado da Reunião
-                          </div>
-                          <div className="text-sm">
-                            <Badge variant={
-                              agendamento.resultado_reuniao === 'comprou' ? 'default' :
-                              agendamento.resultado_reuniao === 'nao_compareceu' ? 'destructive' : 'secondary'
-                            }>
-                              {agendamento.resultado_reuniao === 'comprou' ? 'Comprou' :
-                               agendamento.resultado_reuniao === 'nao_compareceu' ? 'Não Compareceu' :
-                               'Compareceu e não comprou'}
-                            </Badge>
-                            {agendamento.data_resultado && (
-                              <span className="ml-2 text-xs text-muted-foreground">
-                                em {format(new Date(agendamento.data_resultado), 'dd/MM/yyyy', { locale: ptBR })}
-                              </span>
-                            )}
-                          </div>
-                          {agendamento.observacoes_resultado && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {agendamento.observacoes_resultado}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 ml-4">
-                    {isDiretor && onEditarAgendamento && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onEditarAgendamento(agendamento)}
-                        title="Editar agendamento"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
                     )}
+                  </div>
+                </TableCell>
+                <TableCell className="font-medium">
+                  <div className="space-y-1">
+                    <div>{agendamento.lead?.nome}</div>
+                    {agendamento.resultado_reuniao && (
+                      <Badge 
+                        variant={
+                          agendamento.resultado_reuniao === 'comprou' ? 'default' :
+                          agendamento.resultado_reuniao === 'nao_compareceu' ? 'destructive' : 'secondary'
+                        }
+                        className="text-xs"
+                      >
+                        {agendamento.resultado_reuniao === 'comprou' ? 'Comprou' :
+                         agendamento.resultado_reuniao === 'nao_compareceu' ? 'Não Compareceu' :
+                         'Compareceu e não comprou'}
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>{getSdrName(agendamento.sdr_id)}</TableCell>
+                <TableCell>{agendamento.vendedor?.name || '-'}</TableCell>
+                <TableCell className="max-w-[200px]">
+                  <div className="truncate" title={agendamento.pos_graduacao_interesse}>
+                    {agendamento.pos_graduacao_interesse}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge className={getStatusColor(agendamento.status)}>
+                    {getStatusText(agendamento.status)}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -363,12 +452,22 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+                    {isDiretor && onEditarAgendamento && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEditarAgendamento(agendamento)}
+                        title="Editar agendamento"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       <AgendamentoDetailsModal
