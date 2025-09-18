@@ -32,6 +32,7 @@ import VendedorProfileModal from './VendedorProfileModal';
 import VendedoresTableRow from './VendedoresTableRow';
 import VendedorExportTableRow from './VendedorExportTableRow';
 import SDRTableRow from './SDRTableRow';
+import SupervisorTableRow from './SupervisorTableRow';
 // Importação removida - fechamento automático por data
 import { useMesFechado } from '@/hooks/useHistoricoMensal';
 import { Archive, Calendar } from 'lucide-react';
@@ -1114,6 +1115,50 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
                           index={index}
                           weeks={weeks}
                           agendamentos={agendamentosFiltrados}
+                          niveis={niveis}
+                        />
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Tabela de Supervisores */}
+          {vendedores.filter(v => v.user_type === 'supervisor').length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Supervisores</h3>
+              <div className="overflow-x-auto bg-card/50 backdrop-blur-sm rounded-lg border border-border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="p-2 text-left font-semibold">Supervisor</th>
+                      <th className="p-2 text-left font-semibold">Nível</th>
+                      <th className="p-2 text-left font-semibold">Meta Coletiva</th>
+                      <th className="p-2 text-left font-semibold">Variável Semanal</th>
+                      {getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1])).map(week => (
+                        <th key={week.week} className="p-2 text-left font-semibold text-xs">
+                          Semana {week.week}<br />
+                          <span className="text-xs opacity-70">{week.label}</span>
+                        </th>
+                      ))}
+                      <th className="p-2 text-left font-semibold">Atingimento % Médio</th>
+                      <th className="p-2 text-left font-semibold">Comissão Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vendedores.filter(v => v.user_type === 'supervisor').map((supervisor, index) => {
+                      const weeks = getWeeksOfMonth(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]));
+                      
+                      console.log(`🔍 ${supervisor.name} - Supervisor encontrado para planilha detalhada`);
+                      
+                      return (
+                        <SupervisorTableRow
+                          key={supervisor.id}
+                          supervisor={supervisor}
+                          index={index}
+                          weeks={weeks}
                           niveis={niveis}
                         />
                       );

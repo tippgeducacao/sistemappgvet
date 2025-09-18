@@ -107,7 +107,7 @@ const GerenciarNiveis: React.FC = () => {
           </div>
           <div>
             <Label className="text-sm font-medium text-muted-foreground">
-              {nivel.tipo_usuario === 'supervisor' ? 'Variável Mensal (Meta Coletiva)' : 'Variável Semanal'}
+              {nivel.tipo_usuario === 'supervisor' ? 'Variável Semanal' : 'Variável Semanal'}
             </Label>
             <p className="text-lg font-semibold">{formatCurrency(nivel.variavel_semanal)}</p>
           </div>
@@ -266,9 +266,9 @@ const GerenciarNiveis: React.FC = () => {
               </div>
                <div className="grid grid-cols-2 gap-4">
                  <div>
-                   <Label htmlFor="variavel_semanal">
-                     {editingNivel.tipo_usuario === 'supervisor' ? 'Variável Mensal (Meta Coletiva) (R$)' : 'Variável Semanal (R$)'}
-                   </Label>
+                    <Label htmlFor="variavel_semanal">
+                      {editingNivel.tipo_usuario === 'supervisor' ? 'Variável Semanal (R$)' : 'Variável Semanal (R$)'}
+                    </Label>
                    <Input
                      id="variavel_semanal"
                      name="variavel_semanal"
