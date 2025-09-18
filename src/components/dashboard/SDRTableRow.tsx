@@ -186,10 +186,12 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
         const percentualAtingido = metaSemanal > 0 ? (reunioes / metaSemanal) * 100 : 0;
         const multiplicador = getMultiplicadorSDR(percentualAtingido);
         
+        const hasValidData = reunioes > 0 && weeklyCommission > 0;
+        
         return (
-          <td key={weekIndex} className={`p-2 text-xs ${reunioes > 0 ? 'bg-green-50 border-l-2 border-l-green-400' : ''}`}>
-            <div className={reunioes > 0 ? 'font-semibold text-green-900' : ''}>{reunioes} reuniões ({percentage}%) x {multiplicador.toFixed(1)}</div>
-            <div className={`opacity-70 ${weeklyCommission > 0 ? 'text-green-700 font-medium' : 'text-green-600'}`}>R$ {weeklyCommission.toFixed(2)}</div>
+          <td key={weekIndex} className={`p-2 text-xs ${hasValidData ? 'bg-primary/5 border-l border-l-primary/30' : ''}`}>
+            <div className={hasValidData ? 'font-medium text-primary' : ''}>{reunioes} reuniões ({percentage}%) x {multiplicador.toFixed(1)}</div>
+            <div className={`opacity-70 ${weeklyCommission > 0 ? 'text-green-600 font-medium' : ''}`}>R$ {weeklyCommission.toFixed(2)}</div>
           </td>
         );
       })}
