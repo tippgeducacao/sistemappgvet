@@ -85,6 +85,13 @@ export class ComissionamentoService {
     const percentualBruto = (pontosObtidos / metaSemanal) * 100;
     const percentual = Math.floor(percentualBruto); // USAR FLOOR para seleção de regra
     const regras = regrasPreCarregadas || await this.fetchRegras(tipoUsuario);
+
+    // Para SUPERVISOR, usar SEMPRE as regras de VENDEDOR (alinhado ao negócio)
+    let regrasUsadas = regras;
+    if (tipoUsuario === 'supervisor') {
+      console.warn('ℹ️ Supervisor: usando regras de VENDEDOR para cálculo.');
+      regrasUsadas = await this.fetchRegras('vendedor');
+    }
     
     console.log('🔢 DEBUG COMISSIONAMENTO:', {
       tipoUsuario,
@@ -93,8 +100,8 @@ export class ComissionamentoService {
       variabelSemanal,
       percentualBruto,
       percentualArredondado: percentual,
-      regras: regras.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`),
-      totalRegras: regras.length
+      regras: regrasUsadas.map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`),
+      totalRegras: regrasUsadas.length
     });
     
     // Se não há regras, criar regras padrão para SDR
@@ -175,7 +182,7 @@ export class ComissionamentoService {
     let regraAplicavel = null;
     
     // Ordenar regras por percentual_minimo DESC para pegar a mais específica primeiro
-    const regrasOrdenadas = [...regras].sort((a, b) => b.percentual_minimo - a.percentual_minimo);
+    const regrasOrdenadas = [...regrasUsadas].sort((a, b) => b.percentual_minimo - a.percentual_minimo);
     
     for (const regra of regrasOrdenadas) {
       // Para percentuais >= 999 (ou seja, muito altos) - deve ser verificado primeiro
