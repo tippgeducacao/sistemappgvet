@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { SupervisorComissionamentoService, type SupervisorComissionamentoData } from '@/services/supervisor/SupervisorComissionamentoService';
+import { useSupervisorComissionamentoBatch } from '@/hooks/useSupervisorComissionamentoBatch';
+import type { SupervisorComissionamentoData } from '@/services/supervisor/SupervisorComissionamentoService';
 import SupervisorDebugInfo from './SupervisorDebugInfo';
 
 interface SupervisorMetaColetivaProps {
@@ -18,12 +19,17 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
   selectedMonth,
   getWeeksOfMonth
 }) => {
-  const [weeklyData, setWeeklyData] = useState<SupervisorComissionamentoData[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const currentYear = parseInt(selectedMonth.split('-')[0]);
   const currentMonth = parseInt(selectedMonth.split('-')[1]);
   const weeks = getWeeksOfMonth(currentYear, currentMonth);
+  
+  // Usar hook otimizado com batch processing
+  const semanas = weeks.map((_, index) => index + 1);
+  const { 
+    data: weeklyData = [], 
+    isLoading: loading, 
+    error 
+  } = useSupervisorComissionamentoBatch(supervisorId, currentYear, currentMonth, semanas);
 
   // Função para detectar qual semana é realmente a atual
   const getCurrentWeekIndex = () => {
@@ -56,106 +62,38 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
 
   const currentMonthName = monthNames[currentMonth - 1];
 
-  useEffect(() => {
-    const fetchWeeklyData = async () => {
-      setLoading(true);
-      const data: SupervisorComissionamentoData[] = [];
-
-      console.log('🔍 SupervisorMetaColetiva - Iniciando busca de dados semanais para:', {
-        supervisorId,
+  // Log de performance para monitoramento
+  React.useEffect(() => {
+    if (!loading && weeklyData.length > 0) {
+      console.log('📊 OTIMIZADO: Meta coletiva carregada:', {
         supervisorName,
-        currentYear,
-        currentMonth,
-        totalWeeks: weeks.length
-      });
-
-      for (let weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
-        const weekNumber = weekIndex + 1;
-        
-        console.log(`📅 SupervisorMetaColetiva - Buscando SEMANA ${weekNumber}:`, {
-          week: weeks[weekIndex],
-          supervisorId,
-          currentYear,
-          currentMonth
-        });
-        
-        try {
-          const comissionamentoData = await SupervisorComissionamentoService.calcularComissionamentoSupervisor(
-            supervisorId,
-            currentYear,
-            currentMonth,
-            weekNumber
-          );
-
-          console.log(`📊 SupervisorMetaColetiva - SEMANA ${weekNumber} resultado:`, {
-            temDados: !!comissionamentoData,
-            totalMembros: comissionamentoData?.sdrsDetalhes?.length || 0,
-            membros: comissionamentoData?.sdrsDetalhes?.map(sdr => ({
-              nome: sdr.nome,
-              id: sdr.id,
-              reunioes: sdr.reunioesRealizadas,
-              meta: sdr.metaSemanal,
-              percentual: sdr.percentualAtingimento
-            })) || []
-          });
-
-          if (comissionamentoData) {
-            data.push(comissionamentoData);
-          } else {
-            console.log(`⚠️ SupervisorMetaColetiva - SEMANA ${weekNumber}: Sem dados (supervisor sem equipe)`);
-            // Adicionar um objeto vazio para manter o índice da semana
-            data.push({
-              supervisorId,
-              nome: supervisorName,
-              grupoId: '',
-              nomeGrupo: '',
-              ano: currentYear,
-              semana: weekNumber,
-              totalSDRs: 0,
-              mediaPercentualAtingimento: 0,
-              variabelSemanal: 0,
-              multiplicador: 0,
-              valorComissao: 0,
-              sdrsDetalhes: []
-            });
-          }
-        } catch (error) {
-          console.error(`❌ SupervisorMetaColetiva - Erro ao buscar dados da semana ${weekNumber}:`, error);
-          // Adicionar um objeto vazio para manter o índice da semana
-          data.push({
-            supervisorId,
-            nome: supervisorName,
-            grupoId: '',
-            nomeGrupo: '',
-            ano: currentYear,
-            semana: weekNumber,
-            totalSDRs: 0,
-            mediaPercentualAtingimento: 0,
-            variabelSemanal: 0,
-            multiplicador: 0,
-            valorComissao: 0,
-            sdrsDetalhes: []
-          });
-        }
-      }
-
-      console.log('📋 SupervisorMetaColetiva - Dados semanais completos:', {
-        totalSemanas: data.length,
-        resumo: data.map((d, i) => ({
-          semana: i + 1,
-          temMembros: d.sdrsDetalhes?.length > 0,
-          membros: d.sdrsDetalhes?.length || 0
+        totalSemanas: weeklyData.length,
+        membrosUnicos: [...new Set(weeklyData.flatMap(w => w.sdrsDetalhes.map(s => s.id)))].length,
+        semanas: weeklyData.map(w => ({ 
+          semana: w.semana, 
+          membros: w.totalSDRs,
+          media: w.mediaPercentualAtingimento.toFixed(1) + '%'
         }))
       });
-
-      setWeeklyData(data);
-      setLoading(false);
-    };
-
-    if (supervisorId && weeks.length > 0) {
-      fetchWeeklyData();
     }
-  }, [supervisorId, currentYear, currentMonth, weeks.length]);
+  }, [loading, weeklyData, supervisorName]);
+
+  // Tratar erros
+  if (error) {
+    console.error('❌ Erro ao carregar dados da meta coletiva:', error);
+    return (
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Meta coletiva - Supervisor {supervisorName}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <div className="text-destructive">Erro ao carregar dados. Tente novamente.</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Calcular taxa de atingimento média por semana (baseado na média dos membros)
   const taxasAtingimentoMediasPorSemana = weeks.map((week, index) => {
