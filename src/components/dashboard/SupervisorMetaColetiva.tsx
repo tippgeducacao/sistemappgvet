@@ -274,26 +274,34 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                     </td>
                     {dadosMembroPorSemana.map((dados, weekIndex) => {
                       const isCurrentWeek = weekIndex === 3;
+                      const weekInfo = weeks[weekIndex];
+                      const endDate: Date | undefined = weekInfo?.endDate ? new Date(weekInfo.endDate) : undefined;
+                      const now = new Date();
+                      const isFutureWeek = endDate ? endDate > now : false;
 
-                      // Lógica melhorada para detectar "Fora do grupo"
-                      // 1. Se não há dados para este membro nesta semana
-                      // 2. Se é a última semana (semana 5 = index 4) e todos estão com 0.0%
-                      // 3. Se o membro tem 0 reuniões E é uma semana no futuro
-                      
-                      const isOutOfGroup = !dados || 
-                        (weekIndex === 4 && dados?.reunioesRealizadas === 0) || // Semana 5 com 0 reuniões
-                        (dados?.reunioesRealizadas === 0 && dados?.percentualAtingimento === 0 && weekIndex > 3); // Futuras com 0
-
-                      if (isOutOfGroup) {
+                      // Regra CORRETA: "Fora do grupo" SOMENTE quando a pessoa NÃO estava no grupo naquela semana (passada)
+                      if (!dados) {
+                        if (isFutureWeek) {
+                          // Semana futura: mostrar progresso 0% (não marcar como fora do grupo)
+                          return (
+                            <td key={weekIndex} className={`p-3 text-center border-r ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
+                              <div className={`font-medium ${isCurrentWeek ? 'text-primary font-bold' : ''}`}>
+                                0/{metaSemanal} (0.0%)
+                              </div>
+                            </td>
+                          );
+                        }
+                        // Semana passada e sem dados -> fora do grupo
                         return (
                           <td key={weekIndex} className={`p-3 text-center border-r bg-muted/20 ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
-                            <div className="flex items-center justify-center gap-1 italic text-muted-foreground/70 text-sm">
-                              <span>Fora do grupo</span>
+                            <div className="italic text-muted-foreground/70 text-sm">
+                              Fora do grupo
                             </div>
                           </td>
                         );
                       }
 
+                      // Tem dados: exibir valores
                       const reunioesRealizadas = dados.reunioesRealizadas || 0;
                       const percentual = dados.percentualAtingimento || 0;
 
