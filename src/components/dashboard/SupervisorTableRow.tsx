@@ -133,10 +133,12 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
           );
         }
         
+        const hasNonZeroValues = attainment > 0 || weeklyCommission > 0;
+        
         return (
-          <td key={weekIndex} className="p-2 text-xs">
-            <div>{attainment.toFixed(1)}% atingimento</div>
-            <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
+          <td key={weekIndex} className={`p-2 text-xs ${hasNonZeroValues ? 'bg-purple-50 border-l-2 border-l-purple-400' : ''}`}>
+            <div className={hasNonZeroValues ? 'font-semibold text-purple-900' : ''}>{attainment.toFixed(1)}% atingimento</div>
+            <div className={`opacity-70 ${weeklyCommission > 0 ? 'text-green-700 font-medium' : 'text-green-600'}`}>R$ {weeklyCommission.toFixed(2)}</div>
           </td>
         );
       })}

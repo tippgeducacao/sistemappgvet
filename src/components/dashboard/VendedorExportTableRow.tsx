@@ -131,9 +131,9 @@ const VendedorExportTableRow: React.FC<VendedorExportTableRowProps> = ({
         const multiplicador = weeklyMultipliers[weekIndex] || 0;
         
         return (
-          <td key={weekIndex} className="p-2 text-xs">
-            <div>{points.toFixed(1)}pts ({percentage}%) x {multiplicador.toFixed(1)}</div>
-            <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
+          <td key={weekIndex} className={`p-2 text-xs ${points > 0 ? 'bg-blue-50 border-l-2 border-l-blue-400' : ''}`}>
+            <div className={points > 0 ? 'font-semibold text-blue-900' : ''}>{points.toFixed(1)}pts ({percentage}%) x {multiplicador.toFixed(1)}</div>
+            <div className={`opacity-70 ${weeklyCommission > 0 ? 'text-green-700 font-medium' : 'text-green-600'}`}>R$ {weeklyCommission.toFixed(2)}</div>
           </td>
         );
       })}
