@@ -189,7 +189,7 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
         return (
           <td key={weekIndex} className="p-2 text-xs">
             <div>{reunioes} reuniões ({percentage}%) x {multiplicador.toFixed(1)}</div>
-            <div className="opacity-70">R$ {weeklyCommission.toFixed(2)}</div>
+            <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
           </td>
         );
       })}

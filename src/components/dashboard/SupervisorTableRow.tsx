@@ -136,7 +136,7 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
         return (
           <td key={weekIndex} className="p-2 text-xs">
             <div>{attainment.toFixed(1)}% atingimento</div>
-            <div className="opacity-70">R$ {weeklyCommission.toFixed(2)}</div>
+            <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
           </td>
         );
       })}

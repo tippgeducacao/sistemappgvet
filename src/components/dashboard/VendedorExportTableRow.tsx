@@ -133,7 +133,7 @@ const VendedorExportTableRow: React.FC<VendedorExportTableRowProps> = ({
         return (
           <td key={weekIndex} className="p-2 text-xs">
             <div>{points.toFixed(1)}pts ({percentage}%) x {multiplicador.toFixed(1)}</div>
-            <div className="opacity-70">R$ {weeklyCommission.toFixed(2)}</div>
+            <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
           </td>
         );
       })}
