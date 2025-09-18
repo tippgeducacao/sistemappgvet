@@ -35,9 +35,6 @@ export class SupervisorComissionamentoBatchService {
   ): Promise<SupervisorComissionamentoData[]> {
     console.log(`🚀 BATCH: Iniciando cálculo paralelo para ${semanas.length} semanas`);
     
-    // Limpar cache para garantir dados atualizados
-    this.limparCache();
-    
     // Buscar dados do supervisor e grupo uma única vez
     const [supervisorData, grupoData] = await Promise.all([
       this.buscarSupervisor(supervisorId),
@@ -49,24 +46,8 @@ export class SupervisorComissionamentoBatchService {
       return [];
     }
 
-    console.log(`✅ BATCH: Supervisor encontrado:`, {
-      id: supervisorData.id,
-      nome: supervisorData.name,
-      grupo: grupoData.nome_grupo
-    });
-
     // Buscar todos os membros uma única vez
     const todosMembrosMes = await this.buscarTodosMembrosDoMes(grupoData.id);
-    
-    console.log(`👥 BATCH: Membros do grupo encontrados:`, {
-      total: todosMembrosMes.length,
-      membros: todosMembrosMes.map(m => ({
-        id: m.usuario_id,
-        nome: m.usuario?.name,
-        tipo: m.usuario?.user_type,
-        ativo: m.usuario?.ativo
-      }))
-    });
     
     // Pre-carregar níveis uma única vez
     await this.preCarregarNiveis();
@@ -197,16 +178,7 @@ export class SupervisorComissionamentoBatchService {
       fimSemana
     );
 
-    console.log(`👥 Membros válidos para semana ${semana}:`, {
-      total: membrosValidosParaSemana.length,
-      membros: membrosValidosParaSemana.map(m => ({
-        nome: m.usuario?.name,
-        tipo: m.usuario?.user_type
-      }))
-    });
-
     if (membrosValidosParaSemana.length === 0) {
-      console.log(`⚠️ Nenhum membro válido para semana ${semana} - retornando resultado vazio`);
       return this.criarResultadoVazio(supervisorData, grupoData, weekData);
     }
 
@@ -217,15 +189,9 @@ export class SupervisorComissionamentoBatchService {
       this.buscarTodasRespostasFormulario(membrosValidosParaSemana)
     ]);
 
-    console.log(`📊 Dados coletados para semana ${semana}:`, {
-      agendamentos: agendamentosPorMembro.size,
-      vendas: vendasPorMembro.size,
-      respostas: respostasFormulario.length
-    });
-
     // Processar todos os membros em paralelo
     const sdrsDetalhes = await Promise.all(
-      membrosValidosParaSemana.map(membro => 
+      membrosValidosParaSemana.map(membro =>
         this.processarMembroOtimizado(
           membro,
           inicioSemana,
@@ -236,16 +202,6 @@ export class SupervisorComissionamentoBatchService {
         )
       )
     );
-
-    console.log(`✅ SDRs processados para semana ${semana}:`, {
-      total: sdrsDetalhes.length,
-      detalhes: sdrsDetalhes.map(sdr => ({
-        nome: sdr.nome,
-        reunioes: sdr.reunioesRealizadas,
-        meta: sdr.metaSemanal,
-        percentual: sdr.percentualAtingimento.toFixed(1) + '%'
-      }))
-    });
 
     // Calcular métricas finais
     const mediaPercentualAtingimento = this.calcularMediaPercentual(sdrsDetalhes);
@@ -303,14 +259,7 @@ export class SupervisorComissionamentoBatchService {
       .filter(m => ['sdr', 'sdr_inbound', 'sdr_outbound'].includes(m.usuario?.user_type))
       .map(m => m.usuario_id);
 
-    console.log(`🔍 BATCH buscarTodosAgendamentos:`, {
-      totalMembros: membros.length,
-      sdrIds: sdrIds.length,
-      periodo: `${inicioSemana.toLocaleDateString()} - ${fimSemana.toLocaleDateString()}`
-    });
-
     if (sdrIds.length === 0) {
-      console.log('⚠️ Nenhum SDR encontrado nos membros');
       return new Map();
     }
 
@@ -319,20 +268,14 @@ export class SupervisorComissionamentoBatchService {
       .select('sdr_id, id, data_agendamento, resultado_reuniao, status')
       .in('sdr_id', sdrIds)
       .gte('data_agendamento', inicioSemana.toISOString())
-      .lte('data_agendamento', fimSemana.toISOString());
+      .lte('data_agendamento', fimSemana.toISOString())
+      .in('resultado_reuniao', ['compareceu', 'comprou', 'compareceu_nao_comprou'])
+      .eq('status', 'finalizado');
 
     if (error) {
       console.error('❌ Erro ao buscar agendamentos:', error);
       return new Map();
     }
-
-    console.log(`📊 Agendamentos encontrados:`, {
-      total: agendamentos?.length || 0,
-      porSDR: agendamentos?.reduce((acc, curr) => {
-        acc[curr.sdr_id] = (acc[curr.sdr_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {}
-    });
 
     // Agrupar por sdr_id
     const agendamentosPorMembro = new Map<string, any[]>();
@@ -444,7 +387,11 @@ export class SupervisorComissionamentoBatchService {
     let reunioesRealizadas = 0;
     
     if (['sdr', 'sdr_inbound', 'sdr_outbound'].includes(membroTipo)) {
-      reunioesRealizadas = agendamentos.length;
+      // Para SDRs, contar apenas reuniões com resultado válido e status finalizado
+      reunioesRealizadas = agendamentos.filter(agendamento => 
+        ['compareceu', 'comprou', 'compareceu_nao_comprou'].includes(agendamento.resultado_reuniao) &&
+        agendamento.status === 'finalizado'
+      ).length;
     } else if (membroTipo === 'vendedor') {
       // Filtrar vendas que estão na semana usando data efetiva
       const vendasNaSemana = vendas.filter(venda => 
