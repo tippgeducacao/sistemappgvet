@@ -1,8 +1,8 @@
 import React from 'react';
-import SupervisorDashboardNovo from './SupervisorDashboardNovo';
+import SupervisorDashboardAtualizado from './SupervisorDashboardAtualizado';
 
 const SupervisorDashboard: React.FC = () => {
-  return <SupervisorDashboardNovo />;
+  return <SupervisorDashboardAtualizado />;
 };
 
 export default SupervisorDashboard;

@@ -7,7 +7,7 @@ import { useQueries } from '@tanstack/react-query';
 import { useGruposSupervisores } from '@/hooks/useGruposSupervisores';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useMetasSemanais } from '@/hooks/useMetasSemanais';
-import { useSupervisorComissionamento } from '@/hooks/useSupervisorComissionamento';
+import { useSupervisorComissionamentoBatch } from '@/hooks/useSupervisorComissionamentoBatch';
 import UserProfileModal from '@/components/UserProfileModal';
 import VendedorProfileModal from '@/components/dashboard/VendedorProfileModal';
 import SDRProfileModal from '@/components/dashboard/SDRProfileModal';
@@ -197,35 +197,20 @@ const SupervisorDashboardAtualizado: React.FC = () => {
     return grupo;
   }, [user, grupos]);
 
-  // Buscar dados para todas as semanas do mês usando useQueries
-  const semanaQueriesResults = useQueries({
-    queries: (semanasDoMes || []).map(semana => ({
-      queryKey: ['supervisor-comissionamento', user?.id, selectedYear, selectedMonth, semana],
-      queryFn: async () => {
-        const { SupervisorComissionamentoService } = await import('@/services/supervisor/SupervisorComissionamentoService');
-        return SupervisorComissionamentoService.calcularComissionamentoSupervisor(user?.id || '', selectedYear, selectedMonth, semana);
-      },
-      enabled: !!user?.id && !!selectedYear && !!selectedMonth && !!semana,
-      staleTime: 1000 * 60 * 5, // 5 minutos
-    }))
-  });
-  
-  // Mapear resultados para formato esperado
-  const semanaQueries = (semanasDoMes || []).map((semana, index) => ({
-    semana,
-    data: semanaQueriesResults[index] || { isLoading: true, data: null }
-  }));
-  
-  // Coletar status de loading de todos os queries
-  const supervisorLoading = semanaQueries.some(query => query.data.isLoading);
-  
-  // Buscar dados da semana atual para o card de resumo
-  const { data: supervisorData } = useSupervisorComissionamento(
+  // Usar hook otimizado com batch processing
+  const semanas = semanasDoMes || [];
+  const { 
+    data: weeklyData = [], 
+    isLoading: supervisorLoading 
+  } = useSupervisorComissionamentoBatch(
     user?.id || '', 
     selectedYear, 
     selectedMonth, 
-    semanaAtual
+    semanas
   );
+
+  // Dados da semana atual para o card de resumo
+  const supervisorData = weeklyData.find(data => data.semana === semanaAtual);
 
   // Log para debug
   console.log('🔍 Dashboard params:', {
@@ -490,7 +475,7 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                           {metaSemanal}
                         </td>
                         
-                         {/* Colunas das Semanas */}
+                        {/* Colunas das Semanas */}
                          {(semanasDoMes || []).map((semana) => {
                            const { start, end } = getWeekDates(selectedYear, selectedMonth, semana);
                            const today = new Date();
@@ -501,32 +486,42 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                            const isCurrentWeek = (currentAno === selectedYear && currentMes === selectedMonth) &&
                              (start <= currentWeekEnd && end >= currentWeekStart);
                            
-                            // Buscar dados específicos desta semana
-                            const semanaQuery = semanaQueries.find(sq => sq.semana === semana);
-                            const semanaData = semanaQuery?.data.data;
+                            // Buscar dados específicos desta semana nos dados otimizados
+                            const semanaData = weeklyData.find(data => data.semana === semana);
                             const membroDetalhe = semanaData?.sdrsDetalhes?.find(sdr => sdr.id === membro.usuario_id);
                             
-                             console.log(`🔍 DEBUG SEMANA ${semana} - ${membro.usuario?.name}:`, {
-                               semanaQuery: !!semanaQuery,
-                               dataLoading: semanaQuery?.data?.isLoading,
-                               hasData: !!semanaQuery?.data?.data,
-                               semanaData: !!semanaData,
-                               totalSDRs: semanaData?.sdrsDetalhes?.length || 0,
-                               membroEncontrado: !!membroDetalhe,
-                               membroId: membro.usuario_id.substring(0, 8),
-                               sdrsIds: semanaData?.sdrsDetalhes?.map(sdr => sdr.id.substring(0, 8)) || [],
-                               membroDetalhe: membroDetalhe ? {
-                                 nome: membroDetalhe.nome,
-                                 reunioes: membroDetalhe.reunioesRealizadas,
-                                 meta: membroDetalhe.metaSemanal,
-                                 percentual: membroDetalhe.percentualAtingimento
-                               } : null
-                             });
+                            // Verificar se é uma semana futura
+                            const endDate = new Date(end);
+                            const now = new Date();
+                            const isFutureWeek = endDate > now;
                             
                             return (
                               <td key={semana} className={`py-4 px-4 text-center border-l border-border ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
                                 <div className={`text-sm ${isCurrentWeek ? 'font-semibold text-primary' : 'text-foreground'}`}>
-                                  {membroDetalhe ? (
+                                  {!membroDetalhe ? (
+                                    isFutureWeek ? (
+                                      // Semana futura: mostrar progresso 0% (não marcar como fora do grupo)
+                                      (() => {
+                                        const userType = membro.usuario?.user_type;
+                                        const nivel = membro.usuario?.nivel || 'junior';
+                                        let metaPadrao = 0;
+                                        
+                                        if (userType === 'vendedor') {
+                                          metaPadrao = nivel === 'junior' ? 7 : nivel === 'pleno' ? 8 : nivel === 'senior' ? 10 : 7;
+                                        } else {
+                                          metaPadrao = nivel === 'junior' ? 55 : nivel === 'pleno' ? 70 : nivel === 'senior' ? 85 : 55;
+                                        }
+                                        
+                                        return `0/${metaPadrao} (0.0%)`;
+                                      })()
+                                    ) : (
+                                      // Semana passada e sem dados -> fora do grupo
+                                      <div className="italic text-muted-foreground/70 text-xs">
+                                        Fora do grupo
+                                      </div>
+                                    )
+                                  ) : (
+                                    // Tem dados: exibir valores
                                     <>
                                       {membro.usuario?.user_type === 'vendedor' 
                                         ? (membroDetalhe.reunioesRealizadas % 1 === 0 
@@ -535,23 +530,6 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                                         : membroDetalhe.reunioesRealizadas.toString()
                                       }/{membroDetalhe.metaSemanal} ({membroDetalhe.percentualAtingimento.toFixed(1)}%)
                                     </>
-                                  ) : (
-                                    // FALLBACK: Se não há dados específicos da semana, mostrar 0 com meta padrão baseada no tipo e nível
-                                    (() => {
-                                      const userType = membro.usuario?.user_type;
-                                      const nivel = membro.usuario?.nivel || 'junior';
-                                      let metaPadrao = 0;
-                                      
-                                      if (userType === 'vendedor') {
-                                        metaPadrao = nivel === 'junior' ? 7 : nivel === 'pleno' ? 8 : nivel === 'senior' ? 10 : 7;
-                                      } else {
-                                        metaPadrao = nivel === 'junior' ? 55 : nivel === 'pleno' ? 70 : nivel === 'senior' ? 85 : 55;
-                                      }
-                                      
-                                      console.log(`⚠️ FALLBACK SEMANA ${semana} - ${membro.usuario?.name}: usando meta padrão ${metaPadrao} para ${userType} ${nivel}`);
-                                      
-                                      return `0/${metaPadrao} (0.0%)`;
-                                    })()
                                   )}
                                 </div>
                               </td>
@@ -576,9 +554,8 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                        const isCurrentWeek = (currentAno === selectedYear && currentMes === selectedMonth) &&
                          (start <= currentWeekEnd && end >= currentWeekStart);
                        
-                       // Buscar dados específicos desta semana
-                       const semanaQuery = semanaQueries.find(sq => sq.semana === semana);
-                       const semanaData = semanaQuery?.data.data;
+                       // Buscar dados específicos desta semana nos dados otimizados
+                       const semanaData = weeklyData.find(data => data.semana === semana);
                        
                        // Calcular média dos percentuais desta semana
                        const percentualMedia = semanaData?.mediaPercentualAtingimento || 0;
