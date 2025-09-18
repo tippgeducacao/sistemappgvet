@@ -122,30 +122,63 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
     regrasComissionamento
   });
 
+  // Buscar variável semanal do supervisor
+  const { data: nivelSupervisorData } = useQuery({
+    queryKey: ['nivel-supervisor', supervisorId],
+    queryFn: async () => {
+      const { data: supervisorProfile } = await supabase
+        .from('profiles')
+        .select('nivel')
+        .eq('id', supervisorId)
+        .maybeSingle();
+        
+      if (!supervisorProfile?.nivel) return null;
+      
+      const { data: nivelData } = await supabase
+        .from('niveis_vendedores')
+        .select('variavel_semanal')
+        .eq('nivel', supervisorProfile.nivel)
+        .eq('tipo_usuario', 'supervisor')
+        .maybeSingle();
+        
+      return nivelData;
+    },
+    enabled: !!supervisorId
+  });
+
   // Calcular comissão do supervisor baseado na média
   let comissaoSupervisor = 0;
+  let regraAplicavel = null;
   
   // Encontrar a regra de comissionamento apropriada
-  const regraAplicavel = regrasComissionamento.find(regra => 
-    mediaPercentual >= regra.percentual_minimo && mediaPercentual <= regra.percentual_maximo
-  );
+  if (regrasComissionamento && regrasComissionamento.length > 0) {
+    regraAplicavel = regrasComissionamento.find(regra => 
+      mediaPercentual >= regra.percentual_minimo && mediaPercentual <= regra.percentual_maximo
+    );
+  }
   
   console.log('🎯 Regra aplicável:', {
     mediaPercentual,
     regraAplicavel,
-    todasRegras: regrasComissionamento
+    todasRegras: regrasComissionamento,
+    variavel_semanal: nivelSupervisorData?.variavel_semanal
   });
   
-  if (regraAplicavel && mediaPercentual > 0) {
-    // Buscar o fixo mensal do supervisor (assumindo valor base para cálculo)
-    // Por enquanto vou usar um valor fixo, mas idealmente deveria vir do perfil do supervisor
-    const valorBase = 1000; // Este valor deveria vir do perfil/nível do supervisor
-    comissaoSupervisor = valorBase * regraAplicavel.multiplicador;
+  // Só calcular comissão se houver regra aplicável E se o multiplicador for > 0
+  if (regraAplicavel && regraAplicavel.multiplicador > 0 && nivelSupervisorData?.variavel_semanal) {
+    comissaoSupervisor = nivelSupervisorData.variavel_semanal * regraAplicavel.multiplicador;
     
     console.log('💰 Cálculo da comissão:', {
-      valorBase,
+      variavel_semanal: nivelSupervisorData.variavel_semanal,
       multiplicador: regraAplicavel.multiplicador,
       comissaoFinal: comissaoSupervisor
+    });
+  } else {
+    console.log('❌ Sem comissão:', {
+      temRegra: !!regraAplicavel,
+      multiplicador: regraAplicavel?.multiplicador || 0,
+      temVariavel: !!nivelSupervisorData?.variavel_semanal,
+      mediaPercentual
     });
   }
 
@@ -153,9 +186,9 @@ export const WeeklyAverageCalculator: React.FC<WeeklyAverageCalculatorProps> = (
     <div className="text-center">
       <div className="font-semibold">{mediaPercentual.toFixed(1)}%</div>
       <div className="text-xs text-muted-foreground">
-        {regraAplicavel ? (
+        {regraAplicavel && comissaoSupervisor > 0 ? (
           <span>
-            1000 x {regraAplicavel.multiplicador} = R$ {comissaoSupervisor.toFixed(0)}
+            R$ {nivelSupervisorData?.variavel_semanal || 0} x {regraAplicavel.multiplicador} = R$ {comissaoSupervisor.toFixed(0)}
           </span>
         ) : (
           <span>R$ 0</span>
