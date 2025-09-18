@@ -287,9 +287,9 @@ export const SUPERVISOR_MENU_ITEMS: MenuItem[] = [
     icon: 'Target'
   },
   {
-    title: 'Agendamentos',
-    section: 'agendamentos',
-    icon: 'Calendar'
+    title: 'Métricas',
+    section: 'metricas',
+    icon: 'TrendingUp'
   }
 ];
 

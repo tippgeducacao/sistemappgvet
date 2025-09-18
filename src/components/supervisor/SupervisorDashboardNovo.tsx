@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Target, TrendingUp } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import SupervisorMetrics from './SupervisorMetrics';
 
 interface SDRData {
   id: string;
@@ -82,7 +84,14 @@ const SupervisorDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-6">
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="metricas">Métricas</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="dashboard" className="space-y-6">
 
         {/* Cards de Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -193,6 +202,12 @@ const SupervisorDashboard: React.FC = () => {
             ))}
           </CardContent>
         </Card>
+          </TabsContent>
+          
+          <TabsContent value="metricas">
+            <SupervisorMetrics />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -221,6 +221,23 @@ const RouteRenderer: React.FC = () => {
         </div>
       );
 
+    case 'metricas':
+      // Apenas supervisores podem acessar Métricas
+      if (isSupervisor) {
+        const SupervisorMetrics = React.lazy(() => import('@/components/supervisor/SupervisorMetrics'));
+        return (
+          <React.Suspense fallback={<div>Carregando...</div>}>
+            <SupervisorMetrics />
+          </React.Suspense>
+        );
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Apenas supervisores podem acessar Métricas.</p>
+        </div>
+      );
+
     default:
       return (
         <div className="p-6">

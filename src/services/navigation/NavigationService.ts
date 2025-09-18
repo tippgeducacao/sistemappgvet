@@ -7,6 +7,7 @@ export class NavigationService {
     GERENCIAR_VENDAS: 'gerenciar-vendas',
     GESTAO_LEADS: 'gestao-leads',
     GERENCIAR_PERFIS: 'gerenciar-perfis', // Nova seção para perfis
+    METRICAS: 'metricas', // Nova seção para métricas do supervisor
   } as const;
 
   static navigateTo(section: string) {
