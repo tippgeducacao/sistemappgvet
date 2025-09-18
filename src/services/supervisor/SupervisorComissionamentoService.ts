@@ -97,8 +97,24 @@ export class SupervisorComissionamentoService {
 
       console.log('👥 DEBUG: Membros brutos encontrados:', membrosData?.length || 0);
 
-      // Para semana atual: mostrar membros que estavam ativos durante a semana
-      const membrosValidosParaPeriodo = membrosData?.filter(membro => {
+      // Para detectar membros "fora do grupo", vamos criar uma versão mais robusta
+      // que considera membros que podem ter estado em outras semanas mas não nesta
+      
+      // Primeiro, vamos buscar TODOS os membros que ALGUMA VEZ estiveram no grupo durante o mês
+      const { data: todosMembrosDoMes } = await supabase
+        .from('membros_grupos_supervisores')
+        .select(`
+          usuario_id,
+          created_at,
+          left_at,
+          usuario:profiles!inner(id, name, user_type, nivel, ativo)
+        `)
+        .eq('grupo_id', grupoData.id);
+
+      console.log('👥 DEBUG: Todos os membros do mês encontrados:', todosMembrosDoMes?.length || 0);
+      
+      // Agora filtrar apenas os membros que estavam ATIVOS durante esta semana específica
+      const membrosValidosParaPeriodo = todosMembrosDoMes?.filter(membro => {
         const criadoEm = new Date(membro.created_at);
         const saídaEm = membro.left_at ? new Date(membro.left_at) : null;
         

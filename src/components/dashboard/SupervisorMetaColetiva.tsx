@@ -275,8 +275,16 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                     {dadosMembroPorSemana.map((dados, weekIndex) => {
                       const isCurrentWeek = weekIndex === 3;
 
-                      // Se não há dados para este membro nesta semana, significa que não estava no grupo
-                      if (!dados) {
+                      // Lógica melhorada para detectar "Fora do grupo"
+                      // 1. Se não há dados para este membro nesta semana
+                      // 2. Se é a última semana (semana 5 = index 4) e todos estão com 0.0%
+                      // 3. Se o membro tem 0 reuniões E é uma semana no futuro
+                      
+                      const isOutOfGroup = !dados || 
+                        (weekIndex === 4 && dados?.reunioesRealizadas === 0) || // Semana 5 com 0 reuniões
+                        (dados?.reunioesRealizadas === 0 && dados?.percentualAtingimento === 0 && weekIndex > 3); // Futuras com 0
+
+                      if (isOutOfGroup) {
                         return (
                           <td key={weekIndex} className={`p-3 text-center border-r bg-muted/20 ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
                             <div className="flex items-center justify-center gap-1 italic text-muted-foreground/70 text-sm">
