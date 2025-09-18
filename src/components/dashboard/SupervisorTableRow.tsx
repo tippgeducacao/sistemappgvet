@@ -133,12 +133,10 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
           );
         }
         
-        const hasValidData = attainment > 0 && weeklyCommission > 0;
-        
         return (
-          <td key={weekIndex} className={`p-2 text-xs ${hasValidData ? 'bg-primary/5 border-l border-l-primary/30' : ''}`}>
-            <div className={hasValidData ? 'font-medium text-primary' : ''}>{attainment.toFixed(1)}% atingimento</div>
-            <div className={`opacity-70 ${weeklyCommission > 0 ? 'text-green-600 font-medium' : ''}`}>R$ {weeklyCommission.toFixed(2)}</div>
+          <td key={weekIndex} className="p-2 text-xs">
+            <div>{attainment.toFixed(1)}% atingimento</div>
+            <div className="opacity-70">R$ {weeklyCommission.toFixed(2)}</div>
           </td>
         );
       })}
