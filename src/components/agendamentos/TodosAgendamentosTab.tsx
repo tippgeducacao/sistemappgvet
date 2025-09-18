@@ -452,16 +452,6 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {isDiretor && onEditarAgendamento && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onEditarAgendamento(agendamento)}
-                        title="Editar agendamento"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 </TableCell>
               </TableRow>

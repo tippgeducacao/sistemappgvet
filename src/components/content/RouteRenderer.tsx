@@ -59,7 +59,16 @@ const RouteRenderer: React.FC = () => {
       return <DashboardContainer userType={isDiretor ? 'diretor' : (isAdmin ? 'admin' : 'secretaria')} />;
 
     case 'gerenciar-vendas':
-      return <GerenciarVendas />;
+      // Supervisores, diretores, admin e secretaria podem acessar
+      if (isSupervisor || isDiretor || isAdmin || isSecretaria) {
+        return <GerenciarVendas />;
+      }
+      return (
+        <div className="p-6">
+          <h1 className="text-3xl font-bold">Acesso Negado</h1>
+          <p className="text-gray-600 mt-2">Você não tem permissão para acessar esta seção.</p>
+        </div>
+      );
 
     case 'gerenciar-cursos':
       // Apenas admin, secretaria e diretor podem gerenciar cursos

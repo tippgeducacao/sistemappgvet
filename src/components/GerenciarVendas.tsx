@@ -7,13 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, AlertTriangle } from 'lucide-react';
 
 const GerenciarVendas: React.FC = () => {
-  const { isAdmin, isSecretaria, isVendedor, isDiretor, isLoading } = useUserRoles();
+  const { isAdmin, isSecretaria, isVendedor, isDiretor, isSupervisor, isLoading } = useUserRoles();
 
   console.log('🔍 GerenciarVendas: Verificando permissões:', {
     isAdmin,
     isSecretaria,
     isVendedor,
     isDiretor,
+    isSupervisor,
     isLoading
   });
 
@@ -28,8 +29,8 @@ const GerenciarVendas: React.FC = () => {
     );
   }
 
-  // Admin, secretaria e diretor podem gerenciar vendas
-  const canManageVendas = isAdmin || isSecretaria || isDiretor;
+  // Admin, secretaria, diretor e supervisor podem gerenciar vendas
+  const canManageVendas = isAdmin || isSecretaria || isDiretor || isSupervisor;
 
   if (!canManageVendas) {
     return (
@@ -48,13 +49,19 @@ const GerenciarVendas: React.FC = () => {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-blue-700 text-sm">
                 <Shield className="h-4 w-4 inline mr-1" />
-                Esta área é restrita para administradores e membros da secretaria.
+                Esta área é restrita para administradores, membros da secretaria e supervisores.
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
     );
+  }
+
+  // Se é supervisor, usar interface específica sem botões de configurar/aprovar
+  if (isSupervisor) {
+    console.log('🎭 Renderizando SimpleGerenciarVendas para supervisor');
+    return <SimpleGerenciarVendas />;
   }
 
   // Se é admin, secretaria ou diretor, mostrar interface completa
