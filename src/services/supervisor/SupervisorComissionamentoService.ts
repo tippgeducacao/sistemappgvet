@@ -722,9 +722,12 @@ export class SupervisorComissionamentoService {
             .select('id, data_agendamento, resultado_reuniao, status')
             .eq('sdr_id', membroId)
             .gte('data_agendamento', inicioSemana.toISOString())
-            .lte('data_agendamento', fimSemana.toISOString());
+            .lte('data_agendamento', fimSemana.toISOString())
+            .not('resultado_reuniao', 'is', null)
+            .in('resultado_reuniao', ['comprou', 'compareceu_nao_comprou'])
+            .lt('data_agendamento', new Date().toISOString()); // Apenas reuniões que já aconteceram
             
-          // Contar TODOS os agendamentos, não apenas com resultado específico
+          // Contar apenas agendamentos com resultado positivo (alinhado com planilha admin)
           reunioesRealizadas = agendamentos?.length || 0;
         } else if (membroTipo === 'vendedor') {
           // Para vendedores: usar data efetiva das vendas (mesmo que planilha detalhada)
