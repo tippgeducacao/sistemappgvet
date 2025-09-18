@@ -180,7 +180,7 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                       return (
                         <td key={weekIndex} className={`p-3 text-center border-r ${isCurrentWeek ? 'bg-primary/10' : ''}`}>
                           <div className={`font-medium ${isCurrentWeek ? 'text-primary font-bold' : ''}`}>
-                            {reunioesRealizadas}/{metaSemanal} ({percentual.toFixed(1)}%)
+                            {Number(reunioesRealizadas).toFixed(2)}/{metaSemanal} ({percentual.toFixed(1)}%)
                           </div>
                         </td>
                       );
