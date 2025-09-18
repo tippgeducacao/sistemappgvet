@@ -64,7 +64,9 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
               };
             }
             
-            return { taxaAtingimento: 0, comissao: 0 };
+            // Se não há dados (supervisor não estava ativo), retornar null
+            console.log(`📊 ${supervisor.name} - Semana ${weekNumber}: Não havia equipe ativa, retornando null`);
+            return { taxaAtingimento: null, comissao: null };
             
           } catch (error) {
             console.error(`❌ ${supervisor.name} - Erro na semana ${weekNumber}:`, error);
@@ -75,7 +77,9 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
       
       const attainments = weeklyData.map(d => d.taxaAtingimento);
       const commissions = weeklyData.map(d => d.comissao);
-      const total = commissions.reduce((sum, c) => sum + c, 0);
+      
+      // Calcular total apenas das semanas com dados válidos (ignorar null/undefined)
+      const total = commissions.reduce((sum, c) => sum + (c !== null && c !== undefined ? c : 0), 0);
       
       console.log(`✅ ${supervisor.name} - Resultado final:`, {
         attainments,
@@ -93,9 +97,10 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
     }
   }, [supervisor.id, weeks, variavelSemanal]);
 
-  // Calcular atingimento médio mensal
-  const monthlyAttainment = weeklyAttainments.length > 0 
-    ? weeklyAttainments.reduce((sum, att) => sum + att, 0) / weeklyAttainments.length 
+  // Calcular atingimento médio mensal apenas das semanas com dados válidos
+  const validAttainments = weeklyAttainments.filter(att => att !== null && att !== undefined);
+  const monthlyAttainment = validAttainments.length > 0 
+    ? validAttainments.reduce((sum, att) => sum + att, 0) / validAttainments.length 
     : 0;
 
   return (
@@ -114,8 +119,19 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
       <td className="p-2">{supervisorNivel.charAt(0).toUpperCase() + supervisorNivel.slice(1)}</td>
       <td className="p-2">Meta Coletiva</td>
       <td className="p-2">R$ {variavelSemanal.toFixed(2)}</td>
-      {weeklyAttainments.map((attainment, weekIndex) => {
-        const weeklyCommission = weeklyCommissions[weekIndex] || 0;
+      {weeks.map((_, weekIndex) => {
+        const attainment = weeklyAttainments[weekIndex];
+        const weeklyCommission = weeklyCommissions[weekIndex];
+        
+        // Se não há dados (supervisor não estava ativo), mostrar célula vazia
+        if (attainment === undefined || attainment === null || weeklyCommission === undefined || weeklyCommission === null) {
+          return (
+            <td key={weekIndex} className="p-2 text-xs text-muted-foreground">
+              <div>-</div>
+              <div className="opacity-70">-</div>
+            </td>
+          );
+        }
         
         return (
           <td key={weekIndex} className="p-2 text-xs">

@@ -454,150 +454,9 @@ export class SupervisorComissionamentoService {
       console.log(`👥 SEMANA ${semana} - Membros válidos após filtro:`, membrosValidosParaPeriodo.length);
 
       if (membrosValidosParaPeriodo.length === 0) {
-        console.warn(`⚠️ SEMANA ${semana} - Nenhum membro válido encontrado para o período`);
-        console.log(`🔍 SEMANA ${semana} - Verificando se devemos usar membros atuais como fallback...`);
-        
-        // Para evitar erro na Semana 1, vamos usar uma abordagem mais flexível:
-        // Se não há membros válidos no período mas há membros ativos no grupo, usar os membros atuais
-        const { data: todosMembrosDados } = await supabase
-          .from('membros_grupos_supervisores')
-          .select(`
-            usuario_id,
-            created_at,
-            left_at,
-            usuario:profiles!usuario_id(
-              id,
-              name,
-              nivel,
-              user_type,
-              ativo
-            )
-          `)
-          .eq('grupo_id', grupoData.id)
-          .is('left_at', null); // Apenas membros que não saíram
-          
-        const membrosAtuaisAtivos = todosMembrosDados?.filter(
-          membro => membro.usuario?.ativo === true && 
-          (membro.usuario?.user_type === 'sdr' || 
-           membro.usuario?.user_type === 'sdr_inbound' || 
-           membro.usuario?.user_type === 'sdr_outbound' || 
-           membro.usuario?.user_type === 'vendedor')
-        ) || [];
-        
-        console.log(`📊 SEMANA ${semana} - Encontrados ${membrosAtuaisAtivos.length} membros atuais ativos`);
-        
-        // Se há membros atuais, mas nenhum era válido no período, ainda assim processar com 0 pontos
-        // mas manter as metas para calcular % correto
-        if (membrosAtuaisAtivos.length > 0) {
-          console.log(`🔄 SEMANA ${semana} - Processando membros atuais com 0 pontos/reuniões para o período`);
-          
-          const sdrsDetalhes: SDRResumo[] = [];
-          let somaPercentuais = 0;
-
-          for (const membro of membrosAtuaisAtivos) {
-            const membroId = membro.usuario_id;
-            const membroNome = membro.usuario?.name || 'Membro';
-            const membroNivel = membro.usuario?.nivel || 'junior';
-            const membroTipo = membro.usuario?.user_type;
-
-            // Buscar meta baseada no tipo e nível do membro
-            const { data: nivelData } = await supabase
-              .from('niveis_vendedores')
-              .select('meta_semanal_inbound, meta_semanal_outbound, meta_semanal_vendedor')
-              .eq('nivel', membroNivel)
-              .eq('tipo_usuario', membroTipo === 'vendedor' ? 'vendedor' : 'sdr')
-              .maybeSingle();
-
-            // Definir metas padrão baseadas no nível e tipo
-            let metaPadrao = 0;
-            if (membroTipo === 'vendedor') {
-              metaPadrao = membroNivel === 'junior' ? 7 : membroNivel === 'pleno' ? 8 : membroNivel === 'senior' ? 10 : 7;
-            } else {
-              metaPadrao = membroNivel === 'junior' ? 55 : membroNivel === 'pleno' ? 70 : membroNivel === 'senior' ? 85 : 55;
-            }
-            
-            let metaSemanal = 0;
-            if (membroTipo === 'vendedor') {
-              metaSemanal = nivelData?.meta_semanal_vendedor || metaPadrao;
-            } else if (membroTipo === 'sdr_inbound') {
-              metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
-            } else if (membroTipo === 'sdr_outbound') {
-              metaSemanal = nivelData?.meta_semanal_outbound || metaPadrao;
-            } else if (membroTipo === 'sdr') {
-              metaSemanal = nivelData?.meta_semanal_inbound || metaPadrao;
-            } else {
-              metaSemanal = metaPadrao;
-            }
-
-            console.log(`📊 SEMANA ${semana} - ${membroNome}: Meta ${metaSemanal}, Realizado 0 (período anterior à entrada)`);
-
-            const percentualAtingimento = 0; // 0% pois não estava ativo no período
-
-            sdrsDetalhes.push({
-              id: membroId,
-              nome: membroNome,
-              percentualAtingimento: 0,
-              reunioesRealizadas: 0,
-              metaSemanal
-            });
-
-            somaPercentuais += percentualAtingimento;
-          }
-
-          // Calcular média das porcentagens (Meta Coletiva)
-          const mediaPercentualAtingimento = membrosAtuaisAtivos.length > 0 ? somaPercentuais / membrosAtuaisAtivos.length : 0;
-
-          console.log(`🎯 SEMANA ${semana} - Meta Coletiva (fallback): ${mediaPercentualAtingimento.toFixed(1)}% (média de ${membrosAtuaisAtivos.length} membros atuais)`);
-
-          // Buscar variável semanal do supervisor
-          const { data: nivelSupervisorData } = await supabase
-            .from('niveis_vendedores')
-            .select('variavel_semanal')
-            .eq('nivel', supervisorData.nivel)
-            .eq('tipo_usuario', 'supervisor')
-            .maybeSingle();
-
-          const variabelSemanal = nivelSupervisorData?.variavel_semanal || 0;
-
-          // Calcular comissão baseada na média percentual
-          const { multiplicador, valor } = await ComissionamentoService.calcularComissao(
-            mediaPercentualAtingimento,
-            100,
-            variabelSemanal,
-            'supervisor'
-          );
-
-          return {
-            supervisorId,
-            nome: supervisorData.name,
-            grupoId: grupoData.id,
-            nomeGrupo: grupoData.nome_grupo,
-            ano,
-            semana,
-            totalSDRs: membrosAtuaisAtivos.length,
-            mediaPercentualAtingimento: Math.round(mediaPercentualAtingimento * 100) / 100,
-            variabelSemanal,
-            multiplicador,
-            valorComissao: valor,
-            sdrsDetalhes
-          };
-        }
-        
-        // Se realmente não há membros, retornar dados zerados
-        return {
-          supervisorId,
-          nome: supervisorData.name,
-          grupoId: grupoData.id,
-          nomeGrupo: grupoData.nome_grupo,
-          ano,
-          semana,
-          totalSDRs: 0,
-          mediaPercentualAtingimento: 0,
-          variabelSemanal: 0,
-          multiplicador: 0,
-          valorComissao: 0,
-          sdrsDetalhes: []
-        };
+        console.log(`⚠️ SEMANA ${semana}: Nenhum membro válido encontrado para o período`);
+        console.log(`❌ SEMANA ${semana}: Retornando null - supervisor não tinha equipe ativa nesta semana`);
+        return null;
       }
 
       // Filtrar apenas membros ativos (SDRs e Vendedores) - incluindo todos os tipos de SDR
@@ -611,23 +470,11 @@ export class SupervisorComissionamentoService {
 
       console.log(`✅ SEMANA ${semana} - ${membrosAtivos.length} membros ativos válidos para o período`);
       
-      // Se após todos os filtros não há membros ativos, usar fallback
+      // Se após todos os filtros não há membros ativos, retornar null
       if (membrosAtivos.length === 0) {
         console.warn(`⚠️ SEMANA ${semana} - Após filtros, nenhum membro ativo encontrado`);
-        return {
-          supervisorId,
-          nome: supervisorData.name,
-          grupoId: grupoData.id,
-          nomeGrupo: grupoData.nome_grupo,
-          ano,
-          semana,
-          totalSDRs: 0,
-          mediaPercentualAtingimento: 0,
-          variabelSemanal: 0,
-          multiplicador: 0,
-          valorComissao: 0,
-          sdrsDetalhes: []
-        };
+        console.log(`❌ SEMANA ${semana}: Retornando null - supervisor não tinha membros ativos nesta semana`);
+        return null;
       }
 
       if (membrosAtivos.length === 0) {
