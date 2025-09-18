@@ -25,6 +25,30 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
   const currentMonth = parseInt(selectedMonth.split('-')[1]);
   const weeks = getWeeksOfMonth(currentYear, currentMonth);
 
+  // Função para detectar qual semana é realmente a atual
+  const getCurrentWeekIndex = () => {
+    const today = new Date();
+    
+    for (let i = 0; i < weeks.length; i++) {
+      const week = weeks[i];
+      const startDate = new Date(week.startDate);
+      const endDate = new Date(week.endDate);
+      
+      // Ajustar para fim do dia (23:59:59)
+      endDate.setHours(23, 59, 59, 999);
+      
+      // Verificar se hoje está dentro desta semana
+      if (today >= startDate && today <= endDate) {
+        return i;
+      }
+    }
+    
+    // Se não encontrar, retorna -1 (nenhuma semana atual neste mês)
+    return -1;
+  };
+
+  const currentWeekIndex = getCurrentWeekIndex();
+
   const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -200,23 +224,27 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                 <th className="p-3 text-left font-semibold border-r">Membro</th>
                 <th className="p-3 text-left font-semibold border-r">Nível</th>
                 <th className="p-3 text-left font-semibold border-r">Meta Semanal</th>
-                {weeks.map((week, index) => (
-                  <th key={week.week} className="p-3 text-center font-semibold border-r min-w-[120px]">
-                    <div className="flex flex-col">
-                      <span className={index === 3 ? 'text-primary font-bold' : ''}>
-                        Semana {week.week}
-                      </span>
-                      <span className="text-xs opacity-70 font-normal">
-                        {week.label}
-                      </span>
-                      {index === 3 && (
-                        <Badge variant="secondary" className="text-xs mt-1 bg-primary/20 text-primary">
-                          ATUAL
-                        </Badge>
-                      )}
-                    </div>
-                  </th>
-                ))}
+                {weeks.map((week, index) => {
+                  const isCurrentWeek = index === currentWeekIndex;
+                  
+                  return (
+                    <th key={week.week} className="p-3 text-center font-semibold border-r min-w-[120px]">
+                      <div className="flex flex-col">
+                        <span className={isCurrentWeek ? 'text-primary font-bold' : ''}>
+                          Semana {week.week}
+                        </span>
+                        <span className="text-xs opacity-70 font-normal">
+                          {week.label}
+                        </span>
+                        {isCurrentWeek && (
+                          <Badge variant="secondary" className="text-xs mt-1 bg-primary/20 text-primary">
+                            ATUAL
+                          </Badge>
+                        )}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -276,8 +304,8 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                     <td className="p-3 border-r text-center font-semibold">
                       {metaSemanal}
                     </td>
-                    {dadosMembroPorSemana.map((dados, weekIndex) => {
-                      const isCurrentWeek = weekIndex === 3;
+                     {dadosMembroPorSemana.map((dados, weekIndex) => {
+                       const isCurrentWeek = weekIndex === currentWeekIndex;
                       const weekInfo = weeks[weekIndex];
                       const endDate: Date | undefined = weekInfo?.endDate ? new Date(weekInfo.endDate) : undefined;
                       const now = new Date();
@@ -327,7 +355,7 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                   Taxa de Atingimento Média
                 </td>
                 {taxasAtingimentoMediasPorSemana.map((taxa, weekIndex) => {
-                  const isCurrentWeek = weekIndex === 3;
+                  const isCurrentWeek = weekIndex === currentWeekIndex;
                   return (
                     <td key={weekIndex} className={`p-3 text-center font-bold text-lg ${isCurrentWeek ? 'bg-primary/20 text-primary' : ''}`}>
                       {taxa.toFixed(1)}%
