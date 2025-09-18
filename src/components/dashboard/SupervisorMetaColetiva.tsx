@@ -257,18 +257,22 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                             {membro.nome.split(' ').map(n => n[0]).join('').slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <div className="font-medium">{membro.nome}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {/* Determinar tipo baseado na meta */}
-                            {metaSemanal >= 50 ? 'SDR' : 'Vendedor'}
-                          </div>
-                        </div>
+                         <div>
+                           <div className="font-medium">{membro.nome}</div>
+                           <div className="text-xs text-muted-foreground">
+                             {/* Usar o user_type real em vez de inferir pela meta */}
+                             {primeirosDados?.userType === 'vendedor' ? 'Vendedor' : 
+                              primeirosDados?.userType === 'sdr_inbound' ? 'SDR Inbound' :
+                              primeirosDados?.userType === 'sdr_outbound' ? 'SDR Outbound' :
+                              primeirosDados?.userType === 'sdr' ? 'SDR' : 'Vendedor'}
+                           </div>
+                         </div>
                       </div>
                     </td>
-                    <td className="p-3 border-r text-center">
-                      {metaSemanal >= 50 ? 'senior' : 'junior'}
-                    </td>
+                     <td className="p-3 border-r text-center">
+                       {/* Usar o nível real do usuário */}
+                       {primeirosDados?.nivel || 'junior'}
+                     </td>
                     <td className="p-3 border-r text-center font-semibold">
                       {metaSemanal}
                     </td>

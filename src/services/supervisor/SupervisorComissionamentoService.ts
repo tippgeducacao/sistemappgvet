@@ -24,6 +24,8 @@ export interface SDRResumo {
   percentualAtingimento: number;
   reunioesRealizadas: number;
   metaSemanal: number;
+  userType: string;
+  nivel: string;
 }
 
 export class SupervisorComissionamentoService {
@@ -303,7 +305,9 @@ export class SupervisorComissionamentoService {
           nome: membroNome,
           percentualAtingimento: Math.round(percentualAtingimento * 100) / 100,
           reunioesRealizadas,
-          metaSemanal
+          metaSemanal,
+          userType: membroTipo,
+          nivel: membroNivel
         });
 
         somaPercentuais += percentualAtingimento;
@@ -696,7 +700,9 @@ export class SupervisorComissionamentoService {
             nome: membroNome,
             percentualAtingimento: 0,
             reunioesRealizadas: 0,
-            metaSemanal
+            metaSemanal,
+            userType: membroTipo,
+            nivel: membroNivel
           });
         }
         
@@ -837,7 +843,9 @@ export class SupervisorComissionamentoService {
           nome: membroNome,
           percentualAtingimento: Math.round(percentualAtingimento * 100) / 100,
           reunioesRealizadas,
-          metaSemanal
+          metaSemanal,
+          userType: membroTipo,
+          nivel: membroNivel
         });
 
         somaPercentuais += percentualAtingimento;
