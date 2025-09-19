@@ -264,12 +264,14 @@ export class SupervisorComissionamentoBatchService {
     }
 
     const startISO = inicioSemana.toISOString();
-    const endISO = fimSemana.toISOString();
+    const endExclusive = new Date(fimSemana.getTime());
+    endExclusive.setDate(endExclusive.getDate() + 1); // incluir o dia inteiro de terça
+    const endISO = endExclusive.toISOString();
 
     console.log('🔎 BATCH DEBUG: Buscando agendamentos (data_resultado)', {
       sdrs: sdrIds.length,
       inicio: startISO,
-      fim: endISO
+      fimExclusive: endISO
     });
 
     let { data: agendamentos, error } = await supabase
@@ -277,9 +279,7 @@ export class SupervisorComissionamentoBatchService {
       .select('sdr_id, id, data_resultado, resultado_reuniao')
       .in('sdr_id', sdrIds)
       .gte('data_resultado', startISO)
-      .lte('data_resultado', endISO)
-      .not('resultado_reuniao', 'is', null)
-      .neq('resultado_reuniao', 'nao_compareceu');
+      .lt('data_resultado', endISO);
 
     if (error) {
       console.error('❌ Erro ao buscar agendamentos:', error);
@@ -293,9 +293,7 @@ export class SupervisorComissionamentoBatchService {
         .select('sdr_id, id, data_resultado, data_agendamento, resultado_reuniao')
         .in('sdr_id', sdrIds)
         .gte('data_agendamento', startISO)
-        .lte('data_agendamento', endISO)
-        .not('resultado_reuniao', 'is', null)
-        .neq('resultado_reuniao', 'nao_compareceu');
+        .lt('data_agendamento', endISO);
 
       if (!fallback.error && fallback.data) {
         agendamentos = fallback.data;
@@ -420,11 +418,12 @@ export class SupervisorComissionamentoBatchService {
     let reunioesRealizadas = 0;
     
     if (['sdr', 'sdr_inbound', 'sdr_outbound'].includes(membroTipo)) {
-      // Para SDRs, contar reuniões com resultado válido (como na planilha)
-      const resultadosValidos = new Set(['comprou', 'compareceu', 'compareceu_nao_comprou', 'presente', 'realizada']);
-      reunioesRealizadas = agendamentos.filter(agendamento => 
-        agendamento.resultado_reuniao && resultadosValidos.has(String(agendamento.resultado_reuniao).toLowerCase())
-      ).length;
+      // Para SDRs: contar qualquer reunião finalizada (resultado_reuniao não nulo) exceto ausências/negativos
+      const invalid = new Set(['nao_compareceu', 'nao compareceu', 'no_show', 'cancelado', 'cancelada']);
+      reunioesRealizadas = agendamentos.filter(agendamento => {
+        const res = (agendamento.resultado_reuniao || '').toString().trim().toLowerCase();
+        return res && !invalid.has(res);
+      }).length;
       console.log('📈 BATCH DEBUG SDR', {
         membroId,
         membroNome,
