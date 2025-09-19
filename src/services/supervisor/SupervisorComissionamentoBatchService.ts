@@ -268,8 +268,9 @@ export class SupervisorComissionamentoBatchService {
     endExclusive.setDate(endExclusive.getDate() + 1); // incluir o dia inteiro de terça
     const endISO = endExclusive.toISOString();
 
-    console.log('🔎 BATCH DEBUG: Buscando agendamentos (data_agendamento)', {
+    console.log('🔎 BATCH DEBUG: Buscando agendamentos SDR (data_agendamento)', {
       sdrs: sdrIds.length,
+      periodo: `${inicioSemana.toLocaleDateString()} - ${fimSemana.toLocaleDateString()}`,
       inicio: startISO,
       fim: endISO
     });
@@ -279,9 +280,9 @@ export class SupervisorComissionamentoBatchService {
       .select('sdr_id, id, data_agendamento, resultado_reuniao, status')
       .in('sdr_id', sdrIds)
       .gte('data_agendamento', startISO)
-      .lte('data_agendamento', endISO)
-      .in('resultado_reuniao', ['compareceu', 'comprou', 'compareceu_nao_comprou'])
-      .eq('status', 'finalizado');
+      .lt('data_agendamento', endISO)
+      .in('resultado_reuniao', ['compareceu_nao_comprou', 'comprou'])
+      .in('status', ['finalizado', 'finalizado_venda']);
 
     if (error) {
       console.error('❌ Erro ao buscar agendamentos:', error);
