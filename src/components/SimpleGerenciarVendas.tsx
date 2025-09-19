@@ -6,6 +6,8 @@ import { Users, Clock, CheckCircle } from 'lucide-react';
 import { useSimpleAdminVendas } from '@/hooks/useSimpleAdminVendas';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SimplePendentesTab from '@/components/vendas/SimplePendentesTab';
+import SimpleTodasVendasTab from '@/components/vendas/SimpleTodasVendasTab';
+import SimpleMatriculadasTab from '@/components/vendas/SimpleMatriculadasTab';
 
 const SimpleGerenciarVendas: React.FC = () => {
   const { vendas, isLoading, error } = useSimpleAdminVendas();
@@ -70,9 +72,7 @@ const SimpleGerenciarVendas: React.FC = () => {
             </TabsList>
 
             <TabsContent value="todas" className="mt-6">
-              <div className="text-center py-8">
-                <p>Lista de todas as vendas</p>
-              </div>
+              <SimpleTodasVendasTab vendas={vendas} />
             </TabsContent>
 
             <TabsContent value="pendentes" className="mt-6">
@@ -80,9 +80,7 @@ const SimpleGerenciarVendas: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="matriculadas" className="mt-6">
-              <div className="text-center py-8">
-                <p>{vendasMatriculadas.length} vendas matriculadas</p>
-              </div>
+              <SimpleMatriculadasTab vendas={vendasMatriculadas} />
             </TabsContent>
           </Tabs>
         </CardContent>
