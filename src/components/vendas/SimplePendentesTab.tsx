@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Check, X, Eye, Clock } from 'lucide-react';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import { useSimpleAdminVendas } from '@/hooks/useSimpleAdminVendas';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import RejectVendaDialog from '@/components/vendas/dialogs/RejectVendaDialog';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
@@ -15,6 +16,7 @@ interface SimplePendentesTabProps {
 
 const SimplePendentesTab: React.FC<SimplePendentesTabProps> = ({ vendas }) => {
   const { updateStatus, isUpdating } = useSimpleAdminVendas();
+  const { isSupervisor } = useUserRoles();
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [vendaToReject, setVendaToReject] = useState<VendaCompleta | null>(null);
 
@@ -86,7 +88,7 @@ const SimplePendentesTab: React.FC<SimplePendentesTabProps> = ({ vendas }) => {
             Vendas Pendentes de Validação
           </CardTitle>
           <CardDescription>
-            {vendas.length} {vendas.length === 1 ? 'venda' : 'vendas'} aguardando sua aprovação
+            {vendas.length} {vendas.length === 1 ? 'venda' : 'vendas'} {isSupervisor ? 'da sua equipe' : 'aguardando sua aprovação'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -136,26 +138,30 @@ const SimplePendentesTab: React.FC<SimplePendentesTabProps> = ({ vendas }) => {
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleAprovar(venda.id, venda.pontuacao_esperada || 0)} 
-                      disabled={isUpdating}
-                      className="text-green-600 hover:text-green-700"
-                    >
-                      <Check className="h-4 w-4" />
-                      {isUpdating ? 'Aprovando...' : 'Aprovar'}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleOpenRejectDialog(venda)} 
-                      disabled={isUpdating}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <X className="h-4 w-4" />
-                      {isUpdating ? 'Rejeitando...' : 'Rejeitar'}
-                    </Button>
+                    {!isSupervisor && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleAprovar(venda.id, venda.pontuacao_esperada || 0)} 
+                          disabled={isUpdating}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <Check className="h-4 w-4" />
+                          {isUpdating ? 'Aprovando...' : 'Aprovar'}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleOpenRejectDialog(venda)} 
+                          disabled={isUpdating}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                          {isUpdating ? 'Rejeitando...' : 'Rejeitar'}
+                        </Button>
+                      </>
+                    )}
                     <Button variant="outline" size="sm">
                       <Eye className="h-4 w-4" />
                     </Button>
