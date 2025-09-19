@@ -13,7 +13,7 @@ export const useSimpleAdminVendas = () => {
   const { isSupervisor } = useUserRoles();
   
   const { data: vendas, isLoading, error, refetch } = useQuery({
-    queryKey: ['simple-admin-vendas'],
+    queryKey: ['simple-admin-vendas', Date.now().toString().slice(-4)],
     queryFn: async (): Promise<VendaCompleta[]> => {
       console.log('🚀 Carregando vendas...');
       if (isSupervisor) {
@@ -24,7 +24,13 @@ export const useSimpleAdminVendas = () => {
         return AdminVendasService.getAllVendasForAdmin();
       }
     },
-    refetchInterval: 3000,
+    staleTime: 1000 * 30, // 30 segundos
+    gcTime: 1000 * 60 * 2, // 2 minutos
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 1000 * 45, // Refetch a cada 45 segundos
+    retry: 3,
   });
 
   const updateStatusMutation = useMutation({
