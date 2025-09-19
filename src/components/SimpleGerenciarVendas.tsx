@@ -55,7 +55,7 @@ const SimpleGerenciarVendas: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="pendentes" className="w-full">
+          <Tabs defaultValue="todas" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="todas" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
