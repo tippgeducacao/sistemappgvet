@@ -11,7 +11,6 @@ import { useSupervisorComissionamentoBatch } from '@/hooks/useSupervisorComissio
 import UserProfileModal from '@/components/UserProfileModal';
 import VendedorProfileModal from '@/components/dashboard/VendedorProfileModal';
 import SDRProfileModal from '@/components/dashboard/SDRProfileModal';
-import { ForceRefreshButton } from '@/components/debug/ForceRefreshButton';
 import { getWeekRange, getMesAnoSemanaAtual } from '@/utils/semanaUtils';
 
 
@@ -283,9 +282,6 @@ const SupervisorDashboardAtualizado: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Dashboard - Time de Vendas</h1>
             <p className="text-muted-foreground mt-1">Acompanhe o desempenho da sua equipe</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <ForceRefreshButton showDiagnostic={true} />
           </div>
         </div>
       </div>

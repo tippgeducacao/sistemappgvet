@@ -17,7 +17,7 @@ export const useSupervisorComissionamentoBatch = (
   });
   
   return useQuery<SupervisorComissionamentoData[]>({
-    queryKey: ['supervisor-comissionamento-batch', supervisorId, ano, mes, semanas.join(','), Date.now().toString().slice(-6)],
+    queryKey: ['supervisor-comissionamento-batch', supervisorId, ano, mes, semanas.join(',')],
     queryFn: async () => {
       const startTime = performance.now();
       console.log(`⚡ BATCH: Iniciando busca paralela para ${semanas.length} semanas`);
@@ -43,15 +43,11 @@ export const useSupervisorComissionamentoBatch = (
       return result;
     },
     enabled: !!supervisorId && !!ano && !!mes && semanas.length > 0,
-    staleTime: 1000 * 30, // Reduzido para 30 segundos
-    gcTime: 1000 * 60 * 2, // 2 minutos
-    refetchOnMount: true, // Sempre refetch ao montar
-    refetchOnWindowFocus: true, // Refetch quando voltar ao foco
-    refetchOnReconnect: true, // Refetch quando reconectar
-    // Polling mais frequente para dados críticos
-    refetchInterval: 1000 * 60 * 2, // 2 minutos em background
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    // Estratégia de background refetch para melhor UX
+    refetchInterval: 1000 * 60 * 10, // 10 minutos em background
   });
 };
 
