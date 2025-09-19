@@ -263,18 +263,52 @@ export class SupervisorComissionamentoBatchService {
       return new Map();
     }
 
-    const { data: agendamentos, error } = await supabase
+    const startISO = inicioSemana.toISOString();
+    const endISO = fimSemana.toISOString();
+
+    console.log('🔎 BATCH DEBUG: Buscando agendamentos (data_resultado)', {
+      sdrs: sdrIds.length,
+      inicio: startISO,
+      fim: endISO
+    });
+
+    let { data: agendamentos, error } = await supabase
       .from('agendamentos')
       .select('sdr_id, id, data_resultado, resultado_reuniao')
       .in('sdr_id', sdrIds)
-      .gte('data_resultado', inicioSemana.toISOString())
-      .lte('data_resultado', fimSemana.toISOString())
-      .in('resultado_reuniao', ['comprou', 'compareceu', 'compareceu_nao_comprou', 'presente', 'realizada']);
+      .gte('data_resultado', startISO)
+      .lte('data_resultado', endISO)
+      .not('resultado_reuniao', 'is', null)
+      .neq('resultado_reuniao', 'nao_compareceu');
 
     if (error) {
       console.error('❌ Erro ao buscar agendamentos:', error);
       return new Map();
     }
+
+    if (!agendamentos || agendamentos.length === 0) {
+      console.warn('⚠️ BATCH DEBUG: Nenhum agendamento por data_resultado. Tentando fallback por data_agendamento...');
+      const fallback = await supabase
+        .from('agendamentos')
+        .select('sdr_id, id, data_resultado, data_agendamento, resultado_reuniao')
+        .in('sdr_id', sdrIds)
+        .gte('data_agendamento', startISO)
+        .lte('data_agendamento', endISO)
+        .not('resultado_reuniao', 'is', null)
+        .neq('resultado_reuniao', 'nao_compareceu');
+
+      if (!fallback.error && fallback.data) {
+        agendamentos = fallback.data;
+        console.log('🟡 BATCH DEBUG: Fallback retornou agendamentos:', agendamentos.length);
+      } else if (fallback.error) {
+        console.error('❌ Erro no fallback por data_agendamento:', fallback.error);
+      }
+    }
+
+    console.log('📊 BATCH DEBUG: Agendamentos retornados', {
+      total: agendamentos?.length || 0,
+      resultados: Array.from(new Set((agendamentos || []).map(a => a.resultado_reuniao)))
+    });
 
     // Agrupar por sdr_id
     const agendamentosPorMembro = new Map<string, any[]>();
@@ -389,8 +423,15 @@ export class SupervisorComissionamentoBatchService {
       // Para SDRs, contar reuniões com resultado válido (como na planilha)
       const resultadosValidos = new Set(['comprou', 'compareceu', 'compareceu_nao_comprou', 'presente', 'realizada']);
       reunioesRealizadas = agendamentos.filter(agendamento => 
-        resultadosValidos.has(agendamento.resultado_reuniao)
+        agendamento.resultado_reuniao && resultadosValidos.has(String(agendamento.resultado_reuniao).toLowerCase())
       ).length;
+      console.log('📈 BATCH DEBUG SDR', {
+        membroId,
+        membroNome,
+        totalAgendamentos: agendamentos.length,
+        contados: reunioesRealizadas,
+        resultados: Array.from(new Set(agendamentos.map(a => a.resultado_reuniao)))
+      });
     } else if (membroTipo === 'vendedor') {
       // Filtrar vendas que estão na semana usando data efetiva
       const vendasNaSemana = vendas.filter(venda => 
