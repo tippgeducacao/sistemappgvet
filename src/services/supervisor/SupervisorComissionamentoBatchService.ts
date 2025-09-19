@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { getDataEfetivaVenda, isVendaInWeek } from '@/utils/vendaDateUtils';
+import { SDRMeetingsService } from '@/services/agendamentos/SDRMeetingsService';
 import type { SupervisorComissionamentoData, SDRResumo } from './SupervisorComissionamentoService';
 
 interface CachedMemberData {
@@ -248,7 +249,7 @@ export class SupervisorComissionamentoBatchService {
   }
 
   /**
-   * Busca todos os agendamentos de uma vez
+   * Busca todos os agendamentos de uma vez usando o serviço unificado
    */
   private static async buscarTodosAgendamentos(
     membros: any[],
@@ -263,49 +264,14 @@ export class SupervisorComissionamentoBatchService {
       return new Map();
     }
 
-    const startISO = inicioSemana.toISOString();
-    const endExclusive = new Date(fimSemana.getTime());
-    // Usar limite exclusivo no início do dia seguinte (America/Sao_Paulo ~ UTC-3)
-    endExclusive.setHours(0, 0, 0, 0);
-    endExclusive.setDate(endExclusive.getDate() + 1);
-    const endISO = endExclusive.toISOString();
-
-    console.log('🔎 BATCH DEBUG: Buscando agendamentos SDR (data_agendamento)', {
-      sdrs: sdrIds.length,
+    console.log('🔎 BATCH DEBUG: Usando SDRMeetingsService unificado', {
+      sdrCount: sdrIds.length,
       periodo: `${inicioSemana.toLocaleDateString()} - ${fimSemana.toLocaleDateString()}`,
-      inicio: startISO,
-      fimExclusive: endISO
+      membros: membros.map(m => ({ id: m.usuario_id, nome: m.usuario?.name, tipo: m.usuario?.user_type }))
     });
 
-    const { data: agendamentos, error } = await supabase
-      .from('agendamentos')
-      .select('sdr_id, id, data_agendamento, resultado_reuniao, status')
-      .in('sdr_id', sdrIds)
-      .gte('data_agendamento', startISO)
-      .lt('data_agendamento', endISO)
-      .in('resultado_reuniao', ['compareceu_nao_comprou', 'comprou']);
-
-    if (error) {
-      console.error('❌ Erro ao buscar agendamentos:', error);
-      return new Map();
-    }
-
-    console.log('📊 BATCH DEBUG: Agendamentos retornados', {
-      total: agendamentos?.length || 0,
-      resultados: Array.from(new Set((agendamentos || []).map(a => a.resultado_reuniao)))
-    });
-
-    // Agrupar por sdr_id
-    const agendamentosPorMembro = new Map<string, any[]>();
-    agendamentos?.forEach(agendamento => {
-      const sdrId = agendamento.sdr_id;
-      if (!agendamentosPorMembro.has(sdrId)) {
-        agendamentosPorMembro.set(sdrId, []);
-      }
-      agendamentosPorMembro.get(sdrId)!.push(agendamento);
-    });
-
-    return agendamentosPorMembro;
+    // Usar o serviço unificado com EXATAMENTE o mesmo filtro da planilha detalhada
+    return await SDRMeetingsService.fetchSDRMeetingsByPeriod(sdrIds, inicioSemana, fimSemana);
   }
 
   /**
@@ -405,14 +371,21 @@ export class SupervisorComissionamentoBatchService {
     let reunioesRealizadas = 0;
     
     if (['sdr', 'sdr_inbound', 'sdr_outbound'].includes(membroTipo)) {
-      // Para SDRs: já filtrado na query por status e resultados; usar total diretamente
+      // Para SDRs: usar serviço unificado (mesmo filtro da planilha detalhada)
       reunioesRealizadas = agendamentos.length;
-      console.log('📈 BATCH DEBUG SDR', {
+      console.log('📈 BATCH DEBUG SDR (serviço unificado)', {
         membroId,
         membroNome,
         totalAgendamentos: agendamentos.length,
         contados: reunioesRealizadas,
-        resultados: Array.from(new Set(agendamentos.map(a => a.resultado_reuniao)))
+        resultados: Array.from(new Set(agendamentos.map(a => a.resultado_reuniao))),
+        status: Array.from(new Set(agendamentos.map(a => a.status))),
+        reunioesDetalhes: agendamentos.map(a => ({
+          id: a.id,
+          data: a.data_agendamento,
+          resultado: a.resultado_reuniao,
+          status: a.status
+        }))
       });
     } else if (membroTipo === 'vendedor') {
       // Filtrar vendas que estão na semana usando data efetiva
