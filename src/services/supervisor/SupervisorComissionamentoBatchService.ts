@@ -269,8 +269,7 @@ export class SupervisorComissionamentoBatchService {
       .in('sdr_id', sdrIds)
       .gte('data_agendamento', inicioSemana.toISOString())
       .lte('data_agendamento', fimSemana.toISOString())
-      .in('resultado_reuniao', ['compareceu', 'comprou', 'compareceu_nao_comprou'])
-      .eq('status', 'finalizado');
+      .neq('resultado_reuniao', 'nao_compareceu');
 
     if (error) {
       console.error('❌ Erro ao buscar agendamentos:', error);
@@ -387,10 +386,9 @@ export class SupervisorComissionamentoBatchService {
     let reunioesRealizadas = 0;
     
     if (['sdr', 'sdr_inbound', 'sdr_outbound'].includes(membroTipo)) {
-      // Para SDRs, contar apenas reuniões com resultado válido e status finalizado
+      // Para SDRs, contar reuniões baseadas apenas no resultado (ignorar 'nao_compareceu')
       reunioesRealizadas = agendamentos.filter(agendamento => 
-        ['compareceu', 'comprou', 'compareceu_nao_comprou'].includes(agendamento.resultado_reuniao) &&
-        agendamento.status === 'finalizado'
+        agendamento.resultado_reuniao && agendamento.resultado_reuniao !== 'nao_compareceu'
       ).length;
     } else if (membroTipo === 'vendedor') {
       // Filtrar vendas que estão na semana usando data efetiva
