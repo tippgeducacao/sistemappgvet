@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, CheckCircle } from 'lucide-react';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
+import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 interface SimpleMatriculadasTabProps {
@@ -11,8 +12,17 @@ interface SimpleMatriculadasTabProps {
 }
 
 const SimpleMatriculadasTab: React.FC<SimpleMatriculadasTabProps> = ({ vendas }) => {
-  
-  if (vendas.length === 0) {
+  const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+
+  const handleViewVenda = (venda: VendaCompleta) => {
+    setSelectedVenda(venda);
+    setDetailsDialogOpen(true);
+  };
+
+  const vendasMatriculadas = vendas.filter(venda => venda.status === 'matriculado');
+
+  if (vendasMatriculadas.length === 0) {
     return (
       <Card className="bg-green-50 border-green-200">
         <CardContent className="p-6">
@@ -31,19 +41,20 @@ const SimpleMatriculadasTab: React.FC<SimpleMatriculadasTabProps> = ({ vendas })
   }
 
   return (
-    <Card>
+    <>
+      <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CheckCircle className="h-5 w-5 text-green-600" />
           Vendas Matriculadas
         </CardTitle>
         <CardDescription>
-          {vendas.length} {vendas.length === 1 ? 'venda matriculada' : 'vendas matriculadas'} da sua equipe
+          {vendasMatriculadas.length} {vendasMatriculadas.length === 1 ? 'venda matriculada' : 'vendas matriculadas'} da sua equipe
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {vendas.map(venda => (
+          {vendasMatriculadas.map(venda => (
             <div key={venda.id} className="border rounded-lg p-4 bg-green-50">
               <div className="flex items-start justify-between">
                 <div className="space-y-2 flex-1">
@@ -99,7 +110,7 @@ const SimpleMatriculadasTab: React.FC<SimpleMatriculadasTabProps> = ({ vendas })
                 </div>
 
                 <div className="flex items-center gap-2 ml-4">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleViewVenda(venda)}>
                     <Eye className="h-4 w-4" />
                   </Button>
                 </div>
@@ -109,6 +120,13 @@ const SimpleMatriculadasTab: React.FC<SimpleMatriculadasTabProps> = ({ vendas })
         </div>
       </CardContent>
     </Card>
+
+    <VendaDetailsDialog
+      venda={selectedVenda}
+      open={detailsDialogOpen}
+      onOpenChange={setDetailsDialogOpen}
+    />
+    </>
   );
 };
 

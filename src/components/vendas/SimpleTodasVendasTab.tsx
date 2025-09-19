@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, Users } from 'lucide-react';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
+import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 interface SimpleTodasVendasTabProps {
@@ -11,6 +12,13 @@ interface SimpleTodasVendasTabProps {
 }
 
 const SimpleTodasVendasTab: React.FC<SimpleTodasVendasTabProps> = ({ vendas }) => {
+  const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+
+  const handleViewVenda = (venda: VendaCompleta) => {
+    setSelectedVenda(venda);
+    setDetailsDialogOpen(true);
+  };
   
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -57,7 +65,8 @@ const SimpleTodasVendasTab: React.FC<SimpleTodasVendasTabProps> = ({ vendas }) =
   }
 
   return (
-    <Card>
+    <>
+      <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5 text-blue-600" />
@@ -116,7 +125,7 @@ const SimpleTodasVendasTab: React.FC<SimpleTodasVendasTabProps> = ({ vendas }) =
                 </div>
 
                 <div className="flex items-center gap-2 ml-4">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleViewVenda(venda)}>
                     <Eye className="h-4 w-4" />
                   </Button>
                 </div>
@@ -126,6 +135,13 @@ const SimpleTodasVendasTab: React.FC<SimpleTodasVendasTabProps> = ({ vendas }) =
         </div>
       </CardContent>
     </Card>
+
+    <VendaDetailsDialog
+      venda={selectedVenda}
+      open={detailsDialogOpen}
+      onOpenChange={setDetailsDialogOpen}
+    />
+    </>
   );
 };
 

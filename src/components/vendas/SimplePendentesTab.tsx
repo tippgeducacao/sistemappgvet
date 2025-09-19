@@ -8,6 +8,7 @@ import { DataFormattingService } from '@/services/formatting/DataFormattingServi
 import { useSimpleAdminVendas } from '@/hooks/useSimpleAdminVendas';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import RejectVendaDialog from '@/components/vendas/dialogs/RejectVendaDialog';
+import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 interface SimplePendentesTabProps {
@@ -19,6 +20,13 @@ const SimplePendentesTab: React.FC<SimplePendentesTabProps> = ({ vendas }) => {
   const { isSupervisor } = useUserRoles();
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [vendaToReject, setVendaToReject] = useState<VendaCompleta | null>(null);
+  const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+
+  const handleViewVenda = (venda: VendaCompleta) => {
+    setSelectedVenda(venda);
+    setDetailsDialogOpen(true);
+  };
 
   const handleAprovar = async (vendaId: string, pontuacaoEsperada?: number) => {
     console.log('🎯 Aprovando venda:', vendaId.substring(0, 8));
@@ -162,7 +170,7 @@ const SimplePendentesTab: React.FC<SimplePendentesTabProps> = ({ vendas }) => {
                         </Button>
                       </>
                     )}
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleViewVenda(venda)}>
                       <Eye className="h-4 w-4" />
                     </Button>
                   </div>
@@ -179,6 +187,12 @@ const SimplePendentesTab: React.FC<SimplePendentesTabProps> = ({ vendas }) => {
         onConfirm={handleConfirmReject}
         isLoading={isUpdating}
         vendaNome={vendaToReject?.aluno?.nome}
+      />
+
+      <VendaDetailsDialog
+        venda={selectedVenda}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
       />
     </>
   );
