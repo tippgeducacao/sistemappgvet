@@ -1,19 +1,28 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminVendasService } from '@/services/vendas/AdminVendasService';
+import { SupervisorVendaQueryService } from '@/services/vendas/SupervisorVendaQueryService';
 import { SimpleUpdateService } from '@/services/vendas/SimpleUpdateService';
 import { useToast } from '@/hooks/use-toast';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 export const useSimpleAdminVendas = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isSupervisor } = useUserRoles();
   
   const { data: vendas, isLoading, error, refetch } = useQuery({
     queryKey: ['simple-admin-vendas'],
     queryFn: async (): Promise<VendaCompleta[]> => {
       console.log('🚀 Carregando vendas...');
-      return AdminVendasService.getAllVendasForAdmin();
+      if (isSupervisor) {
+        console.log('👥 Carregando vendas da equipe do supervisor...');
+        return SupervisorVendaQueryService.getAllVendasForSupervisor();
+      } else {
+        console.log('🔐 Carregando todas as vendas (admin/secretaria/diretor)...');
+        return AdminVendasService.getAllVendasForAdmin();
+      }
     },
     refetchInterval: 3000,
   });
