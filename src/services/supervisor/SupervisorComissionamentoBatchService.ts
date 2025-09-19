@@ -268,39 +268,24 @@ export class SupervisorComissionamentoBatchService {
     endExclusive.setDate(endExclusive.getDate() + 1); // incluir o dia inteiro de terça
     const endISO = endExclusive.toISOString();
 
-    console.log('🔎 BATCH DEBUG: Buscando agendamentos (data_resultado)', {
+    console.log('🔎 BATCH DEBUG: Buscando agendamentos (data_agendamento)', {
       sdrs: sdrIds.length,
       inicio: startISO,
-      fimExclusive: endISO
+      fim: endISO
     });
 
-    let { data: agendamentos, error } = await supabase
+    const { data: agendamentos, error } = await supabase
       .from('agendamentos')
-      .select('sdr_id, id, data_resultado, resultado_reuniao')
+      .select('sdr_id, id, data_agendamento, resultado_reuniao, status')
       .in('sdr_id', sdrIds)
-      .gte('data_resultado', startISO)
-      .lt('data_resultado', endISO);
+      .gte('data_agendamento', startISO)
+      .lte('data_agendamento', endISO)
+      .in('resultado_reuniao', ['compareceu', 'comprou', 'compareceu_nao_comprou'])
+      .eq('status', 'finalizado');
 
     if (error) {
       console.error('❌ Erro ao buscar agendamentos:', error);
       return new Map();
-    }
-
-    if (!agendamentos || agendamentos.length === 0) {
-      console.warn('⚠️ BATCH DEBUG: Nenhum agendamento por data_resultado. Tentando fallback por data_agendamento...');
-      const fallback = await supabase
-        .from('agendamentos')
-        .select('sdr_id, id, data_resultado, data_agendamento, resultado_reuniao')
-        .in('sdr_id', sdrIds)
-        .gte('data_agendamento', startISO)
-        .lt('data_agendamento', endISO);
-
-      if (!fallback.error && fallback.data) {
-        agendamentos = fallback.data;
-        console.log('🟡 BATCH DEBUG: Fallback retornou agendamentos:', agendamentos.length);
-      } else if (fallback.error) {
-        console.error('❌ Erro no fallback por data_agendamento:', fallback.error);
-      }
     }
 
     console.log('📊 BATCH DEBUG: Agendamentos retornados', {
@@ -418,12 +403,8 @@ export class SupervisorComissionamentoBatchService {
     let reunioesRealizadas = 0;
     
     if (['sdr', 'sdr_inbound', 'sdr_outbound'].includes(membroTipo)) {
-      // Para SDRs: contar qualquer reunião finalizada (resultado_reuniao não nulo) exceto ausências/negativos
-      const invalid = new Set(['nao_compareceu', 'nao compareceu', 'no_show', 'cancelado', 'cancelada']);
-      reunioesRealizadas = agendamentos.filter(agendamento => {
-        const res = (agendamento.resultado_reuniao || '').toString().trim().toLowerCase();
-        return res && !invalid.has(res);
-      }).length;
+      // Para SDRs: já filtrado na query por status e resultados; usar total diretamente
+      reunioesRealizadas = agendamentos.length;
       console.log('📈 BATCH DEBUG SDR', {
         membroId,
         membroNome,
