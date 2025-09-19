@@ -265,11 +265,11 @@ export class SupervisorComissionamentoBatchService {
 
     const { data: agendamentos, error } = await supabase
       .from('agendamentos')
-      .select('sdr_id, id, data_agendamento, resultado_reuniao, status')
+      .select('sdr_id, id, data_resultado, resultado_reuniao')
       .in('sdr_id', sdrIds)
-      .gte('data_agendamento', inicioSemana.toISOString())
-      .lte('data_agendamento', fimSemana.toISOString())
-      .neq('resultado_reuniao', 'nao_compareceu');
+      .gte('data_resultado', inicioSemana.toISOString())
+      .lte('data_resultado', fimSemana.toISOString())
+      .in('resultado_reuniao', ['comprou', 'compareceu', 'compareceu_nao_comprou', 'presente', 'realizada']);
 
     if (error) {
       console.error('❌ Erro ao buscar agendamentos:', error);
@@ -386,9 +386,10 @@ export class SupervisorComissionamentoBatchService {
     let reunioesRealizadas = 0;
     
     if (['sdr', 'sdr_inbound', 'sdr_outbound'].includes(membroTipo)) {
-      // Para SDRs, contar reuniões baseadas apenas no resultado (ignorar 'nao_compareceu')
+      // Para SDRs, contar reuniões com resultado válido (como na planilha)
+      const resultadosValidos = new Set(['comprou', 'compareceu', 'compareceu_nao_comprou', 'presente', 'realizada']);
       reunioesRealizadas = agendamentos.filter(agendamento => 
-        agendamento.resultado_reuniao && agendamento.resultado_reuniao !== 'nao_compareceu'
+        resultadosValidos.has(agendamento.resultado_reuniao)
       ).length;
     } else if (membroTipo === 'vendedor') {
       // Filtrar vendas que estão na semana usando data efetiva
