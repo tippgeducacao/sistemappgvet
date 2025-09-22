@@ -18,8 +18,8 @@ export const useOverdueAppointments = () => {
     // Verificar imediatamente quando o hook é montado
     checkOverdueAppointments();
 
-    // Verificar a cada 2 minutos
-    const interval = setInterval(checkOverdueAppointments, 2 * 60 * 1000);
+    // Verificar a cada 30 minutos para reduzir uso de dados
+    const interval = setInterval(checkOverdueAppointments, 30 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);

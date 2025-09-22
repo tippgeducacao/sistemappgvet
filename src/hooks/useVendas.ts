@@ -65,8 +65,9 @@ export const useVendas = () => {
       return vendas;
     },
     enabled: !!currentUser?.id,
-    refetchInterval: 30000, // Recarrega a cada 30 segundos (reduzido de 5s)
-    staleTime: 10000 // Considera os dados obsoletos após 10 segundos (aumentado de 2s)
+    staleTime: 300000, // 5 minutos
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 
   return {
@@ -91,11 +92,9 @@ export const useAllVendas = () => {
       
       return vendas;
     },
-    // Reduzido drasticamente para realtime
-    refetchInterval: false, // Desabilitado - usar realtime
-    staleTime: 5000, // 5 segundos apenas
-    refetchOnWindowFocus: true, // Recarregar ao focar na janela
-    refetchOnReconnect: true // Recarregar ao reconectar
+    staleTime: 300000, // 5 minutos
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 
   return {

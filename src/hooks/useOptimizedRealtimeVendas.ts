@@ -4,9 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 /**
- * OTIMIZADA: Realtime TV Ranking com menos canais e debounce
+ * OTIMIZADA: Hook realtime com debounce e menos invalidações
  */
-export const useRealtimeTVRanking = () => {
+export const useOptimizedRealtimeVendas = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -18,14 +18,13 @@ export const useRealtimeTVRanking = () => {
         queryKeys.forEach(key => {
           queryClient.invalidateQueries({ queryKey: key });
         });
-      }, 5000); // Debounce de 5 segundos - OTIMIZADO
+      }, 2000); // Debounce de 2 segundos
     };
 
-    console.log('🔵 OTIMIZADA: Configurando realtime TV Ranking');
-
-    // OTIMIZAÇÃO: Apenas 1 canal para form_entries (mais importante)
+    console.log('🔵 OTIMIZADA: Configurando realtime vendas');
+    
     const channel = supabase
-      .channel('tv-ranking-realtime-optimized')
+      .channel('vendas-realtime-optimized')
       .on(
         'postgres_changes',
         {
@@ -37,29 +36,25 @@ export const useRealtimeTVRanking = () => {
           console.log('🔵 OTIMIZADA: Mudança em vendas:', payload.eventType);
           
           if (payload.eventType === 'INSERT') {
-            toast.success('🎉 Nova venda registrada!', { duration: 3000 });
+            toast.success('Nova venda registrada!');
           } else if (payload.eventType === 'UPDATE') {
             const newData = payload.new as any;
-            const oldData = payload.old as any;
-            
-            if (newData?.status !== oldData?.status && newData?.status === 'matriculado') {
-              toast.success('✅ Venda aprovada - ranking atualizado!', { duration: 3000 });
+            if (newData?.status === 'matriculado') {
+              toast.success('Venda aprovada!');
             }
           }
 
-          // OTIMIZADO: Apenas queries essenciais com debounce
+          // Invalidar apenas queries essenciais com debounce
           debouncedInvalidate([
             ['all-vendas'],
-            ['vendas']
+            ['simple-admin-vendas']
           ]);
         }
       )
-      .subscribe((status) => {
-        console.log('🔵 OTIMIZADA: Status do canal TV Ranking:', status);
-      });
+      .subscribe();
 
     return () => {
-      console.log('🔵 OTIMIZADA: Desconectando realtime TV Ranking');
+      console.log('🔵 OTIMIZADA: Desconectando realtime vendas');
       clearTimeout(debounceTimeout);
       supabase.removeChannel(channel);
     };
@@ -67,9 +62,8 @@ export const useRealtimeTVRanking = () => {
 
   return {
     forceRefresh: () => {
-      console.log('🔄 OTIMIZADA: Forçando refresh TV Ranking');
       queryClient.invalidateQueries({ queryKey: ['all-vendas'] });
-      queryClient.invalidateQueries({ queryKey: ['vendas'] });
+      queryClient.invalidateQueries({ queryKey: ['simple-admin-vendas'] });
     }
   };
 };

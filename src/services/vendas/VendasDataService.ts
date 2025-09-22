@@ -1,6 +1,7 @@
 
 import { VendasQueryService } from './VendasQueryService';
 import { VendaProcessingService } from './VendaProcessingService';
+import { OptimizedVendaQueryService } from './OptimizedVendaQueryService';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 export class VendasDataService {
@@ -23,19 +24,14 @@ export class VendasDataService {
   }
 
   /**
-   * Busca TODAS as vendas do sistema
+   * OTIMIZADA: Busca TODAS as vendas do sistema com query única
    */
   static async getAllVendas(): Promise<VendaCompleta[]> {
     try {
-      const allFormEntries = await VendasQueryService.getAllFormEntries();
-      
-      if (allFormEntries.length === 0) {
-        return [];
-      }
-
-      return VendaProcessingService.processVendasWithRelations(allFormEntries);
+      // Usar nova query otimizada ao invés do processamento N+1
+      return OptimizedVendaQueryService.getAllVendasOptimized();
     } catch (error) {
-      console.error('💥💥💥 ERRO CRÍTICO na busca de todas as vendas:', error);
+      console.error('💥💥💥 ERRO CRÍTICO na busca otimizada de vendas:', error);
       throw error;
     }
   }
