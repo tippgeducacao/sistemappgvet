@@ -58,8 +58,8 @@ export const useReuniaoAtrasada = () => {
     // Verificar imediatamente
     verificarAgendamentosAtrasados();
 
-    // Verificar a cada 2 minutos para detectar novos agendamentos atrasados
-    const interval = setInterval(verificarAgendamentosAtrasados, 2 * 60 * 1000);
+    // Verificar a cada 30 minutos em vez de 2 minutos (15x menos)
+    const interval = setInterval(verificarAgendamentosAtrasados, 30 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [profile?.id]);

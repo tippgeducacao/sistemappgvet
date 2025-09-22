@@ -18,7 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrentWeekConversions } from '@/hooks/useWeeklyConversion';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { useVendaWithFormResponses } from '@/hooks/useVendaWithFormResponses';
-import { useRealtimeTVRanking } from '@/hooks/useRealtimeTVRanking';
+import { useOptimizedRealtimeTVRanking } from '@/hooks/useOptimizedRealtimeTVRanking';
 
 interface VendedorData {
   id: string;
@@ -331,8 +331,8 @@ const TVRankingDisplay: React.FC<TVRankingDisplayProps> = ({ isOpen, onClose }) 
   const [zoom, setZoom] = useState(100);
   const [semanaOffset, setSemanaOffset] = useState(0); // 0 = semana atual, -1 = semana anterior, etc.
   
-  // Hook para realtime
-  const { forceRefresh } = useRealtimeTVRanking();
+  // Hook para realtime otimizado
+  const { forceRefresh } = useOptimizedRealtimeTVRanking();
   
   const { vendas } = useAllVendas();
   const { vendedores } = useVendedores();

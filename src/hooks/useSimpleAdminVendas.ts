@@ -24,7 +24,9 @@ export const useSimpleAdminVendas = () => {
         return AdminVendasService.getAllVendasForAdmin();
       }
     },
-    refetchInterval: 3000,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    refetchOnWindowFocus: false, // Evita refetch desnecessário
   });
 
   const updateStatusMutation = useMutation({

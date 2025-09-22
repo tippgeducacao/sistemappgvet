@@ -20,7 +20,7 @@ export const useSupervisorComissionamentoBatch = (
     queryKey: ['supervisor-comissionamento-batch', supervisorId, ano, mes, semanas.join(',')],
     queryFn: async () => {
       const startTime = performance.now();
-      console.log(`⚡ BATCH: Iniciando busca paralela para ${semanas.length} semanas`);
+      console.log(`⚡ [OTIMIZADO] BATCH: Iniciando busca paralela para ${semanas.length} semanas`);
       
       const result = await SupervisorComissionamentoBatchService.calcularComissionamentoMultiplasSemanasParalelo(
         supervisorId,
@@ -32,7 +32,7 @@ export const useSupervisorComissionamentoBatch = (
       const endTime = performance.now();
       const duration = Math.round(endTime - startTime);
       
-      console.log(`✅ BATCH: Busca paralela concluída em ${duration}ms:`, {
+      console.log(`✅ [OTIMIZADO] BATCH: Busca paralela concluída em ${duration}ms:`, {
         totalSemanas: result.length,
         semanasComDados: result.filter(r => r.totalSDRs > 0).length,
         tempoProcessamento: `${duration}ms`,
@@ -43,11 +43,11 @@ export const useSupervisorComissionamentoBatch = (
       return result;
     },
     enabled: !!supervisorId && !!ano && !!mes && semanas.length > 0,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 15 * 60 * 1000, // 15 minutos - triplicado
+    gcTime: 30 * 60 * 1000, // 30 minutos
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    // Estratégia de background refetch para melhor UX
-    refetchInterval: 1000 * 60 * 10, // 10 minutos em background
+    refetchInterval: 60 * 60 * 1000, // 1 hora em vez de 10 minutos (6x menos)
   });
 };
 
