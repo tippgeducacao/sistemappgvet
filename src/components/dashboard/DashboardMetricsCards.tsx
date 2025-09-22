@@ -92,61 +92,6 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
     };
   }, [filteredVendas]);
 
-  // Calcular melhor vendedor para admin/secretaria
-  const melhorVendedor = useMemo(() => {
-    if (!isAdmin && !isSecretaria && userType !== 'admin' && userType !== 'secretaria') {
-      return null;
-    }
-
-    // Filtrar vendedores - remover "Vendedor teste" exceto para admin específico
-    const userEmail = profile?.email || currentUser?.email;
-    const isSpecificAdmin = userEmail === 'wallasmonteiro019@gmail.com';
-    const vendedoresFiltrados = vendedores.filter(vendedor => {
-      if (isSpecificAdmin) {
-        return true;
-      }
-      return vendedor.name !== 'Vendedor teste';
-    });
-
-    // Agrupar vendas por vendedor
-    const vendedoresStats = filteredVendas.reduce((acc, venda) => {
-      const vendedorId = venda.vendedor_id;
-      const vendedorInfo = vendedoresFiltrados.find(v => v.id === vendedorId);
-      if (!vendedorInfo) return acc;
-      if (!acc[vendedorId]) {
-        acc[vendedorId] = {
-          id: vendedorId,
-          nome: vendedorInfo.name,
-          photo_url: vendedorInfo.photo_url,
-          vendas: 0,
-          pontuacao: 0
-        };
-      }
-      
-      // APENAS contabilizar vendas aprovadas - 0,3 pontos por curso
-      if (venda.status === 'matriculado') {
-        acc[vendedorId].vendas++;
-        acc[vendedorId].pontuacao += 0.3; // 0,3 pontos por curso vendido
-      }
-      return acc;
-    }, {} as Record<string, {
-      id: string;
-      nome: string;
-      photo_url?: string;
-      vendas: number;
-      pontuacao: number;
-    }>);
-
-    // Encontrar o melhor vendedor (mais vendas aprovadas)
-    const vendedoresArray = Object.values(vendedoresStats);
-    if (vendedoresArray.length === 0) return null;
-    return vendedoresArray.sort((a, b) => {
-      if (a.vendas !== b.vendas) {
-        return b.vendas - a.vendas;
-      }
-      return b.pontuacao - a.pontuacao;
-    })[0];
-  }, [filteredVendas, vendedores, isAdmin, isSecretaria, userType, profile?.email, currentUser?.email]);
 
   const isVendedor = userType === 'vendedor' || !isAdmin && !isSecretaria;
 
@@ -243,35 +188,6 @@ const DashboardMetricsCards: React.FC<DashboardMetricsCardsProps> = ({
         </CardContent>
       </Card>
 
-      {melhorVendedor && <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/50 dark:via-yellow-950/50 dark:to-orange-950/50 hover:shadow-xl transition-all duration-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-semibold flex items-center gap-1 text-amber-700 dark:text-amber-400 uppercase tracking-wider">
-              <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-              Melhor Vendedor
-            </CardTitle>
-            <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs px-2 py-1 shadow-sm">🏆 #1</Badge>
-          </CardHeader>
-          <CardContent className="pt-2 flex items-center gap-3">
-            <Avatar className="h-10 w-10 ring-2 ring-amber-400 shadow-md flex-shrink-0">
-              <AvatarImage src={melhorVendedor.photo_url} alt={melhorVendedor.nome} className="object-cover" />
-              <AvatarFallback className="text-sm bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-900 dark:to-yellow-900 text-amber-800 dark:text-amber-200 font-bold">
-                {melhorVendedor.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm text-foreground leading-tight truncate">
-                {melhorVendedor.nome}
-              </p>
-              <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                {melhorVendedor.vendas} {melhorVendedor.vendas === 1 ? 'venda aprovada' : 'vendas aprovadas'}
-              </p>
-              <p className="text-xs text-amber-600 dark:text-amber-500 font-medium">
-                {DataFormattingService.formatPoints(melhorVendedor.pontuacao)} pts
-              </p>
-            </div>
-          </CardContent>
-        </Card>}
     </div>;
 };
 export default DashboardMetricsCards;
