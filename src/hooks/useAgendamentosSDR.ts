@@ -126,7 +126,7 @@ export const useAgendamentosSDR = () => {
 
   // Filtrar agendamentos ativos (não cancelados)
   const agendamentosAtivos = agendamentos.filter(ag => 
-    ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'remarcado'].includes(ag.status)
+    ['agendado', 'atrasado', 'finalizado', 'finalizado_venda', 'remarcado', 'realizado'].includes(ag.status)
   );
 
   return {
