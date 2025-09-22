@@ -19,7 +19,6 @@ import AgendamentosPage from '@/components/agendamentos/AgendamentosPage';
 import { GerenciarEventosRecorrentes } from '@/components/agendamentos/GerenciarEventosRecorrentes';
 import VendedorReunioes from '@/components/vendedor/VendedorReunioes';
 import { RelatorioDiario } from '@/components/vendedor/RelatorioDiario';
-import GerenciarPerfis from '@/components/GerenciarPerfis';
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
@@ -193,7 +192,12 @@ const RouteRenderer: React.FC = () => {
     case 'gerenciar-perfis':
       // Apenas admin e diretor podem gerenciar perfis
       if (isAdmin || isDiretor) {
-        return <GerenciarPerfis />;
+        const GerenciarPerfis = React.lazy(() => import('@/components/GerenciarPerfis'));
+        return (
+          <React.Suspense fallback={<div>Carregando...</div>}>
+            <GerenciarPerfis />
+          </React.Suspense>
+        );
       }
       return (
         <div className="p-6">

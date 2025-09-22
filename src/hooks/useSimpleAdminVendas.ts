@@ -24,9 +24,7 @@ export const useSimpleAdminVendas = () => {
         return AdminVendasService.getAllVendasForAdmin();
       }
     },
-    refetchInterval: false, // OTIMIZADA: Removido polling
-    staleTime: 300000, // 5 minutos
-    refetchOnWindowFocus: false,
+    refetchInterval: 3000,
   });
 
   const updateStatusMutation = useMutation({

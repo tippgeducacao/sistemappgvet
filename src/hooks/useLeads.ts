@@ -68,48 +68,115 @@ export const useLeads = (page: number = 1, itemsPerPage: number = 100, filters: 
   return useQuery({
     queryKey: ['leads', page, itemsPerPage, filters],
     queryFn: async () => {
-      console.log('🔍 BUSCANDO LEADS PAGINADOS...');
-      
-      // OTIMIZAÇÃO CRÍTICA: Buscar apenas os leads necessários para esta página
-      const offset = (page - 1) * itemsPerPage;
-      
-      let query = supabase
-        .from('leads')
-        .select(`
-          *,
-          vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
-        `, { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(offset, offset + itemsPerPage - 1);
+      console.log('🔍 INICIANDO BUSCA DE LEADS...');
+      // Buscar TODOS os leads usando paginação em lotes
+      let allData: any[] = [];
+      let startIndex = 0;
+      const batchSize = 1000;
+      let hasMore = true;
 
-      const { data: allData, error, count } = await query;
+      while (hasMore) {
+        let query = supabase
+          .from('leads')
+          .select(`
+            *,
+            vendedor_atribuido_profile:profiles!vendedor_atribuido(name, email)
+          `)
+          .order('created_at', { ascending: false })
+          .range(startIndex, startIndex + batchSize - 1);
 
-      if (error) throw error;
+        const { data: batchData, error: batchError } = await query;
+
+        if (batchError) throw batchError;
+        
+        console.log(`📦 Lote ${Math.floor(startIndex/batchSize) + 1}: ${batchData?.length || 0} leads`);
+        
+        if (batchData && batchData.length > 0) {
+          allData = [...allData, ...batchData];
+          startIndex += batchSize;
+          hasMore = batchData.length === batchSize;
+        } else {
+          hasMore = false;
+        }
+      }
       
-      console.log(`📊 LEADS PAGINADOS BUSCADOS: ${allData?.length || 0}`);
+      console.log(`📊 TOTAL DE LEADS BUSCADOS: ${allData.length}`);
       
       // Map to ensure all required fields are present
-      const leads = (allData || []).map(item => ({
+      let allFilteredLeads = allData.map(item => ({
         ...item,
         data_captura: item.created_at || new Date().toISOString(),
         convertido_em_venda: false,
         vendedor_atribuido_profile: item.vendedor_atribuido_profile || undefined
       })) as Lead[];
 
-      // OTIMIZAÇÃO: Filtros agora aplicados no servidor quando possível
-      // Para filtros complexos que precisam do lado cliente, usar busca menor
-      const totalCount = count || 0;
+      // Aplicar TODOS os filtros no lado cliente
+      if (filters.searchTerm) {
+        const searchTerm = filters.searchTerm.toLowerCase();
+        allFilteredLeads = allFilteredLeads.filter(lead => 
+          lead.nome?.toLowerCase().includes(searchTerm) ||
+          lead.email?.toLowerCase().includes(searchTerm) ||
+          lead.whatsapp?.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      if (filters.statusFilter && filters.statusFilter !== 'todos') {
+        allFilteredLeads = allFilteredLeads.filter(lead => lead.status === filters.statusFilter);
+      }
+
+      if (filters.fonteFilter && filters.fonteFilter !== 'todos') {
+        allFilteredLeads = allFilteredLeads.filter(lead => lead.utm_source === filters.fonteFilter);
+      }
+
+      if (filters.profissaoFilter && filters.profissaoFilter !== 'todos') {
+        allFilteredLeads = allFilteredLeads.filter(lead => {
+          const match = lead.observacoes?.match(/Profissão\/Área:\s*([^\n]+)/);
+          const profissao = match ? match[1].trim() : null;
+          return profissao === filters.profissaoFilter;
+        });
+      }
+
+      if (filters.paginaFilter && filters.paginaFilter !== 'todos') {
+        console.log('🔍 [useLeads] Aplicando filtro de página:', filters.paginaFilter);
+        allFilteredLeads = allFilteredLeads.filter(lead => {
+          const pagina = normalizePageSlug(lead.pagina_nome);
+          const match = pagina === filters.paginaFilter.toLowerCase();
+          if (!match && lead.pagina_nome?.includes(filters.paginaFilter)) {
+            console.log('❓ [useLeads] Possível discrepância:', {
+              original: lead.pagina_nome,
+              normalizado: pagina,
+              filtro: filters.paginaFilter
+            });
+          }
+          return match;
+        });
+        console.log('🔍 [useLeads] Leads após filtro de página:', allFilteredLeads.length);
+      }
+
+      // Filtro por data
+      if (filters.dateFrom || filters.dateTo) {
+        allFilteredLeads = allFilteredLeads.filter(lead => {
+          const leadDate = new Date(lead.created_at);
+          const matchesDateFrom = !filters.dateFrom || leadDate >= filters.dateFrom;
+          const matchesDateTo = !filters.dateTo || leadDate <= filters.dateTo;
+          return matchesDateFrom && matchesDateTo;
+        });
+      }
+
+      // Agora aplicar a paginação nos leads já filtrados
+      const totalCount = allFilteredLeads.length;
       const totalPages = Math.ceil(totalCount / itemsPerPage);
+      const paginationStart = (page - 1) * itemsPerPage;
+      const paginationEnd = paginationStart + itemsPerPage;
+      const paginatedLeads = allFilteredLeads.slice(paginationStart, paginationEnd);
 
       return {
-        leads,
+        leads: paginatedLeads,
         totalCount,
         totalPages,
-        filteredCount: totalCount
+        filteredCount: totalCount // Total de leads após aplicar filtros
       };
     },
-    staleTime: 600000, // 10 minutos para all leads
-    refetchOnWindowFocus: false,
   });
 };
 
@@ -152,7 +219,7 @@ export const useLeadsFilterData = () => {
         .from('leads')
         .select('observacoes, pagina_nome, utm_source')
         .not('pagina_nome', 'is', null)
-        .limit(5000); // Reduzido drasticamente
+        .limit(50000);
 
       if (error) {
         console.error('❌ [useLeadsFilterData] Erro ao buscar dados:', error);

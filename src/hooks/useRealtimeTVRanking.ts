@@ -3,73 +3,118 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-/**
- * OTIMIZADA: Realtime TV Ranking com menos canais e debounce
- */
 export const useRealtimeTVRanking = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    let debounceTimeout: NodeJS.Timeout;
+    console.log('🔴 Configurando realtime para TV Ranking');
 
-    const debouncedInvalidate = (queryKeys: string[][]) => {
-      clearTimeout(debounceTimeout);
-      debounceTimeout = setTimeout(() => {
-        queryKeys.forEach(key => {
-          queryClient.invalidateQueries({ queryKey: key });
-        });
-      }, 5000); // Debounce de 5 segundos - OTIMIZADO
-    };
-
-    console.log('🔵 OTIMIZADA: Configurando realtime TV Ranking');
-
-    // OTIMIZAÇÃO: Apenas 1 canal para form_entries (mais importante)
+    // Canal para escutar mudanças nas tabelas críticas
     const channel = supabase
-      .channel('tv-ranking-realtime-optimized')
+      .channel('tv-ranking-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'form_entries'
+        },
+        (payload) => {
+          console.log('🔴 Mudança detectada em form_entries:', payload);
+          
+          // Invalidar queries relacionadas a vendas
+          queryClient.invalidateQueries({ queryKey: ['all-vendas'] });
+          queryClient.invalidateQueries({ queryKey: ['vendas'] });
+          
+          // Toast discreto para mudanças importantes
+          if (payload.eventType === 'INSERT') {
+            toast.success('Nova venda registrada!', { duration: 2000 });
+          } else if (payload.eventType === 'UPDATE' && payload.new?.status !== payload.old?.status) {
+            toast.success('Status de venda atualizado!', { duration: 2000 });
+          }
+        }
+      )
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'form_entries'
+          table: 'agendamentos'
         },
         (payload) => {
-          console.log('🔵 OTIMIZADA: Mudança em vendas:', payload.eventType);
+          console.log('🔴 Mudança detectada em agendamentos:', payload);
           
-          if (payload.eventType === 'INSERT') {
-            toast.success('🎉 Nova venda registrada!', { duration: 3000 });
-          } else if (payload.eventType === 'UPDATE') {
-            const newData = payload.new as any;
-            const oldData = payload.old as any;
-            
-            if (newData?.status !== oldData?.status && newData?.status === 'matriculado') {
-              toast.success('✅ Venda aprovada - ranking atualizado!', { duration: 3000 });
+          // Invalidar queries relacionadas a agendamentos
+          queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
+          queryClient.invalidateQueries({ queryKey: ['agendamentos-sdr'] });
+          queryClient.invalidateQueries({ queryKey: ['all-agendamentos'] });
+          
+          // Toast para mudanças em resultado de reunião
+          if (payload.eventType === 'UPDATE' && payload.new?.resultado_reuniao !== payload.old?.resultado_reuniao) {
+            if (payload.new?.resultado_reuniao === 'comprou') {
+              toast.success('Reunião converteu em venda!', { duration: 2000 });
             }
           }
-
-          // OTIMIZADO: Apenas queries essenciais com debounce
-          debouncedInvalidate([
-            ['all-vendas'],
-            ['vendas']
-          ]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          console.log('🔴 Mudança detectada em profiles:', payload);
+          
+          // Invalidar queries relacionadas a vendedores
+          queryClient.invalidateQueries({ queryKey: ['vendedores'] });
+          queryClient.invalidateQueries({ queryKey: ['vendedores-only'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'metas_semanais_vendedores'
+        },
+        (payload) => {
+          console.log('🔴 Mudança detectada em metas_semanais_vendedores:', payload);
+          
+          // Invalidar queries relacionadas a metas
+          queryClient.invalidateQueries({ queryKey: ['metas-semanais'] });
+          
+          if (payload.eventType === 'UPDATE') {
+            toast.success('Meta semanal atualizada!', { duration: 2000 });
+          }
         }
       )
       .subscribe((status) => {
-        console.log('🔵 OTIMIZADA: Status do canal TV Ranking:', status);
+        console.log('🔴 Status do canal realtime TV Ranking:', status);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime TV Ranking ativo');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Erro no canal realtime TV Ranking');
+        }
       });
 
+    // Cleanup
     return () => {
-      console.log('🔵 OTIMIZADA: Desconectando realtime TV Ranking');
-      clearTimeout(debounceTimeout);
+      console.log('🔴 Desconectando realtime TV Ranking');
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
 
   return {
+    // Função para forçar atualização manual se necessário
     forceRefresh: () => {
-      console.log('🔄 OTIMIZADA: Forçando refresh TV Ranking');
+      console.log('🔴 Forçando refresh manual TV Ranking');
       queryClient.invalidateQueries({ queryKey: ['all-vendas'] });
-      queryClient.invalidateQueries({ queryKey: ['vendas'] });
+      queryClient.invalidateQueries({ queryKey: ['vendedores'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['metas-semanais'] });
     }
   };
 };
