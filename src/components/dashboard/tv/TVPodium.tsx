@@ -21,111 +21,87 @@ interface TVPodiumProps {
 export const TVPodium: React.FC<TVPodiumProps> = ({ topThree }) => {
   if (topThree.length < 3) return null;
 
-  // Reordenar para layout de pódium (2º, 1º, 3º)
-  const podiumOrder = [topThree[1], topThree[0], topThree[2]];
-  const podiumHeights = ['h-32', 'h-40', 'h-24']; // 2º, 1º, 3º
-  const podiumColors = [
-    'bg-gradient-to-t from-slate-400 to-slate-300', // Prata
-    'bg-gradient-to-t from-yellow-500 to-yellow-400', // Ouro
-    'bg-gradient-to-t from-orange-600 to-orange-500'  // Bronze
+  // Layout horizontal para as 3 primeiras posições
+  const borderColors = [
+    'border-yellow-500', // 1º lugar - dourado
+    'border-blue-500',   // 2º lugar - azul
+    'border-orange-500'  // 3º lugar - laranja
   ];
-  const podiumIcons = [Medal, Trophy, Award];
-  const podiumLabels = ['2º', '1º', '3º'];
-  const podiumPositions = [2, 1, 3];
 
   return (
-    <div className="flex items-end justify-center gap-4 mb-8">
-      {podiumOrder.map((person, index) => {
-        if (!person) return null;
-
-        const Icon = podiumIcons[index];
+    <div className="grid grid-cols-3 gap-6 mb-8">
+      {topThree.map((person, index) => {
         const weeklyProgress = person.weeklyTarget > 0 ? (person.weeklySales / person.weeklyTarget) * 100 : 0;
-        const position = podiumPositions[index];
+        const position = index + 1;
 
         return (
           <motion.div
             key={person.id}
-            initial={{ opacity: 0, y: 100 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.3, type: "spring", stiffness: 100 }}
-            className="flex flex-col items-center"
+            transition={{ delay: index * 0.1 }}
+            className={`bg-slate-800 rounded-xl p-6 border-2 ${borderColors[index]} shadow-lg`}
           >
-            {/* Informações do vendedor */}
-            <div className="mb-4 text-center bg-card rounded-lg p-4 border-2 border-primary/20 shadow-lg min-w-[200px]">
-              {/* Avatar */}
-              <div className="relative mb-3">
+            {/* Header com posição e avatar */}
+            <div className="flex items-center gap-4 mb-4">
+              {/* Número da posição */}
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg ${
+                position === 1 ? 'bg-yellow-500' : 
+                position === 2 ? 'bg-blue-500' : 'bg-orange-500'
+              }`}>
+                {position}
+              </div>
+              
+              {/* Avatar e nome */}
+              <div className="flex items-center gap-3">
                 <img
                   src={person.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person.name.replace(' ', '')}`}
                   alt={person.name}
-                  className="w-16 h-16 rounded-full mx-auto border-4 border-primary/30"
+                  className="w-12 h-12 rounded-full border-2 border-white/20"
                 />
-                {/* Ícone de posição */}
-                <div className={`absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center ${
-                  position === 1 ? 'bg-yellow-500' : position === 2 ? 'bg-slate-400' : 'bg-orange-500'
+                <div>
+                  <div className="text-white font-bold text-lg">{person.name}</div>
+                  <div className="text-white/80 text-sm">{person.points.toFixed(0)} pts</div>
+                </div>
+              </div>
+              
+              {/* Porcentagem */}
+              <div className="ml-auto">
+                <div className={`text-2xl font-bold ${
+                  weeklyProgress >= 100 ? 'text-green-400' : 'text-red-400'
                 }`}>
-                  <Icon className="w-4 h-4 text-white" />
+                  {weeklyProgress.toFixed(0)}%
                 </div>
               </div>
-              
-              {/* Nome */}
-              <div className="text-lg font-bold text-foreground mb-1">
-                {person.name}
+            </div>
+
+            {/* Meta Pontos Semanal */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-blue-400 text-sm">Meta Pontos Semanal</span>
+                <span className="text-white font-semibold">
+                  {person.weeklySales.toFixed(1)}/{person.weeklyTarget} ({weeklyProgress.toFixed(0)}%)
+                </span>
               </div>
-              
-              {/* Pontuação */}
-              <div className="text-2xl font-bold text-primary mb-2">
-                {person.points.toFixed(1)} pts
-              </div>
-              
-              {/* Progresso da meta */}
-              <div className="text-sm text-muted-foreground mb-2">
-                {weeklyProgress.toFixed(0)}% da meta
-              </div>
-              
-              {/* Progresso ontem/hoje */}
-              <div className="flex items-center justify-center gap-4 text-xs">
-                <div className="text-center">
-                  <div className="text-muted-foreground">Ontem</div>
-                  <div className="font-semibold text-foreground">{person.yesterdayProgress || 0}</div>
-                </div>
-                <div className="w-px h-4 bg-border"></div>
-                <div className="text-center">
-                  <div className="text-muted-foreground">Hoje</div>
-                  <div className="font-semibold text-primary">{person.todayProgress || 0}</div>
-                </div>
-              </div>
-              
-              {/* Barra de progresso */}
-              <div className="w-full bg-muted rounded-full h-2 mt-3">
+              <div className="w-full bg-gray-600 rounded-full h-2">
                 <div 
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    position === 1 ? 'bg-yellow-500' : 
-                    position === 2 ? 'bg-slate-400' : 'bg-orange-500'
-                  }`}
+                  className="h-full bg-blue-400 rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(weeklyProgress, 100)}%` }}
                 />
               </div>
             </div>
 
-            {/* Base do pódium */}
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: 'auto' }}
-              transition={{ delay: (index * 0.3) + 0.5, duration: 0.5 }}
-              className={`${podiumHeights[index]} ${podiumColors[index]} rounded-t-lg flex flex-col items-center justify-between text-white font-bold shadow-lg border-t-4 border-white/30`}
-              style={{ width: '180px' }}
-            >
-              {/* Label da posição */}
-              <div className="mt-4 text-lg font-black drop-shadow-md">
-                {podiumLabels[index]}
+            {/* Ontem e Hoje */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-blue-400 text-sm mb-1">Ontem</div>
+                <div className="text-white font-bold text-lg">{person.yesterdayProgress || 0}.0 pts</div>
               </div>
-              
-              {/* Pontuação na base */}
-              <div className="mb-4 text-center">
-                <div className="text-sm opacity-90">Pontos</div>
-                <div className="text-xl font-black">{person.points.toFixed(0)}</div>
+              <div>
+                <div className="text-blue-400 text-sm mb-1">Hoje</div>
+                <div className="text-white font-bold text-lg">{person.todayProgress || 0}.0 pts</div>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         );
       })}
