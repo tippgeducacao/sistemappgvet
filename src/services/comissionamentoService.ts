@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { ComissionamentoCacheService } from './cache/ComissionamentoCache';
 
 export interface RegraComissionamento {
   id: string;
@@ -11,25 +12,20 @@ export interface RegraComissionamento {
   created_by?: string;
 }
 
-// Cache in-memory para regras de comissionamento
-interface CacheEntry {
-  data: RegraComissionamento[];
-  timestamp: number;
-}
-
-const CACHE_TTL = 60 * 60 * 1000; // 1 hora
-const regrasCache = new Map<string, CacheEntry>();
-
 export class ComissionamentoService {
   static async fetchRegras(tipoUsuario = 'vendedor'): Promise<RegraComissionamento[]> {
-    // Verificar cache primeiro
-    const cacheKey = tipoUsuario;
-    const cached = regrasCache.get(cacheKey);
+    console.log(`🔍 ComissionamentoService.fetchRegras: Iniciando para ${tipoUsuario}`);
     
-    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-      console.log(`📋 Cache hit para regras ${tipoUsuario}`);
-      return cached.data;
+    // Verificar cache global primeiro
+    const cached = ComissionamentoCacheService.getRegras(tipoUsuario);
+    if (cached) {
+      console.log(`🚀 ComissionamentoService: Cache HIT para ${tipoUsuario}`);
+      return cached;
     }
+
+    // Cache miss - buscar do banco
+    console.log(`🔄 ComissionamentoService: Cache MISS - Buscando do banco para ${tipoUsuario}`);
+    
     const { data, error } = await supabase
       .from('regras_comissionamento')
       .select('*')
@@ -43,14 +39,10 @@ export class ComissionamentoService {
 
     const regras = data || [];
     
-    // Salvar no cache
-    regrasCache.set(cacheKey, {
-      data: regras,
-      timestamp: Date.now()
-    });
+    // Salvar no cache global
+    ComissionamentoCacheService.setRegras(tipoUsuario, regras);
     
-    console.log(`💾 Cache saved para regras ${tipoUsuario}: ${regras.length} regras`);
-    
+    console.log(`✅ ComissionamentoService: ${regras.length} regras carregadas para ${tipoUsuario}`);
     return regras;
   }
 
@@ -58,6 +50,8 @@ export class ComissionamentoService {
     id: string, 
     dados: Partial<Omit<RegraComissionamento, 'id' | 'created_at' | 'updated_at'>>
   ): Promise<void> {
+    console.log(`🔄 ComissionamentoService.updateRegra: Atualizando regra ${id}`);
+    
     const { error } = await supabase
       .from('regras_comissionamento')
       .update(dados)
@@ -67,6 +61,10 @@ export class ComissionamentoService {
       console.error('❌ Erro ao atualizar regra de comissionamento:', error);
       throw error;
     }
+
+    // Limpar cache após atualização
+    ComissionamentoCacheService.clearAll();
+    console.log(`✅ ComissionamentoService: Regra ${id} atualizada e cache limpo`);
   }
 
   static async calcularComissao(
@@ -76,10 +74,42 @@ export class ComissionamentoService {
     tipoUsuario = 'vendedor',
     regrasPreCarregadas?: RegraComissionamento[]
   ): Promise<{ valor: number; multiplicador: number; percentual: number }> {
+    
+    // Verificar cache de cálculo primeiro
+    const cached = ComissionamentoCacheService.getCalculo(
+      pontosObtidos, 
+      metaSemanal, 
+      variabelSemanal, 
+      tipoUsuario
+    );
+    
+    if (cached) {
+      console.log(`🚀 ComissionamentoService.calcularComissao: Cache HIT`);
+      return cached;
+    }
+
+    console.log(`🔄 ComissionamentoService.calcularComissao: Cache MISS - Calculando`, {
+      pontosObtidos,
+      metaSemanal,
+      variabelSemanal,
+      tipoUsuario
+    });
+
     // Proteger contra divisão por zero
     if (metaSemanal === 0) {
       console.warn('⚠️ Meta semanal é zero, retornando comissão zero');
-      return { valor: 0, multiplicador: 0, percentual: 0 };
+      const resultado = { valor: 0, multiplicador: 0, percentual: 0 };
+      
+      // Salvar no cache mesmo com valor zero
+      ComissionamentoCacheService.setCalculo(
+        pontosObtidos,
+        metaSemanal,
+        variabelSemanal,
+        tipoUsuario,
+        resultado
+      );
+      
+      return resultado;
     }
     
     const percentualBruto = (pontosObtidos / metaSemanal) * 100;
@@ -171,11 +201,22 @@ export class ComissionamentoService {
         regraUsada: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}` : 'nenhuma'
       });
 
-      return {
+      const resultado = {
         valor,
         multiplicador,
         percentual: Math.round(percentualBruto * 100) / 100
       };
+
+      // Salvar resultado no cache antes de retornar
+      ComissionamentoCacheService.setCalculo(
+        pontosObtidos,
+        metaSemanal,
+        variabelSemanal,
+        tipoUsuario,
+        resultado
+      );
+
+      return resultado;
     }
     
     // LÓGICA CORRIGIDA: encontrar a regra mais específica aplicável
@@ -214,10 +255,21 @@ export class ComissionamentoService {
       regraUsada: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}` : 'nenhuma'
     });
 
-    return {
+    const resultado = {
       valor,
       multiplicador,
       percentual: Math.round(percentualBruto * 100) / 100 // Percentual exato para display
     };
+
+    // Salvar resultado no cache antes de retornar
+    ComissionamentoCacheService.setCalculo(
+      pontosObtidos,
+      metaSemanal,
+      variabelSemanal,
+      tipoUsuario,
+      resultado
+    );
+
+    return resultado;
   }
 }

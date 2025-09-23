@@ -51,6 +51,22 @@ export class OptimizedCacheService {
       refetchOnWindowFocus: false,
       refetchOnMount: false,
     },
+    
+    // Comissionamento - cache muito agressivo (dados raramente mudam)
+    COMISSIONAMENTO_REGRAS: {
+      staleTime: 15 * 60 * 1000, // 15 minutos
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    },
+    
+    // Cálculos de comissão - cache moderado
+    COMISSIONAMENTO_CALCULOS: {
+      staleTime: 10 * 60 * 1000, // 10 minutos
+      gcTime: 20 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    },
   };
 
   /**
@@ -78,6 +94,7 @@ export class OptimizedCacheService {
     AGENDAMENTOS_RELATED: ['agendamentos', 'agendamentos-stats', 'all-agendamentos'],
     VENDEDORES_RELATED: ['vendedores', 'vendedores-only'],
     METAS_RELATED: ['metas-semanais', 'metas-vendedores'],
+    COMISSIONAMENTO_RELATED: ['comissionamento-regras', 'comissionamento-calculos', 'weekly-commissions'],
   };
 
   /**

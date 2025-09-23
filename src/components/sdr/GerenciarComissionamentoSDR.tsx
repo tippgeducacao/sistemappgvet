@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useComissionamento } from '@/hooks/useComissionamento';
+import { useOptimizedComissionamento } from '@/hooks/useOptimizedComissionamento';
 import { Loader2, Save, Edit2, Check, X } from 'lucide-react';
 import { RegraComissionamento } from '@/services/comissionamentoService';
 
 export const GerenciarComissionamentoSDR = () => {
-  const { regras, loading, updateRegra } = useComissionamento('sdr');
+  const { regras, loading, updateRegra } = useOptimizedComissionamento('sdr');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<Partial<RegraComissionamento>>({});
 

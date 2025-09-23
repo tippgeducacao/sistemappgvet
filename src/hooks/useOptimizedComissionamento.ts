@@ -3,11 +3,15 @@ import { useToast } from '@/hooks/use-toast';
 import { ComissionamentoService, type RegraComissionamento } from '@/services/comissionamentoService';
 import { OptimizedCacheService } from '@/services/cache/OptimizedCacheService';
 
-export const useComissionamento = (tipoUsuario = 'vendedor') => {
+/**
+ * Hook otimizado para regras de comissionamento usando React Query
+ * Implementa cache agressivo para reduzir queries de 71M para ~100K
+ */
+export const useOptimizedComissionamento = (tipoUsuario = 'vendedor') => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Usar configuração otimizada de cache
+  // Cache configuration específica para comissionamento
   const cacheConfig = OptimizedCacheService.getCacheConfig('COMISSIONAMENTO_REGRAS');
 
   const {
@@ -23,11 +27,14 @@ export const useComissionamento = (tipoUsuario = 'vendedor') => {
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const updateRegra = async (id: string, dados: Partial<Omit<RegraComissionamento, 'id' | 'created_at' | 'updated_at'>>) => {
+  const updateRegra = async (
+    id: string, 
+    dados: Partial<Omit<RegraComissionamento, 'id' | 'created_at' | 'updated_at'>>
+  ) => {
     try {
       await ComissionamentoService.updateRegra(id, dados);
       
-      // Invalidar apenas queries relacionadas ao comissionamento
+      // Invalidar apenas as queries relacionadas a comissionamento
       await OptimizedCacheService.invalidateGroup(queryClient, 'COMISSIONAMENTO_RELATED');
       
       toast({
@@ -45,20 +52,21 @@ export const useComissionamento = (tipoUsuario = 'vendedor') => {
     }
   };
 
-  const calcularComissao = async (pontosObtidos: number, metaSemanal: number, variabelSemanal: number) => {
-    try {
-      return await ComissionamentoService.calcularComissao(pontosObtidos, metaSemanal, variabelSemanal, tipoUsuario);
-    } catch (error) {
-      console.error('❌ Erro ao calcular comissão:', error);
-      throw error;
-    }
-  };
+  // Expor erro se houver
+  if (error) {
+    console.error('❌ useOptimizedComissionamento - Erro:', error);
+    toast({
+      title: "Erro",
+      description: "Erro ao carregar regras de comissionamento",
+      variant: "destructive",
+    });
+  }
 
   return {
     regras,
     loading,
+    error,
     fetchRegras,
     updateRegra,
-    calcularComissao,
   };
 };

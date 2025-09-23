@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ComissionamentoService } from '@/services/comissionamentoService';
+import { useBatchComissionamentoCalculation } from '@/hooks/useComissionamentoCalculation';
 import { supabase } from '@/integrations/supabase/client';
 
 // Regras de comissionamento SDR atualizadas conforme banco
@@ -46,33 +46,32 @@ interface SDRTableRowProps {
   niveis: any[];
 }
 
-const SDRTableRow: React.FC<SDRTableRowProps> = ({
+const SDRTableRow: React.FC<SDRTableRowProps> = React.memo(({
   sdr,
   index,
   weeks,
   agendamentos,
   niveis
 }) => {
-  const [totalSDRCommission, setTotalSDRCommission] = useState(0);
-  const [weeklySDRCommissions, setWeeklySDRCommissions] = useState<number[]>([]);
+  const [reunioesPorSemana, setReunioesPorSemana] = useState<number[]>([]);
 
   const sdrTipoUsuario = sdr.user_type;
   
   console.log('🔍 SDR Row - Dados do SDR:', { nivel: sdr.nivel, userType: sdr.user_type });
   
   // Buscar configuração do nível diretamente usando apenas o nível básico
-  const nivelConfig = niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel === sdr.nivel);
+  const nivelConfig = useMemo(() => 
+    niveis.find(n => n.tipo_usuario === 'sdr' && n.nivel === sdr.nivel),
+    [niveis, sdr.nivel]
+  );
   
   console.log('📊 SDR Row - Configuração do nível encontrada:', nivelConfig);
   
   const metaSemanal = nivelConfig?.meta_semanal_inbound ?? 55;
-  
-  const metaMensal = metaSemanal * weeks.length;
+  const metaMensal = useMemo(() => metaSemanal * weeks.length, [metaSemanal, weeks.length]);
   const variavelSemanal = Number(nivelConfig?.variavel_semanal || 0);
-  
+
   // NOVA LÓGICA - Baseada exatamente no SDRMetasSemanais (que está correto)
-  const [reunioesPorSemana, setReunioesPorSemana] = useState<number[]>([]);
-  
   useEffect(() => {
     const fetchAgendamentosPorSemana = async () => {
       console.log(`🔄 ${sdr.name} - Buscando agendamentos por semana...`);
@@ -137,29 +136,48 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
     }
   }, [sdr.id, weeks]);
   
-  // Calcular totais
-  const totalReunioes = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
-  const achievementPercentage = metaMensal > 0 ? (totalReunioes / metaMensal) * 100 : 0;
+  // Calcular totais com memoização
+  const { totalReunioes, achievementPercentage } = useMemo(() => {
+    const total = reunioesPorSemana.reduce((sum, reunioes) => sum + reunioes, 0);
+    const percentage = metaMensal > 0 ? (total / metaMensal) * 100 : 0;
+    
+    return {
+      totalReunioes: total,
+      achievementPercentage: percentage
+    };
+  }, [reunioesPorSemana, metaMensal]);
   
   console.log(`🎯 NOVA LÓGICA - ${sdr.name} - RESUMO: ${totalReunioes} reuniões total, ${achievementPercentage.toFixed(1)}% da meta`);
   
-  useEffect(() => {
-    const calculateSDRCommissions = async () => {
-      const commissions = await Promise.all(
-        reunioesPorSemana.map(reunioes => 
-          ComissionamentoService.calcularComissao(reunioes, metaSemanal, variavelSemanal, 'sdr')
-        )
-      );
-      
-      const total = commissions.reduce((sum, c) => sum + c.valor, 0);
-      setTotalSDRCommission(total);
-      setWeeklySDRCommissions(commissions.map(c => c.valor));
-    };
-    
-    if (reunioesPorSemana.length > 0) {
-      calculateSDRCommissions();
+  // Usar hook otimizado para cálculos de comissão semanal em batch
+  const calculosComissao = weeks.map((_, weekIndex) => ({
+    pontosObtidos: reunioesPorSemana[weekIndex] || 0,
+    metaSemanal,
+    variavelSemanal,
+    tipoUsuario: 'sdr' as const,
+    enabled: reunioesPorSemana.length > 0
+  }));
+  
+  // Hook para múltiplos cálculos otimizados
+  const { data: commissionsData, loading: commissionsLoading } = useBatchComissionamentoCalculation(
+    calculosComissao,
+    reunioesPorSemana.length > 0
+  );
+  
+  // Calcular total de comissões com memoização
+  const { totalSDRCommission, weeklySDRCommissions } = useMemo(() => {
+    if (!commissionsData || commissionsData.length === 0) {
+      return { totalSDRCommission: 0, weeklySDRCommissions: [] };
     }
-  }, [reunioesPorSemana, metaSemanal, variavelSemanal]);
+    
+    const weeklyValues = commissionsData.map(c => c?.valor || 0);
+    const total = weeklyValues.reduce((sum, value) => sum + value, 0);
+    
+    return {
+      totalSDRCommission: total,
+      weeklySDRCommissions: weeklyValues
+    };
+  }, [commissionsData]);
 
   return (
     <tr key={sdr.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
@@ -180,11 +198,11 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
       <td className="p-2">R$ {variavelSemanal.toFixed(2)}</td>
       {reunioesPorSemana.map((reunioes, weekIndex) => {
         const percentage = metaSemanal > 0 ? ((reunioes / metaSemanal) * 100).toFixed(1) : "0.0";
-        const weeklyCommission = weeklySDRCommissions[weekIndex] || 0;
         
         // Calcular o multiplicador correto baseado na porcentagem atingida
         const percentualAtingido = metaSemanal > 0 ? (reunioes / metaSemanal) * 100 : 0;
         const multiplicador = getMultiplicadorSDR(percentualAtingido);
+        const weeklyCommission = weeklySDRCommissions[weekIndex] || 0;
         
         return (
           <td key={weekIndex} className="p-2 text-xs">
@@ -198,6 +216,8 @@ const SDRTableRow: React.FC<SDRTableRowProps> = ({
       <td className="p-2 font-semibold text-green-600">R$ {totalSDRCommission.toFixed(2)}</td>
     </tr>
   );
-};
+});
+
+SDRTableRow.displayName = 'SDRTableRow';
 
 export default SDRTableRow;
