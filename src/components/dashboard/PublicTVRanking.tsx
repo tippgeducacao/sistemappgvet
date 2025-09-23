@@ -1,9 +1,14 @@
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Trophy, TrendingUp, Target, Users, Wifi } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { useOptimizedTVRankingData } from '@/hooks/useOptimizedTVRankingData';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSmartTVRankingData } from '@/hooks/useSmartTVRankingData';
+import { useSelectiveRealtimeTVUpdates } from '@/hooks/useSelectiveRealtimeTVUpdates';
+import { TVHeader } from './tv/TVHeader';
+import { TVPodium } from './tv/TVPodium';
+import { TVVendorCard } from './tv/TVVendorCard';
+import { TVSDRSection } from './tv/TVSDRSection';
+import { TVSummaryPanel } from './tv/TVSummaryPanel';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 interface VendedorData {
   id: string;
@@ -17,204 +22,111 @@ interface VendedorData {
   reunioesSemana?: number;
   metaReunioesSemanais?: number;
   taxaConversaoSemanal?: number;
+  yesterdayProgress?: number;
+  todayProgress?: number;
 }
 
-const VendedorCard: React.FC<{ person: VendedorData; rank: number; isTopThree?: boolean }> = ({ 
-  person, 
-  rank, 
-  isTopThree = false 
-}) => {
-  const weeklyProgress = person.weeklyTarget > 0 ? (person.weeklySales / person.weeklyTarget) * 100 : 0;
-  const reunioesWeeklyProgress = person.isSDR && person.metaReunioesSemanais ? 
-    (person.reunioesSemana! / person.metaReunioesSemanais) * 100 : 0;
+const PublicTVRanking: React.FC = () => {
+  // Estados para controles da TV
+  const [semanaOffset, setSemanaOffset] = useState(0);
+  const [currentZoom, setCurrentZoom] = useState(100);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  // Hooks otimizados para TV
+  const { vendedoresData, isLoading, error, lastUpdated, weekSummary } = useSmartTVRankingData(semanaOffset);
+  const { forceRefresh, connectionStatus } = useSelectiveRealtimeTVUpdates();
 
-  const getCardStyle = () => {
-    if (person.isSDR) {
-      return weeklyProgress >= 71 
-        ? 'bg-card border-green-500 border-2 shadow-lg' 
-        : 'bg-card border-red-500 border-2 shadow-lg';
-    }
+  // Separar vendedores e SDRs
+  const { vendedores, sdrs } = useMemo(() => {
+    const vendedores = vendedoresData.filter(v => !v.isSDR);
+    const sdrs = vendedoresData.filter(v => v.isSDR);
+    return {
+      vendedores: vendedores.sort((a, b) => b.weeklySales - a.weeklySales),
+      sdrs: sdrs.sort((a, b) => b.weeklySales - a.weeklySales)
+    };
+  }, [vendedoresData]);
+
+  const topThree = vendedores.slice(0, 3);
+  const restOfVendedores = vendedores.slice(3, 12); // Top 12 para TV
+
+  // Controles da TV
+  const getCurrentWeekText = () => {
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay() + 3 + (semanaOffset * 7)); // Quarta
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6); // Terça
     
-    if (!isTopThree) return 'bg-card border-border';
+    return `${weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - ${weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`;
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Ranking de Vendas - TV', 20, 20);
+    doc.text(`Período: ${getCurrentWeekText()}`, 20, 30);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, 40);
     
-    switch (rank) {
-      case 1: return 'bg-card border-yellow-500 border-2 shadow-lg shadow-yellow-500/20';
-      case 2: return 'bg-card border-gray-400 border-2 shadow-lg shadow-gray-500/20';
-      case 3: return 'bg-card border-orange-500 border-2 shadow-lg shadow-orange-500/20';
-      default: return 'bg-card border-border';
+    const tableData = vendedores.map((v, i) => [
+      i + 1,
+      v.name,
+      v.weeklySales.toFixed(1),
+      v.weeklyTarget.toString(),
+      `${((v.weeklySales / v.weeklyTarget) * 100).toFixed(0)}%`
+    ]);
+    
+    (doc as any).autoTable({
+      head: [['Posição', 'Nome', 'Vendas', 'Meta', 'Progresso']],
+      body: tableData,
+      startY: 50
+    });
+    
+    doc.save(`ranking-vendas-${getCurrentWeekText()}.pdf`);
+  };
+
+  const handleExportExcel = () => {
+    const data = vendedores.map((v, i) => ({
+      Posição: i + 1,
+      Nome: v.name,
+      Vendas: v.weeklySales,
+      Meta: v.weeklyTarget,
+      Progresso: `${((v.weeklySales / v.weeklyTarget) * 100).toFixed(0)}%`,
+      'Ontem': v.yesterdayProgress || 0,
+      'Hoje': v.todayProgress || 0
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Ranking');
+    XLSX.writeFile(wb, `ranking-vendas-${getCurrentWeekText()}.xlsx`);
+  };
+
+  const handleToggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
     }
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: rank * 0.05 }}
-      className={`relative border rounded-lg p-3 hover:shadow-md transition-shadow ${getCardStyle()}`}
-    >
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-bold">
-            {rank}
-          </div>
-          <img
-            src={person.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person.name.replace(' ', '')}`}
-            alt={person.name}
-            className="w-9 h-9 rounded-full"
-          />
-          <div>
-            <div className="text-sm font-medium text-foreground">{person.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {person.isSDR ? '' : `${person.points} pts`}
-            </div>
-            <div className="flex items-center gap-1 mt-1">
-              <div className={`w-1.5 h-1.5 rounded-full ${weeklyProgress >= 100 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-xs text-muted-foreground">
-                {weeklyProgress.toFixed(0)}%
-              </span>
-              {person.isSDR && person.taxaConversaoSemanal !== undefined && (
-                <>
-                  <div className={`w-1.5 h-1.5 rounded-full ml-2 ${
-                    person.taxaConversaoSemanal >= 50 ? 'bg-emerald-500' : 
-                    person.taxaConversaoSemanal >= 30 ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}></div>
-                  <span className="text-xs text-muted-foreground">
-                    {person.taxaConversaoSemanal.toFixed(1)}%
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          {person.isSDR && <Users className="w-3 h-3 text-blue-500" />}
-          {!person.isSDR && (weeklyProgress >= 100 ? (
-            <TrendingUp className="w-3 h-3 text-green-500" />
-          ) : (
-            <Target className="w-3 h-3 text-red-500" />
-          ))}
-        </div>
-      </div>
-      
-      <div className="space-y-1">
-        {person.isSDR ? (
-          <>
-            <div>
-              <div className="flex items-center justify-between mb-0.5">
-                <div className="flex items-center gap-1 text-xs text-blue-600">
-                  <Target className="w-2 h-2" />
-                  vendas cursos
-                </div>
-                <span className="text-xs font-medium text-blue-600">
-                  {person.weeklySales}/{person.weeklyTarget}
-                </span>
-              </div>
-              <Progress value={Math.min(weeklyProgress, 100)} className="h-2 bg-blue-100">
-                <div 
-                  className="h-full bg-blue-500 transition-all duration-300 ease-in-out" 
-                  style={{ width: `${Math.min(weeklyProgress, 100)}%` }}
-                />
-              </Progress>
-            </div>
-            
-            <div>
-              <div className="flex items-center justify-between mb-0.5">
-                <div className="flex items-center gap-1 text-xs text-ppgvet-magenta">
-                  <Users className="w-2 h-2" />
-                  reuniões
-                </div>
-                <span className="text-xs font-medium text-ppgvet-magenta">
-                  {person.reunioesSemana}/{person.metaReunioesSemanais}
-                </span>
-              </div>
-              <Progress value={Math.min(reunioesWeeklyProgress, 100)} className="h-2 bg-muted/20">
-                <div 
-                  className="h-full bg-ppgvet-magenta transition-all duration-300 ease-in-out" 
-                  style={{ width: `${Math.min(reunioesWeeklyProgress, 100)}%` }}
-                />
-              </Progress>
-            </div>
-          </>
-        ) : (
-          <div>
-            <div className="flex items-center justify-between mb-0.5">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Target className="w-2 h-2" />
-                Meta Pontos Semanal
-              </div>
-              <span className="text-xs font-medium">
-                {person.weeklySales.toFixed(1)}/{person.weeklyTarget} ({weeklyProgress.toFixed(0)}%)
-              </span>
-            </div>
-            <div className="h-1 bg-muted rounded-full">
-              <div 
-                className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                style={{ width: `${Math.min(weeklyProgress, 100)}%` }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-};
-
-const Podium: React.FC<{ topThree: VendedorData[] }> = ({ topThree }) => {
-  const podiumHeights = [50, 70, 40];
-  const positions = ['2nd', '1st', '3rd'];
-  const colors = ['bg-gray-400', 'bg-yellow-500', 'bg-orange-400'];
-
-  return (
-    <div className="flex items-end justify-center gap-1 mb-4">
-      {[topThree[1], topThree[0], topThree[2]].map((person, index) => (
-        <motion.div
-          key={person?.id}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.2 }}
-          className="flex flex-col items-center"
-        >
-          <div className="mb-1 text-center">
-            <img
-              src={person?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${person?.name.replace(' ', '')}`}
-              alt={person?.name}
-              className="w-12 h-12 rounded-full mx-auto mb-1"
-            />
-            <div className="text-sm font-medium text-foreground">{person?.name}</div>
-            <div className="text-xs text-muted-foreground">{person?.weeklySales?.toFixed(1) || '0.0'} pts</div>
-          </div>
-          <div
-            className={`${colors[index]} rounded-t-lg flex items-end justify-center text-white font-bold text-xs relative`}
-            style={{ height: `${podiumHeights[index]}px`, width: '60px' }}
-          >
-            <div className="absolute top-1">
-              {index === 1 && <Trophy className="w-4 h-4" />}
-              {index !== 1 && <span className="text-xs">{positions[index]}</span>}
-            </div>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
-};
-
-const PublicTVRanking: React.FC = () => {
-  const { vendedoresData, isLoading, error, lastUpdated } = useOptimizedTVRankingData();
-
-  const sortedVendedores = useMemo(() => 
-    vendedoresData.sort((a, b) => b.weeklySales - a.weeklySales),
-    [vendedoresData]
-  );
-
-  const topThree = sortedVendedores.slice(0, 3);
-  const restOfList = sortedVendedores.slice(3, 15); // Mostrar só top 15 para TV pública
+  // Efeito para detectar mudança de fullscreen
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Carregando ranking...</p>
+          <p className="text-2xl text-muted-foreground font-semibold">Carregando ranking para TV...</p>
+          <p className="text-lg text-muted-foreground mt-2">Otimizado para tela de 40 polegadas</p>
         </div>
       </div>
     );
@@ -224,61 +136,76 @@ const PublicTVRanking: React.FC = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-lg text-destructive mb-4">Erro ao carregar dados</p>
-          <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
+          <p className="text-2xl text-destructive mb-4 font-semibold">Erro ao carregar dados</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:bg-primary/90"
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6 text-center">
-          <motion.h1 
-            className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-2"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            🏆 RANKING DE VENDAS
-          </motion.h1>
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Wifi className="w-4 h-4 text-green-500" />
-            <span>Atualizado: {lastUpdated}</span>
-          </div>
-        </div>
+    <div 
+      className="min-h-screen bg-background"
+      style={{ 
+        transform: `scale(${currentZoom / 100})`,
+        transformOrigin: 'top left',
+        width: `${10000 / currentZoom}%`,
+        height: `${10000 / currentZoom}%`
+      }}
+    >
+      {/* Header da TV */}
+      <TVHeader
+        currentWeekText={getCurrentWeekText()}
+        semanaOffset={semanaOffset}
+        onWeekChange={setSemanaOffset}
+        onExportPDF={handleExportPDF}
+        onExportExcel={handleExportExcel}
+        onToggleFullscreen={handleToggleFullscreen}
+        onZoomChange={setCurrentZoom}
+        onForceRefresh={forceRefresh}
+        currentZoom={currentZoom}
+        isConnected={connectionStatus === 'SUBSCRIBED'}
+        lastUpdated={lastUpdated}
+        isFullscreen={isFullscreen}
+      />
 
-        {topThree.length >= 3 && (
-          <div className="mb-8">
-            <Podium topThree={topThree} />
-          </div>
-        )}
+      <div className="p-6">
+        <div className="grid grid-cols-4 gap-6 max-w-[1800px] mx-auto">
+          {/* Coluna principal - 3/4 da tela */}
+          <div className="col-span-3 space-y-8">
+            {/* Podium */}
+            {topThree.length >= 3 && (
+              <TVPodium topThree={topThree} />
+            )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {restOfList.map((person, index) => (
-            <VendedorCard
-              key={person.id}
-              person={person}
-              rank={index + 4}
-              isTopThree={false}
+            {/* Cards dos vendedores (posições 4+) */}
+            {restOfVendedores.length > 0 && (
+              <div className="grid grid-cols-2 gap-6">
+                {restOfVendedores.map((person, index) => (
+                  <TVVendorCard
+                    key={person.id}
+                    person={person}
+                    rank={index + 4}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Seção SDR */}
+            <TVSDRSection sdrData={sdrs} />
+          </div>
+
+          {/* Painel lateral - 1/4 da tela */}
+          <div className="col-span-1">
+            <TVSummaryPanel 
+              weekSummary={weekSummary}
+              currentWeekText={getCurrentWeekText()}
             />
-          ))}
-        </div>
-
-        <div className="mt-8 text-center">
-          <div className="inline-flex items-center gap-4 text-sm text-muted-foreground bg-card px-6 py-3 rounded-lg border">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Meta atingida</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span>Abaixo da meta</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-500" />
-              <span>SDR</span>
-            </div>
           </div>
         </div>
       </div>
