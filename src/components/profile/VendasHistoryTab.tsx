@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, Search, Download, Eye } from 'lucide-react';
+import { CalendarIcon, Search, Download, Eye, Grid, List } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
@@ -23,6 +24,7 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedVenda, setSelectedVenda] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
 
   // Filtrar vendas do usuário
   const filteredVendas = useMemo(() => {
@@ -92,7 +94,7 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
 
   return (
     <div className="space-y-4">
-      {/* Filtros e Exportação */}
+      {/* Filtros, Alternância de Visualização e Exportação */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="flex flex-col sm:flex-row gap-4 flex-1">
           <div className="relative flex-1">
@@ -146,24 +148,115 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
           </Popover>
         </div>
 
-        <Button onClick={exportToExcel} className="gap-2">
-          <Download className="h-4 w-4" />
-          Exportar Excel
-        </Button>
+        <div className="flex gap-2">
+          <div className="flex border rounded-lg p-1">
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className="px-3"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+              className="px-3"
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <Button onClick={exportToExcel} className="gap-2">
+            <Download className="h-4 w-4" />
+            Exportar Excel
+          </Button>
+        </div>
       </div>
 
       {/* Lista de vendas */}
-      <div className="space-y-3">
-        {filteredVendas.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <div className="text-muted-foreground">
-                Nenhuma venda encontrada para os filtros selecionados
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredVendas.map((venda) => (
+      {filteredVendas.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="text-muted-foreground">
+              Nenhuma venda encontrada para os filtros selecionados
+            </div>
+          </CardContent>
+        </Card>
+      ) : viewMode === 'table' ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico de Vendas</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Aluno</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Curso</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Enviado</TableHead>
+                  <TableHead>Aprovado</TableHead>
+                  <TableHead>Pontuação</TableHead>
+                  <TableHead>Validada</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredVendas.map((venda) => (
+                  <TableRow key={venda.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">
+                      {venda.aluno?.nome || 'Não informado'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {venda.aluno?.email || 'Não informado'}
+                    </TableCell>
+                    <TableCell>
+                      {venda.curso?.nome || 'Não informado'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(venda.status)}>
+                        {venda.status === 'matriculado' ? 'Matriculado' : 
+                         venda.status === 'pendente' ? 'Pendente' : 'Rejeitado'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(venda.enviado_em), 'dd/MM/yyyy', { locale: ptBR })}
+                    </TableCell>
+                    <TableCell>
+                      {venda.data_aprovacao 
+                        ? format(new Date(venda.data_aprovacao), 'dd/MM/yyyy', { locale: ptBR })
+                        : '-'
+                      }
+                    </TableCell>
+                    <TableCell className="font-medium text-primary">
+                      {venda.pontuacao_esperada || 0} pts
+                    </TableCell>
+                    <TableCell className="font-medium text-green-600">
+                      {venda.pontuacao_validada ? `${venda.pontuacao_validada} pts` : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-2"
+                        onClick={() => setSelectedVenda(venda)}
+                      >
+                        <Eye className="h-4 w-4" />
+                        Ver
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {filteredVendas.map((venda) => (
             <Card key={venda.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -212,9 +305,9 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
                 </div>
               </CardContent>
             </Card>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       <VendaDetailsDialog
         venda={selectedVenda}
