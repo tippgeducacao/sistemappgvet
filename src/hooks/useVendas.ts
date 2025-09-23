@@ -78,7 +78,6 @@ export const useVendas = () => {
   };
 };
 
-// Hook para TODAS as vendas do sistema (usado pela secretaria)
 export const useAllVendas = () => {
   const { data: vendas, isLoading, error, refetch } = useQuery({
     queryKey: ['all-vendas'],
@@ -92,10 +91,11 @@ export const useAllVendas = () => {
       
       return vendas;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: true
+    // Cache agressivo de 10 minutos para reduzir egress
+    staleTime: 10 * 60 * 1000,
+    gcTime: 20 * 60 * 1000,
+    refetchOnWindowFocus: false, // Não refazer query ao focar janela
+    refetchOnMount: false, // Não refazer query ao montar se cache válido
   });
 
   return {

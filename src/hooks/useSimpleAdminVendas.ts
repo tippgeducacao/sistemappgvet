@@ -24,9 +24,10 @@ export const useSimpleAdminVendas = () => {
         return AdminVendasService.getAllVendasForAdmin();
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
-    refetchOnWindowFocus: false, // Evita refetch desnecessário
+    staleTime: 8 * 60 * 1000, // Cache agressivo de 8 minutos
+    gcTime: 15 * 60 * 1000, // 15 minutos no cache
+    refetchOnWindowFocus: false, // Não refazer query ao focar janela
+    refetchOnMount: false, // Não refazer query ao montar se cache válido
   });
 
   const updateStatusMutation = useMutation({

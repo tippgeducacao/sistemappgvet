@@ -1,14 +1,7 @@
-import TVRankingDisplay from '@/components/dashboard/TVRankingDisplay';
+import PublicTVRanking from '@/components/dashboard/PublicTVRanking';
 
-const PublicTVRanking = () => {
-  return (
-    <div className="min-h-screen bg-background">
-      <TVRankingDisplay 
-        isOpen={true}
-        onClose={() => {}} 
-      />
-    </div>
-  );
+const PublicTVRankingPage = () => {
+  return <PublicTVRanking />;
 };
 
-export default PublicTVRanking;
+export default PublicTVRankingPage;
