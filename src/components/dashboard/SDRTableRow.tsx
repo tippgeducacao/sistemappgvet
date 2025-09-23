@@ -153,7 +153,7 @@ const SDRTableRow: React.FC<SDRTableRowProps> = React.memo(({
   const calculosComissao = weeks.map((_, weekIndex) => ({
     pontosObtidos: reunioesPorSemana[weekIndex] || 0,
     metaSemanal,
-    variavelSemanal,
+    variabelSemanal: variavelSemanal,
     tipoUsuario: 'sdr' as const,
     enabled: reunioesPorSemana.length > 0
   }));
