@@ -85,11 +85,11 @@ const SidebarFooterComponent: React.FC<SidebarFooterComponentProps> = ({
 
   return (
     <>
-      <SidebarFooter className="border-t p-3 bg-muted/50">
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2.5 p-2.5 rounded-lg bg-card border shadow-sm">
+      <SidebarFooter className="border-t p-4 bg-muted/50">
+        <div className="space-y-3">
+          <div className="flex items-center space-x-3 p-3 rounded-lg bg-card border shadow-sm">
             <div className="flex-shrink-0">
-              <Avatar className="h-7 w-7 ring-2 ring-primary/20">
+              <Avatar className="h-8 w-8 ring-2 ring-primary/20">
                 <AvatarImage src={getProfileImage() || undefined} alt={userName} />
                 <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                   {getUserInitials()}
