@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Trash2 } from 'lucide-react';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import DeleteVendaDialog from '@/components/vendas/dialogs/DeleteVendaDialog';
+import VendasPagination from '@/components/vendas/VendasPagination';
 import { useSecretariaVendas } from '@/hooks/useSecretariaVendas';
 import { useDeleteVenda } from '@/hooks/useDeleteVenda';
 import { useAuthStore } from '@/stores/AuthStore';
@@ -27,6 +28,10 @@ const MatriculadasTab: React.FC<MatriculadasTabProps> = ({ vendas, showDeleteBut
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [vendaToDelete, setVendaToDelete] = useState<VendaCompleta | null>(null);
   
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+  
   const { updateStatus, isUpdating } = useSecretariaVendas();
   const { deleteVenda, isDeleting } = useDeleteVenda();
   const { currentUser, profile } = useAuthStore();
@@ -35,6 +40,22 @@ const MatriculadasTab: React.FC<MatriculadasTabProps> = ({ vendas, showDeleteBut
   // Verificar se o usuário atual pode excluir vendas (apenas o admin específico)
   const userEmail = profile?.email || currentUser?.email || '';
   const canDeleteVendas = userEmail === 'wallasmonteiro019@gmail.com' && showDeleteButton;
+
+  // Reset pagination when vendas changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vendas]);
+
+  // Calcular itens da página atual
+  const { currentItems, totalPages, startIndex } = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return {
+      currentItems: vendas.slice(start, end),
+      totalPages: Math.ceil(vendas.length / itemsPerPage),
+      startIndex: start
+    };
+  }, [vendas, currentPage, itemsPerPage]);
 
   console.log('🔍 MatriculadasTab: Renderizando com', vendas.length, 'vendas matriculadas');
   console.log('🔍 MatriculadasTab: IDs das vendas:', vendas.map(v => v.id.substring(0, 8)));
@@ -109,8 +130,7 @@ const MatriculadasTab: React.FC<MatriculadasTabProps> = ({ vendas, showDeleteBut
               <CacheClearButton />
             </div>
             <CardDescription>
-              {vendas.length} {vendas.length === 1 ? 'aluno' : 'alunos'} com matrícula efetivada. 
-              Use os botões para ver detalhes ou reverter status.
+              {vendas.length} {vendas.length === 1 ? 'aluno' : 'alunos'} com matrícula efetivada - Exibindo {Math.min(startIndex + 1, vendas.length)} a {Math.min(startIndex + itemsPerPage, vendas.length)} de {vendas.length}
             </CardDescription>
           </CardHeader>
           <CardContent 
@@ -128,7 +148,7 @@ const MatriculadasTab: React.FC<MatriculadasTabProps> = ({ vendas, showDeleteBut
                 overflow: 'visible !important'
               }}
             >
-              {vendas.map((venda, index) => {
+              {currentItems.map((venda, index) => {
                 console.log(`🔍 MatriculadasTab: Renderizando card ${index} para venda:`, {
                   id: venda.id.substring(0, 8),
                   nome: venda.aluno?.nome,
@@ -142,7 +162,7 @@ const MatriculadasTab: React.FC<MatriculadasTabProps> = ({ vendas, showDeleteBut
                     <div className="flex items-start justify-between">
                       <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-3">
-                          <span className="text-sm text-muted-foreground font-mono">#{index + 1}</span>
+                          <span className="text-sm text-muted-foreground font-mono">#{startIndex + index + 1}</span>
                           <h3 className="font-semibold text-lg">{venda.aluno?.nome || 'Nome não informado'}</h3>
                           <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-sm font-medium">
                             Matriculado
@@ -230,6 +250,12 @@ const MatriculadasTab: React.FC<MatriculadasTabProps> = ({ vendas, showDeleteBut
                 );
               })}
             </div>
+            
+            <VendasPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </CardContent>
         </Card>
 

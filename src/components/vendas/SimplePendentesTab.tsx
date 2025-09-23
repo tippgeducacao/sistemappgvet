@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { useSimpleAdminVendas } from '@/hooks/useSimpleAdminVendas';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import RejectVendaDialog from '@/components/vendas/dialogs/RejectVendaDialog';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
+import VendasPagination from '@/components/vendas/VendasPagination';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 interface SimplePendentesTabProps {
@@ -22,6 +23,26 @@ const SimplePendentesTab: React.FC<SimplePendentesTabProps> = ({ vendas }) => {
   const [vendaToReject, setVendaToReject] = useState<VendaCompleta | null>(null);
   const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  // Reset pagination when vendas changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vendas]);
+
+  // Calcular itens da página atual
+  const { currentItems, totalPages, startIndex } = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return {
+      currentItems: vendas.slice(start, end),
+      totalPages: Math.ceil(vendas.length / itemsPerPage),
+      startIndex: start
+    };
+  }, [vendas, currentPage, itemsPerPage]);
 
   const handleViewVenda = (venda: VendaCompleta) => {
     setSelectedVenda(venda);
@@ -96,12 +117,12 @@ const SimplePendentesTab: React.FC<SimplePendentesTabProps> = ({ vendas }) => {
             Vendas Pendentes de Validação
           </CardTitle>
           <CardDescription>
-            {vendas.length} {vendas.length === 1 ? 'venda' : 'vendas'} {isSupervisor ? 'da sua equipe' : 'aguardando sua aprovação'}
+            {vendas.length} {vendas.length === 1 ? 'venda' : 'vendas'} {isSupervisor ? 'da sua equipe' : 'aguardando sua aprovação'} - Exibindo {Math.min(startIndex + 1, vendas.length)} a {Math.min(startIndex + itemsPerPage, vendas.length)} de {vendas.length}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {vendas.map(venda => (
+            {currentItems.map(venda => (
               <div key={venda.id} className="border rounded-lg p-4 bg-yellow-50">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 flex-1">
@@ -178,6 +199,12 @@ const SimplePendentesTab: React.FC<SimplePendentesTabProps> = ({ vendas }) => {
               </div>
             ))}
           </div>
+          
+          <VendasPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
 

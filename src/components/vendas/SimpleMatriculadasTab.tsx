@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, CheckCircle } from 'lucide-react';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
+import VendasPagination from '@/components/vendas/VendasPagination';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 interface SimpleMatriculadasTabProps {
@@ -14,6 +15,10 @@ interface SimpleMatriculadasTabProps {
 const SimpleMatriculadasTab: React.FC<SimpleMatriculadasTabProps> = ({ vendas }) => {
   const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   const handleViewVenda = (venda: VendaCompleta) => {
     setSelectedVenda(venda);
@@ -21,6 +26,22 @@ const SimpleMatriculadasTab: React.FC<SimpleMatriculadasTabProps> = ({ vendas })
   };
 
   const vendasMatriculadas = vendas.filter(venda => venda.status === 'matriculado');
+
+  // Reset pagination when vendasMatriculadas changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vendasMatriculadas]);
+
+  // Calcular itens da página atual
+  const { currentItems, totalPages, startIndex } = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return {
+      currentItems: vendasMatriculadas.slice(start, end),
+      totalPages: Math.ceil(vendasMatriculadas.length / itemsPerPage),
+      startIndex: start
+    };
+  }, [vendasMatriculadas, currentPage, itemsPerPage]);
 
   if (vendasMatriculadas.length === 0) {
     return (
@@ -49,12 +70,12 @@ const SimpleMatriculadasTab: React.FC<SimpleMatriculadasTabProps> = ({ vendas })
           Vendas Matriculadas
         </CardTitle>
         <CardDescription>
-          {vendasMatriculadas.length} {vendasMatriculadas.length === 1 ? 'venda matriculada' : 'vendas matriculadas'} da sua equipe
+          {vendasMatriculadas.length} {vendasMatriculadas.length === 1 ? 'venda matriculada' : 'vendas matriculadas'} da sua equipe - Exibindo {Math.min(startIndex + 1, vendasMatriculadas.length)} a {Math.min(startIndex + itemsPerPage, vendasMatriculadas.length)} de {vendasMatriculadas.length}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {vendasMatriculadas.map(venda => (
+          {currentItems.map(venda => (
             <div key={venda.id} className="border rounded-lg p-4 bg-green-50">
               <div className="flex items-start justify-between">
                 <div className="space-y-2 flex-1">
@@ -118,6 +139,12 @@ const SimpleMatriculadasTab: React.FC<SimpleMatriculadasTabProps> = ({ vendas })
             </div>
           ))}
         </div>
+        
+        <VendasPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </CardContent>
     </Card>
 

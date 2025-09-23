@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, Users } from 'lucide-react';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
+import VendasPagination from '@/components/vendas/VendasPagination';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 interface SimpleTodasVendasTabProps {
@@ -14,6 +15,26 @@ interface SimpleTodasVendasTabProps {
 const SimpleTodasVendasTab: React.FC<SimpleTodasVendasTabProps> = ({ vendas }) => {
   const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  // Reset pagination when vendas changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vendas]);
+
+  // Calcular itens da página atual
+  const { currentItems, totalPages, startIndex } = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return {
+      currentItems: vendas.slice(start, end),
+      totalPages: Math.ceil(vendas.length / itemsPerPage),
+      startIndex: start
+    };
+  }, [vendas, currentPage, itemsPerPage]);
 
   const handleViewVenda = (venda: VendaCompleta) => {
     setSelectedVenda(venda);
@@ -73,12 +94,12 @@ const SimpleTodasVendasTab: React.FC<SimpleTodasVendasTabProps> = ({ vendas }) =
           Todas as Vendas da Equipe
         </CardTitle>
         <CardDescription>
-          {vendas.length} {vendas.length === 1 ? 'venda' : 'vendas'} da sua equipe
+          {vendas.length} {vendas.length === 1 ? 'venda' : 'vendas'} da sua equipe - Exibindo {Math.min(startIndex + 1, vendas.length)} a {Math.min(startIndex + itemsPerPage, vendas.length)} de {vendas.length}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {vendas.map(venda => (
+          {currentItems.map(venda => (
             <div key={venda.id} className="border rounded-lg p-4 bg-gray-50">
               <div className="flex items-start justify-between">
                 <div className="space-y-2 flex-1">
@@ -133,6 +154,12 @@ const SimpleTodasVendasTab: React.FC<SimpleTodasVendasTabProps> = ({ vendas }) =
             </div>
           ))}
         </div>
+        
+        <VendasPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </CardContent>
     </Card>
 

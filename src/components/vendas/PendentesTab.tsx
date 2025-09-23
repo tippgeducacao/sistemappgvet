@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, Settings, Clock } from 'lucide-react';
 import AdminVendaActionsDialog from '@/components/admin/AdminVendaActionsDialog';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
+import VendasPagination from '@/components/vendas/VendasPagination';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
@@ -17,6 +18,26 @@ const PendentesTab: React.FC<PendentesTabProps> = ({ vendas }) => {
   const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
   const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  // Reset pagination when vendas changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vendas]);
+
+  // Calcular itens da página atual
+  const { currentItems, totalPages, startIndex } = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return {
+      currentItems: vendas.slice(start, end),
+      totalPages: Math.ceil(vendas.length / itemsPerPage),
+      startIndex: start
+    };
+  }, [vendas, currentPage, itemsPerPage]);
 
   const handleViewVenda = (venda: VendaCompleta) => {
     setSelectedVenda(venda);
@@ -51,17 +72,17 @@ const PendentesTab: React.FC<PendentesTabProps> = ({ vendas }) => {
             Vendas Pendentes
           </CardTitle>
           <CardDescription>
-            {vendas.length} vendas aguardando validação
+            {vendas.length} vendas aguardando validação - Exibindo {Math.min(startIndex + 1, vendas.length)} a {Math.min(startIndex + itemsPerPage, vendas.length)} de {vendas.length}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {vendas.map((venda, index) => (
+            {currentItems.map((venda, index) => (
               <div key={venda.id} className="border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 bg-yellow-50/50 dark:bg-yellow-950/30">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground font-mono">#{index + 1}</span>
+                      <span className="text-sm text-muted-foreground font-mono">#{startIndex + index + 1}</span>
                       <h3 className="font-semibold text-lg">{venda.aluno?.nome || 'Nome não informado'}</h3>
                       <Badge variant="secondary">Pendente</Badge>
                     </div>
@@ -130,6 +151,12 @@ const PendentesTab: React.FC<PendentesTabProps> = ({ vendas }) => {
               </div>
             ))}
           </div>
+          
+          <VendasPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
 

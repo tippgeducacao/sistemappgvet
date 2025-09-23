@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { useDeleteVenda } from '@/hooks/useDeleteVenda';
 import { useAuthStore } from '@/stores/AuthStore';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import DeleteVendaDialog from '@/components/vendas/dialogs/DeleteVendaDialog';
+import VendasPagination from '@/components/vendas/VendasPagination';
 import type { VendaCompleta } from '@/hooks/useVendas';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 
@@ -21,12 +22,32 @@ const RejeitadasTab: React.FC<RejeitadasTabProps> = ({ vendas, showDeleteButton 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [vendaToDelete, setVendaToDelete] = useState<VendaCompleta | null>(null);
   
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+  
   const { deleteVenda, isDeleting } = useDeleteVenda();
   const { currentUser, profile } = useAuthStore();
 
   // Verificar se o usuário atual pode excluir vendas (apenas o admin específico)
   const userEmail = profile?.email || currentUser?.email || '';
   const canDeleteVendas = userEmail === 'wallasmonteiro019@gmail.com' && showDeleteButton;
+
+  // Reset pagination when vendas changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vendas]);
+
+  // Calcular itens da página atual
+  const { currentItems, totalPages, startIndex } = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return {
+      currentItems: vendas.slice(start, end),
+      totalPages: Math.ceil(vendas.length / itemsPerPage),
+      startIndex: start
+    };
+  }, [vendas, currentPage, itemsPerPage]);
 
   const handleViewVenda = (venda: VendaCompleta) => {
     setSelectedVenda(venda);
@@ -63,8 +84,12 @@ const RejeitadasTab: React.FC<RejeitadasTabProps> = ({ vendas, showDeleteButton 
               <p className="text-muted-foreground">Todas as vendas foram aprovadas ou estão pendentes! 🎉</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {vendas.map(venda => (
+            <>
+              <div className="mb-4 text-sm text-muted-foreground">
+                Exibindo {Math.min(startIndex + 1, vendas.length)} a {Math.min(startIndex + itemsPerPage, vendas.length)} de {vendas.length} vendas rejeitadas
+              </div>
+              <div className="space-y-4">
+                {currentItems.map(venda => (
                 <div key={venda.id} className="border rounded-lg p-4 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -133,8 +158,15 @@ const RejeitadasTab: React.FC<RejeitadasTabProps> = ({ vendas, showDeleteButton 
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              
+              <VendasPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </>
           )}
         </CardContent>
       </Card>

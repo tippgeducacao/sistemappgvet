@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/AuthStore';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import AdminVendaActionsDialog from '@/components/admin/AdminVendaActionsDialog';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
+import VendasPagination from '@/components/vendas/VendasPagination';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
@@ -22,9 +23,29 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas }) => {
   const [selectedVenda, setSelectedVenda] = useState<VendaCompleta | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
+  
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   // Verificar se pode gerenciar vendas (aprovar/rejeitar)
   const canManageVendas = isAdmin || isDiretor;
+
+  // Reset pagination when vendas changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vendas]);
+
+  // Calcular itens da página atual
+  const { currentItems, totalPages, startIndex } = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return {
+      currentItems: vendas.slice(start, end),
+      totalPages: Math.ceil(vendas.length / itemsPerPage),
+      startIndex: start
+    };
+  }, [vendas, currentPage, itemsPerPage]);
 
   const handleViewVenda = (venda: VendaCompleta) => {
     setSelectedVenda(venda);
@@ -84,17 +105,17 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas }) => {
         <CardHeader>
           <CardTitle>Histórico Completo de Vendas</CardTitle>
           <CardDescription>
-            {vendas.length} vendas encontradas em 06/2025
+            {vendas.length} vendas encontradas - Exibindo {Math.min(startIndex + 1, vendas.length)} a {Math.min(startIndex + itemsPerPage, vendas.length)} de {vendas.length}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {vendas.map((venda, index) => (
+            {currentItems.map((venda, index) => (
               <div key={venda.id} className="border rounded-lg p-4 hover:bg-muted/50 dark:hover:bg-muted/80 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground font-mono">#{index + 1}</span>
+                      <span className="text-sm text-muted-foreground font-mono">#{startIndex + index + 1}</span>
                       <h3 className="font-semibold text-lg">{venda.aluno?.nome || 'Nome não informado'}</h3>
                       <Badge variant={getStatusBadgeVariant(venda.status)}>
                         {getStatusLabel(venda.status)}
@@ -172,6 +193,12 @@ const TodasVendasTab: React.FC<TodasVendasTabProps> = ({ vendas }) => {
               </div>
             ))}
           </div>
+          
+          <VendasPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
 
