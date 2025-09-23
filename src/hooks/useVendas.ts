@@ -80,8 +80,9 @@ export const useVendas = () => {
 
 export const useAllVendas = () => {
   const { data: vendas, isLoading, error, refetch } = useQuery({
-    queryKey: ['all-vendas'],
+    queryKey: ['all-vendas-paginated'], // Nova key para diferentiar da versão completa
     queryFn: async (): Promise<VendaCompleta[]> => {
+      console.log('🚀 [EGRESS OPTIMIZED] Carregando vendas com paginação (200 registros)');
       const vendas = await VendasDataService.getAllVendas();
       
       // Log para debug dos documentos

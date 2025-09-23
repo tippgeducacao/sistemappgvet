@@ -1,11 +1,12 @@
 
-import { AdminVendaQueryService } from './AdminVendaQueryService';
+import { OptimizedVendaQueryService } from './OptimizedVendaQueryService';
 import { DirectUpdateService } from './DirectUpdateService';
 import type { VendaCompleta } from '@/hooks/useVendas';
 
 export class AdminVendasService {
   static async getAllVendasForAdmin(): Promise<VendaCompleta[]> {
-    return AdminVendaQueryService.getAllVendasForAdmin();
+    console.log('🚀 [EGRESS OPTIMIZED] Usando OptimizedVendaQueryService para eliminar N+1 queries');
+    return OptimizedVendaQueryService.getAllVendasForAdmin();
   }
 
   static async updateVendaStatus(

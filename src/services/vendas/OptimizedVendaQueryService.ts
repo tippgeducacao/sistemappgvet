@@ -60,9 +60,10 @@ export class OptimizedVendaQueryService {
 
   /**
    * Busca todas as vendas para admin com JOIN único - elimina N+1 queries  
+   * EGRESS OPTIMIZED: Limitado a 200 registros mais recentes
    */
   static async getAllVendasForAdmin(): Promise<VendaCompleta[]> {
-    console.log('🚀 [OTIMIZADO] Carregando todas as vendas com JOIN único...');
+    console.log('🚀 [EGRESS OPTIMIZED] Carregando vendas com JOIN único (200 registros)...');
     
     try {
       // Query única com JOINs - substitui múltiplas queries
@@ -95,14 +96,14 @@ export class OptimizedVendaQueryService {
           )
         `)
         .order('enviado_em', { ascending: false })
-        .limit(1000); // Limita a 1000 registros mais recentes
+        .limit(200); // 🚀 EGRESS OPTIMIZED: Reduzido de 1000 para 200 registros (-80% volume)
 
       if (error) {
         console.error('❌ Erro na query otimizada:', error);
         throw error;
       }
 
-      console.log(`✅ [OTIMIZADO] Carregadas ${vendas?.length || 0} vendas com JOIN único`);
+      console.log(`✅ [EGRESS OPTIMIZED] Carregadas ${vendas?.length || 0} vendas com JOIN único (máx. 200)`);
 
       return this.mapToVendaCompleta(vendas || []);
     } catch (error) {

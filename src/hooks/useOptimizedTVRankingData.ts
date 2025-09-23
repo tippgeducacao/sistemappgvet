@@ -56,8 +56,8 @@ export const useOptimizedTVRankingData = (): OptimizedTVRankingData => {
       if (error) throw error;
       return data || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos de cache agressivo
-    gcTime: 10 * 60 * 1000, // 10 minutos no cache
+    staleTime: 15 * 60 * 1000, // 15 minutos de cache ultra-agressivo para TV
+    gcTime: 30 * 60 * 1000, // 30 minutos no cache
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
@@ -82,8 +82,8 @@ export const useOptimizedTVRankingData = (): OptimizedTVRankingData => {
       if (error) throw error;
       return data || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos de cache
-    gcTime: 10 * 60 * 1000,
+    staleTime: 15 * 60 * 1000, // 15 minutos de cache ultra-agressivo
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
@@ -106,8 +106,8 @@ export const useOptimizedTVRankingData = (): OptimizedTVRankingData => {
       if (error) throw error;
       return data || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos de cache
-    gcTime: 10 * 60 * 1000,
+    staleTime: 15 * 60 * 1000, // 15 minutos de cache ultra-agressivo
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
@@ -138,8 +138,8 @@ export const useOptimizedTVRankingData = (): OptimizedTVRankingData => {
       if (error) throw error;
       return data || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos de cache
-    gcTime: 10 * 60 * 1000,
+    staleTime: 15 * 60 * 1000, // 15 minutos de cache ultra-agressivo
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });

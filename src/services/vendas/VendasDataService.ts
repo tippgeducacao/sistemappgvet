@@ -27,11 +27,12 @@ export class VendasDataService {
   }
 
   /**
-   * Busca TODAS as vendas do sistema - VERSÃO OTIMIZADA
+   * Busca TODAS as vendas do sistema com paginação - VERSÃO OTIMIZADA
+   * Limitado a 200 registros mais recentes para reduzir egress
    */
   static async getAllVendas(): Promise<VendaCompleta[]> {
     try {
-      console.log('🚀 [OTIMIZADO] Usando OptimizedVendaQueryService para todas as vendas');
+      console.log('🚀 [EGRESS OPTIMIZED] Usando OptimizedVendaQueryService com paginação (200 registros)');
       return OptimizedVendaQueryService.getAllVendasForAdmin();
     } catch (error) {
       console.error('💥💥💥 ERRO CRÍTICO na busca otimizada de todas as vendas:', error);

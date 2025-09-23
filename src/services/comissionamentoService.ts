@@ -13,8 +13,28 @@ export interface RegraComissionamento {
 }
 
 export class ComissionamentoService {
-  static async fetchRegras(tipoUsuario = 'vendedor'): Promise<RegraComissionamento[]> {
-    console.log(`🔍 ComissionamentoService.fetchRegras: Iniciando para ${tipoUsuario}`);
+  static async fetchRegras(tipoUsuario?: string): Promise<RegraComissionamento[]> {
+    console.log(`🔍 ComissionamentoService.fetchRegras: Iniciando para ${tipoUsuario || 'TODAS'}`);
+    
+    // Se não especificar tipo de usuário, buscar todas as regras
+    if (!tipoUsuario) {
+      console.log('🚀 [EGRESS OPTIMIZED] Buscando TODAS as regras para cache global');
+      
+      const { data, error } = await supabase
+        .from('regras_comissionamento')
+        .select('*')
+        .order('tipo_usuario', { ascending: true })
+        .order('percentual_minimo', { ascending: true });
+
+      if (error) {
+        console.error('❌ Erro ao buscar todas as regras de comissionamento:', error);
+        throw error;
+      }
+
+      const regras = data || [];
+      console.log(`✅ ComissionamentoService: ${regras.length} regras carregadas (TODAS)`);
+      return regras;
+    }
     
     // Verificar cache global primeiro
     const cached = ComissionamentoCacheService.getRegras(tipoUsuario);
