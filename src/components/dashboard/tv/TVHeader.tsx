@@ -44,38 +44,42 @@ export const TVHeader: React.FC<TVHeaderProps> = ({
   const zoomOptions = [80, 90, 100, 110, 120];
 
   return (
-    <div className="bg-card border-b border-border px-6 py-4">
+    <div className="bg-slate-800 border-b border-slate-700 px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Título e navegação de semana */}
         <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold text-foreground">
-            Ranking de Vendas - TV
+          <h1 className="text-2xl font-bold text-white">
+            Ranking de Vendas – TV
           </h1>
           
-          <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-1">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost" 
               size="sm"
               onClick={() => onWeekChange(semanaOffset - 1)}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 text-white hover:bg-slate-700"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
-            <span className="text-sm font-medium text-foreground min-w-[120px] text-center">
-              {currentWeekText}
+            <span className="text-sm font-medium text-white min-w-[120px] text-center">
+              Semana Atual
             </span>
             
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onWeekChange(semanaOffset + 1)}
-              className="h-8 w-8 p-0"
-              disabled={semanaOffset >= 0} // Não permitir ir para semanas futuras
+              className="h-8 w-8 p-0 text-white hover:bg-slate-700"
+              disabled={semanaOffset >= 0}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+
+          <span className="text-white text-sm">
+            {currentWeekText}
+          </span>
         </div>
 
         {/* Controles da direita */}
@@ -85,7 +89,7 @@ export const TVHeader: React.FC<TVHeaderProps> = ({
             variant="outline"
             size="sm"
             onClick={onExportPDF}
-            className="flex items-center gap-2 text-xs"
+            className="flex items-center gap-2 text-xs bg-transparent border-slate-600 text-white hover:bg-slate-700"
           >
             <FileText className="h-3 w-3" />
             PDF
@@ -95,22 +99,22 @@ export const TVHeader: React.FC<TVHeaderProps> = ({
             variant="outline"
             size="sm"
             onClick={onExportExcel}
-            className="flex items-center gap-2 text-xs"
+            className="flex items-center gap-2 text-xs bg-transparent border-slate-600 text-white hover:bg-slate-700"
           >
             <Download className="h-3 w-3" />
             Excel
           </Button>
 
           {/* Controle de zoom */}
-          <div className="flex items-center gap-1 bg-muted rounded-lg px-2 py-1">
-            <ZoomIn className="h-3 w-3 text-muted-foreground" />
+          <div className="flex items-center gap-1">
+            <ZoomIn className="h-3 w-3 text-white" />
             <select
               value={currentZoom}
               onChange={(e) => onZoomChange(Number(e.target.value))}
-              className="bg-transparent text-xs border-none outline-none text-foreground"
+              className="bg-transparent text-xs border border-slate-600 rounded px-2 py-1 text-white"
             >
               {zoomOptions.map(zoom => (
-                <option key={zoom} value={zoom}>{zoom}%</option>
+                <option key={zoom} value={zoom} className="bg-slate-800">{zoom}%</option>
               ))}
             </select>
           </div>
@@ -120,19 +124,10 @@ export const TVHeader: React.FC<TVHeaderProps> = ({
             variant={isConnected ? "default" : "destructive"}
             size="sm"
             onClick={onForceRefresh}
-            className="flex items-center gap-2 text-xs min-w-[90px]"
+            className="flex items-center gap-2 text-xs min-w-[90px] bg-green-600 hover:bg-green-700"
           >
-            {isConnected ? (
-              <>
-                <Wifi className="h-3 w-3" />
-                AO VIVO
-              </>
-            ) : (
-              <>
-                <WifiOff className="h-3 w-3" />
-                <RefreshCw className="h-3 w-3" />
-              </>
-            )}
+            <Wifi className="h-3 w-3" />
+            AO VIVO
           </Button>
 
           {/* Tela cheia */}
@@ -140,16 +135,25 @@ export const TVHeader: React.FC<TVHeaderProps> = ({
             variant="outline"
             size="sm"
             onClick={onToggleFullscreen}
-            className="flex items-center gap-2 text-xs"
+            className="flex items-center gap-2 text-xs bg-transparent border-slate-600 text-white hover:bg-slate-700"
           >
             <Maximize className="h-3 w-3" />
-            {isFullscreen ? 'Sair' : 'Tela Cheia'}
+            Tela Cheia
+          </Button>
+
+          {/* Botão de fechar */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2 text-xs bg-transparent border-slate-600 text-white hover:bg-slate-700"
+          >
+            ✕
           </Button>
         </div>
       </div>
 
       {/* Status bar com última atualização */}
-      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+      <div className="mt-2 flex items-center justify-between text-xs text-slate-400">
         <div className="flex items-center gap-4">
           <span>Otimizado para TV 40 polegadas</span>
           <span>•</span>

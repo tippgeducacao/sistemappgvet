@@ -174,41 +174,36 @@ const PublicTVRanking: React.FC = () => {
         isFullscreen={isFullscreen}
       />
 
-      <div className="p-6">
-        <div className="grid grid-cols-4 gap-6 max-w-[1800px] mx-auto">
-          {/* Coluna principal - 3/4 da tela */}
-          <div className="col-span-3 space-y-8">
-            {/* Podium */}
-            {topThree.length >= 3 && (
-              <TVPodium topThree={topThree} />
-            )}
+        <div className="p-6">
+          {/* Cards principais dos 3 primeiros */}
+          {topThree.length >= 3 && (
+            <TVPodium topThree={topThree} />
+          )}
 
-            {/* Cards dos vendedores (posições 4+) */}
-            {restOfVendedores.length > 0 && (
-              <div className="grid grid-cols-2 gap-6">
-                {restOfVendedores.map((person, index) => (
-                  <TVVendorCard
-                    key={person.id}
-                    person={person}
-                    rank={index + 4}
-                  />
-                ))}
-              </div>
-            )}
+          {/* Cards dos vendedores (posições 4-6) */}
+          {restOfVendedores.length > 0 && (
+            <div className="grid grid-cols-2 gap-6 mb-8">
+              {restOfVendedores.slice(0, 2).map((person, index) => (
+                <TVVendorCard
+                  key={person.id}
+                  person={person}
+                  rank={index + 4}
+                />
+              ))}
+            </div>
+          )}
 
-            {/* Seção SDR */}
-            <TVSDRSection sdrData={sdrs} />
-          </div>
+          {/* Seção SDR */}
+          <TVSDRSection sdrData={sdrs} />
 
-          {/* Painel lateral - 1/4 da tela */}
-          <div className="col-span-1">
+          {/* Painel lateral - Resumo Geral */}
+          <div className="fixed top-20 right-6 w-80">
             <TVSummaryPanel 
               weekSummary={weekSummary}
               currentWeekText={getCurrentWeekText()}
             />
           </div>
         </div>
-      </div>
     </div>
   );
 };
