@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye, Filter, X, ChevronUp, ChevronDown, ChevronsUpDown, Search } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, ExternalLink, Eye, Filter, X, ChevronUp, ChevronDown, ChevronsUpDown, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useAuthStore } from '@/stores/AuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingState from '@/components/ui/loading-state';
@@ -56,6 +56,10 @@ const HistoricoReunioes: React.FC = () => {
   // Estado para ordenação
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Estado para paginação
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 50;
 
   // Opções de status de resultado
   const statusOptions = [
@@ -208,6 +212,25 @@ const HistoricoReunioes: React.FC = () => {
 
   // Aplicar ordenação
   const reunioesOrdenadas = sortData(reunioesFiltradas);
+  
+  // Calcular dados da paginação
+  const totalItems = reunioesOrdenadas.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = reunioesOrdenadas.slice(startIndex, endIndex);
+  
+  // Resetar página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateRange, selectedCreationDate, selectedStatus, searchName]);
+  
+  // Funções de navegação da paginação
+  const goToFirstPage = () => setCurrentPage(1);
+  const goToPreviousPage = () => setCurrentPage(page => Math.max(1, page - 1));
+  const goToNextPage = () => setCurrentPage(page => Math.min(totalPages, page + 1));
+  const goToLastPage = () => setCurrentPage(totalPages);
+  const goToPage = (page: number) => setCurrentPage(Math.max(1, Math.min(totalPages, page)));
 
   const handleStatusToggle = (status: string) => {
     setSelectedStatus(prev => 
@@ -222,6 +245,7 @@ const HistoricoReunioes: React.FC = () => {
     setSelectedCreationDate(undefined);
     setSelectedStatus([]);
     setSearchName('');
+    setCurrentPage(1); // Resetar página ao limpar filtros
   };
 
   const hasActiveFilters = dateRange?.from || dateRange?.to || selectedCreationDate || selectedStatus.length > 0 || searchName.trim().length > 0;
@@ -436,7 +460,7 @@ const HistoricoReunioes: React.FC = () => {
       <CardHeader>
         <CardTitle>Histórico de Reuniões</CardTitle>
         <CardDescription>
-          {reunioesFiltradas.length} reuniões encontradas
+          {totalItems} reuniões encontradas
           {hasActiveFilters && (
             <>
               {" com os filtros aplicados"}
@@ -445,9 +469,12 @@ const HistoricoReunioes: React.FC = () => {
               )}
             </>
           )}
-          {reunioes.length > reunioesFiltradas.length && 
+          {reunioes.length > totalItems && 
             ` (${reunioes.length} total)`
           }
+          {totalPages > 1 && (
+            <> • Página {currentPage} de {totalPages} ({startIndex + 1}-{Math.min(endIndex, totalItems)} de {totalItems})</>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -596,107 +623,173 @@ const HistoricoReunioes: React.FC = () => {
           )}
         </div>
 
-        {reunioesFiltradas.length === 0 ? (
+        {totalItems === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-lg mb-2">Nenhuma reunião encontrada neste período</p>
             <p className="text-sm">Selecione outro período ou aguarde novas reuniões</p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('created_at')}
-                >
-                  <div className="flex items-center gap-1">
-                    Data de Criação
-                    {renderSortIcon('created_at')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('data_agendamento')}
-                >
-                  <div className="flex items-center gap-1">
-                    Data de Agendamento
-                    {renderSortIcon('data_agendamento')}
-                  </div>
-                </TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('vendedor')}
-                >
-                  <div className="flex items-center gap-1">
-                    Vendedor
-                    {renderSortIcon('vendedor')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('interesse')}
-                >
-                  <div className="flex items-center gap-1">
-                    Interesse
-                    {renderSortIcon('interesse')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('status')}
-                >
-                  <div className="flex items-center gap-1">
-                    Status
-                    {renderSortIcon('status')}
-                  </div>
-                </TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reunioesOrdenadas.map((reuniao) => (
-                <TableRow key={reuniao.id}>
-                  <TableCell className="font-medium">
-                    {format(new Date(reuniao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div>{format(new Date(reuniao.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {format(new Date(reuniao.data_agendamento), 'HH:mm')}
-                        {reuniao.data_fim_agendamento && 
-                          ` - ${format(new Date(reuniao.data_fim_agendamento), 'HH:mm')}`
-                        }
-                      </div>
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('created_at')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Data de Criação
+                      {renderSortIcon('created_at')}
                     </div>
-                  </TableCell>
-                  <TableCell className="font-medium">{reuniao.lead?.nome}</TableCell>
-                  <TableCell>{reuniao.vendedor?.name}</TableCell>
-                  <TableCell>{reuniao.pos_graduacao_interesse}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      {getStatusBadge(reuniao.status)}
-                      {getResultadoBadge(reuniao.resultado_reuniao)}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('data_agendamento')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Data de Agendamento
+                      {renderSortIcon('data_agendamento')}
                     </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {reuniao.link_reuniao && (
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={reuniao.link_reuniao} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Acessar
-                          </a>
-                        </Button>
-                      )}
+                  </TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('vendedor')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Vendedor
+                      {renderSortIcon('vendedor')}
                     </div>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('interesse')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Interesse
+                      {renderSortIcon('interesse')}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Status
+                      {renderSortIcon('status')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {currentItems.map((reuniao) => (
+                  <TableRow key={reuniao.id}>
+                    <TableCell className="font-medium">
+                      {format(new Date(reuniao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div>{format(new Date(reuniao.data_agendamento), "dd/MM/yyyy", { locale: ptBR })}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(reuniao.data_agendamento), 'HH:mm')}
+                          {reuniao.data_fim_agendamento && 
+                            ` - ${format(new Date(reuniao.data_fim_agendamento), 'HH:mm')}`
+                          }
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">{reuniao.lead?.nome}</TableCell>
+                    <TableCell>{reuniao.vendedor?.name}</TableCell>
+                    <TableCell>{reuniao.pos_graduacao_interesse}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {getStatusBadge(reuniao.status)}
+                        {getResultadoBadge(reuniao.resultado_reuniao)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {reuniao.link_reuniao && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={reuniao.link_reuniao} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Acessar
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {/* Controles de Paginação */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>
+                    Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} reuniões
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {/* Botão Primeira Página */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={goToFirstPage}
+                    disabled={currentPage === 1}
+                    className="hidden sm:flex"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Botão Página Anterior */}
+                  <Button
+                    variant="outline" 
+                    size="sm"
+                    onClick={goToPreviousPage}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Anterior
+                  </Button>
+
+                  {/* Indicador de Página */}
+                  <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-md">
+                    <span className="text-sm font-medium">
+                      {currentPage} de {totalPages}
+                    </span>
+                  </div>
+
+                  {/* Botão Próxima Página */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={goToNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Próxima
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                  
+                  {/* Botão Última Página */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={goToLastPage}
+                    disabled={currentPage === totalPages}
+                    className="hidden sm:flex"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
