@@ -224,11 +224,6 @@ export const VENDOR_MENU_ITEMS: MenuItem[] = [
     title: 'Reuniões',
     section: 'reunioes',
     icon: 'Calendar'
-  },
-  {
-    title: 'Relatório Diário',
-    section: 'relatorio-diario',
-    icon: 'FileText'
   }
 ];
 
@@ -318,11 +313,6 @@ export const SDR_MENU_ITEMS: MenuItem[] = [
     title: 'Agendamentos',
     section: 'agendamentos',
     icon: 'Calendar'
-  },
-  {
-    title: 'Nova Venda',
-    section: 'nova-venda',
-    icon: 'Plus'
-  },
+  }
 ];
 
