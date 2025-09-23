@@ -27,12 +27,14 @@ const AppSidebar: React.FC = () => {
   const userType = getUserType();
   
   return (
-    <Sidebar className="h-full w-56 overflow-hidden border-r bg-card shadow-lg flex flex-col">
+    <Sidebar className="h-full w-56 border-r bg-card shadow-lg flex flex-col">
       <SidebarHeaderComponent userType={userType} />
-      <div className="flex-1">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <SidebarMenuComponent />
       </div>
-      <SidebarFooterComponent userType={userType} userName={userName} />
+      <div className="flex-shrink-0">
+        <SidebarFooterComponent userType={userType} userName={userName} />
+      </div>
     </Sidebar>
   );
 };

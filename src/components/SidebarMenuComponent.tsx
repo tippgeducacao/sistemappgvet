@@ -110,13 +110,13 @@ const SidebarMenuComponent: React.FC = () => {
   // Renderizar menu agrupado para diretor
   if (isDiretor) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-2 pb-4">
         {/* Menu principal sem grupo */}
-        <SidebarGroup className="px-4 py-2">
-          <SidebarGroupLabel className="text-xs font-semibold text-primary px-0 py-2 mb-2 uppercase tracking-wide">
+        <SidebarGroup className="px-3 py-1">
+          <SidebarGroupLabel className="text-xs font-semibold text-primary px-0 py-1 mb-1 uppercase tracking-wide">
             Menu Principal
           </SidebarGroupLabel>
-          <SidebarMenu className="space-y-1">
+          <SidebarMenu className="space-y-0.5">
             {DIRECTOR_MAIN_ITEMS.map((item) => (
               <SidebarMenuItem key={item.section}>
                 <SidebarMenuButton
@@ -127,14 +127,14 @@ const SidebarMenuComponent: React.FC = () => {
                   }}
                   isActive={activeSection === item.section}
                   className={`
-                    w-full cursor-pointer rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200
+                    w-full cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200
                     ${activeSection === item.section 
-                      ? 'bg-primary/15 text-primary border-l-4 border-primary shadow-sm font-semibold' 
+                      ? 'bg-primary/15 text-primary border-l-3 border-primary shadow-sm font-semibold' 
                       : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                     }
                   `}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5">
                     <div className={`flex-shrink-0 ${activeSection === item.section ? 'text-primary' : 'text-muted-foreground'}`}>
                       {getIcon(item.icon)}
                     </div>
@@ -153,16 +153,16 @@ const SidebarMenuComponent: React.FC = () => {
             open={expandedGroups[group.title] || false}
             onOpenChange={() => toggleGroup(group.title)}
           >
-            <SidebarGroup className="px-4 py-2">
+            <SidebarGroup className="px-3 py-1">
               <CollapsibleTrigger asChild>
-                <SidebarGroupLabel className="text-xs font-semibold text-primary px-0 py-2 mb-2 uppercase tracking-wide cursor-pointer hover:text-primary/80 transition-colors flex items-center justify-between group">
+                <SidebarGroupLabel className="text-xs font-semibold text-primary px-0 py-1 mb-1 uppercase tracking-wide cursor-pointer hover:text-primary/80 transition-colors flex items-center justify-between group">
                   <span>{group.title}</span>
                   <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedGroups[group.title] ? 'rotate-180' : ''}`} />
                 </SidebarGroupLabel>
               </CollapsibleTrigger>
               
-              <CollapsibleContent className="space-y-1">
-                <SidebarMenu className="space-y-1">
+              <CollapsibleContent className="space-y-0.5">
+                <SidebarMenu className="space-y-0.5">
                   {group.items.map((item) => (
                     <SidebarMenuItem key={item.section}>
                       <SidebarMenuButton
@@ -173,14 +173,14 @@ const SidebarMenuComponent: React.FC = () => {
                         }}
                         isActive={activeSection === item.section}
                         className={`
-                          w-full cursor-pointer rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200
+                          w-full cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200
                           ${activeSection === item.section 
-                            ? 'bg-primary/15 text-primary border-l-4 border-primary shadow-sm font-semibold' 
+                            ? 'bg-primary/15 text-primary border-l-3 border-primary shadow-sm font-semibold' 
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                           }
                         `}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2.5">
                           <div className={`flex-shrink-0 ${activeSection === item.section ? 'text-primary' : 'text-muted-foreground'}`}>
                             {getIcon(item.icon)}
                           </div>
@@ -200,11 +200,12 @@ const SidebarMenuComponent: React.FC = () => {
 
   // Menu padrão para outros usuários
   return (
-    <SidebarGroup className="px-4 py-2">
-      <SidebarGroupLabel className="text-xs font-semibold text-primary px-0 py-2 mb-2 uppercase tracking-wide">
-        Menu Principal
-      </SidebarGroupLabel>
-      <SidebarMenu className="space-y-1">
+    <div className="pb-4">
+      <SidebarGroup className="px-3 py-1">
+        <SidebarGroupLabel className="text-xs font-semibold text-primary px-0 py-1 mb-1 uppercase tracking-wide">
+          Menu Principal
+        </SidebarGroupLabel>
+        <SidebarMenu className="space-y-0.5">
         {menuItems.map((item) => (
           <SidebarMenuItem key={item.section}>
             <SidebarMenuButton
@@ -225,14 +226,14 @@ const SidebarMenuComponent: React.FC = () => {
               }}
               isActive={activeSection === item.section}
               className={`
-                w-full cursor-pointer rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200
+                w-full cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200
                 ${activeSection === item.section 
-                  ? 'bg-primary/15 text-primary border-l-4 border-primary shadow-sm font-semibold' 
+                  ? 'bg-primary/15 text-primary border-l-3 border-primary shadow-sm font-semibold' 
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 }
               `}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <div className={`flex-shrink-0 ${activeSection === item.section ? 'text-primary' : 'text-muted-foreground'}`}>
                   {getIcon(item.icon)}
                 </div>
@@ -242,7 +243,8 @@ const SidebarMenuComponent: React.FC = () => {
           </SidebarMenuItem>
         ))}
       </SidebarMenu>
-    </SidebarGroup>
+      </SidebarGroup>
+    </div>
   );
 };
 
