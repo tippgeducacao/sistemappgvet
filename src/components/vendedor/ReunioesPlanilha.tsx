@@ -6,13 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, User, Phone, Mail, ExternalLink, Plus, Edit, Search, ChevronUp, ChevronDown, Eye, ShoppingCart, Link } from 'lucide-react';
-import { format, isAfter } from 'date-fns';
+import { Calendar as CalendarIcon, User, Phone, Mail, ExternalLink, Plus, Edit, Search, ChevronUp, ChevronDown, Eye, ShoppingCart, Link, X } from 'lucide-react';
+import { format, isAfter, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Agendamento } from '@/hooks/useAgendamentos';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import type { DateRange } from 'react-day-picker';
 import NovaVendaForm from '@/components/NovaVendaForm';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import { DiagnosticoVinculacaoDialog } from '@/components/agendamentos/DiagnosticoVinculacaoDialog';
@@ -42,8 +46,8 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [observacoes, setObservacoes] = useState('');
   const [novoStatus, setNovoStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [selectedCreationDate, setSelectedCreationDate] = useState<Date | undefined>();
   const [sortBy, setSortBy] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [diagnosticoAberto, setDiagnosticoAberto] = useState(false);
@@ -91,20 +95,23 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
         }
       }
       
-      // Filtro por data (apenas para histórico)
-      if (agendamento.resultado_reuniao && (dataInicio || dataFim)) {
+      // Filtro por período de agendamento (inclusivo dos dias de início e fim)
+      if (dateRange?.from || dateRange?.to) {
         const dataAgendamento = new Date(agendamento.data_agendamento);
+        const startDate = dateRange.from ? startOfDay(dateRange.from) : null;
+        const endDate = dateRange.to ? endOfDay(dateRange.to) : null;
         
-        if (dataInicio) {
-          const inicio = new Date(dataInicio);
-          if (dataAgendamento < inicio) return false;
-        }
-        
-        if (dataFim) {
-          const fim = new Date(dataFim);
-          fim.setHours(23, 59, 59, 999); // Incluir todo o dia
-          if (dataAgendamento > fim) return false;
-        }
+        if (startDate && dataAgendamento < startDate) return false;
+        if (endDate && dataAgendamento > endDate) return false;
+      }
+      
+      // Filtro por data específica de criação
+      if (selectedCreationDate) {
+        const dataCriacao = new Date(agendamento.created_at);
+        dataCriacao.setHours(0, 0, 0, 0);
+        const dataCriacaoSelecionada = new Date(selectedCreationDate);
+        dataCriacaoSelecionada.setHours(0, 0, 0, 0);
+        if (dataCriacao.getTime() !== dataCriacaoSelecionada.getTime()) return false;
       }
       
       return true;
@@ -153,7 +160,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       reunioesAgendadas: agendadas,
       reunioesHistorico: historico
     };
-  }, [agendamentos, searchTerm, dataInicio, dataFim, sortBy, sortOrder]);
+  }, [agendamentos, searchTerm, dateRange, selectedCreationDate, sortBy, sortOrder]);
 
   const getStatusBadge = (agendamento: Agendamento) => {
     if (agendamento.resultado_reuniao) {
@@ -472,6 +479,14 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     return sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
   };
 
+  const clearAllFilters = () => {
+    setDateRange(undefined);
+    setSelectedCreationDate(undefined);
+    setSearchTerm('');
+  };
+
+  const hasActiveFilters = dateRange?.from || dateRange?.to || selectedCreationDate || searchTerm.trim().length > 0;
+
   const renderTabela = (listaAgendamentos: Agendamento[], mostrarAcoes: boolean = true, isHistorico: boolean = false) => (
     listaAgendamentos.length === 0 ? (
       <Card>
@@ -681,67 +696,112 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   return (
     <div className="space-y-4">
       {/* Filtros */}
-      <div className="grid gap-4 md:grid-cols-5">
-        {/* Filtro de pesquisa por nome */}
-        <div className="relative">
+      <div className="flex flex-wrap gap-3 mb-6">
+        {/* Campo de pesquisa por nome */}
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Buscar por nome do lead..."
+            type="text"
+            placeholder="Pesquisar por nome..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
-        
-        {/* Filtro de data início */}
-        <div>
-          <Input
-            type="date"
-            placeholder="Data início"
-            value={dataInicio}
-            onChange={(e) => setDataInicio(e.target.value)}
-          />
-        </div>
-        
-        {/* Filtro de data fim */}
-        <div>
-          <Input
-            type="date"
-            placeholder="Data fim"
-            value={dataFim}
-            onChange={(e) => setDataFim(e.target.value)}
-          />
-        </div>
-        
-        {/* Botão limpar filtros */}
-        <div>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setSearchTerm('');
-              setDataInicio('');
-              setDataFim('');
-              setSortBy('');
-              setSortOrder('desc');
-            }}
-            className="w-full"
-          >
+
+        {/* Filtro por período de agendamento */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full sm:w-auto">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
+                    {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+                  </>
+                ) : (
+                  format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                )
+              ) : (
+                "Filtrar por data agendamento"
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 z-50" align="start">
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={dateRange?.from}
+              selected={dateRange}
+              onSelect={setDateRange}
+              numberOfMonths={2}
+              locale={ptBR}
+              className="p-3 pointer-events-auto"
+            />
+            <div className="p-3 border-t">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setDateRange(undefined)}
+              >
+                Limpar Período
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Filtro por data específica de criação */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full sm:w-auto">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {selectedCreationDate ? (
+                format(selectedCreationDate, "dd/MM/yyyy", { locale: ptBR })
+              ) : (
+                "Filtrar por data criação"
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 z-50" align="start">
+            <Calendar
+              mode="single"
+              selected={selectedCreationDate}
+              onSelect={setSelectedCreationDate}
+              initialFocus
+              locale={ptBR}
+              className="p-3 pointer-events-auto"
+            />
+            <div className="p-3 border-t">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setSelectedCreationDate(undefined)}
+              >
+                Limpar Data
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Botão para limpar todos os filtros */}
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+            <X className="mr-2 h-4 w-4" />
             Limpar Filtros
           </Button>
-        </div>
+        )}
 
         {/* Botão de diagnóstico de vinculação - apenas para admins */}
         {(isAdmin || isDiretor || isSecretaria) && (
-          <div>
-            <Button
-              variant="outline"
-              onClick={() => setDiagnosticoAberto(true)}
-              className="w-full flex items-center gap-2"
-            >
-              <Link className="h-4 w-4" />
-              Diagnóstico
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={() => setDiagnosticoAberto(true)}
+            className="w-full sm:w-auto"
+          >
+            <Link className="h-4 w-4 mr-2" />
+            Diagnóstico Vinculação
+          </Button>
         )}
       </div>
 
