@@ -48,6 +48,8 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedCreationDate, setSelectedCreationDate] = useState<Date | undefined>();
+  const [dateRangePopoverOpen, setDateRangePopoverOpen] = useState(false);
+  const [creationDatePopoverOpen, setCreationDatePopoverOpen] = useState(false);
   const [sortBy, setSortBy] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [diagnosticoAberto, setDiagnosticoAberto] = useState(false);
@@ -710,7 +712,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
         </div>
 
         {/* Filtro por período de agendamento */}
-        <Popover>
+        <Popover open={dateRangePopoverOpen} onOpenChange={setDateRangePopoverOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full sm:w-auto">
               <CalendarIcon className="mr-2 h-4 w-4" />
@@ -734,7 +736,12 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
               mode="range"
               defaultMonth={dateRange?.from}
               selected={dateRange}
-              onSelect={setDateRange}
+              onSelect={(range) => {
+                setDateRange(range);
+                if (range?.from && range?.to) {
+                  setDateRangePopoverOpen(false);
+                }
+              }}
               numberOfMonths={2}
               locale={ptBR}
               className="p-3 pointer-events-auto"
@@ -743,7 +750,10 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => setDateRange(undefined)}
+                onClick={() => {
+                  setDateRange(undefined);
+                  setDateRangePopoverOpen(false);
+                }}
               >
                 Limpar Período
               </Button>
@@ -752,7 +762,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
         </Popover>
 
         {/* Filtro por data específica de criação */}
-        <Popover>
+        <Popover open={creationDatePopoverOpen} onOpenChange={setCreationDatePopoverOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full sm:w-auto">
               <CalendarIcon className="mr-2 h-4 w-4" />
@@ -767,7 +777,12 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
             <Calendar
               mode="single"
               selected={selectedCreationDate}
-              onSelect={setSelectedCreationDate}
+              onSelect={(date) => {
+                setSelectedCreationDate(date);
+                if (date) {
+                  setCreationDatePopoverOpen(false);
+                }
+              }}
               initialFocus
               locale={ptBR}
               className="p-3 pointer-events-auto"
@@ -776,7 +791,10 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => setSelectedCreationDate(undefined)}
+                onClick={() => {
+                  setSelectedCreationDate(undefined);
+                  setCreationDatePopoverOpen(false);
+                }}
               >
                 Limpar Data
               </Button>
