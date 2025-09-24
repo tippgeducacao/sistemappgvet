@@ -15,6 +15,7 @@ import StatusDistributionChart from '@/components/dashboard/StatusDistributionCh
 import SalesByCourseChart from '@/components/dashboard/SalesByCourseChart';
 import WeeklyApprovedSalesChart from '@/components/dashboard/WeeklyApprovedSalesChart';
 import { SDRPerformanceTable } from '@/components/dashboard/SDRPerformanceTable';
+import { VendedorPerformanceTable } from '@/components/dashboard/VendedorPerformanceTable';
 import MiniTVDisplay from '@/components/dashboard/MiniTVDisplay';
 import VendorsRanking from '@/components/dashboard/VendorsRanking';
 
@@ -122,9 +123,11 @@ const SupervisorMetrics: React.FC = () => {
         selectedYear={selectedYear}
       />
 
+      <VendedorPerformanceTable />
+
       <SDRPerformanceTable />
 
-      <MiniTVDisplay 
+      <MiniTVDisplay
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
       />
