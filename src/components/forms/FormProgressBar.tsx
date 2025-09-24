@@ -34,10 +34,10 @@ const FormProgressBar: React.FC = () => {
 
   if (isLoading || !userProfile) {
     return (
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b shadow-sm">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-700">Carregando pontuação...</span>
+            <span className="text-sm font-medium text-foreground">Carregando pontuação...</span>
           </div>
         </div>
       </div>
@@ -47,20 +47,20 @@ const FormProgressBar: React.FC = () => {
   const additionalPoints = totalPoints - basePoints;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b shadow-sm">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border shadow-sm">
       <div className="max-w-4xl mx-auto px-6 py-4">
         <div className="flex items-center justify-center">
           <div className="text-center">
-            <span className="text-lg font-bold text-ppgvet-teal">
+            <span className="text-lg font-bold text-primary">
               Pontuação Total: {totalPoints.toFixed(1)} pontos
             </span>
-            <div className="text-xs text-gray-600 mt-1">
+            <div className="text-xs text-muted-foreground mt-1">
               <span className="inline-flex items-center gap-1">
-                <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-medium">
+                <span className="bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs font-medium">
                   Base: +{basePoints}
                 </span>
                 {additionalPoints > 0 && (
-                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium">
+                  <span className="bg-accent text-accent-foreground px-2 py-0.5 rounded text-xs font-medium">
                     Formulário: +{additionalPoints.toFixed(1)}
                   </span>
                 )}
