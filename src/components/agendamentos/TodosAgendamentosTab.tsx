@@ -26,14 +26,8 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [filtroResultado, setFiltroResultado] = useState<string>('todos');
   const [pesquisaLead, setPesquisaLead] = useState<string>('');
-  
-  // Filtros de data de agendamento (período da reunião)
-  const [dataAgendamentoInicio, setDataAgendamentoInicio] = useState<Date | undefined>(undefined);
-  const [dataAgendamentoFim, setDataAgendamentoFim] = useState<Date | undefined>(undefined);
-  
-  // Filtros de data de criação (quando foi criado no sistema)
-  const [dataCriacaoInicio, setDataCriacaoInicio] = useState<Date | undefined>(undefined);
-  const [dataCriacaoFim, setDataCriacaoFim] = useState<Date | undefined>(undefined);
+  const [dataInicio, setDataInicio] = useState<Date | undefined>(undefined);
+  const [dataFim, setDataFim] = useState<Date | undefined>(undefined);
   const [selectedAgendamento, setSelectedAgendamento] = useState<AgendamentoSDR | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const { isDiretor } = useUserRoles();
@@ -116,40 +110,22 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
     if (filtroResultado !== 'todos' && agendamento.resultado_reuniao !== filtroResultado) return false;
     if (pesquisaLead && !agendamento.lead?.nome?.toLowerCase().includes(pesquisaLead.toLowerCase())) return false;
     
-    // Filtro por data de agendamento - início
-    if (dataAgendamentoInicio) {
+    // Filtro por data de início
+    if (dataInicio) {
       const dataAgendamento = new Date(agendamento.data_agendamento);
       dataAgendamento.setHours(0, 0, 0, 0);
-      const inicio = new Date(dataAgendamentoInicio);
+      const inicio = new Date(dataInicio);
       inicio.setHours(0, 0, 0, 0);
       if (dataAgendamento < inicio) return false;
     }
     
-    // Filtro por data de agendamento - fim
-    if (dataAgendamentoFim) {
+    // Filtro por data de fim
+    if (dataFim) {
       const dataAgendamento = new Date(agendamento.data_agendamento);
       dataAgendamento.setHours(23, 59, 59, 999);
-      const fim = new Date(dataAgendamentoFim);
+      const fim = new Date(dataFim);
       fim.setHours(23, 59, 59, 999);
       if (dataAgendamento > fim) return false;
-    }
-    
-    // Filtro por data de criação - início
-    if (dataCriacaoInicio && agendamento.created_at) {
-      const dataCriacao = new Date(agendamento.created_at);
-      dataCriacao.setHours(0, 0, 0, 0);
-      const inicio = new Date(dataCriacaoInicio);
-      inicio.setHours(0, 0, 0, 0);
-      if (dataCriacao < inicio) return false;
-    }
-    
-    // Filtro por data de criação - fim
-    if (dataCriacaoFim && agendamento.created_at) {
-      const dataCriacao = new Date(agendamento.created_at);
-      dataCriacao.setHours(23, 59, 59, 999);
-      const fim = new Date(dataCriacaoFim);
-      fim.setHours(23, 59, 59, 999);
-      if (dataCriacao > fim) return false;
     }
     
     return true;
@@ -201,207 +177,128 @@ const TodosAgendamentosTab: React.FC<TodosAgendamentosTabProps> = ({ agendamento
       </div>
 
       {/* Filtros */}
-      <div className="space-y-4">
-        {/* Primeira linha - Pesquisa e filtros principais */}
-        <div className="flex flex-col gap-4 md:flex-row">
-          {/* Campo de pesquisa por lead */}
-          <div className="flex items-center gap-2 flex-1">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Pesquisar por nome do lead..."
-              value={pesquisaLead}
-              onChange={(e) => setPesquisaLead(e.target.value)}
-              className="max-w-sm"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            <Select value={filtroSDR} onValueChange={setFiltroSDR}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filtrar por SDR" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os SDRs</SelectItem>
-                {sdrs.map((sdr) => (
-                  <SelectItem key={sdr.id} value={sdr.id}>
-                    {sdr.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="agendado">Agendado</SelectItem>
-              <SelectItem value="atrasado">Atrasado</SelectItem>
-              <SelectItem value="finalizado">Finalizado</SelectItem>
-              <SelectItem value="finalizado_venda">Finalizado - Venda</SelectItem>
-              <SelectItem value="remarcado">Remarcado</SelectItem>
-              <SelectItem value="realizado">Realizado</SelectItem>
-              <SelectItem value="cancelado">Cancelado</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={filtroResultado} onValueChange={setFiltroResultado}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Resultado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os Resultados</SelectItem>
-              <SelectItem value="comprou">Comprou</SelectItem>
-              <SelectItem value="compareceu_nao_comprou">Compareceu e não comprou</SelectItem>
-              <SelectItem value="nao_compareceu">Não compareceu</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="flex flex-col gap-4 md:flex-row">
+        {/* Campo de pesquisa por lead */}
+        <div className="flex items-center gap-2 flex-1">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar por nome do lead..."
+            value={pesquisaLead}
+            onChange={(e) => setPesquisaLead(e.target.value)}
+            className="max-w-sm"
+          />
         </div>
 
-        {/* Segunda linha - Filtros de data */}
-        <div className="flex flex-col gap-4 md:flex-row">
-          {/* Seção: Filtro por Data de Agendamento (período da reunião) */}
-          <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="text-sm font-medium text-blue-700 dark:text-blue-300 min-w-fit">
-              Data de Agendamento:
-            </div>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "w-[140px] justify-start text-left font-normal",
-                    !dataAgendamentoInicio && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dataAgendamentoInicio ? format(dataAgendamentoInicio, "dd/MM/yyyy", { locale: ptBR }) : "Início"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={dataAgendamentoInicio}
-                  onSelect={setDataAgendamentoInicio}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-
-            <span className="text-muted-foreground">até</span>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "w-[140px] justify-start text-left font-normal",
-                    !dataAgendamentoFim && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dataAgendamentoFim ? format(dataAgendamentoFim, "dd/MM/yyyy", { locale: ptBR }) : "Fim"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={dataAgendamentoFim}
-                  onSelect={setDataAgendamentoFim}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Seção: Filtro por Data de Criação (quando foi criado no sistema) */}
-          <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-            <div className="text-sm font-medium text-green-700 dark:text-green-300 min-w-fit">
-              Data de Criação:
-            </div>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "w-[140px] justify-start text-left font-normal",
-                    !dataCriacaoInicio && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dataCriacaoInicio ? format(dataCriacaoInicio, "dd/MM/yyyy", { locale: ptBR }) : "Início"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={dataCriacaoInicio}
-                  onSelect={setDataCriacaoInicio}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-
-            <span className="text-muted-foreground">até</span>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "w-[140px] justify-start text-left font-normal",
-                    !dataCriacaoFim && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dataCriacaoFim ? format(dataCriacaoFim, "dd/MM/yyyy", { locale: ptBR }) : "Fim"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={dataCriacaoFim}
-                  onSelect={setDataCriacaoFim}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        {/* Botão Limpar Filtros */}
-        {(filtroSDR !== 'todos' || filtroStatus !== 'todos' || filtroResultado !== 'todos' || pesquisaLead || dataAgendamentoInicio || dataAgendamentoFim || dataCriacaoInicio || dataCriacaoFim) && (
-          <div className="flex justify-center">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => {
-                setFiltroSDR('todos');
-                setFiltroStatus('todos');
-                setFiltroResultado('todos');
-                setPesquisaLead('');
-                setDataAgendamentoInicio(undefined);
-                setDataAgendamentoFim(undefined);
-                setDataCriacaoInicio(undefined);
-                setDataCriacaoFim(undefined);
-              }}
+        {/* Filtro de Data de Início */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-[160px] justify-start text-left font-normal",
+                !dataInicio && "text-muted-foreground"
+              )}
             >
-              Limpar Filtros
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dataInicio ? format(dataInicio, "dd/MM/yyyy", { locale: ptBR }) : "Data início"}
             </Button>
-          </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dataInicio}
+              onSelect={setDataInicio}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+
+        {/* Filtro de Data de Fim */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-[160px] justify-start text-left font-normal",
+                !dataFim && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dataFim ? format(dataFim, "dd/MM/yyyy", { locale: ptBR }) : "Data fim"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dataFim}
+              onSelect={setDataFim}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4" />
+          <Select value={filtroSDR} onValueChange={setFiltroSDR}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por SDR" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os SDRs</SelectItem>
+              {sdrs.map((sdr) => (
+                <SelectItem key={sdr.id} value={sdr.id}>
+                  {sdr.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="agendado">Agendado</SelectItem>
+            <SelectItem value="atrasado">Atrasado</SelectItem>
+            <SelectItem value="finalizado">Finalizado</SelectItem>
+            <SelectItem value="finalizado_venda">Finalizado - Venda</SelectItem>
+            <SelectItem value="remarcado">Remarcado</SelectItem>
+            <SelectItem value="realizado">Realizado</SelectItem>
+            <SelectItem value="cancelado">Cancelado</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filtroResultado} onValueChange={setFiltroResultado}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Resultado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os Resultados</SelectItem>
+            <SelectItem value="comprou">Comprou</SelectItem>
+            <SelectItem value="compareceu_nao_comprou">Compareceu e não comprou</SelectItem>
+            <SelectItem value="nao_compareceu">Não compareceu</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {(filtroSDR !== 'todos' || filtroStatus !== 'todos' || filtroResultado !== 'todos' || pesquisaLead || dataInicio || dataFim) && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setFiltroSDR('todos');
+              setFiltroStatus('todos');
+              setFiltroResultado('todos');
+              setPesquisaLead('');
+              setDataInicio(undefined);
+              setDataFim(undefined);
+            }}
+          >
+            Limpar Filtros
+          </Button>
         )}
       </div>
 
