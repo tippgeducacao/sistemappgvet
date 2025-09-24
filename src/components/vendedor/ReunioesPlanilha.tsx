@@ -56,6 +56,16 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
   const { updateField, clearForm } = useFormStore();
   const { isAdmin, isDiretor, isSecretaria } = useUserRoles();
 
+  // Garantir popovers sempre fechados ao montar e desmontar
+  useEffect(() => {
+    setDateRangePopoverOpen(false);
+    setCreationDatePopoverOpen(false);
+    return () => {
+      setDateRangePopoverOpen(false);
+      setCreationDatePopoverOpen(false);
+    };
+  }, []);
+
   // Mapa de status das vendas vinculadas (para sobrescrever badge "Comprou" quando for rejeitada)
   const [vendasStatusMap, setVendasStatusMap] = useState<Record<string, string>>({});
 
