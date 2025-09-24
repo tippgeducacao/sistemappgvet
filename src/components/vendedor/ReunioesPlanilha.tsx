@@ -503,7 +503,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
     listaAgendamentos.length === 0 ? (
       <Card>
         <CardContent className="p-6 text-center">
-          <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <CalendarIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-muted-foreground">Nenhuma reunião encontrada</p>
         </CardContent>
       </Card>
@@ -836,7 +836,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
       <Tabs defaultValue="agendadas" className="w-full" onValueChange={() => { setDateRangePopoverOpen(false); setCreationDatePopoverOpen(false); }}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="agendadas" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+            <CalendarIcon className="h-4 w-4" />
             Agendadas ({reunioesAgendadas.length})
           </TabsTrigger>
           <TabsTrigger value="historico" className="flex items-center gap-2">
@@ -895,7 +895,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
               {/* Informações da Reunião */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
+                  <CalendarIcon className="h-4 w-4" />
                   Informações da Reunião
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -925,7 +925,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
                 {agendamentoSelecionado.status === 'remarcado' && (
                   <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
                     <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm font-medium">
-                      <Calendar className="h-4 w-4" />
+                      <CalendarIcon className="h-4 w-4" />
                       Reunião Remarcada pelo Vendedor
                     </div>
                     <p className="text-blue-600 dark:text-blue-400 text-xs mt-1">
