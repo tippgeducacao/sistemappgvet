@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import type { DateRange } from 'react-day-picker';
+import AgendamentoDetailsModal from '@/components/agendamentos/AgendamentoDetailsModal';
 
 interface HistoricoReuniao {
   id: string;
@@ -46,6 +47,10 @@ const HistoricoReunioes: React.FC = () => {
   const [reunioes, setReunioes] = useState<HistoricoReuniao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useAuthStore();
+
+  // Estado para o modal de detalhes
+  const [selectedAgendamento, setSelectedAgendamento] = useState<HistoricoReuniao | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Estado para filtros
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -246,6 +251,11 @@ const HistoricoReunioes: React.FC = () => {
     setSelectedStatus([]);
     setSearchName('');
     setCurrentPage(1); // Resetar página ao limpar filtros
+  };
+
+  const handleViewDetails = (reuniao: HistoricoReuniao) => {
+    setSelectedAgendamento(reuniao);
+    setIsModalOpen(true);
   };
 
   const hasActiveFilters = dateRange?.from || dateRange?.to || selectedCreationDate || selectedStatus.length > 0 || searchName.trim().length > 0;
@@ -711,6 +721,14 @@ const HistoricoReunioes: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewDetails(reuniao)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver
+                        </Button>
                         {reuniao.link_reuniao && (
                           <Button variant="outline" size="sm" asChild>
                             <a href={reuniao.link_reuniao} target="_blank" rel="noopener noreferrer">
@@ -792,6 +810,12 @@ const HistoricoReunioes: React.FC = () => {
           </>
         )}
       </CardContent>
+      
+      <AgendamentoDetailsModal
+        agendamento={selectedAgendamento as any}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+      />
     </Card>
   );
 };
