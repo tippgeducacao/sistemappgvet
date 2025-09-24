@@ -730,7 +730,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 z-[9999]" align="start" side="bottom" sideOffset={8}>
             <Calendar
               initialFocus
               mode="range"
@@ -773,7 +773,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 z-[9999]" align="start" side="bottom" sideOffset={8}>
             <Calendar
               mode="single"
               selected={selectedCreationDate}
@@ -823,7 +823,7 @@ const ReunioesPlanilha: React.FC<ReunioesPlanilhaProps> = ({
         )}
       </div>
 
-      <Tabs defaultValue="agendadas" className="w-full">
+      <Tabs defaultValue="agendadas" className="w-full" onValueChange={() => { setDateRangePopoverOpen(false); setCreationDatePopoverOpen(false); }}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="agendadas" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
