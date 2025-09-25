@@ -555,20 +555,25 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                        const isCurrentWeek = (currentAno === selectedYear && currentMes === selectedMonth) &&
                          (start <= currentWeekEnd && end >= currentWeekStart);
                        
-                       // Buscar dados específicos desta semana nos dados otimizados
-                       const semanaData = weeklyData.find(data => data.semana === semana);
-                       
-                       // Calcular média dos percentuais desta semana
-                       const percentualMedia = semanaData?.mediaPercentualAtingimento || 0;
-                       
-                        // Aplicar regra da taxa média: mostrar 0.0% (XX.X%) se < 50%
-                        const displayMedia = percentualMedia < 50
-                          ? `0.0% (${percentualMedia.toFixed(1)}%)`
-                          : `${percentualMedia.toFixed(1)}%`;
+                        // Buscar dados específicos desta semana nos dados otimizados
+                        const semanaData = weeklyData.find(data => data.semana === semana);
                         
-                        const mediaClass = percentualMedia < 50
-                          ? "text-red-500 bg-red-50 dark:text-red-400 dark:bg-red-950/30"
-                          : "";
+                        // Calcular média dos percentuais desta semana
+                        const percentualMedia = semanaData?.mediaPercentualAtingimento || 0;
+                        
+                        // Verificar se algum membro está abaixo de 50% nesta semana
+                        const temMembroAbaixoDe50 = semanaData?.sdrsDetalhes?.some(sdr => 
+                          sdr.percentualAtingimento && sdr.percentualAtingimento < 50
+                        ) || false;
+                        
+                         // Aplicar regra: se algum membro < 50%, mostrar 0.0% (XX.X%)
+                         const displayMedia = temMembroAbaixoDe50
+                           ? `0.0% (${percentualMedia.toFixed(1)}%)`
+                           : `${percentualMedia.toFixed(1)}%`;
+                         
+                         const mediaClass = temMembroAbaixoDe50
+                           ? "text-red-500 bg-red-50 dark:text-red-400 dark:bg-red-950/30"
+                           : "";
                         
                         return (
                           <td key={semana} className={`py-3 px-4 text-center border-l border-border font-semibold ${isCurrentWeek ? 'bg-primary/10 text-primary' : 'text-foreground'} ${mediaClass}`}>

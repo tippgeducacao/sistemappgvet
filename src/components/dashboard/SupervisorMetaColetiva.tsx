@@ -95,10 +95,20 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
     );
   }
 
-  // Calcular taxa de atingimento média por semana (baseado na média dos membros)
+  // Calcular taxa de atingimento média por semana e verificar se algum membro está abaixo de 50%
   const taxasAtingimentoMediasPorSemana = weeks.map((week, index) => {
     const data = weeklyData[index];
-    return data?.mediaPercentualAtingimento || 0;
+    const mediaReal = data?.mediaPercentualAtingimento || 0;
+    
+    // Verificar se algum membro está abaixo de 50% nesta semana
+    const temMembroAbaixoDe50 = data?.sdrsDetalhes?.some(sdr => 
+      sdr.percentualAtingimento && sdr.percentualAtingimento < 50
+    ) || false;
+    
+    return {
+      mediaReal,
+      temMembroAbaixoDe50
+    };
   });
 
   // Obter lista única de todos os membros da equipe
@@ -297,15 +307,16 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                 <td colSpan={3} className="p-3 font-bold text-lg">
                   Taxa de Atingimento Média
                 </td>
-                {taxasAtingimentoMediasPorSemana.map((taxa, weekIndex) => {
+                {taxasAtingimentoMediasPorSemana.map((taxaInfo, weekIndex) => {
                   const isCurrentWeek = weekIndex === currentWeekIndex;
+                  const { mediaReal, temMembroAbaixoDe50 } = taxaInfo;
                   
-                  // Aplicar regra da taxa média: mostrar 0.0% (XX.X%) se < 50%
-                  const displayMedia = taxa < 50
-                    ? `0.0% (${taxa.toFixed(1)}%)`
-                    : `${taxa.toFixed(1)}%`;
+                  // Aplicar regra: se algum membro < 50%, mostrar 0.0% (XX.X%)
+                  const displayMedia = temMembroAbaixoDe50
+                    ? `0.0% (${mediaReal.toFixed(1)}%)`
+                    : `${mediaReal.toFixed(1)}%`;
                   
-                  const mediaClass = taxa < 50
+                  const mediaClass = temMembroAbaixoDe50
                     ? "text-red-500 bg-red-50 dark:text-red-400 dark:bg-red-950/30"
                     : "";
                   
