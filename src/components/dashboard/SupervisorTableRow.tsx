@@ -19,6 +19,7 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
   const [totalSupervisorCommission, setTotalSupervisorCommission] = useState(0);
   const [weeklyAttainments, setWeeklyAttainments] = useState<number[]>([]);
   const [weeklyCommissions, setWeeklyCommissions] = useState<number[]>([]);
+  const [weeklyAttainmentsForAverage, setWeeklyAttainmentsForAverage] = useState<number[]>([]);
 
   const supervisorNivel = supervisor.nivel || 'supervisor';
   const nivelConfig = niveis.find(n => n.tipo_usuario === 'supervisor' && n.nivel === supervisorNivel);
@@ -56,26 +57,36 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
               const taxaAtingimentoMedia = comissionamentoData.mediaPercentualAtingimento;
               const comissaoValor = comissionamentoData.valorComissao;
               
-              console.log(`📊 ${supervisor.name} - Semana ${weekNumber}: Taxa média ${taxaAtingimentoMedia.toFixed(1)}%, Comissão R$ ${comissaoValor.toFixed(2)}`);
+              // Verificar se algum membro está abaixo de 50% nesta semana
+              const temMembroAbaixoDe50 = comissionamentoData.sdrsDetalhes?.some(sdr => 
+                sdr.percentualAtingimento && sdr.percentualAtingimento < 50
+              ) || false;
+              
+              // Taxa para cálculo da média mensal (0% se algum membro < 50%)
+              const taxaParaMedia = temMembroAbaixoDe50 ? 0 : taxaAtingimentoMedia;
+              
+              console.log(`📊 ${supervisor.name} - Semana ${weekNumber}: Taxa média ${taxaAtingimentoMedia.toFixed(1)}%, Tem membro < 50%: ${temMembroAbaixoDe50}, Taxa para média: ${taxaParaMedia.toFixed(1)}%, Comissão R$ ${comissaoValor.toFixed(2)}`);
               
               return {
-                taxaAtingimento: taxaAtingimentoMedia,
+                taxaAtingimento: taxaAtingimentoMedia, // valor real para exibição
+                taxaParaMedia: taxaParaMedia, // valor para cálculo da média (pode ser 0)
                 comissao: comissaoValor
               };
             }
             
             // Se não há dados (supervisor não estava ativo), retornar null
             console.log(`📊 ${supervisor.name} - Semana ${weekNumber}: Não havia equipe ativa, retornando null`);
-            return { taxaAtingimento: null, comissao: null };
+            return { taxaAtingimento: null, taxaParaMedia: null, comissao: null };
             
           } catch (error) {
             console.error(`❌ ${supervisor.name} - Erro na semana ${weekNumber}:`, error);
-            return { taxaAtingimento: 0, comissao: 0 };
+            return { taxaAtingimento: 0, taxaParaMedia: 0, comissao: 0 };
           }
         })
       );
       
       const attainments = weeklyData.map(d => d.taxaAtingimento);
+      const attainmentsForAverage = weeklyData.map(d => d.taxaParaMedia);
       const commissions = weeklyData.map(d => d.comissao);
       
       // Calcular total apenas das semanas com dados válidos (ignorar null/undefined)
@@ -85,6 +96,7 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
         semanas: weeklyData.map((d, i) => ({
           semana: i + 1,
           taxa: d.taxaAtingimento,
+          taxaParaMedia: d.taxaParaMedia,
           comissao: d.comissao,
           variavelSemanal: variavelSemanal
         })),
@@ -95,11 +107,13 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
       
       console.log(`✅ ${supervisor.name} - Resultado final:`, {
         attainments,
+        attainmentsForAverage,
         commissions,
         total
       });
       
       setWeeklyAttainments(attainments);
+      setWeeklyAttainmentsForAverage(attainmentsForAverage);
       setWeeklyCommissions(commissions);
       setTotalSupervisorCommission(total);
     };
@@ -109,10 +123,10 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
     }
   }, [supervisor.id, weeks, variavelSemanal]);
 
-  // Calcular atingimento médio mensal apenas das semanas com dados válidos
-  const validAttainments = weeklyAttainments.filter(att => att !== null && att !== undefined);
-  const monthlyAttainment = validAttainments.length > 0 
-    ? validAttainments.reduce((sum, att) => sum + att, 0) / validAttainments.length 
+  // Calcular atingimento médio mensal usando as taxas para média (considerando regra dos 50%)
+  const validAttainmentsForAverage = weeklyAttainmentsForAverage.filter(att => att !== null && att !== undefined);
+  const monthlyAttainment = validAttainmentsForAverage.length > 0 
+    ? validAttainmentsForAverage.reduce((sum, att) => sum + att, 0) / validAttainmentsForAverage.length 
     : 0;
 
   return (
