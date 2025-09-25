@@ -497,41 +497,42 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                             
                             return (
                               <td key={semana} className={`py-4 px-4 text-center border-l border-border ${isCurrentWeek ? 'bg-primary/5' : ''}`}>
-                                <div className={`text-sm ${isCurrentWeek ? 'font-semibold text-primary' : 'text-foreground'}`}>
-                                  {!membroDetalhe ? (
-                                    isFutureWeek ? (
-                                      // Semana futura: mostrar progresso 0% (não marcar como fora do grupo)
-                                      (() => {
-                                        const userType = membro.usuario?.user_type;
-                                        const nivel = membro.usuario?.nivel || 'junior';
-                                        let metaPadrao = 0;
-                                        
-                                        if (userType === 'vendedor') {
-                                          metaPadrao = nivel === 'junior' ? 7 : nivel === 'pleno' ? 8 : nivel === 'senior' ? 10 : 7;
-                                        } else {
-                                          metaPadrao = nivel === 'junior' ? 55 : nivel === 'pleno' ? 70 : nivel === 'senior' ? 85 : 55;
-                                        }
-                                        
-                                        return `0/${metaPadrao} (0.0%)`;
-                                      })()
-                                    ) : (
-                                      // Semana passada e sem dados -> fora do grupo
-                                      <div className="italic text-muted-foreground/70 text-xs">
-                                        Fora do grupo
-                                      </div>
-                                    )
-                                  ) : (
-                                    // Tem dados: exibir valores
-                                    <>
-                                      {membro.usuario?.user_type === 'vendedor' 
-                                        ? (membroDetalhe.reunioesRealizadas % 1 === 0 
-                                            ? membroDetalhe.reunioesRealizadas.toString() 
-                                            : membroDetalhe.reunioesRealizadas.toFixed(1))
-                                        : membroDetalhe.reunioesRealizadas.toString()
-                                      }/{membroDetalhe.metaSemanal} ({membroDetalhe.percentualAtingimento.toFixed(1)}%)
-                                    </>
-                                  )}
-                                </div>
+                                 {/* Aplicar formatação condicional para células < 50% */}
+                                 <div className={`text-sm ${isCurrentWeek ? 'font-semibold text-primary' : 'text-foreground'} ${membroDetalhe && membroDetalhe.percentualAtingimento < 50 ? 'text-red-500 bg-red-50 dark:text-red-400 dark:bg-red-950/30 p-2 rounded' : ''}`}>
+                                   {!membroDetalhe ? (
+                                     isFutureWeek ? (
+                                       // Semana futura: mostrar progresso 0% (não marcar como fora do grupo)
+                                       (() => {
+                                         const userType = membro.usuario?.user_type;
+                                         const nivel = membro.usuario?.nivel || 'junior';
+                                         let metaPadrao = 0;
+                                         
+                                         if (userType === 'vendedor') {
+                                           metaPadrao = nivel === 'junior' ? 7 : nivel === 'pleno' ? 8 : nivel === 'senior' ? 10 : 7;
+                                         } else {
+                                           metaPadrao = nivel === 'junior' ? 55 : nivel === 'pleno' ? 70 : nivel === 'senior' ? 85 : 55;
+                                         }
+                                         
+                                         return `0/${metaPadrao} (0.0%)`;
+                                       })()
+                                     ) : (
+                                       // Semana passada e sem dados -> fora do grupo
+                                       <div className="italic text-muted-foreground/70 text-xs">
+                                         Fora do grupo
+                                       </div>
+                                     )
+                                   ) : (
+                                     // Tem dados: exibir valores
+                                     <>
+                                       {membro.usuario?.user_type === 'vendedor' 
+                                         ? (membroDetalhe.reunioesRealizadas % 1 === 0 
+                                             ? membroDetalhe.reunioesRealizadas.toString() 
+                                             : membroDetalhe.reunioesRealizadas.toFixed(1))
+                                         : membroDetalhe.reunioesRealizadas.toString()
+                                       }/{membroDetalhe.metaSemanal} ({membroDetalhe.percentualAtingimento.toFixed(1)}%)
+                                     </>
+                                   )}
+                                 </div>
                               </td>
                             );
                          })}
@@ -560,11 +561,20 @@ const SupervisorDashboardAtualizado: React.FC = () => {
                        // Calcular média dos percentuais desta semana
                        const percentualMedia = semanaData?.mediaPercentualAtingimento || 0;
                        
-                       return (
-                         <td key={semana} className={`py-3 px-4 text-center border-l border-border font-semibold ${isCurrentWeek ? 'bg-primary/10 text-primary' : 'text-foreground'}`}>
-                           {percentualMedia.toFixed(1)}%
-                         </td>
-                       );
+                        // Aplicar regra da taxa média: mostrar 0.0% (XX.X%) se < 50%
+                        const displayMedia = percentualMedia < 50
+                          ? `0.0% (${percentualMedia.toFixed(1)}%)`
+                          : `${percentualMedia.toFixed(1)}%`;
+                        
+                        const mediaClass = percentualMedia < 50
+                          ? "text-red-500 bg-red-50 dark:text-red-400 dark:bg-red-950/30"
+                          : "";
+                        
+                        return (
+                          <td key={semana} className={`py-3 px-4 text-center border-l border-border font-semibold ${isCurrentWeek ? 'bg-primary/10 text-primary' : 'text-foreground'} ${mediaClass}`}>
+                            {displayMedia}
+                          </td>
+                        );
                      })}
                   </tr>
                 </tfoot>

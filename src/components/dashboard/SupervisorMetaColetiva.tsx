@@ -275,8 +275,13 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                       const reunioesRealizadas = dados.reunioesRealizadas || 0;
                       const percentual = dados.percentualAtingimento || 0;
 
+                      // Aplicar formatação condicional para células < 50%
+                      const cellClass = percentual < 50 
+                        ? "text-red-500 bg-red-50 dark:text-red-400 dark:bg-red-950/30" 
+                        : "";
+
                       return (
-                        <td key={weekIndex} className={`p-3 text-center border-r ${isCurrentWeek ? 'bg-primary/10' : ''}`}>
+                        <td key={weekIndex} className={`p-3 text-center border-r ${isCurrentWeek ? 'bg-primary/10' : ''} ${cellClass}`}>
                           <div className={`font-medium ${isCurrentWeek ? 'text-primary font-bold' : ''}`}>
                             {Number(reunioesRealizadas).toFixed(2)}/{metaSemanal} ({percentual.toFixed(1)}%)
                           </div>
@@ -294,9 +299,19 @@ const SupervisorMetaColetiva: React.FC<SupervisorMetaColetivaProps> = ({
                 </td>
                 {taxasAtingimentoMediasPorSemana.map((taxa, weekIndex) => {
                   const isCurrentWeek = weekIndex === currentWeekIndex;
+                  
+                  // Aplicar regra da taxa média: mostrar 0.0% (XX.X%) se < 50%
+                  const displayMedia = taxa < 50
+                    ? `0.0% (${taxa.toFixed(1)}%)`
+                    : `${taxa.toFixed(1)}%`;
+                  
+                  const mediaClass = taxa < 50
+                    ? "text-red-500 bg-red-50 dark:text-red-400 dark:bg-red-950/30"
+                    : "";
+                  
                   return (
-                    <td key={weekIndex} className={`p-3 text-center font-bold text-lg ${isCurrentWeek ? 'bg-primary/20 text-primary' : ''}`}>
-                      {taxa.toFixed(1)}%
+                    <td key={weekIndex} className={`p-3 text-center font-bold text-lg ${isCurrentWeek ? 'bg-primary/20 text-primary' : ''} ${mediaClass}`}>
+                      {displayMedia}
                     </td>
                   );
                 })}
