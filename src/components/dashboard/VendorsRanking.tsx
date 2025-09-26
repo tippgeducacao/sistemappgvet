@@ -1041,16 +1041,7 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           </div>
         </div>
 
-        {/* Planilha Detalhada - Debug */}
-        {(() => {
-          console.log('🔍 DEBUG Planilha:');
-          console.log('- vendedoresFiltrados.length:', vendedoresFiltrados.length);
-          console.log('- vendedoresFiltrados:', vendedoresFiltrados.map(v => ({ id: v.id, name: v.name, user_type: v.user_type })));
-          console.log('- SDRs count:', vendedores.filter(v => v.user_type === 'sdr').length);
-          console.log('- SDRs:', vendedores.filter(v => v.user_type === 'sdr').map(v => ({ id: v.id, name: v.name, user_type: v.user_type })));
-          console.log('- Condição planilha:', vendedoresFiltrados.length > 0 || vendedores.filter(v => v.user_type === 'sdr').length > 0);
-          return null;
-        })()}
+// Debug removido para estabilidade de hooks
         
         <div className="mt-8" data-detailed-spreadsheet>
           
