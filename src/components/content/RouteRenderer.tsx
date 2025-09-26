@@ -8,6 +8,7 @@ import SupervisorSimpleDashboard from '@/components/supervisor/SupervisorSimpleD
 import DashboardContainer from '@/components/dashboard/DashboardContainer';
 import NovaVendaForm from '@/components/NovaVendaForm';
 import GerenciarVendas from '@/components/GerenciarVendas';
+
 import GerenciarCursos from '@/components/GerenciarCursos';
 import GerenciarVendedores from '@/components/GerenciarVendedores';
 import GerenciarPontuacoes from '@/components/GerenciarPontuacoes';
@@ -19,6 +20,12 @@ import AgendamentosPage from '@/components/agendamentos/AgendamentosPage';
 import { GerenciarEventosRecorrentes } from '@/components/agendamentos/GerenciarEventosRecorrentes';
 import VendedorReunioes from '@/components/vendedor/VendedorReunioes';
 import { RelatorioDiario } from '@/components/vendedor/RelatorioDiario';
+
+// Precarregar componentes lazy fora do corpo do componente para manter ordem estável
+const LazySupervisorDashboardAtualizado = React.lazy(() => import('@/components/supervisor/SupervisorDashboardAtualizado'));
+const LazyGerenciarGrupos = React.lazy(() => import('@/components/supervisor/GerenciarGrupos'));
+const LazyGerenciarPerfis = React.lazy(() => import('@/components/GerenciarPerfis'));
+const LazySupervisorMetrics = React.lazy(() => import('@/components/supervisor/SupervisorMetrics'));
 
 const RouteRenderer: React.FC = () => {
   const { activeSection, showNovaVenda } = useAppStateStore();
