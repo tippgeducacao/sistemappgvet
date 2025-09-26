@@ -121,22 +121,64 @@ export const useBatchComissionamentoCalculation = (
   calculations: ComissionamentoCalculationParams[],
   enabled = true
 ) => {
-  const results = calculations.map((params, index) => 
-    useComissionamentoCalculation({
-      ...params,
-      enabled: enabled && Boolean(params.pontosObtidos !== undefined)
-    })
+  // Cache configuration compartilhada
+  const cacheConfig = OptimizedCacheService.getCacheConfig('COMISSIONAMENTO_CALCULOS');
+
+  // Chave estável baseada no payload (evita múltiplos hooks dinâmicos)
+  const key = useMemo(
+    () => [
+      'batch-comissionamento-calculo',
+      calculations.map(c => `${c.tipoUsuario || 'vendedor'}_${c.pontosObtidos}_${c.metaSemanal}_${c.variabelSemanal}`).join('|')
+    ],
+    [calculations]
   );
 
-  const loading = results.some(r => r.loading);
-  const error = results.find(r => r.error)?.error;
-  
-  const data = results.map(r => r.resultado).filter(Boolean);
+  const { data, isLoading, error } = useQuery({
+    queryKey: key,
+    queryFn: async () => {
+      if (!calculations || calculations.length === 0) return [] as Array<{
+        valor: number;
+        multiplicador: number;
+        percentual: number;
+        _meta: any;
+      }>;
+
+      // Processar em lote em uma ÚNICA chamada de hook (evita violar regras dos hooks)
+      const results = await Promise.all(
+        calculations.map(async (params) => {
+          const tipoUsuario = params.tipoUsuario || 'vendedor';
+          const result = await ComissionamentoService.calcularComissao(
+            params.pontosObtidos,
+            params.metaSemanal,
+            params.variabelSemanal,
+            tipoUsuario
+          );
+
+          return {
+            valor: result.valor,
+            multiplicador: result.multiplicador,
+            percentual: result.percentual,
+            _meta: {
+              pontosObtidos: params.pontosObtidos,
+              metaSemanal: params.metaSemanal,
+              variabelSemanal: params.variabelSemanal,
+              tipoUsuario
+            }
+          };
+        })
+      );
+
+      return results;
+    },
+    enabled: enabled && calculations.length > 0,
+    ...cacheConfig,
+    retry: 1,
+  });
 
   return {
-    data,
-    loading,
+    data: data || [],
+    loading: isLoading,
     error,
-    results, // Acesso individual se necessário
+    results: data || [],
   };
 };
