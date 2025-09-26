@@ -55,10 +55,9 @@ const RouteRenderer: React.FC = () => {
         return <SDRDashboard />;
       }
       if (isSupervisor) {
-        const SupervisorDashboardAtualizado = React.lazy(() => import('@/components/supervisor/SupervisorDashboardAtualizado'));
         return (
           <React.Suspense fallback={<div>Carregando...</div>}>
-            <SupervisorDashboardAtualizado />
+            <LazySupervisorDashboardAtualizado />
           </React.Suspense>
         );
       }
@@ -104,10 +103,9 @@ const RouteRenderer: React.FC = () => {
     case 'gerenciar-grupos':
       // Apenas diretores podem gerenciar grupos supervisores
       if (isDiretor) {
-        const GerenciarGrupos = React.lazy(() => import('@/components/supervisor/GerenciarGrupos'));
         return (
           <React.Suspense fallback={<div>Carregando...</div>}>
-            <GerenciarGrupos />
+            <LazyGerenciarGrupos />
           </React.Suspense>
         );
       }
@@ -199,10 +197,9 @@ const RouteRenderer: React.FC = () => {
     case 'gerenciar-perfis':
       // Apenas admin e diretor podem gerenciar perfis
       if (isAdmin || isDiretor) {
-        const GerenciarPerfis = React.lazy(() => import('@/components/GerenciarPerfis'));
         return (
           <React.Suspense fallback={<div>Carregando...</div>}>
-            <GerenciarPerfis />
+            <LazyGerenciarPerfis />
           </React.Suspense>
         );
       }
@@ -240,10 +237,9 @@ const RouteRenderer: React.FC = () => {
     case 'metricas':
       // Apenas supervisores podem acessar Métricas
       if (isSupervisor) {
-        const SupervisorMetrics = React.lazy(() => import('@/components/supervisor/SupervisorMetrics'));
         return (
           <React.Suspense fallback={<div>Carregando...</div>}>
-            <SupervisorMetrics />
+            <LazySupervisorMetrics />
           </React.Suspense>
         );
       }
