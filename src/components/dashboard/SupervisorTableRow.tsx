@@ -152,7 +152,8 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
       <td className="p-2">Meta Coletiva</td>
       <td className="p-2">R$ {variavelSemanal.toFixed(2)}</td>
       {weeks.map((_, weekIndex) => {
-        const attainment = weeklyAttainments[weekIndex];
+        const attainment = weeklyAttainments[weekIndex]; // valor real
+        const adjustedAttainment = weeklyAttainmentsForAverage[weekIndex]; // valor ajustado pela regra dos 50%
         const weeklyCommission = weeklyCommissions[weekIndex];
         
         // Se não há dados (supervisor não estava ativo), mostrar "Fora do grupo"
@@ -165,9 +166,14 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
           );
         }
         
+        // Formatar o texto de atingimento considerando a regra dos 50%
+        const attainmentText = adjustedAttainment !== null && Math.abs(adjustedAttainment - attainment) > 0.1
+          ? `${adjustedAttainment.toFixed(1)}% (${attainment.toFixed(1)}%) atingimento`
+          : `${attainment.toFixed(1)}% atingimento`;
+        
         return (
           <td key={weekIndex} className="p-2 text-xs">
-            <div>{attainment.toFixed(1)}% atingimento</div>
+            <div>{attainmentText}</div>
             <div className="opacity-70 text-green-600">R$ {weeklyCommission.toFixed(2)}</div>
           </td>
         );
