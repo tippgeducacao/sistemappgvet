@@ -170,6 +170,33 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   }, [vendedores, profile?.email, currentUser?.email]);
   
   const vendedoresForCommission = vendedoresFiltrados.map(v => ({ id: v.id, type: 'vendedor' as const }));
+  
+  // Memoizar lista de supervisores para evitar mudanças no número de componentes renderizados
+  const supervisoresFiltrados = useMemo(() => {
+    const userEmail = profile?.email || currentUser?.email;
+    const isSpecificAdmin = userEmail === 'wallasmonteiro019@gmail.com';
+    
+    return vendedores.filter(vendedor => {
+      // Filtrar apenas supervisores
+      if (vendedor.user_type !== 'supervisor') {
+        return false;
+      }
+      
+      // Filtrar apenas supervisores ativos
+      if (!vendedor.ativo) {
+        return false;
+      }
+      
+      // Se for o admin específico, mostrar todos os supervisores
+      if (isSpecificAdmin) {
+        return true;
+      }
+      
+      // Para outros usuários, filtrar "Vendedor teste"
+      return vendedor.name !== 'Vendedor teste';
+    });
+  }, [vendedores, profile?.email, currentUser?.email]);
+  
   const { data: weeklyCommissions, isLoading: commissionsLoading } = useBatchWeeklyCommissions(
     vendedoresForCommission,
     currentYearForCommission,
@@ -1200,17 +1227,15 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           })()}
 
           {/* Meta Coletiva - Supervisor */}
-          {vendedores.filter(v => v.user_type === 'supervisor').length > 0 && (
-            vendedores.filter(v => v.user_type === 'supervisor').map(supervisor => (
-              <SupervisorMetaColetiva
-                key={supervisor.id}
-                supervisorId={supervisor.id}
-                supervisorName={supervisor.name}
-                selectedMonth={selectedMonth}
-                getWeeksOfMonth={getWeeksOfMonth}
-              />
-            ))
-          )}
+          {supervisoresFiltrados.map(supervisor => (
+            <SupervisorMetaColetiva
+              key={supervisor.id}
+              supervisorId={supervisor.id}
+              supervisorName={supervisor.name}
+              selectedMonth={selectedMonth}
+              getWeeksOfMonth={getWeeksOfMonth}
+            />
+          ))}
         </div>
 
       </CardContent>
