@@ -318,6 +318,13 @@ export class SupervisorComissionamentoService {
 
       console.log(`🎯 Meta Coletiva: ${mediaPercentualAtingimento.toFixed(1)}% (média de ${membrosAtivos.length} membros)`);
 
+      // Verificar regra dos 50%: se algum membro está abaixo de 50%, comissão deve ser 0
+      const temMembroAbaixoDe50 = sdrsDetalhes.some(sdr => sdr.percentualAtingimento < 50);
+      const percentualParaComissao = temMembroAbaixoDe50 ? 0 : mediaPercentualAtingimento;
+      
+      console.log(`🔍 Verificação regra 50%: ${temMembroAbaixoDe50 ? 'TEM' : 'NÃO TEM'} membro abaixo de 50%`);
+      console.log(`💰 Percentual para comissão: ${percentualParaComissao.toFixed(1)}% (real: ${mediaPercentualAtingimento.toFixed(1)}%)`);
+
       // Buscar variável semanal do supervisor
       const { data: nivelSupervisorData, error: nivelSupervisorError } = await supabase
         .from('niveis_vendedores')
@@ -333,9 +340,9 @@ export class SupervisorComissionamentoService {
 
       const variabelSemanal = nivelSupervisorData.variavel_semanal;
 
-      // Calcular comissão baseada na média percentual (usando 100 como meta base)
+      // Calcular comissão usando percentual ajustado pela regra dos 50%
       const { multiplicador, valor } = await ComissionamentoService.calcularComissao(
-        mediaPercentualAtingimento,
+        percentualParaComissao, // Usar percentual ajustado (0% se algum membro < 50%)
         100, // Meta base de 100%
         variabelSemanal,
         'supervisor'
@@ -856,6 +863,13 @@ export class SupervisorComissionamentoService {
 
       console.log(`🎯 SEMANA ${semana} - Resultado final: ${sdrsDetalhes.length} membros processados, média: ${mediaPercentualAtingimento.toFixed(1)}%`);
 
+      // Verificar regra dos 50%: se algum membro está abaixo de 50%, comissão deve ser 0
+      const temMembroAbaixoDe50 = sdrsDetalhes.some(sdr => sdr.percentualAtingimento < 50);
+      const percentualParaComissao = temMembroAbaixoDe50 ? 0 : mediaPercentualAtingimento;
+      
+      console.log(`🔍 SEMANA ${semana} - Verificação regra 50%: ${temMembroAbaixoDe50 ? 'TEM' : 'NÃO TEM'} membro abaixo de 50%`);
+      console.log(`💰 SEMANA ${semana} - Percentual para comissão: ${percentualParaComissao.toFixed(1)}% (real: ${mediaPercentualAtingimento.toFixed(1)}%)`);
+
       // Buscar variável semanal do supervisor
       const { data: nivelSupervisorData, error: nivelSupervisorError } = await supabase
         .from('niveis_vendedores')
@@ -871,9 +885,9 @@ export class SupervisorComissionamentoService {
 
       const variabelSemanal = nivelSupervisorData.variavel_semanal;
 
-      // Calcular comissão baseada na média percentual (usando 100 como meta base)
+      // Calcular comissão usando percentual ajustado pela regra dos 50%
       const { multiplicador, valor } = await ComissionamentoService.calcularComissao(
-        mediaPercentualAtingimento,
+        percentualParaComissao, // Usar percentual ajustado (0% se algum membro < 50%)
         100, // Meta base de 100%
         variabelSemanal,
         'supervisor'
