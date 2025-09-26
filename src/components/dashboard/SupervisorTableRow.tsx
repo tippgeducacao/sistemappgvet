@@ -129,6 +129,12 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
     ? validAttainmentsForAverage.reduce((sum, att) => sum + att, 0) / validAttainmentsForAverage.length 
     : 0;
 
+  // Calcular atingimento médio real (sem regra dos 50%) para exibir entre parênteses
+  const validRealAttainments = weeklyAttainments.filter(att => att !== null && att !== undefined);
+  const monthlyRealAttainment = validRealAttainments.length > 0 
+    ? validRealAttainments.reduce((sum, att) => sum + att, 0) / validRealAttainments.length 
+    : 0;
+
   return (
     <tr key={supervisor.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/20"}>
       <td className="p-2 font-medium">
@@ -166,7 +172,12 @@ const SupervisorTableRow: React.FC<SupervisorTableRowProps> = ({
           </td>
         );
       })}
-      <td className="p-2 font-semibold">{monthlyAttainment.toFixed(1)}%</td>
+      <td className="p-2 font-semibold">
+        {Math.abs(monthlyAttainment - monthlyRealAttainment) < 0.1 ? 
+          `${monthlyAttainment.toFixed(1)}%` : 
+          `${monthlyAttainment.toFixed(1)}% (${monthlyRealAttainment.toFixed(1)}%)`
+        }
+      </td>
       <td className="p-2 font-semibold text-green-600">R$ {totalSupervisorCommission.toFixed(2)}</td>
     </tr>
   );
