@@ -131,11 +131,18 @@ const ProfissoesLeadsChart: React.FC<ProfissoesLeadsChartProps> = ({
                     ))}
                   </Pie>
                   <ChartTooltip 
-                    content={<ChartTooltipContent />}
-                    formatter={(value, name, props) => [
-                      `${value} leads (${props.payload?.percentage}%)`, 
-                      props.payload?.fullName || 'Profissão'
-                    ]}
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.[0]) return null;
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-background border border-border rounded-lg shadow-lg p-3">
+                          <p className="font-semibold text-sm mb-1">{data.fullName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {data.value} leads ({data.percentage}%)
+                          </p>
+                        </div>
+                      );
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>

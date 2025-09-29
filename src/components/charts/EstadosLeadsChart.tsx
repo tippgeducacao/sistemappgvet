@@ -18,14 +18,16 @@ interface EstadosLeadsChartProps {
 }
 
 const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  'hsl(var(--primary))',
-  'hsl(var(--secondary))',
-  'hsl(var(--accent))',
+  '#2563EB', // Azul (Blue)
+  '#DC2626', // Vermelho (Red)
+  '#16A34A', // Verde (Green)
+  '#D97706', // Laranja (Orange)
+  '#7C3AED', // Roxo (Purple)
+  '#0891B2', // Ciano (Cyan)
+  '#CA8A04', // Amarelo (Yellow)
+  '#DB2777', // Rosa (Pink)
+  '#4F46E5', // Índigo (Indigo)
+  '#059669', // Esmeralda (Emerald)
 ];
 
 const extractEstado = (regiao?: string): string => {
@@ -132,11 +134,18 @@ export const EstadosLeadsChart: React.FC<EstadosLeadsChartProps> = ({
                 ))}
               </Pie>
               <ChartTooltip
-                content={<ChartTooltipContent />}
-                formatter={(value, name, props) => [
-                  `${value} leads (${props.payload?.percentage}%)`,
-                  props.payload?.fullName || name
-                ]}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.[0]) return null;
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-background border border-border rounded-lg shadow-lg p-3">
+                      <p className="font-semibold text-sm mb-1">{data.fullName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {data.value} leads ({data.percentage}%)
+                      </p>
+                    </div>
+                  );
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
