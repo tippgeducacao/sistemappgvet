@@ -2,6 +2,7 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { normalizeEstado } from '@/utils/geoUtils';
 
 interface Lead {
   id: string;
@@ -30,16 +31,6 @@ const COLORS = [
   '#059669', // Esmeralda (Emerald)
 ];
 
-const extractEstado = (regiao?: string): string => {
-  if (!regiao) return 'Não informado';
-  
-  // Extrair estado da região (formato: "Cidade, Estado" ou "Estado")
-  const parts = regiao.split(',');
-  if (parts.length > 1) {
-    return parts[parts.length - 1].trim();
-  }
-  return regiao.trim();
-};
 
 export const EstadosLeadsChart: React.FC<EstadosLeadsChartProps> = ({
   leads,
@@ -64,12 +55,19 @@ export const EstadosLeadsChart: React.FC<EstadosLeadsChartProps> = ({
     );
   }
 
-  // Processar dados dos estados
+  // Processar dados dos estados (excluindo "Não informado")
   const estadosMap = new Map<string, number>();
   const leadsMap = new Map<string, Lead[]>();
+  let unknownCount = 0;
 
   leads.forEach((lead) => {
-    const estado = extractEstado(lead.regiao);
+    const estado = normalizeEstado(lead.regiao);
+    
+    if (!estado) {
+      unknownCount++;
+      return;
+    }
+    
     estadosMap.set(estado, (estadosMap.get(estado) || 0) + 1);
     
     if (!leadsMap.has(estado)) {
@@ -78,13 +76,15 @@ export const EstadosLeadsChart: React.FC<EstadosLeadsChartProps> = ({
     leadsMap.get(estado)!.push(lead);
   });
 
-  // Preparar dados para o gráfico (top 10)
+  const totalWithEstado = leads.length - unknownCount;
+
+  // Preparar dados para o gráfico (top 10) - percentuais baseados em totalWithEstado
   const estadosChartData = Array.from(estadosMap.entries())
     .map(([estado, count]) => ({
-      name: estado.length > 12 ? estado.substring(0, 12) + '...' : estado,
+      name: estado,
       fullName: estado,
       value: count,
-      percentage: ((count / leads.length) * 100).toFixed(1)
+      percentage: totalWithEstado > 0 ? ((count / totalWithEstado) * 100).toFixed(1) : '0.0'
     }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 10);
@@ -94,7 +94,7 @@ export const EstadosLeadsChart: React.FC<EstadosLeadsChartProps> = ({
     .map(([estado, count]) => ({
       name: estado,
       count,
-      percentage: ((count / leads.length) * 100).toFixed(1)
+      percentage: totalWithEstado > 0 ? ((count / totalWithEstado) * 100).toFixed(1) : '0.0'
     }))
     .sort((a, b) => b.count - a.count);
 
@@ -111,10 +111,34 @@ export const EstadosLeadsChart: React.FC<EstadosLeadsChartProps> = ({
     }
   };
 
+  // Empty state se não houver estados válidos
+  if (totalWithEstado === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center" style={{ height }}>
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">Nenhum lead com localização identificada</p>
+            <p className="text-sm text-muted-foreground">
+              {unknownCount > 0 && `${unknownCount} lead(s) sem informação de estado`}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        <CardTitle className="text-lg font-semibold">
+          {title}
+          <span className="text-xs font-normal text-muted-foreground ml-2">
+            (Top 10 - {totalWithEstado} de {leads.length} com localização)
+          </span>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} style={{ height }}>
