@@ -809,10 +809,12 @@ const AgendamentosPage: React.FC = () => {
       setSelectedVendedorAgenda(vendedor);
       setViewMode('list');
       setSelectedDate(new Date());
-      // Filtrar agendamentos do vendedor específico (apenas sem resultado ou remarcados)
+      // Filtrar agendamentos do vendedor específico (apenas agendados/atrasados sem resultado ou remarcados)
       const agendamentosDoVendedor = agendamentos.filter(agendamento => 
-        agendamento.vendedor_id === vendedor.id && 
-        (!agendamento.resultado_reuniao || agendamento.status === 'remarcado')
+        agendamento.vendedor_id === vendedor.id && (
+          ((agendamento.status === 'agendado' || agendamento.status === 'atrasado') && !agendamento.resultado_reuniao) ||
+          agendamento.status === 'remarcado'
+        )
       );
       setAgendamentosVendedor(agendamentosDoVendedor);
     } catch (error) {
