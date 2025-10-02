@@ -9,10 +9,14 @@
     <meta name="author" content="PPGVET" />
     <link rel="icon" href="/lovable-uploads/e2b888ac-54b9-453e-abda-ee6ef6e7fbb5.png" type="image/png">
     
-    <!-- Preload and async load fonts to avoid render-blocking -->
+    <!-- Early preconnect to Google Fonts to break dependency chain -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    
+    <!-- Load fonts with media print trick for async loading -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap"></noscript>
     
     <!-- Preload LCP image with highest priority using imagesrcset for picture element -->
