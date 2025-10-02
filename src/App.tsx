@@ -7,10 +7,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import Auth from "./pages/Auth"; // Eager load for LCP optimization
 
-// Lazy load all route components for better code splitting
+// Lazy load non-critical route components for better code splitting
 const Index = lazy(() => import("./pages/Index"));
-const Auth = lazy(() => import("./pages/Auth"));
 const NovaVenda = lazy(() => import("./pages/NovaVenda"));
 const Reunioes = lazy(() => import("./pages/Reunioes"));
 const PublicTVRanking = lazy(() => import("./pages/PublicTVRanking"));
@@ -28,23 +28,47 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Suspense fallback={
-              <div className="flex items-center justify-center min-h-screen">
-                <LoadingSpinner />
-              </div>
-            }>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/nova-venda" element={<NovaVenda />} />
-                <Route path="/reunioes" element={<Reunioes />} />
-                <Route path="/tv-ranking" element={<PublicTVRanking />} />
-                <Route path="/profissoes-chart" element={<ProfissoesChart />} />
-                <Route path="/teste-vinculacao" element={<TesteVinculacao />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            <Routes>
+              {/* Auth page eager-loaded for LCP optimization */}
+              <Route path="/auth" element={<Auth />} />
+              
+              {/* Other routes lazy-loaded with Suspense */}
+              <Route path="/" element={
+                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>}>
+                  <Index />
+                </Suspense>
+              } />
+              <Route path="/nova-venda" element={
+                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>}>
+                  <NovaVenda />
+                </Suspense>
+              } />
+              <Route path="/reunioes" element={
+                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>}>
+                  <Reunioes />
+                </Suspense>
+              } />
+              <Route path="/tv-ranking" element={
+                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>}>
+                  <PublicTVRanking />
+                </Suspense>
+              } />
+              <Route path="/profissoes-chart" element={
+                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>}>
+                  <ProfissoesChart />
+                </Suspense>
+              } />
+              <Route path="/teste-vinculacao" element={
+                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>}>
+                  <TesteVinculacao />
+                </Suspense>
+              } />
+              <Route path="*" element={
+                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>}>
+                  <NotFound />
+                </Suspense>
+              } />
+            </Routes>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
