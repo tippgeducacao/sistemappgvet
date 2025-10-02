@@ -21,7 +21,10 @@
     <!-- Early preconnect to external resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    
+    <!-- Load fonts asynchronously using media print trick -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap"></noscript>
     
     <!-- Preload LCP image with highest priority -->
     <link rel="preload" as="image" href="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.webp" type="image/webp" fetchpriority="high">
@@ -39,22 +42,6 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Async CSS loading helper
-      function loadCSS(href, before, media) {
-        var ss = window.document.createElement("link");
-        var ref = before || window.document.getElementsByTagName("script")[0];
-        ss.rel = "stylesheet";
-        ss.href = href;
-        ss.media = media || "all";
-        ref.parentNode.insertBefore(ss, ref);
-        return ss;
-      }
-      
-      // Load fonts after initial render
-      window.addEventListener('DOMContentLoaded', function() {
-        loadCSS("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap");
-      });
-      
       // Register service worker for caching
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
