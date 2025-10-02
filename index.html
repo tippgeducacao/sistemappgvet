@@ -9,14 +9,23 @@
     <meta name="author" content="PPGVET" />
     <link rel="icon" href="/lovable-uploads/e2b888ac-54b9-453e-abda-ee6ef6e7fbb5.png" type="image/png">
     
+    <!-- Critical inline styles to prevent FOUC -->
+    <style>
+      /* Critical layout styles */
+      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+      #root { min-height: 100vh; }
+      /* Loading state */
+      .loading-fallback { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    </style>
+    
     <!-- Early preconnect to Google Fonts to break dependency chain -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     
-    <!-- Load fonts with media print trick for async loading -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+    <!-- Load fonts asynchronously after page render -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all';this.onload=null;">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap"></noscript>
     
     <!-- Preload LCP image with highest priority using properly sized versions -->
