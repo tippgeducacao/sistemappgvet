@@ -39,7 +39,20 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Early logo for LCP optimization - hidden once React mounts -->
+      <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+        <picture>
+          <source srcset="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.webp" type="image/webp" />
+          <img 
+            src="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" 
+            alt="Logo" 
+            style="height: 80px; width: auto; margin: auto;"
+            fetchpriority="high"
+          />
+        </picture>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
       // Register service worker for caching
