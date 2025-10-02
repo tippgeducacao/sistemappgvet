@@ -20,7 +20,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
       <div className="relative z-10 w-full max-w-md">
         {/* Logo section with glass effect */}
         <div className="text-center mb-8 backdrop-blur-md rounded-2xl p-6 border border-white/40 dark:border-white/20 shadow-xl bg-card/95 dark:bg-card/90">
-          <img src="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" alt="Logo" className="h-20 w-auto mx-auto mb-4 drop-shadow-lg" fetchPriority="high" />
+          <picture>
+            <source srcSet="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.webp" type="image/webp" />
+            <img src="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" alt="Logo" className="h-20 w-auto mx-auto mb-4 drop-shadow-lg" fetchPriority="high" />
+          </picture>
           <div className="text-foreground drop-shadow-sm">
             <span className="text-xl font-light">Seja o </span>
             <span className="text-xl font-bold text-ppgvet-teal">Ponto</span>
