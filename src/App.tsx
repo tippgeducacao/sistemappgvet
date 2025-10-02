@@ -1,4 +1,4 @@
-
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,14 +6,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import NovaVenda from "./pages/NovaVenda";
-import Reunioes from "./pages/Reunioes";
-import PublicTVRanking from "./pages/PublicTVRanking";
-import ProfissoesChart from "./pages/ProfissoesChart";
-import NotFound from "./pages/NotFound";
-import { TesteVinculacao } from "./components/debug/TesteVinculacao";
+import LoadingSpinner from "@/components/LoadingSpinner";
+
+// Lazy load all route components for better code splitting
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
+const NovaVenda = lazy(() => import("./pages/NovaVenda"));
+const Reunioes = lazy(() => import("./pages/Reunioes"));
+const PublicTVRanking = lazy(() => import("./pages/PublicTVRanking"));
+const ProfissoesChart = lazy(() => import("./pages/ProfissoesChart"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const TesteVinculacao = lazy(() => import("./components/debug/TesteVinculacao").then(m => ({ default: m.TesteVinculacao })));
 
 const queryClient = new QueryClient();
 
@@ -25,17 +28,23 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/nova-venda" element={<NovaVenda />} />
-              <Route path="/reunioes" element={<Reunioes />} />
-              <Route path="/tv-ranking" element={<PublicTVRanking />} />
-              <Route path="/profissoes-chart" element={<ProfissoesChart />} />
-              <Route path="/teste-vinculacao" element={<TesteVinculacao />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={
+              <div className="flex items-center justify-center min-h-screen">
+                <LoadingSpinner />
+              </div>
+            }>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/nova-venda" element={<NovaVenda />} />
+                <Route path="/reunioes" element={<Reunioes />} />
+                <Route path="/tv-ranking" element={<PublicTVRanking />} />
+                <Route path="/profissoes-chart" element={<ProfissoesChart />} />
+                <Route path="/teste-vinculacao" element={<TesteVinculacao />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
