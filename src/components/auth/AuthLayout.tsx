@@ -31,6 +31,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
               alt="Logo" 
               className="h-20 w-auto mx-auto mb-4 drop-shadow-lg" 
               fetchPriority="high"
+              decoding="async"
               width="233"
               height="80"
             />
