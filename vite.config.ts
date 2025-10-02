@@ -56,9 +56,17 @@ export default defineConfig(({ mode }) => ({
         }
       }
     },
+    cssCodeSplit: true,
     assetsInlineLimit: 4096,
     sourcemap: false,
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    }
   },
   plugins: [
     react(),
