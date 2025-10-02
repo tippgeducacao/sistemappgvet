@@ -22,12 +22,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
         <div className="text-center mb-8 backdrop-blur-md rounded-2xl p-6 border border-white/40 dark:border-white/20 shadow-xl bg-card/95 dark:bg-card/90">
           <picture>
             <source 
-              srcSet="/lovable-uploads/logo-1x.webp 1x, /lovable-uploads/logo-2x.webp 2x" 
+              srcSet="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.webp" 
               type="image/webp" 
             />
             <img 
-              src="/lovable-uploads/logo-1x.png" 
-              srcSet="/lovable-uploads/logo-1x.png 1x, /lovable-uploads/logo-2x.png 2x"
+              src="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" 
               alt="Logo" 
               className="h-20 w-auto mx-auto mb-4 drop-shadow-lg" 
               fetchPriority="high"
