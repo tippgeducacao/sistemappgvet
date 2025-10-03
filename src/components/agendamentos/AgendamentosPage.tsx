@@ -1014,16 +1014,18 @@ const AgendamentosPage: React.FC = () => {
 
       {/* Form Modal */}
       {showForm && (
-        <Card className="w-full max-w-2xl mx-auto">
+        <Card className="w-full max-w-4xl mx-auto">
           <CardHeader>
             <CardTitle>Novo Agendamento</CardTitle>
             <CardDescription>
               Agende uma Reunião entre um lead e um vendedor especializado
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Lead Search */}
-            <div className="space-y-2">
+          <CardContent className="space-y-6">
+            {/* Grid Container para layout 2 colunas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* COLUNA 1: Buscar Lead */}
+              <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label htmlFor="lead">Buscar Lead *</Label>
                 <Button 
@@ -1171,10 +1173,12 @@ const AgendamentosPage: React.FC = () => {
                   )}
                 </>
               )}
-            </div>
+              </div>
 
-            {/* Pós-graduação Selection */}
-            <div className="space-y-2">
+              {/* COLUNA 2: Pós-graduação, Vendedor, Data e Horários */}
+              <div className="space-y-4">
+                {/* Pós-graduação Selection */}
+                <div className="space-y-2">
               <Label htmlFor="pos-graduacao">Pós-graduação de Interesse *</Label>
               <Select value={selectedPosGraduacao} onValueChange={setSelectedPosGraduacao}>
                 <SelectTrigger>
@@ -1186,12 +1190,12 @@ const AgendamentosPage: React.FC = () => {
                       {pos.nome}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                 </SelectContent>
+                </Select>
+                </div>
 
-            {/* Vendedor Selection - Sistema distribui automaticamente */}
-            <div className="space-y-2">
+                {/* Vendedor Selection - Sistema distribui automaticamente */}
+                <div className="space-y-2">
               <Label>Vendedor Especializado</Label>
               <div className="p-3 bg-muted/50 rounded-lg border">
                 {!selectedPosGraduacao ? (
@@ -1457,26 +1461,26 @@ const AgendamentosPage: React.FC = () => {
                        Em caso de empate, será escolhido quem tem maior taxa de conversão.
                      </p>
                   </div>
-                )}
-              </div>
-            </div>
+                 )}
+                </div>
+                </div>
 
-            {/* Data e Horário */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Data *</Label>
-                <Input
-                  type="date"
-                  value={selectedDateForm}
-                  onChange={(e) => {
-                    console.log('🎯 Data alterada:', e.target.value);
-                    setSelectedDateForm(e.target.value);
-                  }}
-                  min={new Date().toISOString().split('T')[0]}
-                />
-              </div>
+                {/* Data e Horário */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Data *</Label>
+                    <Input
+                      type="date"
+                      value={selectedDateForm}
+                      onChange={(e) => {
+                        console.log('🎯 Data alterada:', e.target.value);
+                        setSelectedDateForm(e.target.value);
+                      }}
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="horario-inicio">Horário Início *</Label>
                   <div className="relative">
@@ -1525,10 +1529,14 @@ const AgendamentosPage: React.FC = () => {
                       className="pl-10"
                     />
                   </div>
+                  </div>
+                  </div>
                 </div>
               </div>
             </div>
+            {/* Fim do Grid 2 colunas */}
 
+            {/* Seções Full Width */}
             {/* Vendedor Selecionado Automaticamente */}
             {selectedDateForm && (
               <div className={`p-4 rounded-lg border ${
