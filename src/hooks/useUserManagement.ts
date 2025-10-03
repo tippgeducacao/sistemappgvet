@@ -25,7 +25,8 @@ export const useUserManagement = () => {
     } else {
       setCurrentUser(null);
     }
-  }, [profile, user, setCurrentUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, user]);
 
   return {
     user,
