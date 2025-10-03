@@ -3,20 +3,25 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Eye, Edit, Trash2, CalendarIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useVendas } from '@/hooks/useVendas';
-import { useMetasSemanais } from '@/hooks/useMetasSemanais';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useDeleteVenda } from '@/hooks/useDeleteVenda';
 import { useAuthStore } from '@/stores/AuthStore';
 import VendaDetailsDialog from '@/components/vendas/VendaDetailsDialog';
 import DeleteVendaDialog from '@/components/vendas/dialogs/DeleteVendaDialog';
 import VendasPagination from '@/components/vendas/VendasPagination';
-import VendasFilter from '@/components/vendas/VendasFilter';
 import type { VendaCompleta } from '@/hooks/useVendas';
 import { DataFormattingService } from '@/services/formatting/DataFormattingService';
-import { getVendaEffectivePeriod } from '@/utils/vendaDateUtils';
+import { getDataEfetivaVenda } from '@/utils/vendaDateUtils';
+import { isDateInRange } from '@/utils/dateRangeUtils';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import type { DateRange } from 'react-day-picker';
 
 const ITEMS_PER_PAGE = 20; // Aumentado de 10 para 20
 
@@ -31,22 +36,20 @@ const MinhasVendas: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [vendaToDelete, setVendaToDelete] = useState<VendaCompleta | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  
-  // Estados para filtro por período - usar lógica de semanas consistente
-  const { getMesAnoSemanaAtual } = useMetasSemanais();
-  const { mes: mesCorreto, ano: anoCorreto } = getMesAnoSemanaAtual();
-  const [selectedMonth, setSelectedMonth] = useState(mesCorreto);
-  const [selectedYear, setSelectedYear] = useState(anoCorreto);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-  // Filtrar vendas por mês e ano
+  // Filtrar vendas por data de assinatura de contrato
   const filteredVendas = useMemo(() => {
     return vendas.filter(venda => {
-      if (!venda.enviado_em) return false;
+      // Filtrar por data de assinatura de contrato
+      if (dateRange?.from || dateRange?.to) {
+        const dataEfetiva = getDataEfetivaVenda(venda);
+        if (!isDateInRange(dataEfetiva, dateRange)) return false;
+      }
       
-      const vendaPeriod = getVendaEffectivePeriod(venda);
-      return vendaPeriod.mes === selectedMonth && vendaPeriod.ano === selectedYear;
+      return true;
     });
-  }, [vendas, selectedMonth, selectedYear]);
+  }, [vendas, dateRange]);
 
   // Calcular dados paginados
   const paginatedData = useMemo(() => {
@@ -61,16 +64,6 @@ const MinhasVendas: React.FC = () => {
     setCurrentPage(page);
     // Scroll para o topo quando mudar de página
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleMonthChange = (month: number) => {
-    setSelectedMonth(month);
-    setCurrentPage(1); // Reset para primeira página ao mudar filtro
-  };
-
-  const handleYearChange = (year: number) => {
-    setSelectedYear(year);
-    setCurrentPage(1); // Reset para primeira página ao mudar filtro
   };
 
   const handleViewVenda = (venda: VendaCompleta) => {
@@ -151,13 +144,64 @@ const MinhasVendas: React.FC = () => {
   return (
     <>
       <div className="space-y-6">
-        {/* Filtro por período */}
-        <VendasFilter
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
-          onMonthChange={handleMonthChange}
-          onYearChange={handleYearChange}
-        />
+        {/* Filtro por data de assinatura */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto justify-start">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
+                          {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+                        </>
+                      ) : (
+                        format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                      )
+                    ) : (
+                      "Filtrar por data de assinatura"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={(range) => {
+                      setDateRange(range);
+                      setCurrentPage(1);
+                    }}
+                    numberOfMonths={2}
+                    locale={ptBR}
+                  />
+                  <div className="p-3 border-t">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setDateRange(undefined);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      Limpar Filtro
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              {dateRange && (
+                <div className="text-sm text-muted-foreground">
+                  {filteredVendas.length} {filteredVendas.length === 1 ? 'venda encontrada' : 'vendas encontradas'}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Cards de Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -216,8 +260,10 @@ const MinhasVendas: React.FC = () => {
             <CardTitle>Histórico de Vendas</CardTitle>
             <CardDescription>
               {filteredVendas.length === 0 
-                ? `Nenhuma venda encontrada para ${selectedMonth}/${selectedYear}`
-                : `Exibindo ${paginatedData.length} de ${filteredVendas.length} vendas - Página ${currentPage} de ${totalPages} (${selectedMonth}/${selectedYear})`
+                ? dateRange?.from || dateRange?.to 
+                  ? 'Nenhuma venda encontrada para o período selecionado'
+                  : 'Selecione um período para filtrar'
+                : `Exibindo ${paginatedData.length} de ${filteredVendas.length} vendas - Página ${currentPage} de ${totalPages}`
               }
             </CardDescription>
           </CardHeader>
