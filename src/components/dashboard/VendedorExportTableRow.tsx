@@ -138,10 +138,7 @@ const VendedorExportTableRow: React.FC<VendedorExportTableRowProps> = ({
         const metaSemanal = nivelConfig?.meta_semanal_vendedor || 7;
         const percentage = metaSemanal > 0 ? ((points / metaSemanal) * 100).toFixed(1) : "0.0";
         const weeklyCommission = weeklyCommissions[weekIndex] || 0;
-        const variavelSemanalNum = Number(nivelConfig?.variavel_semanal || 0);
-        const multiplicador = variavelSemanalNum > 0 
-          ? weeklyCommission / variavelSemanalNum 
-          : (weeklyMultipliers[weekIndex] || 0);
+        const multiplicador = weeklyMultipliers[weekIndex] || 0;
         
         return (
           <td key={weekIndex} className="p-2 text-xs">
