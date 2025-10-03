@@ -121,22 +121,65 @@ export const useBatchComissionamentoCalculation = (
   calculations: ComissionamentoCalculationParams[],
   enabled = true
 ) => {
-  const results = calculations.map((params, index) => 
-    useComissionamentoCalculation({
-      ...params,
-      enabled: enabled && Boolean(params.pontosObtidos !== undefined)
-    })
+  const cacheConfig = OptimizedCacheService.getCacheConfig('COMISSIONAMENTO_CALCULOS');
+
+  const keyPart = (calculations || []).map((c) =>
+    `${c.tipoUsuario ?? 'vendedor'}_${c.pontosObtidos}_${c.metaSemanal}_${c.variabelSemanal}`
   );
 
-  const loading = results.some(r => r.loading);
-  const error = results.find(r => r.error)?.error;
-  
-  const data = results.map(r => r.resultado).filter(Boolean);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['comissionamento-calculo-batch', keyPart],
+    queryFn: async () => {
+      const results = await Promise.all(
+        (calculations || []).map(async (params) => {
+          const {
+            pontosObtidos,
+            metaSemanal,
+            variabelSemanal,
+            tipoUsuario = 'vendedor',
+            enabled: itemEnabled = true,
+          } = params;
+
+          const valid =
+            itemEnabled &&
+            typeof pontosObtidos === 'number' &&
+            typeof metaSemanal === 'number' &&
+            typeof variabelSemanal === 'number' &&
+            !isNaN(pontosObtidos) &&
+            !isNaN(metaSemanal) &&
+            !isNaN(variabelSemanal);
+
+          if (!valid) return null;
+
+          const cached = ComissionamentoCacheService.getCalculo(
+            pontosObtidos,
+            metaSemanal,
+            variabelSemanal,
+            tipoUsuario
+          );
+          if (cached) {
+            return cached;
+          }
+
+          const result = await ComissionamentoService.calcularComissao(
+            pontosObtidos,
+            metaSemanal,
+            variabelSemanal,
+            tipoUsuario
+          );
+          return result;
+        })
+      );
+      return results;
+    },
+    enabled: enabled && Array.isArray(calculations) && calculations.length > 0,
+    ...cacheConfig,
+    retry: 1,
+  });
 
   return {
-    data,
-    loading,
+    data: data?.filter((r) => r != null) ?? [],
+    loading: isLoading,
     error,
-    results, // Acesso individual se necessário
   };
 };
