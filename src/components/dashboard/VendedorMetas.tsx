@@ -41,13 +41,10 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     if (venda.vendedor_id !== profile?.id) return false;
     if (venda.status !== 'matriculado') return false;
     
-    // Usar data_aprovacao, data_assinatura_contrato ou enviado_em
-    const dataVenda = venda.data_aprovacao || venda.data_assinatura_contrato || venda.enviado_em;
-    if (!dataVenda) return false;
-    
-    const data = new Date(dataVenda);
-    const mesVenda = data.getMonth() + 1;
-    const anoVenda = data.getFullYear();
+    // CORREÇÃO: Usar getVendaEffectivePeriod para consistência com cálculo semanal
+    const vendaPeriod = getVendaEffectivePeriod(venda);
+    const mesVenda = vendaPeriod.mes;
+    const anoVenda = vendaPeriod.ano;
     
     // Incluir vendas do mês selecionado E do mês anterior (para pegar semanas que cruzam)
     // Ex: vendas de 27-31 Aug devem ser incluídas quando selecionamos Setembro
@@ -59,9 +56,10 @@ const VendedorMetas: React.FC<VendedorMetasProps> = ({
     
     // Log específico para August 27-31 -> September weeks
     if (selectedMonth === 9 && selectedYear === 2025 && isPreviousMonth) {
+      const dataEfetiva = getDataEfetivaVenda(venda);
       console.log(`🚨 BUFFER FILTER - Incluindo venda de Aug para Set:`, {
         venda_id: venda.id.substring(0, 8),
-        data_venda: dataVenda,
+        data_efetiva: dataEfetiva,
         mes_venda: mesVenda,
         ano_venda: anoVenda,
         selected: `${selectedMonth}/${selectedYear}`
