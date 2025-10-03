@@ -15,30 +15,31 @@ const REGRAS_COMISSIONAMENTO_FALLBACK = [
 ];
 
 const getMultiplicador = async (percentual: number, ano: number, mes?: number): Promise<number> => {
-  try {
-    return await HistoricoMensalService.buscarMultiplicador(percentual, 'vendedor', ano, mes);
-  } catch (error) {
-    // Fallback para regras padrão em caso de erro
-    console.log('📋 FALLBACK MULTIPLICADOR:', { percentual });
-    
-    // LÓGICA CORRIGIDA: encontrar a regra correta
-    let regra = null;
-    
-    for (const r of REGRAS_COMISSIONAMENTO_FALLBACK) {
-      // Para percentuais >= 999 (muito altos) - verificar primeiro
-      if (r.percentual_maximo >= 999 && percentual >= r.percentual_minimo) {
-        regra = r;
-        break;
-      }
-      // Para outros percentuais, usar >= minimo e <= maximo (CORRIGIDO)
-      else if (percentual >= r.percentual_minimo && percentual <= r.percentual_maximo) {
-        regra = r;
-        break;
-      }
+  // Calcula multiplicador local pelas regras padrão
+  let regraLocal = null as null | { percentual_minimo: number; percentual_maximo: number; multiplicador: number };
+  for (const r of REGRAS_COMISSIONAMENTO_FALLBACK) {
+    if (r.percentual_maximo >= 999 && percentual >= r.percentual_minimo) {
+      regraLocal = r;
+      break;
+    } else if (percentual >= r.percentual_minimo && percentual <= r.percentual_maximo) {
+      regraLocal = r;
+      break;
     }
-    
-    console.log('✅ FALLBACK REGRA:', { percentual, regra: regra ? `${regra.percentual_minimo}-${regra.percentual_maximo}: ${regra.multiplicador}x` : 'NENHUMA' });
-    return regra?.multiplicador || 0;
+  }
+  const multiplicadorLocal = regraLocal?.multiplicador ?? 0;
+
+  try {
+    const multiplicadorHistorico = await HistoricoMensalService.buscarMultiplicador(percentual, 'vendedor', ano, mes);
+    // Em caso de discrepância, prioriza o maior entre histórico e local para não subcontar
+    const multiplicadorFinal = Math.max(multiplicadorHistorico || 0, multiplicadorLocal);
+    if (multiplicadorHistorico !== multiplicadorFinal) {
+      console.log('ℹ️ Ajuste multiplicador (preferindo local):', { percentual, historico: multiplicadorHistorico, local: multiplicadorLocal, final: multiplicadorFinal });
+    }
+    return multiplicadorFinal;
+  } catch (error) {
+    console.log('📋 FALLBACK MULTIPLICADOR (erro histórico):', { percentual, error });
+    console.log('✅ FALLBACK REGRA:', { percentual, regra: regraLocal ? `${regraLocal.percentual_minimo}-${regraLocal.percentual_maximo}: ${regraLocal.multiplicador}x` : 'NENHUMA' });
+    return multiplicadorLocal;
   }
 };
 
