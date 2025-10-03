@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/AuthStore';
 import { UserRoleService, type AppRole, type UserRole } from '@/services/user/UserRoleService';
+import { Logger } from '@/services/logger/LoggerService';
 
 export const useUserRoles = () => {
   const { currentUser, profile } = useAuthStore();
@@ -55,24 +56,26 @@ export const useUserRoles = () => {
   const isSDROutbound = false; // Será determinado por outras características se necessário  
   const isSDRUnified = profile?.user_type === 'sdr' || currentUser?.user_type === 'sdr';
   
-  console.log('🔐 useUserRoles: Verificando roles do usuário:', {
-    userEmail: profile?.email || currentUser?.email,
-    userType: profile?.user_type || currentUser?.user_type,
-    roles: roles?.map(r => r.role),
-    hasVendedorRole: hasRole('vendedor'),
-    hasSDRRole: isSDR,
-    isSecretariaByProfile,
-    isDiretor,
-    isAdmin,
-    isSecretaria,
-    isVendedor,
-    isSDR,
-    isCoordenador,
-    isSupervisor,
-    isSDRInbound,
-    isSDROutbound,
-    isSDRUnified
-  });
+  if ((window as any).DEBUG_ROLES) {
+    Logger.debug('useUserRoles verificação', {
+      userEmail: profile?.email || currentUser?.email,
+      userType: profile?.user_type || currentUser?.user_type,
+      roles: roles?.map(r => r.role),
+      hasVendedorRole: hasRole('vendedor'),
+      hasSDRRole: isSDR,
+      isSecretariaByProfile,
+      isDiretor,
+      isAdmin,
+      isSecretaria,
+      isVendedor,
+      isSDR,
+      isCoordenador,
+      isSupervisor,
+      isSDRInbound,
+      isSDROutbound,
+      isSDRUnified
+    });
+  }
   
   return {
     roles: roles || [],

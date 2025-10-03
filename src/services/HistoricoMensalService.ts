@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { Logger } from '@/services/logger/LoggerService';
 
 export interface HistoricoMensal {
   id: string;
@@ -66,7 +67,7 @@ export class HistoricoMensalService {
       .maybeSingle();
 
     if (error) {
-      console.error('❌ Erro ao buscar histórico mensal:', error);
+      Logger.error('Erro ao buscar histórico mensal', error);
       throw error;
     }
 
@@ -84,7 +85,7 @@ export class HistoricoMensalService {
       .order('mes', { ascending: false });
 
     if (error) {
-      console.error('❌ Erro ao listar históricos:', error);
+      Logger.error('Erro ao listar históricos', error);
       throw error;
     }
 
@@ -114,13 +115,13 @@ export class HistoricoMensalService {
       });
 
       if (error) {
-        console.error('❌ Erro ao fechar mês:', error);
+        Logger.error('Erro ao fechar mês', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('❌ Erro ao executar fechamento do mês:', error);
+      Logger.error('Erro ao executar fechamento do mês', error);
       throw error;
     }
   }
@@ -136,13 +137,13 @@ export class HistoricoMensalService {
       });
 
       if (error) {
-        console.error('❌ Erro ao reabrir mês:', error);
+        Logger.error('Erro ao reabrir mês', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('❌ Erro ao executar reabertura do mês:', error);
+      Logger.error('Erro ao executar reabertura do mês', error);
       throw error;
     }
   }
@@ -251,11 +252,13 @@ export class HistoricoMensalService {
   ): Promise<number> {
     const regras = await this.buscarRegrasComissionamento(ano, mes);
     
-    console.log('🔍 HISTÓRICO MULTIPLICADOR:', {
-      percentual,
-      tipoUsuario,
-      regras: regras.filter(r => r.tipo_usuario === tipoUsuario).map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
-    });
+    if ((window as any).DEBUG_COMMISSION) {
+      Logger.debug('Multiplicador histórico', {
+        percentual,
+        tipoUsuario,
+        regras: regras.filter(r => r.tipo_usuario === tipoUsuario).map(r => `${r.percentual_minimo}-${r.percentual_maximo}: ${r.multiplicador}x`)
+      });
+    }
     
     // LÓGICA CORRIGIDA: encontrar a regra mais específica aplicável  
     let regraAplicavel = null;
@@ -277,10 +280,12 @@ export class HistoricoMensalService {
       }
     }
 
-    console.log('✅ HISTÓRICO REGRA SELECIONADA:', {
-      percentual,
-      regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
-    });
+    if ((window as any).DEBUG_COMMISSION) {
+      Logger.debug('Regra selecionada', {
+        percentual,
+        regra: regraAplicavel ? `${regraAplicavel.percentual_minimo}-${regraAplicavel.percentual_maximo}: ${regraAplicavel.multiplicador}x` : 'NENHUMA'
+      });
+    }
 
     return regraAplicavel?.multiplicador || 0;
   }

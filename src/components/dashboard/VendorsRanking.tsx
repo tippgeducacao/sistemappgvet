@@ -70,10 +70,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
     return `${ano}-${String(mes).padStart(2, '0')}`;
   });
   
-  // Debug effect para monitorar mudanças no estado
-  useEffect(() => {
-    console.log('🔄 internalSelectedMonth mudou:', internalSelectedMonth);
-  }, [internalSelectedMonth]);
   
   // Hook para verificar se o mês está fechado
   const currentMonth = propSelectedMonth || parseInt(internalSelectedMonth?.split('-')[1] || '1');
@@ -102,8 +98,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   // Estado para modo TV
   const [isTVMode, setIsTVMode] = useState(false);
   
-  console.log('🔥 VendorsRanking - isTVMode atual:', isTVMode);
-  
   // Separar lógica: planilha detalhada sempre usa filtro interno
   const selectedMonth = internalSelectedMonth;
   
@@ -114,20 +108,6 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
   
   // Extrair mês e ano do selectedMonth para o filtro  
   const [selectedYearNum, selectedMonthNum] = selectedMonth.split('-').map(Number);
-    
-  console.log('📊 VendorsRanking Filtros:', { 
-    propSelectedMonth, 
-    propSelectedYear, 
-    internalSelectedMonth, 
-    selectedMonth,
-    selectedYearNum,
-    selectedMonthNum,
-    selectedMonthNumType: typeof selectedMonthNum,
-    selectedYearNumType: typeof selectedYearNum,
-    isNaNMonth: isNaN(selectedMonthNum),
-    isNaNYear: isNaN(selectedYearNum),
-    totalVendas: vendas?.length || 0
-  });
 
   const isLoading = vendasLoading || vendedoresLoading || metasLoading || niveisLoading;
 
@@ -222,46 +202,12 @@ const VendorsRanking: React.FC<VendorsRankingProps> = ({ selectedVendedor, selec
           // PADRONIZADO: Usar função centralizada para obter data efetiva
           const dataEfetiva = getDataEfetivaVenda(venda, respostas);
           
-          // Debug específico para Pedro Garbelini
-          if (venda.id === '53af0209-9b2d-4b76-b6a2-2c9d8e4f7a8c' || 
-              (venda.aluno && (venda.aluno.nome === 'Pedro Garbelini' || venda.aluno.nome?.includes('Pedro')))) {
-            console.log(`🚨 PEDRO GARBELINI - VendorsRanking filtro:`, {
-              venda_id: venda.id?.substring(0, 8),
-              aluno: venda.aluno?.nome,
-              data_efetiva: dataEfetiva.toISOString(),
-              data_efetiva_br: dataEfetiva.toLocaleDateString('pt-BR'),
-              data_assinatura_contrato: venda.data_assinatura_contrato,
-              data_enviado: venda.enviado_em,
-              status: venda.status
-            });
-          }
-          
-          // Debug detalhado para identificar inconsistências no dashboard geral
-          if (venda.vendedor?.name === 'Adones' && venda.status === 'matriculado') {
-            console.log(`🔍 DASHBOARD GERAL - Processando venda do Adones:`, {
-              venda_id: venda.id.substring(0, 8),
-              aluno: venda.aluno?.nome,
-              status: venda.status,
-              data_efetiva: dataEfetiva.toISOString(),
-              data_efetiva_br: dataEfetiva.toLocaleDateString('pt-BR'),
-              pontos: venda.pontuacao_validada || venda.pontuacao_esperada || 0,
-              periodo_filtro: `${propSelectedMonth}/${propSelectedYear}`
-            });
-          }
-          
           // Na planilha detalhada, sempre usar filtro interno se existe
           if (internalSelectedMonth) {
             // Usar filtro interno mensal com regra de semana
             const { mes: vendaMes, ano: vendaAno } = getVendaEffectivePeriod(venda, respostas);
             const filterMonth = parseInt(internalSelectedMonth.split('-')[1]);
             const filterYear = parseInt(internalSelectedMonth.split('-')[0]);
-            
-            console.log('🎯 Filtro detalhado:', {
-              vendaMes, vendaAno,
-              filterMonth, filterYear,
-              dataEfetiva: dataEfetiva.toLocaleDateString('pt-BR'),
-              match: vendaMes === filterMonth && vendaAno === filterYear
-            });
             
             if (vendaMes !== filterMonth || vendaAno !== filterYear) {
               return false;

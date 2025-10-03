@@ -15,7 +15,16 @@ import ProfissoesChart from "./pages/ProfissoesChart";
 import NotFound from "./pages/NotFound";
 import { TesteVinculacao } from "./components/debug/TesteVinculacao";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      gcTime: 10 * 60 * 1000, // 10 minutos
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

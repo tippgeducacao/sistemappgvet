@@ -3,6 +3,7 @@
  */
 
 import { getVendaPeriod } from './semanaUtils';
+import { Logger } from '@/services/logger/LoggerService';
 
 /**
  * Extrai a data de assinatura do contrato das observações
@@ -29,26 +30,13 @@ export const extractDataAssinaturaContrato = (observacoes: string | null): Date 
  * Se não disponível, usa a data de envio
  */
 export const getDataEfetivaVenda = (venda: any, respostasFormulario?: any[]): Date => {
-  // Debug específico para Pedro Garbelini
-  if (venda.id === '53af0209-9b2d-4b76-b6a2-2c9d8e4f7a8c' || 
-      (venda.aluno && (venda.aluno.nome === 'Pedro Garbelini' || venda.aluno.nome?.includes('Pedro')))) {
-    console.log(`🚨 PEDRO GARBELINI - getDataEfetivaVenda:`, {
+  if ((window as any).DEBUG_VENDAS) {
+    Logger.debug('getDataEfetivaVenda', {
       venda_id: venda.id?.substring(0, 8),
-      nome_aluno: venda.aluno?.nome || 'N/A',
+      nome_aluno: venda.aluno?.nome,
       data_assinatura_contrato: venda.data_assinatura_contrato,
       data_enviado: venda.enviado_em,
-      status: venda.status,
-      tem_respostas_formulario: !!respostasFormulario
-    });
-  }
-  
-  // Debug específico para venda do dia 20/08/2025
-  if (venda.data_assinatura_contrato === '2025-08-20') {
-    console.log(`🚨 vendaDateUtils.getDataEfetivaVenda - Venda 20/08:`, {
-      venda_id: venda.id?.substring(0, 8),
-      data_assinatura_contrato: venda.data_assinatura_contrato,
-      data_enviado: venda.enviado_em,
-      tem_respostas_formulario: !!respostasFormulario
+      status: venda.status
     });
   }
 
@@ -56,20 +44,6 @@ export const getDataEfetivaVenda = (venda: any, respostasFormulario?: any[]): Da
   if (venda.data_assinatura_contrato) {
     // CORREÇÃO: Garantir que a data seja interpretada no timezone local
     const dataEfetiva = new Date(venda.data_assinatura_contrato + 'T12:00:00');
-    
-    // Debug para Pedro
-    if (venda.id === '53af0209-9b2d-4b76-b6a2-2c9d8e4f7a8c' || 
-        (venda.aluno && (venda.aluno.nome === 'Pedro Garbelini' || venda.aluno.nome?.includes('Pedro')))) {
-      console.log(`✅ PEDRO - Usando data_assinatura_contrato:`, {
-        data_assinatura_contrato: venda.data_assinatura_contrato,
-        data_efetiva_iso: dataEfetiva.toISOString(),
-        data_efetiva_br: dataEfetiva.toLocaleDateString('pt-BR')
-      });
-    }
-    
-    if (venda.data_assinatura_contrato === '2025-08-20') {
-      console.log(`✅ Usando data_assinatura_contrato: ${dataEfetiva.toISOString()} (${dataEfetiva.toLocaleDateString('pt-BR')})`);
-    }
     return dataEfetiva;
   }
   
@@ -106,19 +80,7 @@ export const getDataEfetivaVenda = (venda: any, respostasFormulario?: any[]): Da
   }
   
   // Fallback para data de envio - também corrigir timezone
-  const dataEnvio = new Date(venda.enviado_em);
-  
-  // Debug para Pedro
-  if (venda.id === '53af0209-9b2d-4b76-b6a2-2c9d8e4f7a8c' || 
-      (venda.aluno && (venda.aluno.nome === 'Pedro Garbelini' || venda.aluno.nome?.includes('Pedro')))) {
-    console.log(`⚠️ PEDRO - Usando FALLBACK data_envio:`, {
-      data_enviado: venda.enviado_em,
-      data_efetiva_iso: dataEnvio.toISOString(),
-      data_efetiva_br: dataEnvio.toLocaleDateString('pt-BR')
-    });
-  }
-  
-  return dataEnvio;
+  return new Date(venda.enviado_em);
 };
 
 /**
@@ -139,17 +101,5 @@ export const isVendaInWeek = (
  */
 export const getVendaEffectivePeriod = (venda: any, respostasFormulario?: any[]): { mes: number; ano: number } => {
   const dataEfetiva = getDataEfetivaVenda(venda, respostasFormulario);
-  const periodo = getVendaPeriod(dataEfetiva);
-  
-  // Debug específico para venda do dia 20/08/2025
-  if (venda.data_assinatura_contrato === '2025-08-20') {
-    console.log(`🚨 vendaDateUtils.getVendaEffectivePeriod - Venda 20/08:`, {
-      venda_id: venda.id?.substring(0, 8),
-      data_efetiva: dataEfetiva.toISOString(),
-      data_efetiva_br: dataEfetiva.toLocaleDateString('pt-BR'),
-      periodo_calculado: periodo
-    });
-  }
-  
-  return periodo;
+  return getVendaPeriod(dataEfetiva);
 };
