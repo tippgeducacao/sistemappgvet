@@ -13,6 +13,8 @@ import { ptBR } from 'date-fns/locale';
 import { useAllVendas } from '@/hooks/useVendas';
 import type { DateRange } from 'react-day-picker';
 import * as XLSX from 'xlsx';
+import { getDataEfetivaVenda } from '@/utils/vendaDateUtils';
+import { isDateInRange } from '@/utils/dateRangeUtils';
 
 interface VendasHistoryTabProps {
   userId: string;
@@ -34,11 +36,10 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
       // Filtrar por vendedor
       if (venda.vendedor_id !== userId) return false;
       
-      // Filtrar por período
+      // Filtrar por data de assinatura de contrato
       if (dateRange?.from || dateRange?.to) {
-        const vendaDate = new Date(venda.enviado_em);
-        if (dateRange.from && vendaDate < dateRange.from) return false;
-        if (dateRange.to && vendaDate > dateRange.to) return false;
+        const dataEfetiva = getDataEfetivaVenda(venda);
+        if (!isDateInRange(dataEfetiva, dateRange)) return false;
       }
       
       // Filtro por busca
@@ -58,6 +59,9 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
   // Exportar para Excel
   const exportToExcel = () => {
     const data = filteredVendas.map(venda => ({
+      'Data Assinatura': venda.data_assinatura_contrato 
+        ? format(new Date(venda.data_assinatura_contrato), 'dd/MM/yyyy')
+        : 'Não informada',
       'Data Envio': format(new Date(venda.enviado_em), 'dd/MM/yyyy'),
       'Aluno': venda.aluno?.nome || 'Não informado',
       'Curso': venda.curso?.nome || 'Não informado',
@@ -121,7 +125,7 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
                     format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
                   )
                 ) : (
-                  "Filtrar por período"
+                  "Filtrar por data de assinatura"
                 )}
               </Button>
             </PopoverTrigger>
@@ -197,6 +201,7 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
                   <TableHead>Email</TableHead>
                   <TableHead>Curso</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Data Assinatura</TableHead>
                   <TableHead>Enviado</TableHead>
                   <TableHead>Aprovado</TableHead>
                   <TableHead>Pontuação</TableHead>
@@ -221,6 +226,12 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
                         {venda.status === 'matriculado' ? 'Matriculado' : 
                          venda.status === 'pendente' ? 'Pendente' : 'Rejeitado'}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {venda.data_assinatura_contrato 
+                        ? format(new Date(venda.data_assinatura_contrato), 'dd/MM/yyyy', { locale: ptBR })
+                        : <Badge variant="secondary" className="text-xs">Não informada</Badge>
+                      }
                     </TableCell>
                     <TableCell>
                       {format(new Date(venda.enviado_em), 'dd/MM/yyyy', { locale: ptBR })}
@@ -270,7 +281,7 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                       <div>
                         <div className="text-muted-foreground">Aluno</div>
                         <div className="font-medium">
@@ -281,6 +292,15 @@ const VendasHistoryTab: React.FC<VendasHistoryTabProps> = ({ userId, userType })
                         <div className="text-muted-foreground">Curso</div>
                         <div className="font-medium">
                           {venda.curso?.nome || 'Não informado'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Data Assinatura</div>
+                        <div className="font-medium">
+                          {venda.data_assinatura_contrato 
+                            ? format(new Date(venda.data_assinatura_contrato), 'dd/MM/yyyy', { locale: ptBR })
+                            : <Badge variant="secondary" className="text-xs">Não informada</Badge>
+                          }
                         </div>
                       </div>
                       <div>
