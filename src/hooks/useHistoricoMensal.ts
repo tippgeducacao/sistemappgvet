@@ -17,6 +17,9 @@ export const useMesFechado = (ano: number, mes: number) => {
     queryKey: ['mes-fechado', ano, mes],
     queryFn: () => HistoricoMensalService.isMesFechado(ano, mes),
     enabled: !!(ano && mes),
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
   });
 };
 
@@ -26,6 +29,9 @@ export const useMetasHistoricas = (ano: number, mes?: number) => {
     queryKey: ['metas-historicas', ano, mes],
     queryFn: () => HistoricoMensalService.buscarMetasSemanais(ano, mes),
     enabled: !!(ano),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };
 
@@ -35,6 +41,9 @@ export const useRegrasComissionamentoHistoricas = (ano: number, mes?: number) =>
     queryKey: ['regras-comissionamento-historicas', ano, mes],
     queryFn: () => HistoricoMensalService.buscarRegrasComissionamento(ano, mes),
     enabled: !!(ano),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };
 
@@ -44,5 +53,8 @@ export const useNiveisHistoricos = (ano: number, mes?: number) => {
     queryKey: ['niveis-historicos', ano, mes],
     queryFn: () => HistoricoMensalService.buscarNiveis(ano, mes),
     enabled: !!(ano),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };

@@ -63,9 +63,9 @@ export class HistoricoMensalService {
       .select('*')
       .eq('ano', ano)
       .eq('mes', mes)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('❌ Erro ao buscar histórico mensal:', error);
       throw error;
     }
