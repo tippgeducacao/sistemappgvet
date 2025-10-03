@@ -4,30 +4,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable" />
+    <meta http-equiv="Expires" content="Thu, 31 Dec 2025 23:59:59 GMT" />
     <title>Sistema PPGVET - Gestão de Matrículas</title>
     <meta name="description" content="Sistema interno para gestão de matrículas de pós-graduação PPGVET" />
     <meta name="author" content="PPGVET" />
     <link rel="icon" href="/lovable-uploads/e2b888ac-54b9-453e-abda-ee6ef6e7fbb5.png" type="image/png">
-    
-    <!-- Critical inline styles to prevent FOUC -->
-    <style>
-      /* Critical layout styles */
-      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
-      #root { min-height: 100vh; }
-      /* Loading state */
-      .loading-fallback { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    </style>
-    
-    <!-- Early preconnect to external resources -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Load fonts asynchronously using media print trick -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Epilogue:wght@400;500;600;700;800&display=swap"></noscript>
-    
-    <!-- Preload LCP image with highest priority -->
-    <link rel="preload" as="image" href="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" fetchpriority="high" imagesrcset="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.webp" imagesizes="233px">
 
     <meta property="og:title" content="Sistema PPGVET - Gestão de Matrículas" />
     <meta property="og:description" content="Sistema interno para gestão de matrículas de pós-graduação PPGVET" />
@@ -39,20 +21,7 @@
   </head>
 
   <body>
-    <div id="root">
-      <!-- Early logo for LCP optimization - hidden once React mounts -->
-      <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
-        <picture>
-          <source srcset="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.webp" type="image/webp" />
-          <img 
-            src="/lovable-uploads/fff79721-2c80-40ff-8da5-5a2174a9f86c.png" 
-            alt="Logo" 
-            style="height: 80px; width: auto; margin: auto;"
-            fetchpriority="high"
-          />
-        </picture>
-      </div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
       // Register service worker for caching

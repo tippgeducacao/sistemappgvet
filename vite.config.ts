@@ -29,59 +29,15 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Core dependencies
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-react';
-            }
-            if (id.includes('@supabase')) {
-              return 'vendor-supabase';
-            }
-            if (id.includes('@tanstack/react-query')) {
-              return 'vendor-query';
-            }
-            if (id.includes('recharts')) {
-              return 'vendor-charts';
-            }
-            if (id.includes('@radix-ui')) {
-              const match = id.match(/@radix-ui\/react-([^/]+)/);
-              if (match) return `vendor-radix-${match[1]}`;
-              return 'vendor-ui';
-            }
-            if (id.includes('framer-motion')) {
-              return 'vendor-animation';
-            }
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-            // All other node_modules
-            return 'vendor-misc';
-          }
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select']
         }
-      },
-      treeshake: {
-        moduleSideEffects: 'no-external',
-        propertyReadSideEffects: false,
-        tryCatchDeoptimization: false
       }
     },
-    cssCodeSplit: true,
     assetsInlineLimit: 4096,
-    sourcemap: false,
-    chunkSizeWarningLimit: 1000,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        passes: 2,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.trace']
-      },
-      mangle: {
-        safari10: true
-      }
-    }
+    sourcemap: false
   },
   plugins: [
     react(),
@@ -95,12 +51,6 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     exclude: ['lovable-tagger'],
-    include: ['react', 'react-dom', 'react-router-dom'],
-    esbuildOptions: {
-      target: 'es2020',
-      supported: {
-        'top-level-await': true
-      }
-    }
+    include: ['react', 'react-dom']
   }
 }));

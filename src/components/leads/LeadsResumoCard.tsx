@@ -2,7 +2,6 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, UserCheck, UserX, TrendingUp, MapPin, Globe } from 'lucide-react';
-import { normalizeEstado } from '@/utils/geoUtils';
 
 interface Lead {
   id: string;
@@ -42,6 +41,15 @@ const extractProfissao = (observacoes?: string): boolean => {
   return professionPatterns.some(pattern => pattern.test(observacoes));
 };
 
+const extractEstado = (regiao?: string): string | null => {
+  if (!regiao) return null;
+  
+  const parts = regiao.split(',');
+  if (parts.length > 1) {
+    return parts[parts.length - 1].trim();
+  }
+  return regiao.trim();
+};
 
 export const LeadsResumoCard: React.FC<LeadsResumoCardProps> = ({
   leads,
@@ -66,16 +74,16 @@ export const LeadsResumoCard: React.FC<LeadsResumoCardProps> = ({
     );
   }
 
-  // Calcular métricas (usando normalizeEstado para precisão)
+  // Calcular métricas
   const totalLeads = leads.length;
   const leadsComProfissao = leads.filter(lead => extractProfissao(lead.observacoes)).length;
   const leadsComWhatsApp = leads.filter(lead => lead.whatsapp && lead.whatsapp.trim()).length;
-  const leadsComRegiao = leads.filter(lead => normalizeEstado(lead.regiao) !== null).length;
+  const leadsComRegiao = leads.filter(lead => lead.regiao && lead.regiao.trim()).length;
   
-  // Estados únicos (UFs válidos normalizados)
+  // Estados únicos
   const estadosUnicos = new Set();
   leads.forEach(lead => {
-    const estado = normalizeEstado(lead.regiao);
+    const estado = extractEstado(lead.regiao);
     if (estado) estadosUnicos.add(estado);
   });
 

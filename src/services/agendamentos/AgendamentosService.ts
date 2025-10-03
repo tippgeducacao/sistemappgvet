@@ -11,7 +11,6 @@ export interface Agendamento {
   link_reuniao: string;
   status: string;
   observacoes?: string;
-  resultado_reuniao?: string;
   created_at: string;
   updated_at: string;
   // Relacionamentos

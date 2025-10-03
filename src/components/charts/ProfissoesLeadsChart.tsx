@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Briefcase } from 'lucide-react';
 import type { Lead } from '@/hooks/useLeads';
 
@@ -121,7 +121,7 @@ const ProfissoesLeadsChart: React.FC<ProfissoesLeadsChartProps> = ({
                     data={profissoesChartData}
                     cx="50%"
                     cy="50%"
-                    outerRadius="70%"
+                    outerRadius="75%"
                     fill="#8884d8"
                     dataKey="value"
                     label={false}
@@ -131,28 +131,11 @@ const ProfissoesLeadsChart: React.FC<ProfissoesLeadsChartProps> = ({
                     ))}
                   </Pie>
                   <ChartTooltip 
-                    content={({ active, payload }) => {
-                      if (!active || !payload?.[0]) return null;
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-background border border-border rounded-lg shadow-lg p-3">
-                          <p className="font-semibold text-sm mb-1">{data.fullName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {data.value} leads ({data.percentage}%)
-                          </p>
-                        </div>
-                      );
-                    }}
-                  />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    align="center"
-                    iconType="circle"
-                    formatter={(value: string) => {
-                      const item = profissoesChartData.find(d => d.name === value);
-                      return item ? item.fullName : value;
-                    }}
-                    wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
+                    content={<ChartTooltipContent />}
+                    formatter={(value, name, props) => [
+                      `${value} leads (${props.payload?.percentage}%)`, 
+                      props.payload?.fullName || 'Profissão'
+                    ]}
                   />
                 </PieChart>
               </ResponsiveContainer>
