@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Users, 
   Phone, 
@@ -31,12 +32,16 @@ import { cn } from '@/lib/utils';
 
 import LeadDetailsDialog from './LeadDetailsDialog';
 import LeadsDashboard from './LeadsDashboard';
+import { BulkActionsBar } from './BulkActionsBar';
 import { useAgendamentosLeads } from '@/hooks/useAgendamentosLeads';
+import { useBulkDeleteLeads } from '@/hooks/useBulkDeleteLeads';
+import { useExportLeads } from '@/hooks/useExportLeads';
 import type { Lead, LeadFilters } from '@/hooks/useLeads';
 import { extractPageSlug } from '@/utils/leadUtils';
 
 const LeadsManager: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   
   // Filtros para os gráficos (sem busca por texto)
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -95,6 +100,10 @@ const LeadsManager: React.FC = () => {
   );
   const { data: totalLeadsCount = 0 } = useLeadsCount();
   const { data: filterData } = useLeadsFilterData();
+  
+  // Hooks para ações em lote
+  const { deleteLeads, isDeleting } = useBulkDeleteLeads();
+  const { exportLeads, isExporting } = useExportLeads();
   
   // Usar React.useMemo para otimizar carregamento de dados pesados
   const { data: allLeadsForStats = [], isLoading: isLoadingStats } = useAllLeads(); // Para estatísticas e dashboard
@@ -224,6 +233,36 @@ const LeadsManager: React.FC = () => {
   // Função para buscar agendamento de um lead específico
   const getAgendamentoByLead = (leadId: string) => {
     return agendamentosData.find(agendamento => agendamento.lead_id === leadId);
+  };
+
+  // Funções de seleção múltipla
+  const toggleLeadSelection = (leadId: string) => {
+    setSelectedLeadIds(prev =>
+      prev.includes(leadId)
+        ? prev.filter(id => id !== leadId)
+        : [...prev, leadId]
+    );
+  };
+
+  const toggleAllLeads = () => {
+    if (selectedLeadIds.length === leads.length) {
+      setSelectedLeadIds([]);
+    } else {
+      setSelectedLeadIds(leads.map(lead => lead.id));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedLeadIds([]);
+  };
+
+  const handleBulkDelete = async () => {
+    await deleteLeads(selectedLeadIds);
+    clearSelection();
+  };
+
+  const handleBulkExport = async () => {
+    await exportLeads(selectedLeadIds);
   };
 
   if (isLoading || isLoadingStats) {
@@ -539,6 +578,13 @@ const LeadsManager: React.FC = () => {
               <Table>
                  <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b">
                    <TableRow>
+                     <TableHead className="w-[40px] py-2 text-xs font-medium">
+                       <Checkbox
+                         checked={leads.length > 0 && selectedLeadIds.length === leads.length}
+                         onCheckedChange={toggleAllLeads}
+                         aria-label="Selecionar todos"
+                       />
+                     </TableHead>
                      <TableHead className="w-[140px] py-2 text-xs font-medium">Nome</TableHead>
                      <TableHead className="w-[180px] py-2 text-xs font-medium hidden sm:table-cell">Email</TableHead>
                      <TableHead className="w-[130px] py-2 text-xs font-medium hidden md:table-cell">WhatsApp</TableHead>
@@ -553,12 +599,20 @@ const LeadsManager: React.FC = () => {
                     {leads.map((lead) => {
                       const agendamento = getAgendamentoByLead(lead.id);
                       const temReuniao = lead.status === 'reuniao_marcada' && agendamento;
+                      const isSelected = selectedLeadIds.includes(lead.id);
                       
                       return (
                         <TableRow 
                           key={lead.id} 
-                          className={`hover:bg-muted/50 ${temReuniao ? 'bg-red-50 dark:bg-red-950/20 border-l-4 border-l-red-500' : ''}`}
+                          className={`hover:bg-muted/50 ${temReuniao ? 'bg-red-50 dark:bg-red-950/20 border-l-4 border-l-red-500' : ''} ${isSelected ? 'bg-primary/5' : ''}`}
                         >
+                          <TableCell className="py-2">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleLeadSelection(lead.id)}
+                              aria-label={`Selecionar ${lead.nome}`}
+                            />
+                          </TableCell>
                           <TableCell className="py-2">
                             <div className="font-medium text-xs max-w-[130px]" title={lead.nome}>
                               {lead.nome}
@@ -646,6 +700,19 @@ const LeadsManager: React.FC = () => {
           leadId={selectedLead}
           open={!!selectedLead}
           onOpenChange={(open) => !open && setSelectedLead(null)}
+        />
+      )}
+
+      {/* Barra de Ações em Lote */}
+      {selectedLeadIds.length > 0 && (
+        <BulkActionsBar
+          selectedCount={selectedLeadIds.length}
+          selectedLeadIds={selectedLeadIds}
+          onClear={clearSelection}
+          onDelete={handleBulkDelete}
+          onExport={handleBulkExport}
+          isDeleting={isDeleting}
+          isExporting={isExporting}
         />
       )}
     </div>
