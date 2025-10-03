@@ -1,67 +1,72 @@
-// Service Worker for caching assets
-const CACHE_NAME = 'ppgvet-cache-v3';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/src/main.tsx',
-  '/assets/index.css',
-  '/assets/index.js'
-];
+// Service Worker with network-first strategy for HTML and stale-while-revalidate for assets
+const CACHE_NAME = 'ppgvet-cache-v4';
 
-// Install event - cache assets
+// Install event - activate immediately
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(ASSETS_TO_CACHE);
-      })
-  );
+  console.log('SW v4 installing');
+  self.skipWaiting(); // Activate new SW immediately
 });
 
-// Fetch event - serve from cache with network fallback
+// Fetch event - network-first for HTML, stale-while-revalidate for assets
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests for same origin
-  if (event.request.method === 'GET' && event.request.url.startsWith(self.location.origin)) {
+  // Only handle GET requests for same origin
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  const url = new URL(event.request.url);
+  
+  // Network-first for HTML and navigation requests
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
     event.respondWith(
-      caches.match(event.request)
-        .then((response) => {
-          // Return cached version or fetch from network
-          return response || fetch(event.request).then((fetchResponse) => {
-            // Clone the response as it can only be consumed once
-            const responseClone = fetchResponse.clone();
-            
-            // Cache assets with long-term caching strategy
-            if (fetchResponse.ok && (
-              event.request.url.includes('/assets/') ||
-              event.request.url.includes('/lovable-uploads/') ||
-              event.request.url.includes('.js') ||
-              event.request.url.includes('.css') ||
-              event.request.url.includes('.png') ||
-              event.request.url.includes('.jpg') ||
-              event.request.url.includes('.svg')
-            )) {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseClone);
-              });
+      fetch(event.request)
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for static assets
+  if (
+    url.pathname.startsWith('/assets/') ||
+    url.pathname.startsWith('/lovable-uploads/') ||
+    url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|webp|woff|woff2)$/)
+  ) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.match(event.request).then((cachedResponse) => {
+          const fetchPromise = fetch(event.request).then((networkResponse) => {
+            if (networkResponse.ok) {
+              cache.put(event.request, networkResponse.clone());
             }
-            
-            return fetchResponse;
+            return networkResponse;
           });
-        })
+          
+          // Return cached version immediately, update in background
+          return cachedResponse || fetchPromise;
+        });
+      })
     );
   }
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and take control
 self.addEventListener('activate', (event) => {
+  console.log('SW v4 activating');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Take control of all clients immediately
+      self.clients.claim()
+    ])
   );
 });

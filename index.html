@@ -4,8 +4,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable" />
-    <meta http-equiv="Expires" content="Thu, 31 Dec 2025 23:59:59 GMT" />
     <title>Sistema PPGVET - Gestão de Matrículas</title>
     <meta name="description" content="Sistema interno para gestão de matrículas de pós-graduação PPGVET" />
     <meta name="author" content="PPGVET" />
@@ -24,16 +22,34 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Register service worker for caching
+      // Register service worker with auto-update
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
               console.log('SW registered: ', registration);
+              
+              // Check for updates
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                if (newWorker) {
+                  newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                      // New SW activated, reload to get latest version
+                      window.location.reload();
+                    }
+                  });
+                }
+              });
             })
             .catch((registrationError) => {
               console.log('SW registration failed: ', registrationError);
             });
+          
+          // Reload when new SW takes control
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+          });
         });
       }
     </script>

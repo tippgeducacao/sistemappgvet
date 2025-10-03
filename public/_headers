@@ -1,10 +1,22 @@
-# Cache static assets for 1 year
+# Service Worker - always fetch fresh
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# HTML - revalidate on every request
+*.html
+  Cache-Control: no-cache, must-revalidate
+
+# Default cache for root - revalidate
+/
+  Cache-Control: no-cache, must-revalidate
+
+# Cache static assets for 1 year (hash-based versioning)
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Cache images for 1 year
+# Cache uploads for 24 hours (allow updates)
 /lovable-uploads/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=86400
 
 # Cache fonts for 1 year
 *.woff2
@@ -12,18 +24,3 @@
 
 *.woff
   Cache-Control: public, max-age=31536000, immutable
-
-# Cache JavaScript and CSS for 1 year (with hash-based versioning)
-*.js
-  Cache-Control: public, max-age=31536000, immutable
-
-*.css
-  Cache-Control: public, max-age=31536000, immutable
-
-# Cache HTML for 1 hour (shorter to allow updates)
-*.html
-  Cache-Control: public, max-age=3600
-
-# Default cache for root
-/
-  Cache-Control: public, max-age=3600
