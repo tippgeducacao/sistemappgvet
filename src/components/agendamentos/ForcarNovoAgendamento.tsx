@@ -230,7 +230,7 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-500" />
@@ -248,11 +248,9 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
           </CardHeader>
         </Card>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Grid 2 colunas para os campos principais */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* COLUNA 1: Lead Selection */}
-            <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Lead Selection */}
+          <div className="space-y-2">
             <div className="flex justify-between items-center">
               <Label htmlFor="lead">Lead *</Label>
               <Button 
@@ -411,79 +409,73 @@ const ForcarNovoAgendamento: React.FC<ForcarNovoAgendamentoProps> = ({
                 )}
               </>
             )}
+          </div>
+
+          {/* Vendedor Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="vendedor">Vendedor *</Label>
+            <Select value={selectedVendedor} onValueChange={setSelectedVendedor}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um vendedor" />
+              </SelectTrigger>
+              <SelectContent>
+                {vendedores.map((vendedor) => (
+                  <SelectItem key={vendedor.id} value={vendedor.id}>
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      {vendedor.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Pós-graduação Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="pos-graduacao">Pós-graduação de Interesse *</Label>
+            <Select value={selectedPosGraduacao} onValueChange={setSelectedPosGraduacao}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma pós-graduação" />
+              </SelectTrigger>
+              <SelectContent>
+                {posGraduacoes.map((pg) => (
+                  <SelectItem key={pg.id} value={pg.nome}>
+                    {pg.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Date and Time */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="data">Data *</Label>
+              <Input
+                id="data"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
             </div>
-
-            {/* COLUNA 2: Vendedor e Pós-graduação */}
-            <div className="space-y-4">
-              {/* Vendedor Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="vendedor">Vendedor *</Label>
-                <Select value={selectedVendedor} onValueChange={setSelectedVendedor}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um vendedor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vendedores.map((vendedor) => (
-                      <SelectItem key={vendedor.id} value={vendedor.id}>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          {vendedor.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Pós-graduação Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="pos-graduacao">Pós-graduação de Interesse *</Label>
-                <Select value={selectedPosGraduacao} onValueChange={setSelectedPosGraduacao}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma pós-graduação" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {posGraduacoes.map((pg) => (
-                      <SelectItem key={pg.id} value={pg.nome}>
-                        {pg.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Data */}
-              <div className="space-y-2">
-                <Label htmlFor="data">Data *</Label>
-                <Input
-                  id="data"
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                />
-              </div>
-
-              {/* Horários lado a lado */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="horario">Horário Início *</Label>
-                  <Input
-                    id="horario"
-                    type="time"
-                    value={selectedTime}
-                    onChange={(e) => setSelectedTime(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="horario-fim">Horário Fim</Label>
-                  <Input
-                    id="horario-fim"
-                    type="time"
-                    value={selectedEndTime}
-                    onChange={(e) => setSelectedEndTime(e.target.value)}
-                  />
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="horario">Horário Início *</Label>
+              <Input
+                id="horario"
+                type="time"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="horario-fim">Horário Fim</Label>
+              <Input
+                id="horario-fim"
+                type="time"
+                value={selectedEndTime}
+                onChange={(e) => setSelectedEndTime(e.target.value)}
+              />
             </div>
           </div>
 
