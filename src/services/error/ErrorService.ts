@@ -1,8 +1,8 @@
+import { Logger } from '@/services/logger/LoggerService';
 
 export class ErrorService {
   static logError(error: Error, context?: string): void {
-    console.error(`[${context || 'Unknown'}] Error:`, error.message);
-    console.error('Stack trace:', error.stack);
+    Logger.error(`[${context || 'Unknown'}] Error: ${error.message}`, error);
   }
 
   static handleApiError(error: unknown, defaultMessage: string = 'Ocorreu um erro inesperado'): string {
@@ -12,11 +12,11 @@ export class ErrorService {
     }
     
     if (typeof error === 'string') {
-      console.error('API Error:', error);
+      Logger.error('API Error', error);
       return error;
     }
     
-    console.error('Unknown API Error:', error);
+    Logger.error('Unknown API Error', error);
     return defaultMessage;
   }
 
