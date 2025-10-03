@@ -101,6 +101,16 @@ const VendedorExportTableRow: React.FC<VendedorExportTableRowProps> = ({
       setTotalCommission(total);
       setWeeklyCommissions(commissions.map(c => c.valor));
       setWeeklyMultipliers(multipliers);
+      
+      console.log(`✅ MULTIPLICADORES CALCULADOS - ${vendedor.name}:`, {
+        weeklyPoints,
+        multipliers,
+        semanas: weeklyPoints.map((pts, idx) => ({
+          semana: idx + 1,
+          pontos: pts,
+          multiplicador: multipliers[idx]
+        }))
+      });
     };
     
     if (weeklyPoints.length > 0) {
