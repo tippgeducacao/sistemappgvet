@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ComissionamentoService } from '@/services/comissionamentoService';
 import { OptimizedCacheService } from '@/services/cache/OptimizedCacheService';
 import { ComissionamentoCacheService } from '@/services/cache/ComissionamentoCache';
+import { Logger } from '@/services/logger/LoggerService';
 
 interface ComissionamentoCalculationParams {
   pontosObtidos: number;
@@ -49,11 +50,15 @@ export const useComissionamentoCalculation = ({
       );
       
       if (cached) {
-        console.log(`🚀 useComissionamentoCalculation: Cache HIT para ${calculationKey}`);
+        if ((window as any).DEBUG_COMMISSION) {
+          Logger.debug(`🚀 useComissionamentoCalculation: Cache HIT para ${calculationKey}`);
+        }
         return cached;
       }
 
-      console.log(`🔄 useComissionamentoCalculation: Cache MISS - Calculando para ${calculationKey}`);
+      if ((window as any).DEBUG_COMMISSION) {
+        Logger.debug(`🔄 useComissionamentoCalculation: Cache MISS - Calculando para ${calculationKey}`);
+      }
       
       // Calcular novo resultado
       const result = await ComissionamentoService.calcularComissao(

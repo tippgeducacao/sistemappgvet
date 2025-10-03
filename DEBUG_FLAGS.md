@@ -31,9 +31,11 @@ window.DEBUG_COMMISSION = true;
 ```
 
 **O que mostra:**
-- Multiplicadores históricos
-- Regras de comissionamento aplicáveis
-- Cálculo de percentuais
+- Cache hits/misses de regras e cálculos
+- Regras de comissionamento carregadas
+- Percentuais calculados e regras aplicáveis
+- Multiplicadores e valores de comissão
+- Limpeza de cache expirado
 
 ### 3. DEBUG_VENDAS
 Exibe detalhes sobre processamento de vendas.

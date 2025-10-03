@@ -1,3 +1,5 @@
+import { Logger } from '@/services/logger/LoggerService';
+
 /**
  * Cache global especializado para cálculos de comissionamento
  * Reduz drasticamente queries repetitivas
@@ -35,10 +37,12 @@ class ComissionamentoCacheService {
       ttl: this.REGRAS_TTL
     });
     
-    console.log(`💾 ComissionamentoCache: Regras cached para ${tipoUsuario}`, {
-      total: regras.length,
-      ttl: `${this.REGRAS_TTL / (60 * 60 * 1000)}h`
-    });
+    if ((window as any).DEBUG_COMMISSION) {
+      Logger.debug(`💾 ComissionamentoCache: Regras cached para ${tipoUsuario}`, {
+        total: regras.length,
+        ttl: `${this.REGRAS_TTL / (60 * 60 * 1000)}h`
+      });
+    }
   }
 
   static getRegras(tipoUsuario: string): any[] | null {
@@ -46,20 +50,26 @@ class ComissionamentoCacheService {
     const entry = this.regrasCache.get(key);
     
     if (!entry) {
-      console.log(`❌ ComissionamentoCache: MISS para regras ${tipoUsuario}`);
+      if ((window as any).DEBUG_COMMISSION) {
+        Logger.debug(`❌ ComissionamentoCache: MISS para regras ${tipoUsuario}`);
+      }
       return null;
     }
 
     const isExpired = Date.now() - entry.timestamp > entry.ttl;
     if (isExpired) {
-      console.log(`⏰ ComissionamentoCache: EXPIRED para regras ${tipoUsuario}`);
+      if ((window as any).DEBUG_COMMISSION) {
+        Logger.debug(`⏰ ComissionamentoCache: EXPIRED para regras ${tipoUsuario}`);
+      }
       this.regrasCache.delete(key);
       return null;
     }
 
-    console.log(`✅ ComissionamentoCache: HIT para regras ${tipoUsuario}`, {
-      age: `${Math.round((Date.now() - entry.timestamp) / (60 * 1000))}min`
-    });
+    if ((window as any).DEBUG_COMMISSION) {
+      Logger.debug(`✅ ComissionamentoCache: HIT para regras ${tipoUsuario}`, {
+        age: `${Math.round((Date.now() - entry.timestamp) / (60 * 1000))}min`
+      });
+    }
     return entry.data;
   }
 
@@ -81,12 +91,14 @@ class ComissionamentoCacheService {
       ttl: this.CALCULOS_TTL
     });
     
-    console.log(`💾 ComissionamentoCache: Cálculo cached`, {
-      key: key.substring(0, 50) + '...',
-      valor: `R$ ${resultado.valor.toFixed(2)}`,
-      multiplicador: `${resultado.multiplicador}x`,
-      ttl: `${this.CALCULOS_TTL / (60 * 60 * 1000)}h`
-    });
+    if ((window as any).DEBUG_COMMISSION) {
+      Logger.debug(`💾 ComissionamentoCache: Cálculo cached`, {
+        key: key.substring(0, 50) + '...',
+        valor: `R$ ${resultado.valor.toFixed(2)}`,
+        multiplicador: `${resultado.multiplicador}x`,
+        ttl: `${this.CALCULOS_TTL / (60 * 60 * 1000)}h`
+      });
+    }
   }
 
   static getCalculo(
@@ -99,22 +111,28 @@ class ComissionamentoCacheService {
     const entry = this.calculosCache.get(key);
     
     if (!entry) {
-      console.log(`❌ ComissionamentoCache: MISS para cálculo`, { key: key.substring(0, 50) + '...' });
+      if ((window as any).DEBUG_COMMISSION) {
+        Logger.debug(`❌ ComissionamentoCache: MISS para cálculo`, { key: key.substring(0, 50) + '...' });
+      }
       return null;
     }
 
     const isExpired = Date.now() - entry.timestamp > entry.ttl;
     if (isExpired) {
-      console.log(`⏰ ComissionamentoCache: EXPIRED para cálculo`, { key: key.substring(0, 50) + '...' });
+      if ((window as any).DEBUG_COMMISSION) {
+        Logger.debug(`⏰ ComissionamentoCache: EXPIRED para cálculo`, { key: key.substring(0, 50) + '...' });
+      }
       this.calculosCache.delete(key);
       return null;
     }
 
-    console.log(`✅ ComissionamentoCache: HIT para cálculo`, {
-      key: key.substring(0, 50) + '...',
-      valor: `R$ ${entry.data.valor.toFixed(2)}`,
-      age: `${Math.round((Date.now() - entry.timestamp) / (60 * 1000))}min`
-    });
+    if ((window as any).DEBUG_COMMISSION) {
+      Logger.debug(`✅ ComissionamentoCache: HIT para cálculo`, {
+        key: key.substring(0, 50) + '...',
+        valor: `R$ ${entry.data.valor.toFixed(2)}`,
+        age: `${Math.round((Date.now() - entry.timestamp) / (60 * 1000))}min`
+      });
+    }
     return entry.data;
   }
 
@@ -155,12 +173,14 @@ class ComissionamentoCacheService {
     }
 
     if (cleanedRegras > 0 || cleanedCalculos > 0) {
-      console.log(`🧹 ComissionamentoCache: Limpeza executada`, {
-        regrasLimpas: cleanedRegras,
-        calculosLimpos: cleanedCalculos,
-        regrasAtivas: this.regrasCache.size,
-        calculosAtivos: this.calculosCache.size
-      });
+      if ((window as any).DEBUG_COMMISSION) {
+        Logger.debug(`🧹 ComissionamentoCache: Limpeza executada`, {
+          regrasLimpas: cleanedRegras,
+          calculosLimpos: cleanedCalculos,
+          regrasAtivas: this.regrasCache.size,
+          calculosAtivos: this.calculosCache.size
+        });
+      }
     }
   }
 
@@ -174,10 +194,12 @@ class ComissionamentoCacheService {
     this.regrasCache.clear();
     this.calculosCache.clear();
     
-    console.log(`🗑️ ComissionamentoCache: Cache limpo completamente`, {
-      regrasRemovidas: regrasCount,
-      calculosRemovidos: calculosCount
-    });
+    if ((window as any).DEBUG_COMMISSION) {
+      Logger.debug(`🗑️ ComissionamentoCache: Cache limpo completamente`, {
+        regrasRemovidas: regrasCount,
+        calculosRemovidos: calculosCount
+      });
+    }
   }
 
   /**
