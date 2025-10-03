@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { Globe, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { normalizePageSlug } from '@/utils/leadUtils';
@@ -161,7 +161,7 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
                     data={paginasChartData}
                     cx="50%"
                     cy="50%"
-                    outerRadius="75%"
+                    outerRadius="70%"
                     fill="#8884d8"
                     dataKey="value"
                     label={false}
@@ -178,6 +178,12 @@ const PaginasLeadsChart: React.FC<PaginasLeadsChartProps> = ({
                       `${value} leads (${props.payload?.percentage}%)`, 
                       props.payload?.fullName || 'Página'
                     ]}
+                  />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={50}
+                    iconType="circle"
+                    wrapperStyle={{ paddingTop: '20px' }}
                   />
                 </PieChart>
               </ResponsiveContainer>

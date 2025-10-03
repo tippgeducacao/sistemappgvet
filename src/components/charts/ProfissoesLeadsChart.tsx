@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { Briefcase } from 'lucide-react';
 import type { Lead } from '@/hooks/useLeads';
 
@@ -121,7 +121,7 @@ const ProfissoesLeadsChart: React.FC<ProfissoesLeadsChartProps> = ({
                     data={profissoesChartData}
                     cx="50%"
                     cy="50%"
-                    outerRadius="75%"
+                    outerRadius="70%"
                     fill="#8884d8"
                     dataKey="value"
                     label={false}
@@ -136,6 +136,12 @@ const ProfissoesLeadsChart: React.FC<ProfissoesLeadsChartProps> = ({
                       `${value} leads (${props.payload?.percentage}%)`, 
                       props.payload?.fullName || 'Profissão'
                     ]}
+                  />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={50}
+                    iconType="circle"
+                    wrapperStyle={{ paddingTop: '20px' }}
                   />
                 </PieChart>
               </ResponsiveContainer>

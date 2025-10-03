@@ -207,6 +207,16 @@
 
     --radius: 0.75rem;
 
+    /* Chart colors - cores vibrantes e distintas para gráficos */
+    --chart-1: 217 91% 60%;   /* Azul vibrante */
+    --chart-2: 0 84% 60%;      /* Vermelho */
+    --chart-3: 142 71% 45%;    /* Verde */
+    --chart-4: 38 92% 50%;     /* Laranja */
+    --chart-5: 280 67% 55%;    /* Roxo */
+    --chart-6: 180 100% 35.5%; /* Teal (tema) */
+    --chart-7: 318 51% 50%;    /* Magenta (tema) */
+    --chart-8: 200 98% 39%;    /* Ciano */
+
     /* PPGVET Cores Personalizadas */
     --ppgvet-teal: 180 100% 35.5%;
     --ppgvet-magenta: 318 51% 50%;
@@ -244,6 +254,16 @@
     --border: 223 47% 11%;
     --input: 223 47% 11%;
     --ring: 180 100% 50%;
+
+    /* Chart colors para dark mode - ajustados para melhor contraste */
+    --chart-1: 217 91% 65%;
+    --chart-2: 0 84% 65%;
+    --chart-3: 142 71% 55%;
+    --chart-4: 38 92% 60%;
+    --chart-5: 280 67% 65%;
+    --chart-6: 180 100% 50%;
+    --chart-7: 318 51% 60%;
+    --chart-8: 200 98% 50%;
     
     /* Dark Mode PPGVET Colors */
     --ppgvet-gray-50: 223 47% 11%;

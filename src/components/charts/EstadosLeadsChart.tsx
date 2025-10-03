@@ -1,7 +1,8 @@
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { MapPin } from 'lucide-react';
 
 interface Lead {
   id: string;
@@ -112,33 +113,48 @@ export const EstadosLeadsChart: React.FC<EstadosLeadsChartProps> = ({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        <CardTitle className="flex items-center space-x-2">
+          <MapPin className="h-5 w-5 text-primary" />
+          <span>{title}</span>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} style={{ height }}>
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={estadosChartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {estadosChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
+            <BarChart data={estadosChartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <XAxis 
+                dataKey="name" 
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+              />
               <ChartTooltip
                 content={<ChartTooltipContent />}
                 formatter={(value, name, props) => [
                   `${value} leads (${props.payload?.percentage}%)`,
-                  props.payload?.fullName || name
+                  props.payload?.fullName || 'Estado'
                 ]}
               />
-            </PieChart>
+              <Legend 
+                verticalAlign="bottom" 
+                height={36}
+                iconType="circle"
+                wrapperStyle={{ paddingTop: '10px' }}
+              />
+              <Bar 
+                dataKey="value" 
+                fill="hsl(var(--chart-1))" 
+                radius={[8, 8, 0, 0]}
+                name="Leads por Estado"
+              />
+            </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
 

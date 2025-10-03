@@ -36,19 +36,19 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
           leads={[]} 
           title="Profissões dos Leads"
           showDetails={false}
-          height="350px"
+          height="400px"
         />
         <PaginasLeadsChart 
           leads={[]} 
           title="Páginas dos Leads"
           showDetails={false}
-          height="350px"
+          height="400px"
         />
         <EstadosLeadsChart 
           leads={[]} 
           title="Estados dos Leads"
           showDetails={false}
-          height="350px"
+          height="400px"
         />
         <LeadsResumoCard 
           leads={[]} 
@@ -68,14 +68,14 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
           leads={leads} 
           title="Profissões dos Leads"
           showDetails={false}
-          height="350px"
+          height="400px"
         />
         
         <PaginasLeadsChart 
           leads={leads} 
           title="Páginas dos Leads"
           showDetails={false}
-          height="350px"
+          height="400px"
           onPageClick={handlePageClick}
         />
         
@@ -84,7 +84,7 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ leads }) => {
           leads={leads} 
           title="Estados dos Leads"
           showDetails={false}
-          height="350px"
+          height="400px"
           onStateClick={handlePageClick}
         />
         
