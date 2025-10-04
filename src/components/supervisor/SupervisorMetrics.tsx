@@ -100,8 +100,6 @@ const SupervisorMetrics: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SalesChart 
           selectedVendedor={selectedVendedor}
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
         />
         <StatusDistributionChart 
           selectedVendedor={selectedVendedor}

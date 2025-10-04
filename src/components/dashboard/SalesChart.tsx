@@ -7,11 +7,11 @@ import { getVendaPeriod } from '@/utils/semanaUtils';
 
 interface SalesChartProps {
   selectedVendedor?: string;
-  selectedMonth?: number;
-  selectedYear?: number;
+  dataInicio?: Date;
+  dataFim?: Date;
 }
 
-const SalesChart: React.FC<SalesChartProps> = ({ selectedVendedor, selectedMonth, selectedYear }) => {
+const SalesChart: React.FC<SalesChartProps> = ({ selectedVendedor, dataInicio, dataFim }) => {
   const { vendas, isLoading } = useAllVendas();
 
   if (isLoading) {
@@ -37,28 +37,46 @@ const SalesChart: React.FC<SalesChartProps> = ({ selectedVendedor, selectedMonth
       return false;
     }
     
-    // Filtro por período usando regra de semana
-    if (selectedMonth && selectedYear && venda.enviado_em) {
-      const vendaDate = new Date(venda.enviado_em);
-      const { mes: vendaMes, ano: vendaAno } = getVendaPeriod(vendaDate);
-      if (vendaMes !== selectedMonth || vendaAno !== selectedYear) {
+    // Filtro por período de datas
+    if (dataInicio || dataFim) {
+      // Usar data efetiva: data_assinatura_contrato > data_aprovacao > enviado_em
+      const vendaDataEfetiva = venda.data_assinatura_contrato || venda.data_aprovacao || venda.enviado_em;
+      
+      if (!vendaDataEfetiva) return false;
+      
+      const vendaDate = new Date(vendaDataEfetiva);
+      
+      if (dataInicio && vendaDate < dataInicio) {
         return false;
+      }
+      
+      if (dataFim) {
+        const fimDia = new Date(dataFim);
+        fimDia.setHours(23, 59, 59, 999);
+        if (vendaDate > fimDia) {
+          return false;
+        }
       }
     }
     
     return true;
   });
 
-  // Agrupar apenas vendas aprovadas por mês
+  // Agrupar apenas vendas aprovadas por mês usando data efetiva
   const vendasPorMes = vendasFiltradas.reduce((acc, venda) => {
-    if (!venda.enviado_em) return acc;
+    // Usar data efetiva: data_assinatura_contrato > data_aprovacao > enviado_em
+    const vendaDataEfetiva = venda.data_assinatura_contrato || venda.data_aprovacao || venda.enviado_em;
     
-    const data = new Date(venda.enviado_em);
+    if (!vendaDataEfetiva) return acc;
+    
+    const data = new Date(vendaDataEfetiva);
     const mesAno = data.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
     
     if (!acc[mesAno]) {
       acc[mesAno] = { 
-        mes: mesAno, 
+        mes: mesAno,
+        mesNumero: data.getMonth(),
+        ano: data.getFullYear(),
         aprovadas: 0
       };
     }
@@ -68,12 +86,14 @@ const SalesChart: React.FC<SalesChartProps> = ({ selectedVendedor, selectedMonth
     }
     
     return acc;
-  }, {} as Record<string, { mes: string; aprovadas: number }>);
+  }, {} as Record<string, { mes: string; mesNumero: number; ano: number; aprovadas: number }>);
 
   const chartData = Object.values(vendasPorMes).sort((a, b) => {
-    const [mesA, anoA] = a.mes.split(' ');
-    const [mesB, anoB] = b.mes.split(' ');
-    return new Date(`${mesA} 1, ${anoA}`).getTime() - new Date(`${mesB} 1, ${anoB}`).getTime();
+    // Ordenar por ano e depois por mês
+    if (a.ano !== b.ano) {
+      return a.ano - b.ano;
+    }
+    return a.mesNumero - b.mesNumero;
   });
 
   const totalAprovadas = vendasFiltradas.filter(v => v.status === 'matriculado').length;
