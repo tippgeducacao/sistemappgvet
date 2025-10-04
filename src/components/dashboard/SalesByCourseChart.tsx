@@ -4,25 +4,26 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useCursos } from '@/hooks/useCursos';
-import { getVendaPeriod } from '@/utils/semanaUtils';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { format } from 'date-fns';
 
 interface SalesByCourseChartProps {
   selectedVendedor?: string;
-  selectedMonth?: number;
-  selectedYear?: number;
 }
 
 type StatusFilter = 'total' | 'matriculado' | 'pendente' | 'desistiu';
 
-const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedor, selectedMonth, selectedYear }) => {
+const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedor }) => {
   const { vendas, isLoading } = useAllVendas();
   const { cursos } = useCursos();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('matriculado');
   const [cursoFilter, setCursoFilter] = useState<string>('todos');
+  const [dataInicio, setDataInicio] = useState<string>('');
+  const [dataFim, setDataFim] = useState<string>('');
 
   const courseColors = [
     '#3b82f6', // azul
@@ -89,12 +90,26 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
         return false;
       }
       
-      // Filtro por período usando regra de semana
-      if (selectedMonth && selectedYear && venda.enviado_em) {
-        const vendaDate = new Date(venda.enviado_em);
-        const { mes: vendaMes, ano: vendaAno } = getVendaPeriod(vendaDate);
-        if (vendaMes !== selectedMonth || vendaAno !== selectedYear) {
-          return false;
+      // Filtro por período usando data_assinatura_contrato ou data_aprovacao
+      if (dataInicio || dataFim) {
+        const vendaDate = venda.data_assinatura_contrato 
+          ? new Date(venda.data_assinatura_contrato)
+          : venda.data_aprovacao
+          ? new Date(venda.data_aprovacao)
+          : null;
+        
+        if (!vendaDate) return false;
+        
+        if (dataInicio) {
+          const inicio = new Date(dataInicio);
+          inicio.setHours(0, 0, 0, 0);
+          if (vendaDate < inicio) return false;
+        }
+        
+        if (dataFim) {
+          const fim = new Date(dataFim);
+          fim.setHours(23, 59, 59, 999);
+          if (vendaDate > fim) return false;
         }
       }
       
@@ -155,7 +170,7 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
                      statusFilter === 'pendente' ? item.pendentes :
                      statusFilter === 'desistiu' ? item.rejeitadas : item.total
       }));
-  }, [vendas, selectedVendedor, selectedMonth, selectedYear, statusFilter, cursoFilter]);
+  }, [vendas, selectedVendedor, statusFilter, cursoFilter, dataInicio, dataFim]);
 
   const getStatusLabel = (status: StatusFilter) => {
     switch (status) {
@@ -259,40 +274,63 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
     <TooltipProvider>
       <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <CardTitle>Vendas por Curso</CardTitle>
-              <CardDescription>
-                Distribuição de vendas entre os cursos oferecidos
-              </CardDescription>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <CardTitle>Vendas por Curso</CardTitle>
+                <CardDescription>
+                  Distribuição de vendas entre os cursos oferecidos
+                </CardDescription>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
+                  <SelectTrigger className="w-full sm:w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="matriculado">Matriculadas</SelectItem>
+                    <SelectItem value="total">Total</SelectItem>
+                    <SelectItem value="pendente">Pendentes</SelectItem>
+                    <SelectItem value="desistiu">Rejeitadas</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={cursoFilter} onValueChange={setCursoFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filtrar por curso" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os cursos</SelectItem>
+                    {cursos.map((curso) => (
+                      <SelectItem key={curso.id} value={curso.id}>
+                        {curso.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-2">
-              <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
-                <SelectTrigger className="w-full sm:w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="matriculado">Matriculadas</SelectItem>
-                  <SelectItem value="total">Total</SelectItem>
-                  <SelectItem value="pendente">Pendentes</SelectItem>
-                  <SelectItem value="desistiu">Rejeitadas</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={cursoFilter} onValueChange={setCursoFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filtrar por curso" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os cursos</SelectItem>
-                  {cursos.map((curso) => (
-                    <SelectItem key={curso.id} value={curso.id}>
-                      {curso.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">Data Início</label>
+                <Input
+                  type="date"
+                  value={dataInicio}
+                  onChange={(e) => setDataInicio(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">Data Fim</label>
+                <Input
+                  type="date"
+                  value={dataFim}
+                  onChange={(e) => setDataFim(e.target.value)}
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
           

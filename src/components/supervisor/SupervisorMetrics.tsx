@@ -112,8 +112,6 @@ const SupervisorMetrics: React.FC = () => {
 
       <SalesByCourseChart 
         selectedVendedor={selectedVendedor}
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
       />
 
       <WeeklyApprovedSalesChart 

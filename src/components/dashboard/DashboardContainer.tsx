@@ -140,8 +140,6 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({ userType }) => 
 
         <SalesByCourseChart 
           selectedVendedor={selectedVendedor}
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
         />
 
         <WeeklyApprovedSalesChart 
