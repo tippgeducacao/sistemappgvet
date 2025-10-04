@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, CheckCircle, XCircle, Users, Search, UserCheck, Calendar } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Users, Search, UserCheck, Calendar, Headset } from 'lucide-react';
 import { useAllVendas } from '@/hooks/useVendas';
 import { useVendedoresOnly } from '@/hooks/useVendedoresOnly';
+import { useSDRsOnly } from '@/hooks/useSDRsOnly';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -28,9 +29,11 @@ const SecretariaGerenciarVendas: React.FC = () => {
   } = useAllVendas();
   
   const { vendedores } = useVendedoresOnly();
+  const { sdrs } = useSDRsOnly();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendedor, setSelectedVendedor] = useState<string>('');
+  const [selectedSDR, setSelectedSDR] = useState<string>('');
   const [dataInicio, setDataInicio] = useState<Date | undefined>();
   const [dataFim, setDataFim] = useState<Date | undefined>();
   
@@ -41,6 +44,11 @@ const SecretariaGerenciarVendas: React.FC = () => {
     // Filtrar por vendedor se selecionado
     if (selectedVendedor && selectedVendedor !== 'todos') {
       filtered = filtered.filter(venda => venda.vendedor_id === selectedVendedor);
+    }
+    
+    // Filtrar por SDR se selecionado
+    if (selectedSDR && selectedSDR !== 'todos') {
+      filtered = filtered.filter(venda => venda.sdr_id === selectedSDR);
     }
     
     // Filtrar por termo de pesquisa (nome ou email)
@@ -76,7 +84,7 @@ const SecretariaGerenciarVendas: React.FC = () => {
     }
     
     return filtered;
-  }, [vendas, searchTerm, selectedVendedor, dataInicio, dataFim]);
+  }, [vendas, searchTerm, selectedVendedor, selectedSDR, dataInicio, dataFim]);
   
   // Filtrar vendas por status
   const vendasPendentes = useMemo(() => {
@@ -111,7 +119,7 @@ const SecretariaGerenciarVendas: React.FC = () => {
       </div>
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Campo de pesquisa */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -136,6 +144,24 @@ const SecretariaGerenciarVendas: React.FC = () => {
               {vendedores.map((vendedor) => (
                 <SelectItem key={vendedor.id} value={vendedor.id}>
                   {vendedor.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Filtro por SDR */}
+        <div className="relative">
+          <Headset className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Select value={selectedSDR} onValueChange={setSelectedSDR}>
+            <SelectTrigger className="pl-10">
+              <SelectValue placeholder="Filtrar por SDR..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os SDRs</SelectItem>
+              {sdrs.map((sdr) => (
+                <SelectItem key={sdr.id} value={sdr.id}>
+                  {sdr.name}
                 </SelectItem>
               ))}
             </SelectContent>
