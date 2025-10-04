@@ -134,17 +134,17 @@ const SalesByCourseChart: React.FC<SalesByCourseChartProps> = ({ selectedVendedo
         };
       }
       
-      // Sempre incrementar o total
-      acc[cursoNome].total += 1;
-      
-      // Incrementar baseado no status específico
-      if (venda.status === 'matriculado') {
-        acc[cursoNome].matriculadas += 1;
-      } else if (venda.status === 'pendente') {
-        acc[cursoNome].pendentes += 1;
-      } else if (venda.status === 'desistiu' || venda.status === 'rejeitado') {
-        acc[cursoNome].rejeitadas += 1;
-      }
+            // Incrementar baseado no status específico
+            if (venda.status === 'matriculado') {
+              acc[cursoNome].matriculadas += 1;
+              acc[cursoNome].total += 1; // Conta no total
+            } else if (venda.status === 'pendente') {
+              acc[cursoNome].pendentes += 1;
+              acc[cursoNome].total += 1; // Conta no total
+            } else if (venda.status === 'desistiu' || venda.status === 'rejeitado') {
+              acc[cursoNome].rejeitadas += 1;
+              // NÃO incrementa o total
+            }
       
       return acc;
     }, {} as Record<string, any>);
